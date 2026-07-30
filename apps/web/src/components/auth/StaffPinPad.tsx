@@ -8,6 +8,7 @@ import {
   resolveStaffUnlockPhase,
   STAFF_UNLOCK_LIST_SUBJECT,
 } from './staffUnlockState';
+import { safeLocalStorageSetItem, safeLocalStorageGetItem, DENTE_CLINIC_TOKEN_KEY, DENTE_STAFF_TOKEN_KEY } from "../../lib/safeLocalStorage";
 
 interface StaffPinPadProps {
   /**
@@ -102,7 +103,7 @@ export function StaffPinPad({
     setErrorText(null);
 
     try {
-      const clinicToken = localStorage.getItem('dente_clinic_token');
+      const clinicToken = safeLocalStorageGetItem(DENTE_CLINIC_TOKEN_KEY);
       const response = await fetch('/api/auth/staff/unlock', {
         method: 'POST',
         headers: {
@@ -168,7 +169,7 @@ export function StaffPinPad({
       }
 
       try {
-        localStorage.setItem('dente_staff_token', staffToken);
+        safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, staffToken);
       } catch (storageError) {
         /*
          * Запись в localStorage запрещена (приватный режим, переполненное

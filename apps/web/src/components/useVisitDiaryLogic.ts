@@ -10,6 +10,7 @@ import {
 import { useVisitStore } from "../store/visitStore";
 import { useAppLogic } from "../useAppLogic";
 import { showToast } from "./GlobalToast";
+import { readDenteClinicToken } from "../lib/safeLocalStorage";
 
 export interface DiaryState {
 	anamnesis: string;
@@ -345,7 +346,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			}
 			setIsSaving(true);
 			try {
-				const clinicToken = localStorage.getItem("dente_clinic_token");
+				const clinicToken = readDenteClinicToken() || null;
 				const res = await fetch(`/api/visits/${visitId}/draft/autosave`, {
 					method: "PUT",
 					headers: {

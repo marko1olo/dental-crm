@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Shield, Building, Mail, KeyRound, ArrowRight, User, Eye, EyeOff } from 'lucide-react';
 import { showToast } from '../GlobalToast';
+import { safeLocalStorageSetItem, DENTE_CLINIC_TOKEN_KEY, DENTE_STAFF_TOKEN_KEY } from "../../lib/safeLocalStorage";
 
 interface RegisterProps {
   onSuccess: (clinicProfile: any, userProfile: any) => void;
@@ -62,8 +63,8 @@ export function Register({ onSuccess, onSwitchToLogin }: RegisterProps) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Ошибка регистрации');
 
-      localStorage.setItem('dente_clinic_token', data.clinicToken);
-      localStorage.setItem('dente_staff_token', data.staffToken);
+      safeLocalStorageSetItem(DENTE_CLINIC_TOKEN_KEY, data.clinicToken);
+      safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, data.staffToken);
       showToast('Клиника зарегистрирована!', 'success');
       onSuccess(
         { organizationId: data.organizationId },

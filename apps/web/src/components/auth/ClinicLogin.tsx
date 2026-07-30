@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, KeyRound, Building, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { showToast } from '../GlobalToast';
+import { safeLocalStorageSetItem, DENTE_CLINIC_TOKEN_KEY } from "../../lib/safeLocalStorage";
 
 interface ClinicLoginProps {
   onLoginSuccess: (clinicProfile: any) => void;
@@ -32,7 +33,7 @@ export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
         throw new Error(data.message || "Ошибка входа клиники");
       }
 
-      localStorage.setItem("dente_clinic_token", data.clinicToken);
+      safeLocalStorageSetItem(DENTE_CLINIC_TOKEN_KEY, data.clinicToken);
       showToast("Вход в рабочее пространство выполнен", "success");
       onLoginSuccess(data.clinicProfile);
     } catch (err: any) {

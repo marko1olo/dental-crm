@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, KeyRound, ArrowRight, User } from 'lucide-react';
 import { showToast } from '../GlobalToast';
+import { safeLocalStorageSetItem, DENTE_CLINIC_TOKEN_KEY, DENTE_STAFF_TOKEN_KEY } from "../../lib/safeLocalStorage";
 
 interface AcceptInviteProps {
   token: string;
@@ -42,8 +43,8 @@ export function AcceptInvite({ token, onSuccess, onCancel }: AcceptInviteProps) 
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Ошибка принятия приглашения');
 
-      localStorage.setItem('dente_clinic_token', data.clinicToken);
-      localStorage.setItem('dente_staff_token', data.staffToken);
+      safeLocalStorageSetItem(DENTE_CLINIC_TOKEN_KEY, data.clinicToken);
+      safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, data.staffToken);
       showToast('Профиль успешно создан!', 'success');
       onSuccess({ organizationId: data.user.organizationId }, data.user);
     } catch (err: any) {

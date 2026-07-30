@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { safeLocalStorageGetItem, DENTE_CLINIC_TOKEN_KEY, DENTE_STAFF_TOKEN_KEY } from "../lib/safeLocalStorage";
 
 type WebSocketMessage = {
 	type: string;
@@ -14,14 +15,10 @@ const RECONNECT_MAX_MS = 30_000;
  * остальной интерфейс.
  */
 function readAuthPayload(): { clinicToken: string | null; staffToken: string | null } {
-	try {
-		return {
-			clinicToken: localStorage.getItem("dente_clinic_token"),
-			staffToken: localStorage.getItem("dente_staff_token"),
-		};
-	} catch {
-		return { clinicToken: null, staffToken: null };
-	}
+	return {
+		clinicToken: safeLocalStorageGetItem(DENTE_CLINIC_TOKEN_KEY),
+		staffToken: safeLocalStorageGetItem(DENTE_STAFF_TOKEN_KEY),
+	};
 }
 
 export function useWebsocket(url: string) {

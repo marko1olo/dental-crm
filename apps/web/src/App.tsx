@@ -10,6 +10,7 @@ import { CommandPalette } from './components/CommandPalette';
 import { IncomingCallToast } from './components/IncomingCallToast';
 import { AuthHub } from './components/auth/AuthHub';
 import { StaffPinPad } from './components/auth/StaffPinPad';
+import { readDenteClinicToken, readDenteStaffToken, safeLocalStorageRemoveItem, DENTE_CLINIC_TOKEN_KEY, DENTE_STAFF_TOKEN_KEY } from "./lib/safeLocalStorage";
 
 import { useAppStore } from "./store/appStore";
 import { useImagingStore } from "./store/imagingStore";
@@ -1932,10 +1933,10 @@ export function App() {
 
   // --- DUAL-TIER AUTH STATE ---
   const [clinicAuthed, setClinicAuthed] = useState<boolean>(() => {
-    return typeof window !== "undefined" && !!localStorage.getItem("dente_clinic_token");
+    return !!readDenteClinicToken();
   });
   const [staffAuthed, setStaffAuthed] = useState<boolean>(() => {
-    return typeof window !== "undefined" && !!localStorage.getItem("dente_staff_token");
+    return !!readDenteStaffToken();
   });
   const [showStaffPinPad, setShowStaffPinPad] = useState<boolean>(false);
   const [activeStaffUser, setActiveStaffUser] = useState<any>(null);
@@ -1949,8 +1950,8 @@ export function App() {
         const is401 = statusCode === 401 || (e instanceof Error && (e.message.includes("401") || e.message.includes("Unauthorized")));
         if (is401) {
           console.warn("[Dente] Clinic token invalid (401), forcing re-login:", e);
-          localStorage.removeItem("dente_clinic_token");
-          localStorage.removeItem("dente_staff_token");
+          safeLocalStorageRemoveItem(DENTE_CLINIC_TOKEN_KEY);
+          safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
           setClinicAuthed(false);
           setStaffAuthed(false);
         } else {
@@ -1960,7 +1961,7 @@ export function App() {
       });
     }
     // Restore staff user profile from token on page refresh
-    const staffToken = localStorage.getItem("dente_staff_token");
+    const staffToken = readDenteStaffToken() || null;
     if (staffToken && !activeStaffUser) {
       fetch("/api/auth/user/me", {
         headers: { "x-dente-staff-token": staffToken }
@@ -1982,7 +1983,7 @@ export function App() {
       timer = setTimeout(() => {
         setStaffAuthed(false);
         setShowStaffPinPad(true);
-        localStorage.removeItem("dente_staff_token");
+        safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
       }, 5 * 60 * 1000);
     };
     const events = ["mousemove", "keydown", "pointerdown", "touchstart"];
@@ -1995,8 +1996,8 @@ export function App() {
   }, [clinicAuthed]);
 
   const handleClinicLogout = () => {
-    localStorage.removeItem("dente_clinic_token");
-    localStorage.removeItem("dente_staff_token");
+    safeLocalStorageRemoveItem(DENTE_CLINIC_TOKEN_KEY);
+    safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
     setClinicAuthed(false);
     setStaffAuthed(false);
     setShowStaffPinPad(false);
@@ -2004,7 +2005,7 @@ export function App() {
   };
 
   const handleLockSession = () => {
-    localStorage.removeItem("dente_staff_token");
+    safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
     setStaffAuthed(false);
     setShowStaffPinPad(true);
   };

@@ -300,6 +300,7 @@ import { specialtyQuickPhraseLibrary } from "./visitDictationData";
 import { inferDashboardVisitSpecialty, inferSpecialtyFromText, visitSpecialtyFocusOptions } from "./visitSpecialtyData";
 import { ActionIcon, appViews, type AppView, getFilteredAppViews, viewLabels, WorkspaceSidebar, WorkspaceTopbar } from "./workspaceShell";
 import { denteAdminSecretRequestHeaders } from "./lib/denteRequestHeaders";
+import { readDenteClinicToken } from "./lib/safeLocalStorage";
 import { WorkspaceContinuityStrip } from "./workspaceContinuityStrip";
 import { WorkspaceRouteErrorBoundary } from "./workspaceRouteErrorBoundary";
 import {
@@ -6252,14 +6253,14 @@ export const initialUiPreferences = {} as any;
 
 export const auth = {
   denteClinicalReadHeaders: (customHeaders: Record<string, string> = {}, adminSecret?: string): Record<string, string> => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("dente_clinic_token") || "" : "";
+    const token = readDenteClinicToken();
     const headers: Record<string, string> = { ...customHeaders };
     if (token) headers["x-dente-clinic-token"] = token;
     if (adminSecret) headers["x-dente-admin-secret"] = adminSecret;
     return headers;
   },
   denteClinicalMutationHeaders: (customHeaders: Record<string, string> = {}, adminSecret?: string): Record<string, string> => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("dente_clinic_token") || "" : "";
+    const token = readDenteClinicToken();
     const headers: Record<string, string> = { "Content-Type": "application/json", ...customHeaders };
     if (token) headers["x-dente-clinic-token"] = token;
     if (adminSecret) headers["x-dente-admin-secret"] = adminSecret;

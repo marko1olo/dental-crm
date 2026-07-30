@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { readDenteClinicToken, readDenteStaffToken } from "../lib/safeLocalStorage";
 
 export interface Lead {
 	id: string;
@@ -35,9 +36,9 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 			const res = await fetch(`${API_URL}/leads`, {
 				headers: {
 					"x-dente-staff-token":
-						localStorage.getItem("dente_staff_token") || "",
+						readDenteStaffToken(),
 					"x-dente-clinic-token":
-						localStorage.getItem("dente_clinic_token") || "",
+						readDenteClinicToken(),
 				},
 			});
 			if (!res.ok) throw new Error("Failed to fetch leads");
@@ -60,9 +61,9 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 				headers: {
 					"Content-Type": "application/json",
 					"x-dente-staff-token":
-						localStorage.getItem("dente_staff_token") || "",
+						readDenteStaffToken(),
 					"x-dente-clinic-token":
-						localStorage.getItem("dente_clinic_token") || "",
+						readDenteClinicToken(),
 				},
 				body: JSON.stringify({ status }),
 			});
@@ -82,9 +83,9 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 				headers: {
 					"Content-Type": "application/json",
 					"x-dente-staff-token":
-						localStorage.getItem("dente_staff_token") || "",
+						readDenteStaffToken(),
 					"x-dente-clinic-token":
-						localStorage.getItem("dente_clinic_token") || "",
+						readDenteClinicToken(),
 				},
 				body: JSON.stringify(leadData),
 			});
@@ -102,9 +103,9 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 				headers: {
 					"Content-Type": "application/json",
 					"x-dente-staff-token":
-						localStorage.getItem("dente_staff_token") || "",
+						readDenteStaffToken(),
 					"x-dente-clinic-token":
-						localStorage.getItem("dente_clinic_token") || "",
+						readDenteClinicToken(),
 				},
 				body: JSON.stringify(details),
 			});

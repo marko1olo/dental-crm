@@ -3,6 +3,7 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { AUTHED_API_FILE_FAILURE, fetchAuthedApiFileObjectUrl } from "../lib/authedApiFile";
 import { showToast } from "./GlobalToast";
+import { readDenteClinicToken } from "../lib/safeLocalStorage";
 
 interface Attachment {
 	id: string;
@@ -49,7 +50,7 @@ export function VisitDiaryPhotoUpload({
 
 		const controller = new AbortController();
 		let cancelled = false;
-		const clinicToken = localStorage.getItem("dente_clinic_token");
+		const clinicToken = readDenteClinicToken() || null;
 		fetch(`/api/files/visits/${visitId}/attachments`, {
 			headers: {
 				"x-dente-clinic-token": clinicToken || "",
@@ -170,7 +171,7 @@ export function VisitDiaryPhotoUpload({
 			formData.append("entityType", "diary");
 			formData.append("entityId", diaryId);
 
-			const clinicToken = localStorage.getItem("dente_clinic_token");
+			const clinicToken = readDenteClinicToken() || null;
 
 			const res = await fetch(`/api/files/visits/${visitId}/attachments`, {
 				method: "POST",

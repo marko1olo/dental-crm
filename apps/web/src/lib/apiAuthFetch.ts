@@ -17,8 +17,14 @@
  * Установка вызывается один раз в main.tsx до рендера приложения.
  */
 
-const CLINIC_TOKEN_STORAGE_KEY = "dente_clinic_token";
-const STAFF_TOKEN_STORAGE_KEY = "dente_staff_token";
+import {
+  DENTE_CLINIC_TOKEN_KEY,
+  DENTE_STAFF_TOKEN_KEY,
+  safeLocalStorageGetItem,
+} from "./safeLocalStorage";
+
+const CLINIC_TOKEN_STORAGE_KEY = DENTE_CLINIC_TOKEN_KEY;
+const STAFF_TOKEN_STORAGE_KEY = DENTE_STAFF_TOKEN_KEY;
 const CLINIC_TOKEN_HEADER = "x-dente-clinic-token";
 const STAFF_TOKEN_HEADER = "x-dente-staff-token";
 
@@ -28,13 +34,8 @@ const INSTALLED_FLAG = "__denteApiAuthFetchInstalled";
 const PUBLIC_API_PREFIXES = ["/api/public/", "/api/portal/", "/api/auth/"] as const;
 
 function readToken(key: string): string | null {
-  try {
-    const value = window.localStorage.getItem(key);
-    return value && value.trim() ? value : null;
-  } catch {
-    // Приватный режим браузера или заблокированное хранилище.
-    return null;
-  }
+  const value = safeLocalStorageGetItem(key);
+  return value && value.trim() ? value : null;
 }
 
 function requestUrlOf(input: RequestInfo | URL): string {
