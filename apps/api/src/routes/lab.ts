@@ -1,3 +1,4 @@
+import { nonNegativeMoneyRubSchema } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -10,6 +11,19 @@ import { getLabOrderByToken, updateLabOrderStatus } from "../db/labQuery.js";
 import { labOrders, patients, users } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
+/*
+ * Цена заказа лаборатории — деньги клиники. Колонка `numeric(12,2)`:
+ * `z.number()` пропускал 1500.505, и третья цифра после запятой либо
+ * молча обрезалась драйвером, либо уезжала в базу как «почти копейка».
+ * Единый контракт `nonNegativeMoneyRubSchema` — как прайс и смета.
+ */
+const labOrderPriceRubSchema = nonNegativeMoneyRubSchema
+	.refine((value) => value <= 100_000_000, {
+		message: "цена заказа лаборатории не помещается в допустимый диапазон",
+	})
+	.optional()
+	.nullable();
+
 const createLabOrderSchema = z.object({
 	patientId: z.string().uuid(),
 	doctorId: z.string().uuid().optional(),
@@ -18,7 +32,7 @@ const createLabOrderSchema = z.object({
 	colorVita: z.string().optional().nullable(),
 	dueDate: z.string().optional().nullable(),
 	clinicalNotes: z.string().optional().nullable(),
-	priceRub: z.number().optional().nullable(),
+	priceRub: labOrderPriceRubSchema,
 });
 
 export async function registerLabRoutes(app: FastifyInstance) {
@@ -188,7 +202,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			colorVita: z.string().optional().nullable(),
 			dueDate: z.string().optional().nullable(),
 			clinicalNotes: z.string().optional().nullable(),
-			priceRub: z.number().optional().nullable(),
+			priceRub: labOrderPriceRubSchema,
 			status: z
 				.enum([
 					"draft",
