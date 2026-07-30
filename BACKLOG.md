@@ -34,7 +34,7 @@
 [x] P1 | egisz snils + vk webhook + workspace preset body guards (AUTH-first; null/array; InvalidSnils* preserved) | egisz+vk+workspaceProfile + egiszVkBody.test.ts | 13/13 GREEN typecheck OK | c564d6fd9
 [x] P1 | leads+finance_family+sterilization body Zod (AUTH-first; null/array→400≠500; RU ValidationError) | leads.ts+finance_family.ts+sterilization.ts + leadsFinanceSterilBody.test.ts | 20/20 GREEN typecheck OK | a0eb58194
 
-[x] P1 | diary POST /api/diaries upsert body Zod (AUTH-first; null/array/{}→400≠500; RU ValidationError) | diary.ts + nextCastsBody.test.ts | 22/22 GREEN typecheck OK | PENDING
+[x] P1 | diary POST /api/diaries upsert body Zod (AUTH-first; null/array/{}→400≠500; RU ValidationError) | diary.ts + nextCastsBody.test.ts | 22/22 GREEN typecheck OK | 18050f0ec
 
 
 
