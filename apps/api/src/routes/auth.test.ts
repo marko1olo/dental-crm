@@ -573,4 +573,231 @@ describe("auth routes", () => {
       assert.strictEqual(accepted.json().ok, true);
     });
   });
+
+  // ─── SaaS body Zod validation ───────────────────────────────────────────────
+  // Bodies that used to be `(request.body as any)` now go through safeParse.
+  // Empty/short/bad-PIN cases must stay 400 ValidationError with the same RU
+  // messages; no DB needed for pure validation failures. Auth-gated routes
+  // still refuse unauthenticated callers before body shape is considered.
+  describe("SaaS body Zod validation", () => {
+    const TEST_TOKEN_SECRET = "test-secret";
+
+    test("register: empty body → 400 Заполните все поля", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/register",
+        payload: {}
+      });
+      assert.strictEqual(response.statusCode, 400);
+      assert.strictEqual(response.json().error, "ValidationError");
+      assert.strictEqual(response.json().message, "Заполните все поля.");
+    });
+
+    test("register: short password → 400 password policy", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/register",
+        payload: {
+          clinicName: "Клиника",
+          ownerName: "Владелец",
+          email: "owner@example.com",
+          password: "short"
+        }
+      });
+      assert.strictEqual(response.statusCode, 400);
+      assert.strictEqual(response.json().error, "ValidationError");
+      assert.strictEqual(response.json().message, "Пароль должен быть не короче 8 символов.");
+    });
+
+    test("register: bad ownerPin → 400 PIN policy", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/register",
+        payload: {
+          clinicName: "Клиника",
+          ownerName: "Владелец",
+          email: "owner@example.com",
+          password: "long-enough-password",
+          ownerPin: "12"
+        }
+      });
+      assert.strictEqual(response.statusCode, 400);
+      assert.strictEqual(response.json().error, "ValidationError");
+      assert.strictEqual(response.json().message, "PIN должен состоять из 4–12 цифр.");
+    });
+
+    test("login: empty body → 400 Введите email и пароль", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/login",
+        payload: {}
+      });
+      assert.strictEqual(response.statusCode, 400);
+      assert.strictEqual(response.json().error, "ValidationError");
+      assert.strictEqual(response.json().message, "Введите email и пароль.");
+    });
+
+    test("invites/accept: empty body → 400 Заполните все поля", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/invites/accept",
+        payload: {}
+      });
+      assert.strictEqual(response.statusCode, 400);
+      assert.strictEqual(response.json().error, "ValidationError");
+      assert.strictEqual(response.json().message, "Заполните все поля.");
+    });
+
+    test("invites/accept: short password → 400 password policy", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/invites/accept",
+        payload: {
+          token: "some-token",
+          fullName: "Иван",
+          password: "short",
+          pinCode: "1234"
+        }
+      });
+      assert.strictEqual(response.statusCode, 400);
+      assert.strictEqual(response.json().error, "ValidationError");
+      assert.strictEqual(response.json().message, "Пароль должен быть не короче 8 символов.");
+    });
+
+    test("invites/accept: bad pinCode → 400 PIN policy", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/invites/accept",
+        payload: {
+          token: "some-token",
+          fullName: "Иван",
+          password: "long-enough-password",
+          pinCode: "ab"
+        }
+      });
+      assert.strictEqual(response.statusCode, 400);
+      assert.strictEqual(response.json().error, "ValidationError");
+      assert.strictEqual(response.json().message, "PIN должен состоять из 4–12 цифр.");
+    });
+
+    test("invites/create: no token → 403 before body shape", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/invites/create",
+        payload: {}
+      });
+      assert.strictEqual(response.statusCode, 403);
+      assert.strictEqual(response.json().error, "Forbidden");
+    });
+
+    test("invites/create: admin token + empty body → 400 Укажите email и роль", async () => {
+      const staffToken = signToken(
+        {
+          userId: "11111111-1111-4111-8111-111111111111",
+          fullName: "Admin",
+          role: "owner",
+          organizationId: "22222222-2222-4222-8222-222222222222"
+        },
+        TEST_TOKEN_SECRET,
+        60 * 60
+      );
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/invites/create",
+        headers: { "x-dente-staff-token": staffToken },
+        payload: {}
+      });
+      assert.strictEqual(response.statusCode, 400);
+      assert.strictEqual(response.json().error, "ValidationError");
+      assert.strictEqual(response.json().message, "Укажите email и роль.");
+    });
+
+    test("update-password: no token → 401 before body", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/user/update-password",
+        payload: {}
+      });
+      assert.strictEqual(response.statusCode, 401);
+      assert.strictEqual(response.json().error, "AuthRequired");
+    });
+
+    test("update-password: token + empty body → 400", async () => {
+      const staffToken = signToken(
+        { userId: "11111111-1111-4111-8111-111111111111" },
+        TEST_TOKEN_SECRET,
+        60 * 60
+      );
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/user/update-password",
+        headers: { "x-dente-staff-token": staffToken },
+        payload: {}
+      });
+      assert.strictEqual(response.statusCode, 400);
+      assert.strictEqual(response.json().error, "ValidationError");
+      assert.strictEqual(response.json().message, "Введите старый и новый пароль.");
+    });
+
+    test("update-password: token + short newPassword → 400", async () => {
+      const staffToken = signToken(
+        { userId: "11111111-1111-4111-8111-111111111111" },
+        TEST_TOKEN_SECRET,
+        60 * 60
+      );
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/user/update-password",
+        headers: { "x-dente-staff-token": staffToken },
+        payload: { oldPassword: "old-password", newPassword: "short" }
+      });
+      assert.strictEqual(response.statusCode, 400);
+      assert.strictEqual(response.json().error, "ValidationError");
+      assert.strictEqual(response.json().message, "Новый пароль должен быть не короче 8 символов.");
+    });
+
+    test("update-pin: no token → 401 before body", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/user/update-pin",
+        payload: {}
+      });
+      assert.strictEqual(response.statusCode, 401);
+      assert.strictEqual(response.json().error, "AuthRequired");
+    });
+
+    test("update-pin: token + empty body → 400", async () => {
+      const staffToken = signToken(
+        { userId: "11111111-1111-4111-8111-111111111111" },
+        TEST_TOKEN_SECRET,
+        60 * 60
+      );
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/user/update-pin",
+        headers: { "x-dente-staff-token": staffToken },
+        payload: {}
+      });
+      assert.strictEqual(response.statusCode, 400);
+      assert.strictEqual(response.json().error, "ValidationError");
+      assert.strictEqual(response.json().message, "Введите старый и новый PIN-код.");
+    });
+
+    test("update-pin: token + bad newPin → 400 PIN policy", async () => {
+      const staffToken = signToken(
+        { userId: "11111111-1111-4111-8111-111111111111" },
+        TEST_TOKEN_SECRET,
+        60 * 60
+      );
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/user/update-pin",
+        headers: { "x-dente-staff-token": staffToken },
+        payload: { oldPin: "1234", newPin: "12" }
+      });
+      assert.strictEqual(response.statusCode, 400);
+      assert.strictEqual(response.json().error, "ValidationError");
+      assert.strictEqual(response.json().message, "PIN должен состоять из 4–12 цифр.");
+    });
+  });
 });

@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import crypto from "crypto";
 import { eq, and } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "../db/client.js";
 import { organizations, users, userInvitations, auditEvents } from "../db/schema.js";
 import { hashCredential, verifyCredential, signToken, verifyToken } from "../utils/cryptoHelper.js";
@@ -59,6 +60,122 @@ interface SetupInitBody {
   password?: string;
   ownerName?: string;
   ownerPin?: string;
+}
+
+/**
+ * SaaS-тела auth раньше разбирались как `(request.body as any)`.
+ * Схемы ниже повторяют прежние ручные проверки (длина пароля, форма PIN,
+ * обязательные поля) через safeParse — тот же узор, что parseSettingsPayload.
+ * Сообщения отказов сохранены дословно, чтобы клиент и существующие тесты
+ * не меняли контракт.
+ */
+const authPinSchema = z
+  .union([z.string(), z.number()])
+  .transform((value) => String(value))
+  .refine((value) => /^\d{4,12}$/.test(value), {
+    message: "PIN должен состоять из 4–12 цифр."
+  });
+
+const registerBodySchema = z
+  .object({
+    clinicName: z.string().trim().min(1),
+    ownerName: z.string().trim().min(1),
+    email: z.string().trim().min(1),
+    password: z.string().min(1),
+    ownerPin: authPinSchema.optional()
+  })
+  .superRefine((data, ctx) => {
+    if (data.password.length < 8) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["password"],
+        message: "Пароль должен быть не короче 8 символов."
+      });
+    }
+  });
+
+const loginBodySchema = z.object({
+  email: z.string().trim().min(1),
+  password: z.string().min(1)
+});
+
+const createInviteBodySchema = z.object({
+  email: z.string().trim().min(1),
+  role: z.string().min(1)
+});
+
+const acceptInviteBodySchema = z
+  .object({
+    token: z.string().trim().min(1),
+    fullName: z.string().trim().min(1),
+    password: z.string().min(1),
+    pinCode: authPinSchema
+  })
+  .superRefine((data, ctx) => {
+    if (data.password.length < 8) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["password"],
+        message: "Пароль должен быть не короче 8 символов."
+      });
+    }
+  });
+
+const updatePasswordBodySchema = z
+  .object({
+    oldPassword: z.string().min(1),
+    newPassword: z.string().min(1)
+  })
+  .superRefine((data, ctx) => {
+    if (data.newPassword.length < 8) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["newPassword"],
+        message: "Новый пароль должен быть не короче 8 символов."
+      });
+    }
+  });
+
+const updatePinBodySchema = z.object({
+  oldPin: z
+    .union([z.string(), z.number()])
+    .transform((value) => String(value))
+    .refine((value) => value.length > 0, { message: "required" }),
+  newPin: authPinSchema
+});
+
+type AuthPayloadSchema<T> = {
+  safeParse: (value: unknown) =>
+    | { success: true; data: T }
+    | { success: false; error: z.ZodError };
+};
+
+/** Как parseSettingsPayload: null = тело не прошло схему. */
+function parseAuthPayload<T>(schema: AuthPayloadSchema<T>, value: unknown): T | null {
+  const parsed = schema.safeParse(value);
+  if (!parsed.success) return null;
+  return parsed.data;
+}
+
+/**
+ * Сообщения SaaS-отказов идут в прежнем порядке ручных if-ов.
+ * Zod может вернуть несколько issues сразу — берём первую по старой цепочке.
+ */
+function authSchemaMessage(
+  error: z.ZodError,
+  fallback: string,
+  priority: Array<{ match: RegExp | string; message: string }>
+): string {
+  const texts = error.issues.map((issue) => issue.message);
+  for (const rule of priority) {
+    const hit =
+      typeof rule.match === "string"
+        ? texts.some((text) => text.includes(rule.match as string))
+        : texts.some((text) => (rule.match as RegExp).test(text));
+    if (hit) return rule.message;
+  }
+  // Обязательные поля (min) без custom-текста → fallback «заполните / введите».
+  return fallback;
 }
 
 /*
@@ -481,16 +598,15 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   });
   // ─── SaaS Registration (New Clinic + Owner) ──────────────────────────────────
   app.post('/api/auth/register', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { clinicName, ownerName, email, password, ownerPin } = (request.body as any) ?? {};
-    if (!clinicName || !ownerName || !email || !password) {
-      return reply.code(400).send({ error: 'ValidationError', message: 'Заполните все поля.' });
+    const parsed = registerBodySchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      const message = authSchemaMessage(parsed.error, "Заполните все поля.", [
+        { match: "Пароль должен быть не короче 8 символов.", message: "Пароль должен быть не короче 8 символов." },
+        { match: "PIN должен состоять из 4–12 цифр.", message: "PIN должен состоять из 4–12 цифр." }
+      ]);
+      return reply.code(400).send({ error: "ValidationError", message });
     }
-    if (String(password).length < 8) {
-      return reply.code(400).send({ error: 'ValidationError', message: 'Пароль должен быть не короче 8 символов.' });
-    }
-    if (ownerPin !== undefined && !/^\d{4,12}$/.test(String(ownerPin))) {
-      return reply.code(400).send({ error: 'ValidationError', message: 'PIN должен состоять из 4–12 цифр.' });
-    }
+    const { clinicName, ownerName, email, password, ownerPin } = parsed.data;
     const loginId = email.toLowerCase().trim();
     const [existingOrg] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.loginId, loginId)).limit(1);
     if (existingOrg) return reply.code(409).send({ error: 'Conflict', message: 'Организация с таким логином уже существует.' });
@@ -525,9 +641,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
   // ─── SaaS User Login (Direct user login) ─────────────────────────────────────
   app.post('/api/auth/login', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { email, password } = (request.body as any) ?? {};
-    if (!email || !password) return reply.code(400).send({ error: 'ValidationError', message: 'Введите email и пароль.' });
-    
+    const parsed = loginBodySchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "ValidationError", message: "Введите email и пароль." });
+    }
+    const { email, password } = parsed.data;
     const loginEmail = email.toLowerCase().trim();
     let user: any = null;
     try {
@@ -582,7 +700,6 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
   // ─── SaaS Create Invite ──────────────────────────────────────────────────────
   app.post('/api/auth/invites/create', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { email, role } = (request.body as any) ?? {};
     const staffHeader = request.headers['x-dente-staff-token'];
     const staffToken = Array.isArray(staffHeader) ? staffHeader[0] : staffHeader;
     const staffPayload = staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null;
@@ -606,7 +723,12 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     if (!staffPayload?.organizationId || !ADMIN_ROLES.some((allowed) => allowed === invitingRole)) {
       return reply.code(403).send({ error: 'Forbidden', message: 'Приглашать сотрудников может владелец клиники или администратор.' });
     }
-    if (!email || !role) return reply.code(400).send({ error: 'ValidationError', message: 'Укажите email и роль.' });
+    // AUTH first, then body — same order as set-password/set-pin.
+    const parsedBody = createInviteBodySchema.safeParse(request.body ?? {});
+    if (!parsedBody.success) {
+      return reply.code(400).send({ error: "ValidationError", message: "Укажите email и роль." });
+    }
+    const { email, role } = parsedBody.data;
 
     /*
      * РОЛЬ ПРОВЕРЯЕТСЯ ПО СХЕМЕ, а не принимается как есть. Прежде значение из
@@ -645,14 +767,15 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
   // ─── SaaS Accept Invite ──────────────────────────────────────────────────────
   app.post('/api/auth/invites/accept', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { token, fullName, password, pinCode } = (request.body as any) ?? {};
-    if (!token || !fullName || !password || !pinCode) return reply.code(400).send({ error: 'ValidationError', message: 'Заполните все поля.' });
-    if (String(password).length < 8) {
-      return reply.code(400).send({ error: 'ValidationError', message: 'Пароль должен быть не короче 8 символов.' });
+    const parsed = acceptInviteBodySchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      const message = authSchemaMessage(parsed.error, "Заполните все поля.", [
+        { match: "Пароль должен быть не короче 8 символов.", message: "Пароль должен быть не короче 8 символов." },
+        { match: "PIN должен состоять из 4–12 цифр.", message: "PIN должен состоять из 4–12 цифр." }
+      ]);
+      return reply.code(400).send({ error: "ValidationError", message });
     }
-    if (!/^\d{4,12}$/.test(String(pinCode))) {
-      return reply.code(400).send({ error: 'ValidationError', message: 'PIN должен состоять из 4–12 цифр.' });
-    }
+    const { token, fullName, password, pinCode } = parsed.data;
 
     const [invite] = await db.select().from(userInvitations).where(and(eq(userInvitations.inviteToken, token), eq(userInvitations.status, 'pending'))).limit(1);
     if (!invite || new Date() > invite.expiresAt) return reply.code(400).send({ error: 'InvalidToken', message: 'Приглашение недействительно или истекло.' });
@@ -720,16 +843,20 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
   // ─── SaaS User Profile: Update Password ───────────────────────────────────────
   app.post('/api/auth/user/update-password', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { oldPassword, newPassword } = (request.body as any) ?? {};
     const staffHeader = request.headers['x-dente-staff-token'];
     const staffToken = Array.isArray(staffHeader) ? staffHeader[0] : staffHeader;
     const payload = staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null;
 
+    // AUTH first, then body — same order as set-password.
     if (!payload?.userId) return reply.code(401).send({ error: 'AuthRequired', message: 'Требуется авторизация.' });
-    if (!oldPassword || !newPassword) return reply.code(400).send({ error: 'ValidationError', message: 'Введите старый и новый пароль.' });
-    if (String(newPassword).length < 8) {
-      return reply.code(400).send({ error: 'ValidationError', message: 'Новый пароль должен быть не короче 8 символов.' });
+    const parsed = updatePasswordBodySchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      const message = authSchemaMessage(parsed.error, "Введите старый и новый пароль.", [
+        { match: "Новый пароль должен быть не короче 8 символов.", message: "Новый пароль должен быть не короче 8 символов." }
+      ]);
+      return reply.code(400).send({ error: "ValidationError", message });
     }
+    const { oldPassword, newPassword } = parsed.data;
 
     const [user] = await db.select().from(users).where(eq(users.id, payload.userId as string)).limit(1);
     if (!user || !user.passwordHash) return reply.code(401).send({ error: 'AuthError', message: 'Пользователь не найден или пароль не установлен.' });
@@ -746,16 +873,20 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
   // ─── SaaS User Profile: Update PIN ───────────────────────────────────────────
   app.post('/api/auth/user/update-pin', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { oldPin, newPin } = (request.body as any) ?? {};
     const staffHeader = request.headers['x-dente-staff-token'];
     const staffToken = Array.isArray(staffHeader) ? staffHeader[0] : staffHeader;
     const payload = staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null;
 
+    // AUTH first, then body — same order as set-pin.
     if (!payload?.userId) return reply.code(401).send({ error: 'AuthRequired', message: 'Требуется авторизация.' });
-    if (!oldPin || !newPin) return reply.code(400).send({ error: 'ValidationError', message: 'Введите старый и новый PIN-код.' });
-    if (!/^\d{4,12}$/.test(String(newPin))) {
-      return reply.code(400).send({ error: 'ValidationError', message: 'PIN должен состоять из 4–12 цифр.' });
+    const parsed = updatePinBodySchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      const message = authSchemaMessage(parsed.error, "Введите старый и новый PIN-код.", [
+        { match: "PIN должен состоять из 4–12 цифр.", message: "PIN должен состоять из 4–12 цифр." }
+      ]);
+      return reply.code(400).send({ error: "ValidationError", message });
     }
+    const { oldPin, newPin } = parsed.data;
 
     const [user] = await db.select().from(users).where(eq(users.id, payload.userId as string)).limit(1);
     if (!user || !user.pinCodeHash) return reply.code(401).send({ error: 'AuthError', message: 'Пользователь не найден или PIN не установлен.' });

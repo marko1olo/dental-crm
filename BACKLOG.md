@@ -18,8 +18,9 @@
 [x] P1 | U1 unverified org mutation proof | apps/api/src/tests/security/unverifiedOrganizationMutation.test.ts | 6/6 GREEN EXIT 0
 [x] P1 | sessionStorage bare access sweep | apps/web/src/main.tsx + safeLocalStorage.ts | bf6750c9d typecheck GREEN
 [x] P2 | intake route proofs | apps/api/src/routes/imports.test.ts + documents tests | import intake 4/4 + documents 11+8 GREEN (bf6750c9d base)
+[x] P1 | Zod-validate auth SaaS bodies (register/login/invites/accept/update-password/update-pin) | auth.ts + auth.test.ts | 34/34 GREEN typecheck OK
 [x] P2 | TODO/FIXME in settings components | apps/web/src/components/settings | none real (CSS .shift-todo only)
-[x] P2 | Push main after each green commit | origin main | bf6750c9d on main
+[x] P2 | Push main after each green commit | origin main | pending auth Zod push
 
 
 # replenish sources when empty:
