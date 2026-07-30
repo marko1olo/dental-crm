@@ -221,5 +221,6 @@ export async function purgeFixtureOrganizations(organizationIds: readonly string
 		);
 	}
 
+	await db.execute(sql`DELETE FROM bi_analytics_snapshots WHERE organization_id IN (${idList})`).catch(() => {});
 	await db.execute(sql`DELETE FROM organizations WHERE id IN (${idList})`);
 }

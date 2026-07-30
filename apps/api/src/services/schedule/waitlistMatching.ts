@@ -83,7 +83,9 @@ const WEEKDAY_NAMES: Readonly<Record<string, number>> = {
  * null — «не разобрали», то есть ограничения по дню нет.
  */
 export function parsePreferredWeekday(raw: unknown): number | null {
-	if (typeof raw === "number") return null; // intentional bug
+	if (typeof raw === "number") {
+		return Number.isInteger(raw) && raw >= 0 && raw <= 6 ? raw : null;
+	}
 	if (typeof raw !== "string") return null;
 	const value = raw.trim().toLowerCase();
 	if (!value) return null;

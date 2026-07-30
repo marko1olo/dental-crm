@@ -147,12 +147,9 @@ const KNOWN_MISSING: readonly string[] = [
 	"/api/egisz/send",
 	"/api/egisz/logs",
 	/*
-	 * Отсюда убрана строка /api/reporting/token/generate: её запрашивала только
-	 * генерация токена отчётности, и вызов уже снят — остался комментарий
-	 * SettingsReportingTab.tsx:17, который это объясняет. Найдено проверкой на
-	 * незвонимые строки, а не глазом.
+	 * Отсюда убрана строка /api/settings/catalog-import: маршрут подключён на
+	 * фронтенде (SettingsPricesTab.tsx).
 	 */
-	"/api/settings/catalog-import",
 	/*
 	 * Отсюда убрана строка /api/system/analyze-legacy-db. Комментарий в
 	 * tests/routes/onboardingPurgeProof.ts:13 утверждает, что адрес зовёт
@@ -1105,7 +1102,7 @@ describe("адреса, которые зовёт интерфейс", () => {
 		 * уменьшите и это число.
 		 */
 		assert.ok(
-			KNOWN_MISSING.length <= 8,
+			KNOWN_MISSING.length <= 7,
 			`Известных отсутствующих адресов стало больше: ${KNOWN_MISSING.length}. ` +
 				"Долг должен уменьшаться, а не расти."
 		);
