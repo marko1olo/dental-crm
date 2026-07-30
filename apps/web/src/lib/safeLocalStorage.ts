@@ -50,3 +50,10 @@ export function readDenteStaffToken(): string {
 export function readDenteClinicToken(): string {
 	return safeLocalStorageGetItem(DENTE_CLINIC_TOKEN_KEY)?.trim() || "";
 }
+
+/** Токен личного кабинета пациента (OTP session). */
+export const PATIENT_TOKEN_KEY = "patient_token";
+
+export function readPatientToken(): string {
+	return safeLocalStorageGetItem(PATIENT_TOKEN_KEY)?.trim() || "";
+}

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../lib/safeLocalStorage";
 
 export type ThemeMode = "auto" | "light" | "dark" | "night";
 
@@ -9,8 +10,7 @@ function isThemeMode(value: unknown): value is ThemeMode {
 }
 
 function readThemeMode(): ThemeMode {
-	if (typeof window === "undefined") return "auto";
-	const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+	const stored = safeLocalStorageGetItem(THEME_STORAGE_KEY);
 	return isThemeMode(stored) ? stored : "auto";
 }
 
@@ -23,7 +23,7 @@ export interface ThemeState {
 export const useThemeStore = create<ThemeState>((set) => ({
 	themeMode: readThemeMode(),
 	setThemeMode: (mode) => {
-		window.localStorage.setItem(THEME_STORAGE_KEY, mode);
+		safeLocalStorageSetItem(THEME_STORAGE_KEY, mode);
 		set({ themeMode: mode });
 	},
 	reset: () => set({ themeMode: readThemeMode() }),

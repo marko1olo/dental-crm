@@ -2,6 +2,12 @@ import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { countLabel, money } from "../AppHelpers";
 import { actionFailureToast } from "../lib/panelStateText";
+import {
+	PATIENT_TOKEN_KEY,
+	safeLocalStorageGetItem,
+	safeLocalStorageRemoveItem,
+	safeLocalStorageSetItem,
+} from "../lib/safeLocalStorage";
 import { EmptyState } from "./EmptyState";
 import "./PatientPortal.css";
 
@@ -208,7 +214,7 @@ export const PatientPortal: React.FC = () => {
 			// Пропуск действительно недействителен — только в этих двух случаях
 			// его есть смысл выбрасывать и просить войти заново.
 			if (res.status === 401 || res.status === 403) {
-				localStorage.removeItem("patient_token");
+				safeLocalStorageRemoveItem(PATIENT_TOKEN_KEY);
 				setIsAuthenticated(false);
 				return;
 			}
@@ -231,7 +237,7 @@ export const PatientPortal: React.FC = () => {
 
 	// Повтор без нового СМС: пропуск сохранён, спрашивать код заново не за что.
 	const retrySession = useCallback(() => {
-		const token = localStorage.getItem("patient_token");
+		const token = safeLocalStorageGetItem(PATIENT_TOKEN_KEY);
 		if (!token) {
 			setSessionError(null);
 			return;
@@ -240,7 +246,7 @@ export const PatientPortal: React.FC = () => {
 	}, []);
 
 	useEffect(() => {
-		const token = localStorage.getItem("patient_token");
+		const token = safeLocalStorageGetItem(PATIENT_TOKEN_KEY);
 		if (token) fetchPatientData(token);
 		phoneRef.current?.focus();
 	}, []);
@@ -278,7 +284,7 @@ export const PatientPortal: React.FC = () => {
 
 	useEffect(() => {
 		if (viewingDoc) {
-			const token = localStorage.getItem("patient_token");
+			const token = safeLocalStorageGetItem(PATIENT_TOKEN_KEY);
 			if (!token) return;
 			setViewingDocLoading(true);
 			setViewingDocHtml(null);
@@ -347,7 +353,7 @@ export const PatientPortal: React.FC = () => {
 				});
 				const data = await res.json();
 				if (res.ok && data.token) {
-					localStorage.setItem("patient_token", data.token);
+					safeLocalStorageSetItem(PATIENT_TOKEN_KEY, data.token);
 					setOtpError("");
 					await fetchPatientData(data.token);
 				} else {

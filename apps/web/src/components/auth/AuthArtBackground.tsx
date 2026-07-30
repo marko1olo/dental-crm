@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { safeLocalStorageGetItem } from "../../lib/safeLocalStorage";
 import { AuthArtItem, getCurrentTimeSlot, selectAuthArt } from "./authArtSelector";
 
 export function AuthArtBackground() {
@@ -13,13 +14,13 @@ export function AuthArtBackground() {
 
 	useEffect(() => {
 		// Read settings from localStorage to handle unauthenticated state
-		try {
-			const saved = localStorage.getItem("dente_auth_art_settings");
-			if (saved) {
+		const saved = safeLocalStorageGetItem("dente_auth_art_settings");
+		if (saved) {
+			try {
 				setArtSettings(JSON.parse(saved));
+			} catch (e) {
+				console.error("Failed to parse auth art settings from local storage", e);
 			}
-		} catch (e) {
-			console.error("Failed to parse auth art settings from local storage", e);
 		}
 
 		// Fetch manifest
