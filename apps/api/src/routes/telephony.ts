@@ -1,9 +1,27 @@
 import { and, eq, ilike } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
+import { z } from "zod";
 import { db } from "../db/client.js";
 import { communicationEvents, patients } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
 import { verifyWebhookSecret } from "../security/webhookAuth.js";
+
+/**
+ * Тела вебхуков АТС/SMS раньше читались через bare destructure `const { … } = request.body`.
+ * При null/undefined body деструктуризация бросала TypeError → 500 вместо 400.
+ * Zod safeParse после verifyWebhookSecret закрывает путь; тексты отказов сохранены.
+ */
+const telephonyCallBodySchema = z.object({
+	event: z.enum(["ringing", "answered", "ended"]).optional(),
+	from: z.string().optional(),
+	to: z.string().optional(),
+	call_id: z.string().optional(),
+});
+
+const telephonySmsBodySchema = z.object({
+	from: z.string().optional(),
+	message: z.string().optional(),
+});
 
 export const telephonyRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
@@ -27,7 +45,11 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 		})) return reply;
 
 		const { organizationId } = request.params;
-		const { event, from } = request.body;
+		const parsedCall = telephonyCallBodySchema.safeParse(request.body);
+		if (!parsedCall.success) {
+			return reply.status(400).send({ error: "Missing 'from' phone number" });
+		}
+		const { event, from } = parsedCall.data;
 
 		if (!from) {
 			return reply.status(400).send({ error: "Missing 'from' phone number" });
@@ -122,7 +144,11 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 		})) return reply;
 
 		const { organizationId } = request.params;
-		const { from, message } = request.body;
+		const parsedSms = telephonySmsBodySchema.safeParse(request.body);
+		if (!parsedSms.success) {
+			return reply.status(400).send({ error: "Missing 'from' or 'message'" });
+		}
+		const { from, message } = parsedSms.data;
 
 		if (!from || !message) {
 			return reply.status(400).send({ error: "Missing 'from' or 'message'" });

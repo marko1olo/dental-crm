@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
+import { z } from "zod";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -11,6 +12,49 @@ import {
 	procedureMaterialRules,
 	serviceCatalogItems,
 } from "../db/schema.js";
+
+/**
+ * Тела склада раньше читались через bare destructure `const { … } = request.body`.
+ * При null/undefined body (POST/PATCH без JSON) это бросало TypeError → 500.
+ * Zod safeParse после auth-first закрывает путь: 400 с прежними текстами.
+ */
+const inventoryCreateBodySchema = z.object({
+	name: z.string().optional(),
+	criticalThreshold: z.number().finite().optional(),
+	unitCostRub: z.number().finite().optional(),
+	stockQuantity: z.number().finite().optional(),
+	sku: z.string().nullable().optional(),
+	barcode: z.string().nullable().optional(),
+	lotNumber: z.string().nullable().optional(),
+	expirationDate: z.string().nullable().optional(),
+});
+
+const inventoryStockBodySchema = z.object({
+	adjustment: z.number({
+		required_error:
+			"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
+		invalid_type_error:
+			"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
+	}).finite({
+		message:
+			"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
+	}),
+});
+
+const inventoryRuleBodySchema = z.object({
+	serviceId: z.string({
+		required_error: "Missing required fields",
+		invalid_type_error: "Missing required fields",
+	}).min(1, { message: "Missing required fields" }),
+	inventoryItemId: z.string({
+		required_error: "Missing required fields",
+		invalid_type_error: "Missing required fields",
+	}).min(1, { message: "Missing required fields" }),
+	quantityToDeduct: z.number({
+		required_error: "Missing required fields",
+		invalid_type_error: "Missing required fields",
+	}),
+});
 
 /**
  * Метка «дату прислали, но разобрать её нельзя».
@@ -96,6 +140,12 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
+		const parsedBody = inventoryCreateBodySchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			return reply
+				.status(400)
+				.send({ error: "NameRequired", message: "Укажите название материала." });
+		}
 		const {
 			name,
 			criticalThreshold = 0,
@@ -105,7 +155,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			barcode = null,
 			lotNumber = null,
 			expirationDate = null,
-		} = request.body;
+		} = parsedBody.data;
 		if (!name?.trim()) {
 			return reply
 				.status(400)
@@ -165,14 +215,15 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		const { adjustment } = request.body;
-		if (typeof adjustment !== "number" || !Number.isFinite(adjustment)) {
+		const parsedStock = inventoryStockBodySchema.safeParse(request.body);
+		if (!parsedStock.success) {
 			return reply.status(400).send({
 				error: "AdjustmentInvalid",
 				message:
 					"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
 			});
 		}
+		const { adjustment } = parsedStock.data;
 		if (adjustment === 0) {
 			// БЫЛО: ноль проходил как 200 с обновлённой строкой, при этом строка в
 			// журнал движений не писалась вовсе (условие actualAdjustment !== 0
@@ -345,6 +396,12 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		 * пятёрка бралась с потолка и заставляла склад сигналить о дефиците
 		 * материала, для которого порога не задавали.
 		 */
+		const parsedUpdate = inventoryCreateBodySchema.safeParse(request.body ?? {});
+		if (!parsedUpdate.success) {
+			return reply
+				.status(400)
+				.send({ error: "NameRequired", message: "Укажите название материала." });
+		}
 		const {
 			name,
 			criticalThreshold = 0,
@@ -353,7 +410,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			barcode = null,
 			lotNumber = null,
 			expirationDate = null,
-		} = request.body;
+		} = parsedUpdate.data;
 		if (!name?.trim()) {
 			return reply
 				.status(400)
@@ -514,14 +571,11 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		const { serviceId, inventoryItemId, quantityToDeduct } = request.body;
-		if (
-			!serviceId ||
-			!inventoryItemId ||
-			typeof quantityToDeduct !== "number"
-		) {
+		const parsedRule = inventoryRuleBodySchema.safeParse(request.body);
+		if (!parsedRule.success) {
 			return reply.status(400).send({ error: "Missing required fields" });
 		}
+		const { serviceId, inventoryItemId, quantityToDeduct } = parsedRule.data;
 
 		// Both the service and the inventory item must belong to this org — else a
 		// caller could wire another clinic's item into their own service rule.
