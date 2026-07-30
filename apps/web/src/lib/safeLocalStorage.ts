@@ -57,3 +57,41 @@ export const PATIENT_TOKEN_KEY = "patient_token";
 export function readPatientToken(): string {
 	return safeLocalStorageGetItem(PATIENT_TOKEN_KEY)?.trim() || "";
 }
+
+/**
+ * Безопасный доступ к sessionStorage.
+ *
+ * Та же DOMException в приватном режиме / при запрете хранения, что и у
+ * localStorage. Нужен для маркера однократной перезагрузки после смены
+ * Service Worker controller (main.tsx) — без try/catch вкладка падает
+ * белым экраном ещё до AppShell.
+ */
+
+export function safeSessionStorageGetItem(key: string): string | null {
+	if (typeof window === "undefined") return null;
+	try {
+		return window.sessionStorage.getItem(key);
+	} catch {
+		return null;
+	}
+}
+
+export function safeSessionStorageSetItem(key: string, value: string): boolean {
+	if (typeof window === "undefined") return false;
+	try {
+		window.sessionStorage.setItem(key, value);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+export function safeSessionStorageRemoveItem(key: string): boolean {
+	if (typeof window === "undefined") return false;
+	try {
+		window.sessionStorage.removeItem(key);
+		return true;
+	} catch {
+		return false;
+	}
+}

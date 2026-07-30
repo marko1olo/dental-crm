@@ -6,6 +6,11 @@ import { GuestLabPortal } from "./GuestLabPortal";
 import { installApiAuthFetch } from "./lib/apiAuthFetch";
 import { publicPortalRouteFromHash } from "./lib/publicPortalRoute";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
+import {
+  safeSessionStorageGetItem,
+  safeSessionStorageRemoveItem,
+  safeSessionStorageSetItem,
+} from "./lib/safeLocalStorage";
 import { PublicBookingWidget } from "./pages/PublicBookingWidget";
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
 // любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —
@@ -103,8 +108,8 @@ function requestDenteServiceWorkerActivation(worker: ServiceWorker | null | unde
 }
 
 function reloadOnceAfterServiceWorkerControllerChange(): void {
-  if (window.sessionStorage.getItem(DENTE_SW_RELOAD_MARKER) === "1") return;
-  window.sessionStorage.setItem(DENTE_SW_RELOAD_MARKER, "1");
+  if (safeSessionStorageGetItem(DENTE_SW_RELOAD_MARKER) === "1") return;
+  safeSessionStorageSetItem(DENTE_SW_RELOAD_MARKER, "1");
   window.location.reload();
 }
 
@@ -143,8 +148,8 @@ function watchDenteServiceWorkerUpdates(registration: ServiceWorkerRegistration)
 // он не нужен и вреден: у зуботехника в кэше осталась бы оболочка чужой клиники,
 // а «Обновить рабочее место» ему предлагать нечего.
 if (!publicPortalRoute && "serviceWorker" in navigator && import.meta.env.PROD) {
-  if (window.sessionStorage.getItem(DENTE_SW_RELOAD_MARKER) === "1") {
-    window.sessionStorage.removeItem(DENTE_SW_RELOAD_MARKER);
+  if (safeSessionStorageGetItem(DENTE_SW_RELOAD_MARKER) === "1") {
+    safeSessionStorageRemoveItem(DENTE_SW_RELOAD_MARKER);
   }
 
   navigator.serviceWorker.addEventListener("controllerchange", reloadOnceAfterServiceWorkerControllerChange);

@@ -13,10 +13,13 @@
 [x] P1 | PatientPortal patient_token + themeStore + AuthArtBackground via safeLocalStorage | apps/web/src | 36d232886 typecheck GREEN
 [x] P1 | AppHelpers+App non-token localStorage drafts via safe helpers | AppHelpers.tsx App.tsx | a316d9b83 typecheck GREEN
 [x] P1 | Zod on settings staff/catalog via parseSettingsPayload + 400 proofs | settings.ts serviceCatalogWriteProof/Routes | verified existing
-[ ] P2 | Integration tests schedule / intake / payroll | apps/api/src/tests | npm run test slice green
-[ ] P1 | Find UNVERIFIED in direction/packets related to settings auth | .agents | list + verify
+[x] P1 | MarketingView+useAppLogic+browserContinuity via safeLocalStorage | apps/web/src | 57c0b274c typecheck GREEN
+[x] P2 | Integration tests schedule / payroll proofs | apps/api/src/tests | schedule 33/33 + commission+payout proofs GREEN (57c0b274c base)
+[x] P1 | U1 unverified org mutation proof | apps/api/src/tests/security/unverifiedOrganizationMutation.test.ts | 6/6 GREEN EXIT 0
+[x] P1 | sessionStorage bare access sweep | apps/web/src/main.tsx + safeLocalStorage.ts | safeSessionStorage* helpers + SW reload marker
+[ ] P2 | intake route proofs if missing | apps/api/src/tests | find+run or note gap
 [x] P2 | TODO/FIXME in settings components | apps/web/src/components/settings | none real (CSS .shift-todo only)
-[x] P2 | Push main after each green commit | origin main | a316d9b83 on main
+[x] P2 | Push main after each green commit | origin main | sessionStorage commit pending push
 
 
 # replenish sources when empty:
