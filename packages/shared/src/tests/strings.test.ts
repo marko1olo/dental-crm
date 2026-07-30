@@ -1,6 +1,53 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert';
-import { splitLine } from '../utils/strings.js';
+import { splitLine, isValidRussianInn } from '../utils/strings.js';
+
+describe('isValidRussianInn', () => {
+  test('returns true for null, undefined, or empty string', () => {
+    assert.strictEqual(isValidRussianInn(null), true);
+    assert.strictEqual(isValidRussianInn(undefined), true);
+    assert.strictEqual(isValidRussianInn(''), true);
+  });
+
+  test('returns false for invalid lengths', () => {
+    assert.strictEqual(isValidRussianInn('123456789'), false); // 9 digits
+    assert.strictEqual(isValidRussianInn('12345678901'), false); // 11 digits
+    assert.strictEqual(isValidRussianInn('1234567890123'), false); // 13 digits
+  });
+
+  test('returns true for valid 10-digit INNs', () => {
+    assert.strictEqual(isValidRussianInn('7728168971'), true);
+    assert.strictEqual(isValidRussianInn('7707083893'), true);
+    assert.strictEqual(isValidRussianInn('1234567894'), true);
+  });
+
+  test('returns false for invalid 10-digit INNs', () => {
+    // Correct one is 7728168971
+    assert.strictEqual(isValidRussianInn('7728168972'), false);
+    // Correct one is 1234567894
+    assert.strictEqual(isValidRussianInn('1234567895'), false);
+  });
+
+  test('returns true for valid 12-digit INNs', () => {
+    assert.strictEqual(isValidRussianInn('500100732259'), true);
+    assert.strictEqual(isValidRussianInn('123456789047'), true);
+  });
+
+  test('returns false for invalid 12-digit INNs', () => {
+    // Correct one is 500100732259
+    assert.strictEqual(isValidRussianInn('500100732258'), false);
+    assert.strictEqual(isValidRussianInn('500100732269'), false);
+    // Correct one is 123456789047
+    assert.strictEqual(isValidRussianInn('123456789048'), false);
+  });
+
+  test('handles formatting characters (spaces, hyphens)', () => {
+    assert.strictEqual(isValidRussianInn(' 7728168971 '), true);
+    assert.strictEqual(isValidRussianInn('772-816-89-71'), true);
+    assert.strictEqual(isValidRussianInn('5001 0073 2259'), true);
+    assert.strictEqual(isValidRussianInn(' 5001 0073 22 58 '), false); // Invalid check digit with formatting
+  });
+});
 
 describe('splitLine', () => {
   test('splits simple strings with a delimiter', () => {
