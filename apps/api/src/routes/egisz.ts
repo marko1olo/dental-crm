@@ -135,7 +135,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				return reply.status(400).send({
 					ok: false,
 					error: "InvalidSnilsFormat",
-					message: "СНИЛС должен содержать 11 цифр в формате XXX-XXX-XXX XX",
+					message: "СНИЛС должен содержать 11 цифр в формате 000-000-000 00",
 				});
 			}
 
