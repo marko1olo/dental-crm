@@ -273,13 +273,14 @@ export function SettingsPricesTab() {
 				return;
 			}
 
-			setImportResult({
-				count: imported,
-				error:
-					failures.length > 0
-						? `Сохранено ${imported}, с ошибкой ${failures.length}: ${failures[0]}`
-						: undefined,
-			});
+			if (failures.length > 0) {
+				setImportResult({
+					count: imported,
+					error: `Сохранено ${imported}, с ошибкой ${failures.length}: ${failures[0]}`,
+				});
+			} else {
+				setImportResult({ count: imported });
+			}
 			if (failures.length === 0) {
 				setTimeout(() => {
 					window.location.reload();
