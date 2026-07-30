@@ -104,7 +104,7 @@ async function sweepRemainingOrganizationRows(): Promise<void> {
 		const stillBlocked: string[] = [];
 		for (const table of remaining) {
 			try {
-				await db.execute(sql.raw(`DELETE FROM "${table}" WHERE organization_id = '${ORG_ID}'`));
+				await db.execute(sql`DELETE FROM ${sql.identifier(table)} WHERE organization_id = ${ORG_ID}`);
 			} catch {
 				// Мешает ссылка из другой таблицы — вернёмся к ней следующим проходом.
 				stillBlocked.push(table);
