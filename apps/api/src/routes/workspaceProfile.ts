@@ -10,9 +10,22 @@
 
 import { eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
+
+/**
+ * POST /api/workspace/preset/:name: optional body overrides.
+ * Was bare `req.body?.hasPediatricMode` / `numberOfChairs` after Fastify Body?.
+ * Non-object body must 400 (not coerce array/string into flags).
+ */
+const workspacePresetBodySchema = z
+	.object({
+		numberOfChairs: z.number().int().positive().optional(),
+		hasPediatricMode: z.boolean().optional(),
+	})
+	.strict();
 
 /**
  * БЫЛО: организация бралась из заголовка x-organization-id без всякой проверки,
@@ -691,9 +704,22 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
     if (!flags)
       return reply.code(400).send({ error: `Unknown preset: ${presetName}` });
 
+    // Body optional: missing/undefined → empty overrides. Non-object / bad types → 400.
+    const rawBody = req.body;
+    const bodyCandidate =
+      rawBody === undefined || rawBody === null ? {} : rawBody;
+    const parsedBody = workspacePresetBodySchema.safeParse(bodyCandidate);
+    if (!parsedBody.success) {
+      return reply.code(400).send({
+        error: "ValidationError",
+        message:
+          "Тело запроса должно быть JSON-объектом с опциональными numberOfChairs (целое > 0) и hasPediatricMode (boolean).",
+      });
+    }
+
     const finalFlags = { ...flags };
-    if (req.body?.hasPediatricMode !== undefined) {
-      finalFlags.hasPediatricMode = req.body.hasPediatricMode;
+    if (parsedBody.data.hasPediatricMode !== undefined) {
+      finalFlags.hasPediatricMode = parsedBody.data.hasPediatricMode;
     }
 
     /*
@@ -737,7 +763,7 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
     seedDemoDataForPreset(
       organizationId,
       presetName,
-      req.body?.numberOfChairs,
+      parsedBody.data.numberOfChairs,
     ).catch((e) => console.error("[workspace preset] seeding error:", e));
 
     // Отдаём то, что легло в базу, а не то, что было в справочнике пресетов.

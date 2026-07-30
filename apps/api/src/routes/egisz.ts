@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { requireClinicalReadAccess } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
@@ -9,6 +10,16 @@ import {
 	generateDentalCdaXml,
 } from "../services/egiszCdaGenerator.js";
 import { isValidSnils, normalizeSnils } from "../utils/snils.js";
+
+/**
+ * POST /api/clinical/egisz/validate-doctor-snils: было bare cast
+ * `(request.body || {}) as { snils?: unknown }`.
+ * Array body truthy → cast → normalizeSnils may mis-read shape.
+ * Zod safeParse после AUTH → 400 ValidationError; InvalidSnils* сохранены.
+ */
+const validateDoctorSnilsBodySchema = z.object({
+	snils: z.unknown().optional(),
+});
 
 /**
  * Модуль ЕГИСЗ (ФРМО / ФРМР / РЭМД).
@@ -128,8 +139,18 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			)
 				return;
 
-			const body = (request.body || {}) as { snils?: unknown };
-			const digits = normalizeSnils(body.snils);
+			// No `?? {}`: null/undefined must fail object gate (400 ValidationError),
+			// not coerce into empty object and look like a missing snils field.
+			const parsedBody = validateDoctorSnilsBodySchema.safeParse(request.body);
+			if (!parsedBody.success) {
+				return reply.status(400).send({
+					ok: false,
+					error: "ValidationError",
+					message: "Тело запроса должно быть JSON-объектом с полем snils.",
+				});
+			}
+
+			const digits = normalizeSnils(parsedBody.data.snils);
 
 			if (digits.length !== 11) {
 				return reply.status(400).send({

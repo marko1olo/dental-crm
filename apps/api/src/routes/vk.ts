@@ -29,7 +29,18 @@ export async function registerVkRoutes(server: FastifyInstance) {
 		})) return reply;
 
 		const { organizationId } = request.params;
-		const body = (request.body || {}) as VkWebhookBody;
+		// Shape-guard: null/string/array must not TypeError on body.type / body.object.
+		// VK retries on non-200 for events; silent "ok" matches Callback API ACK contract
+		// (same idea as max/whatsapp cast-after-200, without pre-ACK because confirmation
+		// must return the plain token string).
+		if (
+			!request.body ||
+			typeof request.body !== "object" ||
+			Array.isArray(request.body)
+		) {
+			return reply.code(200).send("ok");
+		}
+		const body = request.body as VkWebhookBody;
 
 		// VK Callback API Server Confirmation
 		if (body.type === "confirmation") {
