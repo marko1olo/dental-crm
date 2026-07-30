@@ -90,6 +90,12 @@ describe("код ссылки на приём", () => {
 		assert.equal(readPublicBaseUrl({ DENTE_PUBLIC_BASE_URL: "не адрес" }), null);
 	});
 
+	test("ошибка разбора некорректного адреса безопасно перехватывается", () => {
+		assert.equal(readPublicBaseUrl({ DENTE_PUBLIC_BASE_URL: "http://" }), null);
+		assert.equal(readPublicBaseUrl({ DENTE_PUBLIC_BASE_URL: "this-is-not-a-url" }), null);
+		assert.equal(readPublicBaseUrl({ DENTE_PUBLIC_BASE_URL: "http://%" }), null);
+	});
+
 	test("короткая ссылка втрое дешевле подписанного токена в SMS", () => {
 		// Кириллица даёт 70 знаков на сегмент, и клиника платит за каждый.
 		// Здесь измеряется ровно та разница, из-за которой токен был заменён кодом.
