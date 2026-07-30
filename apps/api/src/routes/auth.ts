@@ -124,6 +124,82 @@ const staffUnlockBodySchema = z.object({
 const clinicLoginValidationMessage = "Введите логин и пароль клиники.";
 const staffUnlockValidationMessage = "Необходимо указать сотрудника и ввести PIN-код.";
 
+
+/**
+ * Admin set-password / set-pin: AUTH first (identity | ADMIN_SETUP_KEY), then body.
+ * adminKey is read from the raw object before full schema — credential, not form field.
+ * newPassword/newPin: string; pin number OK via union->String (same as unlock).
+ */
+const clinicSetPasswordBodySchema = z
+  .object({
+    organizationId: z.string().min(1).optional(),
+    newPassword: z.string().min(1),
+    adminKey: z
+      .union([z.string(), z.number()])
+      .transform((value) => String(value))
+      .optional()
+  })
+  .superRefine((data, ctx) => {
+    if (data.newPassword.length < 8) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["newPassword"],
+        message: "Новый пароль должен быть не короче 8 символов."
+      });
+    }
+  });
+
+const staffSetPinBodySchema = z.object({
+  userId: z.string().min(1),
+  newPin: z
+    .union([z.string(), z.number()])
+    .transform((value) => String(value))
+    .refine((value) => /^\d{4,12}$/.test(value), {
+      message: "PIN должен состоять из 4–12 цифр."
+    }),
+  adminKey: z
+    .union([z.string(), z.number()])
+    .transform((value) => String(value))
+    .optional()
+});
+
+/**
+ * First-run setup: public route; bare cast + destructure number email -> 500.
+ * Messages and if-order preserved (required -> password length -> PIN).
+ */
+const setupInitBodySchema = z
+  .object({
+    clinicName: z.string().min(1),
+    email: z.string().min(1),
+    password: z.string().min(1),
+    ownerName: z.string().min(1).optional(),
+    ownerPin: authPinSchema.optional()
+  })
+  .superRefine((data, ctx) => {
+    if (data.password.length < 8) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["password"],
+        message: "Пароль должен быть не короче 8 символов."
+      });
+    }
+  });
+
+/** Raw body -> plain object for AUTH-first (adminKey) without throw on null/number. */
+function authBodyRecord(value: unknown): Record<string, unknown> {
+  if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return {};
+}
+
+function authAdminKeyFromRecord(record: Record<string, unknown>): string | null {
+  const raw = record.adminKey;
+  if (typeof raw === "string") return raw;
+  if (typeof raw === "number") return String(raw);
+  return null;
+}
+
 const createInviteBodySchema = z.object({
   email: z.string().trim().min(1),
   role: z.string().min(1)
@@ -434,17 +510,10 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   // либо настроенный ADMIN_SETUP_KEY (сравнение timing-safe). Без переменной
   // окружения ключевой путь недоступен вовсе.
   app.post("/api/auth/clinic/set-password", async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = (request.body as { organizationId?: string; newPassword?: string; adminKey?: string }) ?? {};
+    // AUTH first on raw record (adminKey credential), then Zod body for authorized caller.
+    // Anonymous always gets the same 403 regardless of body shape (no policy oracle).
+    const rawBody = authBodyRecord(request.body);
 
-    // СНАЧАЛА ПРАВА, ПОТОМ ТЕЛО.
-    // БЫЛО: длина нового пароля проверялась до проверки прав. Аноним отправлял
-    // {"newPassword":"1"} и по коду ответа читал политику паролей клиники
-    // (400 «не короче 8 символов»), а по имени поля — форму запроса на смену
-    // пароля. Разные ответы на разные тела превращали закрытый маршрут в
-    // справочник. Теперь тело не влияет на отказ: без прав ответ ровно один и
-    // тот же при любом содержимом, а вся работа по разбору тела выполняется
-    // только для того, кто имеет право её вызвать.
-    // adminKey читается из тела — это учётные данные, а не проверяемое поле.
     const identity = getRequestIdentity(request);
     const isOrgAdmin =
       !!identity.organizationId &&
@@ -452,20 +521,31 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       ADMIN_ROLES.some((role) => role === (identity.role ?? "").toLowerCase());
 
     const setupKey = configuredAdminSetupKey();
-    const hasValidSetupKey = !!setupKey && timingSafeSecretEqual(body.adminKey ?? null, setupKey);
+    const hasValidSetupKey =
+      !!setupKey && timingSafeSecretEqual(authAdminKeyFromRecord(rawBody), setupKey);
 
     if (!isOrgAdmin && !hasValidSetupKey) {
       await authFailureDelay();
       return reply.code(403).send({ error: "Forbidden", message: "Недостаточно прав для смены пароля клиники." });
     }
 
-    // Порядок проверок тела для авторизованного вызова сохранён дословно:
-    // сначала пароль, затем организация, затем запрет чужой организации.
-    if (!body.newPassword || String(body.newPassword).length < 8) {
-      return reply.code(400).send({ error: "ValidationError", message: "Новый пароль должен быть не короче 8 символов." });
+    const parsed = clinicSetPasswordBodySchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      const message = authSchemaMessage(
+        parsed.error,
+        "Новый пароль должен быть не короче 8 символов.",
+        [
+          {
+            match: "Новый пароль должен быть не короче 8 символов.",
+            message: "Новый пароль должен быть не короче 8 символов."
+          }
+        ]
+      );
+      return reply.code(400).send({ error: "ValidationError", message });
     }
+    const body = parsed.data;
 
-    // Администратор организации может менять пароль ТОЛЬКО своей организации.
+    // Org admin may only reset own org password; setup-key path needs organizationId.
     const targetOrganizationId = isOrgAdmin ? identity.organizationId! : body.organizationId;
     if (!targetOrganizationId) {
       return reply.code(400).send({ error: "ValidationError", message: "Не указана организация." });
@@ -494,15 +574,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   // СТАЛО: только владелец/админ своей организации (или настроенный ADMIN_SETUP_KEY),
   // и целевой сотрудник обязан принадлежать той же организации.
   app.post("/api/auth/staff/set-pin", async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = (request.body as { userId?: string; newPin?: string; adminKey?: string }) ?? {};
+    // AUTH first on raw record, then Zod body. Anonymous always same 403.
+    const rawBody = authBodyRecord(request.body);
 
-    // СНАЧАЛА ПРАВА, ПОТОМ ТЕЛО — по той же причине, что и в set-password.
-    // БЫЛО: аноним получал 400 «Не указан сотрудник.» на пустое тело и
-    // 400 «PIN должен состоять из 4–12 цифр.» на PIN неверной формы, то есть
-    // узнавал обязательные поля и политику PIN раньше, чем сервер выяснял, имеет
-    // ли он право менять PIN вообще. Теперь без прав возвращается один и тот же
-    // отказ независимо от тела, и по нему нельзя отличить «нет прав» от
-    // «тело неверной формы».
     const identity = getRequestIdentity(request);
     const isOrgAdmin =
       !!identity.organizationId &&
@@ -510,21 +584,30 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       ADMIN_ROLES.some((role) => role === (identity.role ?? "").toLowerCase());
 
     const setupKey = configuredAdminSetupKey();
-    const hasValidSetupKey = !!setupKey && timingSafeSecretEqual(body.adminKey ?? null, setupKey);
+    const hasValidSetupKey =
+      !!setupKey && timingSafeSecretEqual(authAdminKeyFromRecord(rawBody), setupKey);
 
     if (!isOrgAdmin && !hasValidSetupKey) {
       await authFailureDelay();
       return reply.code(403).send({ error: "Forbidden", message: "Недостаточно прав для смены PIN сотрудника." });
     }
 
-    // Порядок проверок тела для авторизованного вызова сохранён дословно:
-    // сначала отсутствие сотрудника, затем форма PIN.
-    if (!body.userId) {
-      return reply.code(400).send({ error: "ValidationError", message: "Не указан сотрудник." });
+    const parsed = staffSetPinBodySchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      // Old if-order: userId missing first, then PIN form.
+      // Union invalid_type on newPin has no custom text — map by path.
+      const userPathHit = parsed.error.issues.some((issue) => issue.path[0] === "userId");
+      const pinPathHit = parsed.error.issues.some((issue) => issue.path[0] === "newPin");
+      const message = userPathHit
+        ? "Не указан сотрудник."
+        : pinPathHit
+          ? "PIN должен состоять из 4–12 цифр."
+          : authSchemaMessage(parsed.error, "Не указан сотрудник.", [
+              { match: "PIN должен состоять из 4–12 цифр.", message: "PIN должен состоять из 4–12 цифр." }
+            ]);
+      return reply.code(400).send({ error: "ValidationError", message });
     }
-    if (!body.newPin || !/^\d{4,12}$/.test(String(body.newPin))) {
-      return reply.code(400).send({ error: "ValidationError", message: "PIN должен состоять из 4–12 цифр." });
-    }
+    const body = parsed.data;
 
     if (isOrgAdmin) {
       const [target] = await db
@@ -556,18 +639,38 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
   // ─── Initial Clinic Setup (first-run seed credentials) ───────────────────────
   app.post("/api/auth/setup/init", async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = (request.body as SetupInitBody) ?? {};
-    const { clinicName, email, password, ownerName, ownerPin } = body;
-
-    if (!clinicName || !email || !password) {
-      return reply.code(400).send({ error: "ValidationError", message: "Укажите название клиники, логин и пароль." });
+    const parsed = setupInitBodySchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      // Old if-order: required -> password length -> PIN form.
+      // ownerPin object fails union with invalid_type — map by path after priority.
+      let message = authSchemaMessage(
+        parsed.error,
+        "Укажите название клиники, логин и пароль.",
+        [
+          {
+            match: "Пароль должен быть не короче 8 символов.",
+            message: "Пароль должен быть не короче 8 символов."
+          },
+          {
+            match: "PIN должен состоять из 4–12 цифр.",
+            message: "PIN должен состоять из 4–12 цифр."
+          }
+        ]
+      );
+      const pinPathOnly =
+        message === "Укажите название клиники, логин и пароль." &&
+        parsed.error.issues.some((issue) => issue.path[0] === "ownerPin") &&
+        !parsed.error.issues.some((issue) =>
+          issue.path[0] === "clinicName" ||
+          issue.path[0] === "email" ||
+          issue.path[0] === "password"
+        );
+      if (pinPathOnly) {
+        message = "PIN должен состоять из 4–12 цифр.";
+      }
+      return reply.code(400).send({ error: "ValidationError", message });
     }
-    if (String(password).length < 8) {
-      return reply.code(400).send({ error: "ValidationError", message: "Пароль должен быть не короче 8 символов." });
-    }
-    if (ownerPin !== undefined && !/^\d{4,12}$/.test(String(ownerPin))) {
-      return reply.code(400).send({ error: "ValidationError", message: "PIN должен состоять из 4–12 цифр." });
-    }
+    const { clinicName, email, password, ownerName, ownerPin } = parsed.data;
 
     const loginId = email.toLowerCase().trim();
 
