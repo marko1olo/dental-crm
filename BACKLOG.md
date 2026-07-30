@@ -11,12 +11,12 @@
 [x] P1 | Sweep bare dente_* token localStorage (App, leads, ws, diary, apiAuthFetch, auth writes) | apps/web/src | cbfd51852 typecheck GREEN
 [x] P1 | Wire safeLocalStorage into apiAuthFetch readToken + DENTE_*_KEY | apiAuthFetch.ts | cbfd51852
 [x] P1 | PatientPortal patient_token + themeStore + AuthArtBackground via safeLocalStorage | apps/web/src | 36d232886 typecheck GREEN
-[x] P1 | AppHelpers+App non-token localStorage drafts via safe helpers | AppHelpers.tsx App.tsx | typecheck GREEN
-[ ] P1 | Zod strict on settings staff/catalog routes | apps/api/src/routes/settings.ts | 400 on bad body proof test
+[x] P1 | AppHelpers+App non-token localStorage drafts via safe helpers | AppHelpers.tsx App.tsx | a316d9b83 typecheck GREEN
+[x] P1 | Zod on settings staff/catalog via parseSettingsPayload + 400 proofs | settings.ts serviceCatalogWriteProof/Routes | verified existing
 [ ] P2 | Integration tests schedule / intake / payroll | apps/api/src/tests | npm run test slice green
 [ ] P1 | Find UNVERIFIED in direction/packets related to settings auth | .agents | list + verify
-[ ] P2 | TODO/FIXME in settings components | apps/web/src/components/settings | rg and fix or ticket
-[x] P2 | Push main after each green commit | origin main | cbfd51852 on main
+[x] P2 | TODO/FIXME in settings components | apps/web/src/components/settings | none real (CSS .shift-todo only)
+[x] P2 | Push main after each green commit | origin main | a316d9b83 on main
 
 
 # replenish sources when empty:

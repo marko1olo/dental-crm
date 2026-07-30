@@ -792,6 +792,7 @@ import {
 	pricelistParserModeLabels,
 } from "./imagingUiLabels";
 import { motionSafeScrollIntoView } from "./motionPreference";
+import { safeLocalStorageSetItem } from "./lib/safeLocalStorage";
 import {
 	buildMprClinicalChecklist,
 	buildMprOperatorSummary,
@@ -3636,7 +3637,7 @@ export function useAppLogic(): any {
 							serverPreferences.savedAt > localPreferences.savedAt))
 				) {
 					applyUiPreferences(serverPreferences);
-					window.localStorage.setItem(
+					safeLocalStorageSetItem(
 						uiPreferencesStorageKey,
 						JSON.stringify(serverPreferences),
 					);

@@ -15,6 +15,10 @@ import {
   Globe
 } from "lucide-react";
 import { RecallListPanel } from "./components/patients/RecallListPanel";
+import {
+  safeLocalStorageGetItem,
+  safeLocalStorageSetItem,
+} from "./lib/safeLocalStorage";
 
 type MarketingStats = {
   yandex: { rating: number; reviews: number };
@@ -40,23 +44,15 @@ type ReviewTone = "positive" | "negative" | "neutral";
   временно не открылся» вместо маркетинга, и починить это из интерфейса было
   нечем. Запись бросала так же, но уже на каждое нажатие клавиши в поле.
   Теперь отказ хранилища означает только «не запомнится до перезагрузки», а не
-  потерю раздела и не потерю набранного текста.
+  потерю раздела и не потерю набранного текста. Чтение/запись идут через
+  safeLocalStorage — единая точка try/catch для всего web-клиента.
 */
 function readStored(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch (e) {
-    console.warn(`[Маркетинг] Хранилище браузера недоступно для чтения (${key}):`, e);
-    return null;
-  }
+  return safeLocalStorageGetItem(key);
 }
 
 function writeStored(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value);
-  } catch (e) {
-    console.warn(`[Маркетинг] Не удалось сохранить «${key}» в хранилище браузера:`, e);
-  }
+  safeLocalStorageSetItem(key, value);
 }
 
 export function MarketingView({ clinicName, clinicPhone }: { clinicName: string; clinicPhone: string }) {

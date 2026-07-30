@@ -1,3 +1,7 @@
+import {
+  safeLocalStorageRemoveItem,
+  safeLocalStorageSetItem,
+} from "./lib/safeLocalStorage";
 export type BrowserContinuityRegistrationState =
   | "unsupported"
   | "not_registered"
@@ -75,13 +79,11 @@ export const browserCtOfflineStorageBoundary: BrowserCtOfflineStorageBoundary =
 function browserLocalStorageWritable(): boolean {
   if (typeof window === "undefined") return false;
   const probeKey = "dental-crm:storage-probe";
-  try {
-    window.localStorage.setItem(probeKey, "1");
-    window.localStorage.removeItem(probeKey);
-    return true;
-  } catch {
-    return false;
-  }
+  // Probe via safe helpers: setItem returns false on quota/private mode;
+  // still remove so we never leave the probe key behind when writable.
+  const wrote = safeLocalStorageSetItem(probeKey, "1");
+  safeLocalStorageRemoveItem(probeKey);
+  return wrote;
 }
 
 export async function browserIndexedDbWritable(): Promise<boolean> {
