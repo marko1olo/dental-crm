@@ -43,13 +43,25 @@ export type PanoramicWorkerResponse =
 export function mat3ToMat4Direction(m3: ArrayLike<number>): Float32Array {
   const m4 = new Float32Array(16);
   // row 0
-  m4[0] = m3[0] ?? 0; m4[1] = m3[1] ?? 0; m4[2] = m3[2] ?? 0; m4[3] = 0;
+  m4[0] = m3[0] ?? 0;
+  m4[1] = m3[1] ?? 0;
+  m4[2] = m3[2] ?? 0;
+  m4[3] = 0;
   // row 1
-  m4[4] = m3[3] ?? 0; m4[5] = m3[4] ?? 0; m4[6] = m3[5] ?? 0; m4[7] = 0;
+  m4[4] = m3[3] ?? 0;
+  m4[5] = m3[4] ?? 0;
+  m4[6] = m3[5] ?? 0;
+  m4[7] = 0;
   // row 2
-  m4[8] = m3[6] ?? 0; m4[9] = m3[7] ?? 0; m4[10] = m3[8] ?? 0; m4[11] = 0;
+  m4[8] = m3[6] ?? 0;
+  m4[9] = m3[7] ?? 0;
+  m4[10] = m3[8] ?? 0;
+  m4[11] = 0;
   // row 3
-  m4[12] = 0; m4[13] = 0; m4[14] = 0; m4[15] = 1;
+  m4[12] = 0;
+  m4[13] = 0;
+  m4[14] = 0;
+  m4[15] = 1;
   return m4;
 }
 
@@ -76,23 +88,26 @@ export function toTransferableScalarData(
 /**
  * Calculates Catmull-Rom spline points interpolated at equidistant steps.
  */
-export function interpolateSpline(points: Point2D[], stepSize: number = 0.5): Point2D[] {
+export function interpolateSpline(
+  points: Point2D[],
+  stepSize: number = 0.5,
+): Point2D[] {
   if (points.length < 2) return points;
 
-  // Simple linear interpolation fallback for 2 points, 
+  // Simple linear interpolation fallback for 2 points,
   // or add a proper Catmull-Rom math here for >= 3 points.
   // For the sake of hardcore math, let's do a basic subdivision for now
   // to ensure equidistant points along the segments.
   const result: Point2D[] = [];
-  
+
   for (let i = 0; i < points.length - 1; i++) {
     const p0 = points[i]!;
     const p1 = points[i + 1]!;
-    
+
     const dx = p1.x - p0.x;
     const dy = p1.y - p0.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    
+
     const steps = Math.max(1, Math.floor(distance / stepSize));
     for (let j = 0; j < steps; j++) {
       const t = j / steps;
@@ -104,7 +119,7 @@ export function interpolateSpline(points: Point2D[], stepSize: number = 0.5): Po
   }
   // push last point
   result.push(points[points.length - 1]!);
-  
+
   return result;
 }
 
@@ -116,15 +131,15 @@ export function calculateNormals(points: Point2D[]): Point2D[] {
   for (let i = 0; i < points.length; i++) {
     const prev = i === 0 ? points[i]! : points[i - 1]!;
     const next = i === points.length - 1 ? points[i]! : points[i + 1]!;
-    
+
     const dx = next.x - prev.x;
     const dy = next.y - prev.y;
-    
+
     // Normalize tangent
     const len = Math.sqrt(dx * dx + dy * dy) || 1;
     const tx = dx / len;
     const ty = dy / len;
-    
+
     // Normal is orthogonal to tangent (-ty, tx)
     normals.push({ x: -ty, y: tx });
   }
@@ -139,10 +154,10 @@ export function trilinearInterpolate(
   dimensions: [number, number, number],
   x: number,
   y: number,
-  z: number
+  z: number,
 ): number {
   const [width, height, depth] = dimensions;
-  
+
   const x0 = Math.floor(x);
   const x1 = Math.min(x0 + 1, width - 1);
   const y0 = Math.floor(y);
@@ -187,7 +202,7 @@ export function worldToIndex(
   worldPos: vec3,
   origin: vec3,
   direction: mat4,
-  spacing: vec3
+  spacing: vec3,
 ): vec3 {
   // 1. Translate relative to origin
   const translated = vec3.create();
@@ -203,14 +218,14 @@ export function worldToIndex(
   const rotated = vec3.fromValues(
     vec3.dot(translated, dirX),
     vec3.dot(translated, dirY),
-    vec3.dot(translated, dirZ)
+    vec3.dot(translated, dirZ),
   );
 
   // 3. Scale by spacing
   const index = vec3.fromValues(
     rotated[0] / spacing[0],
     rotated[1] / spacing[1],
-    rotated[2] / spacing[2]
+    rotated[2] / spacing[2],
   );
 
   return index;
@@ -231,9 +246,8 @@ export function generatePanoramicImage(
   zEndWorld: number,
   zStepWorld: number = 0.5,
   thickness: number = 0, // Thickness in mm
-  blendMode: "average" | "mip" = "mip"
+  blendMode: "average" | "mip" = "mip",
 ): { width: number; height: number; pixels: Float32Array } {
-  
   const width = splinePoints.length;
   const height = Math.abs(Math.floor((zEndWorld - zStartWorld) / zStepWorld));
   const pixels = new Float32Array(width * height);
@@ -243,17 +257,21 @@ export function generatePanoramicImage(
   const thicknessSteps = Math.max(1, Math.floor(thickness / 0.5));
   const stepSizeNormal = thickness > 0 ? thickness / thicknessSteps : 0;
 
-  // --- Hoist loop-invariant world->index transform out of the per-pixel hot loop. ---
-  // worldToIndex() allocated 6 vec3 (Float32Array(3)) per call and recomputed the
-  // direction basis every pixel, even though origin/direction/spacing are constant
-  // for the whole image. For a WxH panoramic with T thickness steps that is
-  // O(W*H*T) allocations feeding the GC. Here we read the basis once as scalars and
-  // fold spacing division into the dot products so the inner loop is allocation-free.
-  const ox = origin[0], oy = origin[1], oz = origin[2];
-  const invSx = 1 / spacing[0], invSy = 1 / spacing[1], invSz = 1 / spacing[2];
-  const dx0 = direction[0] * invSx, dx1 = direction[1] * invSx, dx2 = direction[2] * invSx;
-  const dy0 = direction[4] * invSy, dy1 = direction[5] * invSy, dy2 = direction[6] * invSy;
-  const dz0 = direction[8] * invSz, dz1 = direction[9] * invSz, dz2 = direction[10] * invSz;
+  const ox = origin[0],
+    oy = origin[1],
+    oz = origin[2];
+  const invSx = 1 / spacing[0],
+    invSy = 1 / spacing[1],
+    invSz = 1 / spacing[2];
+  const dx0 = direction[0] * invSx,
+    dx1 = direction[1] * invSx,
+    dx2 = direction[2] * invSx;
+  const dy0 = direction[4] * invSy,
+    dy1 = direction[5] * invSy,
+    dy2 = direction[6] * invSy;
+  const dz0 = direction[8] * invSz,
+    dz1 = direction[9] * invSz,
+    dz2 = direction[10] * invSz;
 
   const zSign = Math.sign(zEndWorld - zStartWorld);
   const halfThickness = thickness / 2;
@@ -274,23 +292,37 @@ export function generatePanoramicImage(
         const ix = tx * dx0 + ty * dx1 + tz * dx2;
         const iy = tx * dy0 + ty * dy1 + tz * dy2;
         const iz = tx * dz0 + ty * dz1 + tz * dz2;
-        pixels[rowOffset + x] = trilinearInterpolate(scalarData, dimensions, ix, iy, iz);
+        pixels[rowOffset + x] = trilinearInterpolate(
+          scalarData,
+          dimensions,
+          ix,
+          iy,
+          iz,
+        );
       } else {
         // Thick Slab Raycasting along the normal.
         const normal = normals[x]!;
-        const nx = normal.x, ny = normal.y;
-        const px = point.x, py = point.y;
+        const nx = normal.x,
+          ny = normal.y;
+        const px = point.x,
+          py = point.y;
         let accumulator = blendMode === "mip" ? -Infinity : 0;
 
         for (let s = 0; s <= thicknessSteps; s++) {
           const offset = -halfThickness + s * stepSizeNormal;
 
-          const tx = (px + nx * offset) - ox;
-          const ty = (py + ny * offset) - oy;
+          const tx = px + nx * offset - ox;
+          const ty = py + ny * offset - oy;
           const ix = tx * dx0 + ty * dx1 + tz * dx2;
           const iy = tx * dy0 + ty * dy1 + tz * dy2;
           const iz = tx * dz0 + ty * dz1 + tz * dz2;
-          const value = trilinearInterpolate(scalarData, dimensions, ix, iy, iz);
+          const value = trilinearInterpolate(
+            scalarData,
+            dimensions,
+            ix,
+            iy,
+            iz,
+          );
 
           if (blendMode === "mip") {
             if (value > accumulator) accumulator = value;
@@ -315,19 +347,31 @@ export function generatePanoramicImage(
  * Calculates the shortest distance from a 3D point (implant apex) to a line segment (nerve segment).
  */
 export function distancePointToLineSegment(p: vec3, v: vec3, w: vec3): number {
-  const vx = v[0]!, vy = v[1]!, vz = v[2]!;
-  const wx = w[0]!, wy = w[1]!, wz = w[2]!;
-  const px = p[0]!, py = p[1]!, pz = p[2]!;
+  const vx = v[0]!,
+    vy = v[1]!,
+    vz = v[2]!;
+  const wx = w[0]!,
+    wy = w[1]!,
+    wz = w[2]!;
+  const px = p[0]!,
+    py = p[1]!,
+    pz = p[2]!;
 
-  const vwx = wx - vx, vwy = wy - vy, vwz = wz - vz;
+  const vwx = wx - vx,
+    vwy = wy - vy,
+    vwz = wz - vz;
   const l2 = vwx * vwx + vwy * vwy + vwz * vwz;
 
   if (l2 === 0) {
-    const dx = px - vx, dy = py - vy, dz = pz - vz;
+    const dx = px - vx,
+      dy = py - vy,
+      dz = pz - vz;
     return Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
 
-  const pvx = px - vx, pvy = py - vy, pvz = pz - vz;
+  const pvx = px - vx,
+    pvy = py - vy,
+    pvz = pz - vz;
   let t = (pvx * vwx + pvy * vwy + pvz * vwz) / l2;
   t = Math.max(0, Math.min(1, t));
 
@@ -348,10 +392,10 @@ export function distancePointToLineSegment(p: vec3, v: vec3, w: vec3): number {
 export function distancePointToSpline(p: vec3, spline: vec3[]): number {
   if (spline.length === 0) return Infinity;
   if (spline.length === 1) return vec3.distance(p, spline[0]!);
-  
+
   let minDist = Infinity;
   for (let i = 0; i < spline.length - 1; i++) {
-    const dist = distancePointToLineSegment(p, spline[i]!, spline[i+1]!);
+    const dist = distancePointToLineSegment(p, spline[i]!, spline[i + 1]!);
     if (dist < minDist) minDist = dist;
   }
   return minDist;
@@ -378,35 +422,35 @@ export function calculateImplantBoneDensity(
   spacing: vec3,
   implantStartWorld: vec3,
   implantEndWorld: vec3,
-  diameter: number
-): { averageHU: number, classification: string } {
+  diameter: number,
+): { averageHU: number; classification: string } {
   // 1. Calculate direction vector of the implant
   const implantVec = vec3.create();
   vec3.subtract(implantVec, implantEndWorld, implantStartWorld);
-  
+
   const length = vec3.length(implantVec);
   if (length === 0) return { averageHU: 0, classification: "D4" };
-  
+
   const implantDir = vec3.create();
-  vec3.scale(implantDir, implantVec, 1/length);
-  
+  vec3.scale(implantDir, implantVec, 1 / length);
+
   // 2. Sample points within the cylinder
   // We'll take step sizes of 0.5mm along length and radius
   const stepSize = 0.5;
-  const radius = (diameter / 2) + 1.0; // 1mm buffer around implant thread
-  
+  const radius = diameter / 2 + 1.0; // 1mm buffer around implant thread
+
   let totalHU = 0;
   let count = 0;
-  
+
   // Orthogonal vectors to create the disk base
   // Cross product with an arbitrary vector not parallel to implantDir
   let arbitrary = vec3.fromValues(1, 0, 0);
   if (Math.abs(implantDir[0]) > 0.9) arbitrary = vec3.fromValues(0, 1, 0);
-  
+
   const ortho1 = vec3.create();
   vec3.cross(ortho1, implantDir, arbitrary);
   vec3.normalize(ortho1, ortho1);
-  
+
   const ortho2 = vec3.create();
   vec3.cross(ortho2, implantDir, ortho1);
   vec3.normalize(ortho2, ortho2);
@@ -416,47 +460,59 @@ export function calculateImplantBoneDensity(
     const tempDir = vec3.create();
     vec3.scale(tempDir, implantDir, l);
     vec3.add(centerWorld, implantStartWorld, tempDir);
-    
+
     // Sample disk
     for (let r = 0; r <= radius; r += stepSize) {
       if (r === 0) {
         const idx = worldToIndex(centerWorld, origin, direction, spacing);
-        const val = trilinearInterpolate(scalarData, dimensions, idx[0], idx[1], idx[2]);
+        const val = trilinearInterpolate(
+          scalarData,
+          dimensions,
+          idx[0],
+          idx[1],
+          idx[2],
+        );
         totalHU += val;
         count++;
         continue;
       }
-      
+
       const numAngles = Math.max(4, Math.floor((2 * Math.PI * r) / stepSize));
       for (let i = 0; i < numAngles; i++) {
         const theta = (i / numAngles) * 2 * Math.PI;
-        
+
         const offset = vec3.create();
         const o1 = vec3.create();
         const o2 = vec3.create();
         vec3.scale(o1, ortho1, r * Math.cos(theta));
         vec3.scale(o2, ortho2, r * Math.sin(theta));
         vec3.add(offset, o1, o2);
-        
+
         const sampleWorld = vec3.create();
         vec3.add(sampleWorld, centerWorld, offset);
-        
+
         const idx = worldToIndex(sampleWorld, origin, direction, spacing);
-        const val = trilinearInterpolate(scalarData, dimensions, idx[0], idx[1], idx[2]);
+        const val = trilinearInterpolate(
+          scalarData,
+          dimensions,
+          idx[0],
+          idx[1],
+          idx[2],
+        );
         totalHU += val;
         count++;
       }
     }
   }
-  
+
   const avg = count > 0 ? totalHU / count : 0;
-  // Assume basic mapping (val -> HU if no rescale intercept/slope provided, 
+  // Assume basic mapping (val -> HU if no rescale intercept/slope provided,
   // DICOM usually maps to actual HU but if raw Uint16, we'd apply (val * slope + intercept).
   // For this generic function, we assume `scalarData` is already in HU or normalized).
   // Let's just pass avg through classify.
-  
+
   return {
     averageHU: Math.round(avg),
-    classification: classifyBoneDensity(avg)
+    classification: classifyBoneDensity(avg),
   };
 }
