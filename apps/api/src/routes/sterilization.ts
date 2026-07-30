@@ -37,7 +37,14 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			"sterilization scan",
 		);
 		if (!organizationId) return;
-		const data = scanSchema.parse(req.body);
+		const scanParsed = scanSchema.safeParse(req.body);
+		if (!scanParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Проверьте данные стерилизации: barcode, autoclaveId и status.",
+			});
+		}
+		const data = scanParsed.data;
 
 		if (data.operatorId) {
 			const [operator] = await db
@@ -78,9 +85,16 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			"sterilization link",
 		);
 		if (!organizationId) return;
-		const { visitId, barcode } = z
+		const linkParsed = z
 			.object({ visitId: z.string().uuid(), barcode: z.string() })
-			.parse(req.body);
+			.safeParse(req.body);
+		if (!linkParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Проверьте привязку стерилизации: visitId и barcode.",
+			});
+		}
+		const { visitId, barcode } = linkParsed.data;
 
 		// Verify that the barcode passed sterilization within the same tenant.
 		const [log] = await db

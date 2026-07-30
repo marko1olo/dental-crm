@@ -55,7 +55,14 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 		);
 		if (!organizationId) return;
 
-		const data = leadSchema.parse(req.body);
+		const parsed = leadSchema.safeParse(req.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Проверьте поля лида: нужно непустое имя.",
+			});
+		}
+		const data = parsed.data;
 		const [lead] = (await db
 			.insert(crmLeads)
 			.values({ ...data, organizationId })
@@ -76,7 +83,7 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 		if (!organizationId) return;
 
 		const { id } = req.params as { id: string };
-		const { status } = z
+		const statusParsed = z
 			.object({
 				status: z.enum([
 					"new",
@@ -86,7 +93,14 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 					"trash",
 				]),
 			})
-			.parse(req.body);
+			.safeParse(req.body);
+		if (!statusParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Проверьте статус лида.",
+			});
+		}
+		const { status } = statusParsed.data;
 
 		const [lead] = await db
 			.update(crmLeads)
@@ -112,7 +126,14 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 		if (!organizationId) return;
 
 		const { id } = req.params as { id: string };
-		const data = leadSchema.parse(req.body);
+		const parsed = leadSchema.safeParse(req.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Проверьте поля лида: нужно непустое имя.",
+			});
+		}
+		const data = parsed.data;
 
 		const [lead] = await db
 			.update(crmLeads)
@@ -162,7 +183,14 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 		if (!organizationId) return;
 
 		const { id } = req.params as { id: string };
-		const payload = convertLeadSchema.parse(req.body);
+		const convertParsed = convertLeadSchema.safeParse(req.body);
+		if (!convertParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Проверьте данные конвертации лида: даты, кресло и врач.",
+			});
+		}
+		const payload = convertParsed.data;
 
 		const [lead] = await db
 			.select()

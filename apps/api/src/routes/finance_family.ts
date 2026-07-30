@@ -242,12 +242,19 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		// секрет клиники, одинаковый для чтения и записи.
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
 
-		const data = z
+		const createParsed = z
 			.object({
 				name: z.string().min(1),
 				headPatientId: z.string().uuid().optional(),
 			})
-			.parse(req.body);
+			.safeParse(req.body);
+		if (!createParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Проверьте данные семейной группы: нужно непустое имя.",
+			});
+		}
+		const data = createParsed.data;
 
 		if (data.headPatientId) {
 			const [headPatient] = await db
@@ -301,12 +308,19 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
 
 		const { id } = req.params as { id: string };
-		const data = z
+		const updateParsed = z
 			.object({
 				name: z.string().min(1).optional(),
 				headPatientId: z.string().uuid().nullable().optional(),
 			})
-			.parse(req.body);
+			.safeParse(req.body);
+		if (!updateParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Проверьте данные семейной группы.",
+			});
+		}
+		const data = updateParsed.data;
 
 		if (data.headPatientId) {
 			const [headPatient] = await db
@@ -402,7 +416,14 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		// кошельку не допущены. Раньше единственным барьером был общий
 		// секрет клиники, одинаковый для чтения и записи.
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
-		const payload = familyPaymentSchema.parse(req.body);
+		const payParsed = familyPaymentSchema.safeParse(req.body);
+		if (!payParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Проверьте оплату с семейного счёта: нужны patientId, familyGroupId и целые рубли больше нуля.",
+			});
+		}
+		const payload = payParsed.data;
 
 		try {
 			const result = await db.transaction(async (tx) => {
