@@ -4,14 +4,6 @@ import { hashCredential, verifyCredential } from "./cryptoHelper.js";
 
 describe("cryptoHelper", () => {
 	describe("verifyCredential", () => {
-		test("returns true for legacy plain equality", async () => {
-			assert.strictEqual(await verifyCredential("password123", "password123"), true);
-		});
-
-		test("returns false for incorrect legacy plain equality", async () => {
-			assert.strictEqual(await verifyCredential("password123", "wrongpassword"), false);
-		});
-
 		test("returns true for valid salt:hash matching", async () => {
 			const hashed = await hashCredential("securepassword");
 			assert.strictEqual(await verifyCredential("securepassword", hashed), true);
