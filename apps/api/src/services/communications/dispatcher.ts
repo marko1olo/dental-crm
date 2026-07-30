@@ -816,6 +816,7 @@ export async function dispatchDueMessages(options: DispatchOptions = {}): Promis
 			countSentToday(organizationId, patientIds, now)
 		]);
 
+		const unknownFailures = new Map<string, string[]>();
 		for (const row of rows) {
 			try {
 				const outcome = await processRow(row, { credentials, settings, consents, sentToday, now });
@@ -853,19 +854,28 @@ export async function dispatchDueMessages(options: DispatchOptions = {}): Promis
 				// Непредвиденный сбой не должен оставить строку захваченной
 				// навсегда: возвращаем её в очередь с записанной причиной.
 				report.retried += 1;
+				const errorMessage = error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500);
+				const failureGroup = unknownFailures.get(errorMessage) ?? [];
+				failureGroup.push(row.id);
+				unknownFailures.set(errorMessage, failureGroup);
+			}
+		}
+
+		for (const [errorMessage, ids] of unknownFailures) {
+			if (ids.length > 0) {
 				await db
 					.update(communicationOutbox)
 					.set({
 						status: "queued",
-						attempts: row.attempts + 1,
+						attempts: sql`${communicationOutbox.attempts} + 1`,
 						lockedAt: null,
 						lockedBy: null,
 						nextAttemptAt: new Date(now.getTime() + 60_000),
 						lastErrorClass: "unknown",
-						lastErrorMessage: error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500),
+						lastErrorMessage: errorMessage,
 						updatedAt: now
 					})
-					.where(eq(communicationOutbox.id, row.id));
+					.where(inArray(communicationOutbox.id, ids));
 			}
 		}
 	}
