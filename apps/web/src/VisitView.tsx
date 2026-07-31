@@ -15,6 +15,7 @@ import { parseVisitDictationLocal } from "./lib/smartVisitParser";
 import { useVisitStore } from "./store/visitStore";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
+import { SpeechChunksInspector } from "./components/visit/SpeechChunksInspector";
 import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
 import { VisitEmkTab } from "./components/visit/VisitEmkTab";
@@ -828,6 +829,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                 ) : null}
               </div>
             </div>
+
+            <SpeechChunksInspector />
 
             <VisiographAnalyzer />
 
