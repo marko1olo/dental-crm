@@ -134,6 +134,7 @@ export interface VisitViewProps {
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { ClinicalTasksPanel } from "./ClinicalTasksPanel";
 import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
+import { VisitNoteDraftPanel } from "./VisitNoteDraftPanel";
 
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
@@ -1377,6 +1378,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                 null
               }
             />
+					{activePatient?.id ? (
+						<div className="mt-4" data-testid="visit-note-draft-mount">
+							<VisitNoteDraftPanel patientId={activePatient.id} />
+						</div>
+					) : null}
+
 
                         {visitCloseChecklist ? (
 

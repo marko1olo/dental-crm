@@ -1,3 +1,9 @@
+## 2026-07-31 — AI visit-note-draft gameplay (Visit)
+
+- **Gap:** `POST /api/ai/visit-note-draft` already built SOAP visit note fields from transcript + specialty (rule + optional neural, `visitNoteDraftRequestSchema` / `visitNoteDraftSchema`), but **zero web callers** — dictation never became a structured visit note on screen.
+- **Ship:** `VisitNoteDraftPanel.tsx` — self-contained (`useAppLogicContext` + `denteClinicalReadHeaders`); transcript + specialty; run → show complaint/anamnesis/objective/diagnosis/plan + quality; copy/apply. Mounted on `VisitView` when `activePatient.id` is set.
+- **Verify:** `npx tsc -p apps/web --noEmit`; live empty body → 400 `VisitNoteDraftValidationError`; web grep `visit-note-draft` → panel + VisitView.
+
 ## 2026-07-31 — Diary revise gameplay (admin correct signed 043/у)
 
 - **Gap:** `POST /api/diaries/:id/revise` already archived prior SOAP text into `visit_diary_revisions` and updated the locked diary (admin-only `OnlyAdminsCanRevise`), and `GET …/revisions` already fed the revision counter — but the Visit diary editor had **zero web callers** for revise. After ЭЦП lock, admin could not fix a typo in МКБ-10 / SOAP without SQL.
