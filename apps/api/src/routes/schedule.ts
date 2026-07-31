@@ -582,6 +582,10 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
         copiedAt: scheduleClipboardItems.copiedAt
       });
 
+    if (!created) {
+      return reply.code(500).send({ error: "Failed to create schedule clipboard item" });
+    }
+
     return reply.code(201).send({
       ...created,
       copiedAt:
