@@ -1,6 +1,8 @@
-import { Clipboard } from "lucide-react";
+import { Clipboard, Download, Loader2 } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
+import { actionFailureToast } from "../lib/panelStateText";
+import { showToast } from "./GlobalToast";
 
 interface Template {
 	id: string;
@@ -17,12 +19,27 @@ interface VisitDiaryTemplateSelectorProps {
 	onSelectTemplate: (template: Template) => void;
 }
 
+/**
+ * Выбор клинического протокола на приёме + восстановление встроенных.
+ *
+ * GET /api/templates сам ставит встроенные ТОЛЬКО если список клиники пуст.
+ * Если посев упал (503 ClinicalTemplatesSeedFailed), в клинике только свои
+ * протоколы без части встроенных, или врач открыл дневник до готовности базы —
+ * без POST /api/templates/seed восстановить список нельзя: кнопки на экране
+ * не было, CLI/SQL врачу недоступны. Здесь empty/503 → «Установить встроенные
+ * протоколы»; при непустом списке — тихая ссылка «Восстановить встроенные».
+ */
 export function VisitDiaryTemplateSelector({
 	isLocked,
 	onSelectTemplate,
 }: VisitDiaryTemplateSelectorProps) {
 	const [templates, setTemplates] = useState<Template[]>([]);
 	const [selectedTemplate, setSelectedTemplate] = useState("");
+	const [loadStatus, setLoadStatus] = useState<number | null>(null);
+	const [loadFailed, setLoadFailed] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
+	const [isSeeding, setIsSeeding] = useState(false);
+	const [seedError, setSeedError] = useState<string | null>(null);
 
 	/*
 	 * Источник заголовков берётся ТОЛЬКО из контекста приложения.
@@ -49,6 +66,10 @@ export function VisitDiaryTemplateSelector({
 	authRef.current = auth;
 
 	const loadTemplates = useCallback(async () => {
+		setIsLoading(true);
+		setLoadFailed(false);
+		setLoadStatus(null);
+		setSeedError(null);
 		try {
 			const headerSource = authRef.current;
 			const res = await fetch("/api/templates", {
@@ -59,18 +80,102 @@ export function VisitDiaryTemplateSelector({
 							})
 						: { "Content-Type": "application/json" },
 			});
+			setLoadStatus(res.status);
 			if (res.ok) {
 				const data = await res.json();
-				setTemplates(data?.templates || []);
+				setTemplates(Array.isArray(data?.templates) ? data.templates : []);
+				setLoadFailed(false);
+			} else {
+				setTemplates([]);
+				setLoadFailed(true);
+				// 503 ClinicalTemplatesSeedFailed — не «протоколов нет», а сбой установки.
+				// Сообщение сервера показываем рядом с кнопкой посева, не гасим.
+				try {
+					const body = await res.json();
+					const msg =
+						typeof body?.message === "string" && body.message.trim()
+							? body.message.trim()
+							: null;
+					if (msg) setSeedError(msg);
+				} catch {
+					/* тело не JSON — оставляем общий отказ */
+				}
 			}
 		} catch (error) {
 			console.error("Failed to load templates", error);
+			setTemplates([]);
+			setLoadFailed(true);
+			setLoadStatus(null);
+		} finally {
+			setIsLoading(false);
 		}
 	}, []);
 
 	useEffect(() => {
 		loadTemplates();
 	}, [loadTemplates]);
+
+	const seedBuiltIns = useCallback(async () => {
+		if (isSeeding || isLocked) return;
+		setIsSeeding(true);
+		setSeedError(null);
+		try {
+			const headerSource = authRef.current;
+			const res = await fetch("/api/templates/seed", {
+				method: "POST",
+				headers:
+					headerSource &&
+					typeof headerSource.denteClinicalMutationHeaders === "function"
+						? headerSource.denteClinicalMutationHeaders({
+								"Content-Type": "application/json",
+							})
+						: { "Content-Type": "application/json" },
+			});
+			if (!res.ok) {
+				let serverMessage: string | null = null;
+				try {
+					const body = await res.json();
+					if (typeof body?.message === "string" && body.message.trim()) {
+						serverMessage = body.message.trim();
+					}
+				} catch {
+					/* ignore */
+				}
+				const toastText =
+					serverMessage ??
+					actionFailureToast("Встроенные протоколы не установлены", res.status);
+				setSeedError(toastText);
+				showToast(toastText, "error");
+				return;
+			}
+			let count: number | null = null;
+			try {
+				const body = await res.json();
+				if (typeof body?.count === "number" && Number.isFinite(body.count)) {
+					count = body.count;
+				}
+			} catch {
+				/* ok without count */
+			}
+			showToast(
+				count !== null
+					? `Встроенные протоколы установлены · в списке ${count}`
+					: "Встроенные протоколы установлены",
+				"success",
+			);
+			await loadTemplates();
+		} catch (error) {
+			console.error("Failed to seed templates", error);
+			const toastText = actionFailureToast(
+				"Встроенные протоколы не установлены",
+				null,
+			);
+			setSeedError(toastText);
+			showToast(toastText, "error");
+		} finally {
+			setIsSeeding(false);
+		}
+	}, [isLocked, isSeeding, loadTemplates]);
 
 	const templatesByCategory = React.useMemo(() => {
 		const groups: Record<string, Template[]> = {};
@@ -82,27 +187,78 @@ export function VisitDiaryTemplateSelector({
 		return groups;
 	}, [templates]);
 
+	const showEmptyRecovery =
+		!isLoading && (templates.length === 0 || loadFailed);
+	const showRestoreLink = !isLoading && templates.length > 0 && !isLocked;
+
+	if (showEmptyRecovery) {
+		const isSeedFailed = loadStatus === 503;
+		return (
+			<div
+				className="flex flex-col gap-2 w-full sm:w-auto max-w-md flex-shrink-0"
+				data-testid="diary-template-empty"
+			>
+				<div className="text-xs text-zinc-400 leading-snug">
+					{isSeedFailed
+						? seedError ||
+							"Встроенные протоколы не установились — список пуст из‑за сбоя, а не потому что протоколов нет."
+						: loadFailed
+							? seedError ||
+								"Список клинических протоколов не загружен. Дневник можно заполнить вручную."
+							: "В этой клинике пока нет клинических протоколов. Установите встроенные — врач выберет протокол в списке на приёме."}
+				</div>
+				<button
+					type="button"
+					id="diary-template-seed"
+					data-testid="diary-template-seed"
+					disabled={isLocked || isSeeding}
+					onClick={() => void seedBuiltIns()}
+					className="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-emerald-100 bg-emerald-600/90 hover:bg-emerald-500 border border-emerald-400/40 rounded-xl disabled:opacity-50 transition-colors"
+				>
+					{isSeeding ? (
+						<>
+							<Loader2 className="w-4 h-4 animate-spin" />
+							Устанавливаю…
+						</>
+					) : (
+						<>
+							<Download className="w-4 h-4" />
+							Установить встроенные протоколы
+						</>
+					)}
+				</button>
+				{seedError && !isSeedFailed && (
+					<p className="text-xs text-rose-400/90" data-testid="diary-template-seed-error">
+						{seedError}
+					</p>
+				)}
+			</div>
+		);
+	}
+
 	return (
-		<div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
+		<div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0 flex-wrap">
 			<div className="relative w-full sm:w-60">
 				<Clipboard className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500 pointer-events-none" />
 				<select
 					id="diary-template-select"
-					disabled={isLocked}
+					data-testid="diary-template-select"
+					disabled={isLocked || isLoading}
 					value={selectedTemplate}
-					onChange={async (e) => {
+					onChange={(e) => {
 						const val = e.target.value;
 						setSelectedTemplate(val);
 						if (!val) return;
 						const tmpl = templates.find((t) => t.id === val);
 						if (tmpl) {
 							onSelectTemplate(tmpl);
-							/* showToast("Шаблон успешно применен", "success"); */
 						}
 					}}
 					className="w-full pl-9 pr-3 py-2 bg-zinc-900 border border-zinc-700/60 text-zinc-200 text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 outline-none appearance-none disabled:opacity-50"
 				>
-					<option value="">— Клинический шаблон —</option>
+					<option value="">
+						{isLoading ? "Загружаем протоколы…" : "— Клинический шаблон —"}
+					</option>
 					{Object.entries(templatesByCategory).map(([cat, tpls]) => (
 						<optgroup key={cat} label={cat || "Без категории"}>
 							{tpls.map((t) => (
@@ -114,6 +270,18 @@ export function VisitDiaryTemplateSelector({
 					))}
 				</select>
 			</div>
+			{showRestoreLink && (
+				<button
+					type="button"
+					data-testid="diary-template-restore"
+					disabled={isSeeding}
+					onClick={() => void seedBuiltIns()}
+					title="Добавить недостающие встроенные протоколы (уже имеющиеся не дублируются)"
+					className="text-xs text-zinc-500 hover:text-emerald-400 underline-offset-2 hover:underline disabled:opacity-50 transition-colors whitespace-nowrap"
+				>
+					{isSeeding ? "Восстанавливаю…" : "Восстановить встроенные"}
+				</button>
+			)}
 		</div>
 	);
 }

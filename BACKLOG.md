@@ -1,3 +1,9 @@
+## 2026-07-31 — Diary clinical templates seed (VisitDiaryTemplateSelector)
+
+- **Gap:** `POST /api/templates/seed` already called `ensureClinicalTemplatesSeeded` (insert missing built-ins by title, `isBuiltIn: true`) and returned `{ success, count }`, but **zero web callers**. GET `/api/templates` auto-seeds only when the org list is fully empty; on 503 `ClinicalTemplatesSeedFailed`, partial customs without built-ins, or a failed first visit, the doctor saw a silent empty «Клинический шаблон» dropdown with no recovery — CLI/SQL only.
+- **Ship:** `VisitDiaryTemplateSelector.tsx` — empty/load-failure/503 state with Russian copy + button «Установить встроенные протоколы» (`POST /api/templates/seed` via `denteClinicalMutationHeaders`); non-empty list keeps select + subtle «Восстановить встроенные» (idempotent by title). Reload list after success; toast with count; server `message` on error. data-testid: `diary-template-empty`, `diary-template-seed`, `diary-template-restore`, `diary-template-select`. Mount already in `VisitDiaryEditor` (unlocked diary header).
+- **Verify:** panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); live POST seed without session → 403 OrgRequired (route up); web grep `templates/seed` → selector only.
+
 ## 2026-07-31 — Staff authority grants panel (Settings → Персонал)
 
 - **Gap:** `PUT /api/settings/staff/:staffId/authority` already wrote column grants (`can_sign_medical_records` / `can_manage_money` / `can_manage_imports`) with roleDerived/grants/effective semantics and 409 on role-revocation, and POST create accepted the three flags in body (zod dropped them silently on create form) — but **zero web callers** on the PUT. Owner could not grant an assistant cash-desk access or import rights without SQL; role-locked flags had no UI.
