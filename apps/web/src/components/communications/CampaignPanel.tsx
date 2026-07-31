@@ -39,6 +39,7 @@ type CampaignItem = {
 };
 
 type TemplateOption = { id: string; title: string; channel: string; intent: string; isActive: boolean };
+type TemplateVariable = { key: string; label: string; example: string; phi: boolean };
 
 type CampaignPreview = {
 	criteria: string[];
@@ -152,17 +153,22 @@ export function CampaignPanel() {
 	// предпросмотра навсегда оставалась полоса загрузки.
 	const [previewError, setPreviewError] = useState<string | null>(null);
 
+	const [variables, setVariables] = useState<TemplateVariable[]>([]);
+
 	const load = useCallback(async () => {
 		setLoadError(null);
 		try {
-			const [campaignResponse, templateResponse] = await Promise.all([
+			const [campaignResponse, templateResponse, variablesResponse] = await Promise.all([
 				fetch("/api/communications/campaigns", { headers: auth ? auth.denteClinicalReadHeaders() : {} }),
-				fetch("/api/communications/templates", { headers: auth ? auth.denteClinicalReadHeaders() : {} })
+				fetch("/api/communications/templates", { headers: auth ? auth.denteClinicalReadHeaders() : {} }),
+				fetch("/api/communications/variables", { headers: auth ? auth.denteClinicalReadHeaders() : {} })
 			]);
 			const campaignData = await readJson<{ campaigns: CampaignItem[] }>(campaignResponse);
 			const templateData = await readJson<{ templates: TemplateOption[] }>(templateResponse);
+			const variablesData = await readJson<{ variables: TemplateVariable[] }>(variablesResponse);
 			setCampaigns(campaignData.campaigns);
 			setTemplates(templateData.templates.filter((template) => template.isActive));
+			setVariables(variablesData.variables ?? []);
 		} catch (error) {
 			setLoadError(error instanceof Error ? error.message : String(error));
 		}
@@ -578,6 +584,13 @@ export function CampaignPanel() {
 					>
 						Создать и посмотреть получателей
 					</button>
+
+					{variables.length > 0 ? (
+						<p className="ops-hint ops-variable-catalog__title">
+							<strong>Доступные переменные шаблонов:</strong>{" "}
+							{variables.map((variable) => `{${variable.key}} (${variable.label})`).join(", ")}
+						</p>
+					) : null}
 				</div>
 			)}
 		</section>

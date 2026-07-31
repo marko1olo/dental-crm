@@ -922,15 +922,8 @@ export function MessageDeliveryConsole() {
 						className="ops-variable-catalog"
 						data-testid="comm-template-variables"
 						aria-label="Подстановки для шаблона"
-						style={{
-							display: "flex",
-							flexWrap: "wrap",
-							gap: "6px",
-							marginTop: "6px",
-							marginBottom: "8px",
-						}}
 					>
-						<span className="ops-note" style={{ width: "100%", marginBottom: "2px" }}>
+						<span className="ops-note ops-variable-catalog__title">
 							Подстановки — нажмите, чтобы вставить в текст:
 						</span>
 						{variableCatalog.map((v) => (
@@ -944,18 +937,10 @@ export function MessageDeliveryConsole() {
 										: `${v.label} · пример: ${v.example}`
 								}
 								onClick={() => insertTemplateVariable(v.key)}
-								className="quick-chip"
-								style={
-									v.phi
-										? {
-												borderColor: "rgba(244, 63, 94, 0.45)",
-												color: "var(--bad-fg, #b42318)",
-											}
-										: undefined
-								}
+								className={v.phi ? "quick-chip quick-chip--phi" : "quick-chip"}
 							>
 								{`{${v.key}}`}
-								<span style={{ opacity: 0.75, marginLeft: 4, fontSize: "0.85em" }}>
+								<span className="quick-chip__label">
 									{v.label}
 									{v.phi ? " · мед." : ""}
 								</span>
