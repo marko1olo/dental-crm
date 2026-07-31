@@ -1,6 +1,8 @@
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
 import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
+import { DayConfirmationsPanel } from "./components/schedule/DayConfirmationsPanel";
+import { FreedSlotsPanel } from "./components/schedule/FreedSlotsPanel";
 import { EmptyState } from "./components/EmptyState";
 /*
  * auth — обычный экспорт модуля, читающий токен из localStorage, а не значение
@@ -221,6 +223,10 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   const focusCreateFormRequestedRef = useRef(false);
   /** Открыт ли лист ожидания. Экран есть, а войти в него было неоткуда. */
   const [waitlistOpen, setWaitlistOpen] = useState(false);
+  /** Открыта ли панель утреннего обзвона / подтверждения приёмов. */
+  const [showConfirmationsPanel, setShowConfirmationsPanel] = useState(false);
+  /** Открыта ли панель освободившихся окон и кандидатов из листа ожидания. */
+  const [showFreedSlotsPanel, setShowFreedSlotsPanel] = useState(false);
   /**
    * Сколько человек стоит в очереди. Число живёт на кнопке, потому что очередь
    * — это то, о чём забывают: администратор открывает лист ожидания, только
@@ -631,8 +637,40 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 >
                   Лист ожидания{waitlistCount > 0 ? ` · ${waitlistCount}` : ""}
                 </button>
+                <button
+                  className={`text-button ${showConfirmationsPanel ? "active" : ""}`}
+                  type="button"
+                  onClick={() => {
+                    setShowConfirmationsPanel((prev) => !prev);
+                    setShowFreedSlotsPanel(false);
+                  }}
+                  title="Панель утреннего обзвона и подтверждений"
+                >
+                  Утренний обзвон
+                </button>
+                <button
+                  className={`text-button ${showFreedSlotsPanel ? "active" : ""}`}
+                  type="button"
+                  onClick={() => {
+                    setShowFreedSlotsPanel((prev) => !prev);
+                    setShowConfirmationsPanel(false);
+                  }}
+                  title="Освободившиеся окна и подбор из листа ожидания"
+                >
+                  Освободившиеся окна
+                </button>
               </div>
             </div>
+            {showConfirmationsPanel && (
+              <div className="my-4 p-4 bg-slate-900/90 text-white rounded-xl border border-slate-700 shadow-xl">
+                <DayConfirmationsPanel />
+              </div>
+            )}
+            {showFreedSlotsPanel && (
+              <div className="my-4 p-4 bg-slate-900/90 text-white rounded-xl border border-slate-700 shadow-xl">
+                <FreedSlotsPanel />
+              </div>
+            )}
             {showShiftAnalytics && (
               <div className="schedule-command-grid">
                 <article>

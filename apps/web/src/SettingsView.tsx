@@ -1858,6 +1858,16 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
         {settingsTab === "reporting" && flags.hasAnalyticsModule ? (
           <SettingsReportingTab />
         ) : null}
+        {settingsTab === "messengers" ? (
+          <ErrorBoundary moduleName="Мессенджеры и рассылки">
+            <SettingsMessengersTab props={settingsProps} settingsTab={settingsTab} />
+          </ErrorBoundary>
+        ) : null}
+        {settingsTab === "rules" ? (
+          <ErrorBoundary moduleName="Правила и регламенты">
+            <SettingsRulesTab />
+          </ErrorBoundary>
+        ) : null}
 
         {/*
           Мастер переноса стоит здесь, а не внутри SettingsImportsTab.
