@@ -4,6 +4,7 @@ import type { StaffRole } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { DoctorSnilsValidationWidget } from "./DoctorSnilsValidationWidget";
 import { StaffCommissionsPanel } from "./StaffCommissionsPanel";
+import { StaffAuthorityPanel } from "./StaffAuthorityPanel";
 import { actionFailureToast } from "../../lib/panelStateText";
 import {
   CREATABLE_STAFF_ROLES,
@@ -293,6 +294,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 
       <div className="settings-cards-grid">
         <StaffCommissionsPanel />
+        <StaffAuthorityPanel />
         {/* Список сотрудников */}
         <article className="settings-card col-span-full">
           <div className="settings-card-header">

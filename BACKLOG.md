@@ -1,3 +1,9 @@
+## 2026-07-31 — Staff authority grants panel (Settings → Персонал)
+
+- **Gap:** `PUT /api/settings/staff/:staffId/authority` already wrote column grants (`can_sign_medical_records` / `can_manage_money` / `can_manage_imports`) with roleDerived/grants/effective semantics and 409 on role-revocation, and POST create accepted the three flags in body (zod dropped them silently on create form) — but **zero web callers** on the PUT. Owner could not grant an assistant cash-desk access or import rights without SQL; role-locked flags had no UI.
+- **Ship:** `StaffAuthorityPanel.tsx` — self-contained (`useAppLogicContext` + `denteAdminSecretRequestHeaders`); staff list from dashboard; expandable rows; three checkboxes; role-locked disabled; local overrides after PUT (dashboard still returns roleDerived only — debt noted in panel header). Mounted on `SettingsStaffTab` after `StaffCommissionsPanel`. data-testid: `staff-authority-panel`, `staff-authority-list`, `staff-authority-check-*`.
+- **Verify:** panel has zero TS errors under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); live PUT without auth → 401 AuthRequired (route up); web grep `/authority` + `staff-authority-panel` → StaffAuthorityPanel only.
+
 ## 2026-07-31 — Waitlist matches per appointment (schedule gameplay)
 
 - **Gap:** `GET /api/appointments/:appointmentId/waitlist-matches` already returned full ranked candidates (`WaitlistMatch` + reason, same doctor / time / priority / waiting days) for a cancelled or no_show future slot, but **zero web callers**. `FreedSlotsPanel` only showed `topMatches` (limit 3) from `/api/schedule/freed-slots`. Admin opening a cancelled card in the day timeline had no «кому звонить» list beyond the summary strip.
