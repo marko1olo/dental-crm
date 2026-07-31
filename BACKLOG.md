@@ -1,3 +1,9 @@
+## 2026-07-31 — Diary revise gameplay (admin correct signed 043/у)
+
+- **Gap:** `POST /api/diaries/:id/revise` already archived prior SOAP text into `visit_diary_revisions` and updated the locked diary (admin-only `OnlyAdminsCanRevise`), and `GET …/revisions` already fed the revision counter — but the Visit diary editor had **zero web callers** for revise. After ЭЦП lock, admin could not fix a typo in МКБ-10 / SOAP without SQL.
+- **Ship:** `useVisitDiaryLogic.ts` — `beginRevise` / `cancelRevise` / `doRevise` (clinical mutation headers, reason ≥3 chars, message-first RU toasts, keeps `isLocked`, refreshes hash + revisionCount; autosave skips while revising). `VisitDiaryEditor.tsx` — `fieldsDisabled = isLocked && !isRevising` unlocks SOAP/ICD/tooth/complications in revise mode; locked footer «Исправить» (`diary-revise-begin`) + revise panel (reason + cancel/save); header badge «ПРАВКА» while revising.
+- **Verify:** `npx tsc -p apps/web --noEmit` GREEN; live `POST /api/diaries/:id/revise` without admin → 403 `OnlyAdminsCanRevise` (route up); web grep `/revise` → `useVisitDiaryLogic.ts`; `diary-revise-begin` / `diary-revise-panel` in editor; `disabled={isLocked}` on SOAP fields = 0 (all via `fieldsDisabled`).
+
 ## 2026-07-31 — Live audit logs GET UI (Settings → Аудит)
 
 - **Gap:** `GET /api/audit/logs` returned the full org audit trail (entityType/entityId/limit filters, immutability 152-ФЗ), but the Settings audit tab only rendered `dashboard.auditEvents` (dashboard slice) — zero web callers for the live route.

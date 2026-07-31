@@ -102,6 +102,11 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 	const [revisionCount, setRevisionCount] = useState(0);
 	const [loadState, setLoadState] = useState<DiaryLoadState>({ phase: "loading" });
+	/** Режим правки уже подписанного дневника (только admin на API). */
+	const [isRevising, setIsRevising] = useState(false);
+	const [revisionReason, setRevisionReason] = useState("");
+	const [isRevisingBusy, setIsRevisingBusy] = useState(false);
+
 
 	/**
 	 * Заголовки с админским секретом клинической сессии.
@@ -167,8 +172,12 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setDiaryHash(null);
 		setLastSavedAt(null);
 		setRevisionCount(0);
+		setIsRevising(false);
+		setRevisionReason("");
+		setIsRevisingBusy(false);
 		setLoadState({ phase: "loading" });
 		autosaveFailureReportedRef.current = false;
+
 
 		/** Отказ чтения: состояние + сообщение человеку с подсказкой что делать. */
 		const reportLoadFailure = (status: number | null) => {
@@ -445,13 +454,139 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	// ── Autosave
 	useEffect(() => {
 		if (autosaveRef.current) clearInterval(autosaveRef.current);
+		// В режиме ревизии автосохранение молчит: черновик POST /api/diaries
+		// для подписанного дневника не подходит — только POST …/revise.
+		if (isLocked || isRevising) return;
 		autosaveRef.current = setInterval(() => {
 			void doSave(true);
 		}, 30000);
-		return () => clearInterval(autosaveRef.current!);
-	}, [doSave]);
+		return () => {
+			if (autosaveRef.current) clearInterval(autosaveRef.current);
+		};
+	}, [doSave, isLocked, isRevising]);
+
+	/**
+	 * Правка уже подписанного дневника (admin-only на API).
+	 *
+	 * БЫЛО: POST /api/diaries/:id/revise существовал (сохраняет прежний текст
+	 * в visit_diary_revisions и обновляет поля), GET …/revisions уже читался
+	 * для счётчика — но кнопки «Исправить» на экране не было. Администратор
+	 * не мог исправить опечатку в подписанной 043/у без SQL.
+	 *
+	 * Поля остаются locked на экране, пока isRevising=false. В режиме ревизии
+	 * поля открываются; отправка идёт на /revise с reason; дневник остаётся
+	 * подписанным (isLocked true), hash и revisionCount обновляются.
+	 */
+	const beginRevise = useCallback(() => {
+		if (!isLocked || !diaryId) {
+			showToast(
+				"Исправлять можно только уже подписанный дневник. Сначала сохраните и подпишите запись.",
+				"info",
+				10000,
+			);
+			return;
+		}
+		setIsRevising(true);
+		setRevisionReason("");
+	}, [diaryId, isLocked]);
+
+	const cancelRevise = useCallback(() => {
+		setIsRevising(false);
+		setRevisionReason("");
+	}, []);
+
+	const doRevise = useCallback(async () => {
+		if (!diaryId) {
+			showToast(
+				"Дневник ещё не сохранён на сервере — исправлять нечего. Обновите страницу.",
+				"error",
+				12000,
+			);
+			return;
+		}
+		if (!isLocked) {
+			showToast("Дневник не подписан — просто отредактируйте и сохраните черновик.", "info", 8000);
+			return;
+		}
+		const reason = revisionReason.trim();
+		if (reason.length < 3) {
+			showToast(
+				"Укажите причину правки (не короче трёх символов) — она нужна для истории дневника.",
+				"error",
+				10000,
+			);
+			return;
+		}
+		setIsRevisingBusy(true);
+		try {
+			const headerSource = authRef.current;
+			const res = await fetch(`/api/diaries/${diaryId}/revise`, {
+				method: "POST",
+				headers:
+					headerSource && typeof headerSource.denteClinicalMutationHeaders === "function"
+						? headerSource.denteClinicalMutationHeaders({
+								"Content-Type": "application/json",
+							})
+						: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					anamnesis: diary.anamnesis,
+					statusLocalis: diary.statusLocalis,
+					diagnosisIcd10: diary.diagnosisIcd10,
+					diagnosisTooth: diary.diagnosisTooth,
+					treatmentDescription: diary.treatmentDescription,
+					revisionReason: reason,
+				}),
+			});
+			const rawBody = await res.text();
+			const json = jsonObjectOrNull(rawBody);
+			if (res.ok) {
+				if (typeof json?.hash === "string") setDiaryHash(json.hash);
+				if (typeof json?.revisionCount === "number") {
+					setRevisionCount(json.revisionCount);
+				} else {
+					setRevisionCount((n) => n + 1);
+				}
+				setIsRevising(false);
+				setRevisionReason("");
+				setLastSavedAt(new Date());
+				// Дневник остаётся подписанным: API не снимает isLocked.
+				setIsLocked(true);
+				showToast(
+					`Правка сохранена. Прежний текст остался в истории (ревизий: ${
+						typeof json?.revisionCount === "number" ? json.revisionCount : "…"
+					}).`,
+					"success",
+					10000,
+				);
+				return;
+			}
+			console.error(`[diary revise] ${res.status} ${rawBody.slice(0, 300)}`);
+			const detail = operatorReadableErrorDetail(
+				typeof json?.message === "string" ? json.message : null,
+			);
+			// 403 OnlyAdminsCanRevise — сервер уже отдаёт полный RU текст.
+			showToast(
+				detail ??
+					(res.status === 403
+						? "Исправить подписанный дневник может только администратор клиники. Позовите администратора."
+						: `Правка не сохранена: ${requestFailureCause(res.status)}. Набранный текст остался на экране.`),
+				"error",
+				14000,
+			);
+		} catch (error) {
+			console.error("[diary revise] запрос не выполнен", error);
+			showToast(
+				`Правка не сохранена: ${requestFailureCause(null)}. Набранный текст остался на экране.`,
+				"error",
+				12000,
+			);
+		} finally {
+			setIsRevisingBusy(false);
+		}
+	}, [diary, diaryId, isLocked, revisionReason]);
 
 	// ── Lock (Sign & Seal)
+
 	const doLock = async (certThumbprint: string, pkcs7Signature: string) => {
 		if (!activeDoctor) {
 			showToast("Сначала выберите врача для приема!", "error");
@@ -620,6 +755,14 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setShowPreview,
 		doSave,
 		doLock,
+		isRevising,
+		revisionReason,
+		setRevisionReason,
+		isRevisingBusy,
+		beginRevise,
+		cancelRevise,
+		doRevise,
 		icdRef,
 	};
 }
+

@@ -97,8 +97,19 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		setShowPreview,
 		doSave,
 		doLock,
+		isRevising,
+		revisionReason,
+		setRevisionReason,
+		isRevisingBusy,
+		beginRevise,
+		cancelRevise,
+		doRevise,
 		icdRef,
 	} = useVisitDiaryLogic(visitId, patientId);
+
+	/** Поля открыты в черновике или в режиме правки подписанного (admin revise). */
+	const fieldsDisabled = isLocked && !isRevising;
+
 
 	// ── ICD-10 select
 	const handleIcdSelect = (code: string) => {
@@ -299,9 +310,15 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						>
 							<Printer className="w-4 h-4" /> Печать 043/у
 						</button>
-						<span className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-xl text-sm font-bold">
-							<Lock className="w-4 h-4" /> ПОДПИСАНО
-						</span>
+						{isRevising ? (
+							<span className="flex items-center gap-2 text-amber-300 bg-amber-500/10 border border-amber-500/30 px-4 py-2 rounded-xl text-sm font-bold">
+								<AlertTriangle className="w-4 h-4" /> ПРАВКА
+							</span>
+						) : (
+							<span className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-xl text-sm font-bold">
+								<Lock className="w-4 h-4" /> ПОДПИСАНО
+							</span>
+						)}
 					</div>
 				) : (
 					<VisitDiaryTemplateSelector
@@ -331,7 +348,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						<Stethoscope className="w-3 h-3 text-blue-400" />
 						<span className="text-blue-400 font-mono font-bold">S</span> —
 						Жалобы и анамнез
-						{!isLocked && (
+						{!fieldsDisabled && (
 							<div className="ml-auto">
 								<SmartMicrophoneButton
 									context="visit"
@@ -349,7 +366,8 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 					</label>
 					<textarea
 						id="diary-anamnesis"
-						disabled={isLocked}
+						disabled={fieldsDisabled}
+
 						style={{ minHeight: "96px", overflowY: "hidden" }}
 						className="auto-resize-ta flex-1 w-full bg-zinc-900/60 border border-zinc-800 rounded-xl p-3.5 text-sm text-zinc-200 focus:ring-1 focus:ring-blue-500/50 outline-none disabled:opacity-50 resize-none transition-all"
 						value={diary.anamnesis}
@@ -368,7 +386,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						<Search className="w-3 h-3 text-purple-400" />
 						<span className="text-purple-400 font-mono font-bold">O</span> —
 						Объективно (Status Localis)
-						{!isLocked && (
+						{!fieldsDisabled && (
 							<div className="ml-auto">
 								<SmartMicrophoneButton
 									context="visit"
@@ -388,7 +406,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 					</label>
 					<textarea
 						id="diary-status-localis"
-						disabled={isLocked}
+						disabled={fieldsDisabled}
 						style={{ minHeight: "96px", overflowY: "hidden" }}
 						className="auto-resize-ta flex-1 w-full bg-zinc-900/60 border border-zinc-800 rounded-xl p-3.5 text-sm text-zinc-200 focus:ring-1 focus:ring-purple-500/50 outline-none disabled:opacity-50 resize-none transition-all"
 						value={diary.statusLocalis}
@@ -422,7 +440,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 											(i) => i.code === diary.diagnosisIcd10,
 										)?.label ?? "Диагноз выбран"}
 									</span>
-									{!isLocked && (
+									{!fieldsDisabled && (
 										<button
 											onClick={() => {
 												setDiary((p) => ({ ...p, diagnosisIcd10: "" }));
@@ -440,14 +458,14 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 									<Search className="absolute left-3 top-3.5 w-4 h-4 text-zinc-500" />
 									<input
 										id="diary-icd-search"
-										disabled={isLocked}
+										disabled={fieldsDisabled}
 										className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl pl-9 p-3 text-sm text-zinc-200 focus:ring-2 focus:ring-amber-500/50 outline-none disabled:opacity-50"
 										value={icdSearch}
 										onChange={(e) => {
 											setIcdSearch(e.target.value);
 											setShowIcdDropdown(true);
 										}}
-										onFocus={() => !isLocked && setShowIcdDropdown(true)}
+										onFocus={() => !fieldsDisabled && setShowIcdDropdown(true)}
 										onKeyDown={(e) => {
 											if (e.key === "Enter") {
 												e.preventDefault();
@@ -502,7 +520,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 							</label>
 							<input
 								id="diary-tooth"
-								disabled={isLocked}
+								disabled={fieldsDisabled}
 								className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 focus:ring-2 focus:ring-amber-500/50 outline-none disabled:opacity-50 font-mono text-center"
 								value={diary.diagnosisTooth}
 								onChange={(e) =>
@@ -521,7 +539,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						<FileText className="w-3 h-3 text-emerald-400" />
 						<span className="text-emerald-400 font-mono font-bold">P</span> —
 						Лечение и рекомендации
-						{!isLocked && (
+						{!fieldsDisabled && (
 							<div className="ml-auto">
 								<SmartMicrophoneButton
 									context="visit"
@@ -541,7 +559,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 					</label>
 					<textarea
 						id="diary-treatment"
-						disabled={isLocked}
+						disabled={fieldsDisabled}
 						style={{ minHeight: "96px", overflowY: "hidden" }}
 						className="auto-resize-ta w-full bg-zinc-900/60 border border-zinc-800 rounded-xl p-3.5 text-sm text-zinc-200 focus:ring-1 focus:ring-emerald-500/50 outline-none disabled:opacity-50 resize-none transition-all"
 						value={diary.treatmentDescription}
@@ -562,7 +580,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 					</label>
 					<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 						<textarea
-							disabled={isLocked}
+							disabled={fieldsDisabled}
 							style={{ minHeight: "72px", overflowY: "hidden" }}
 							className="auto-resize-ta w-full bg-zinc-900/60 border border-zinc-800 rounded-xl p-3.5 text-sm text-zinc-200 focus:ring-1 focus:ring-rose-500/50 outline-none disabled:opacity-50 resize-none transition-all"
 							value={diary.complications}
@@ -574,7 +592,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 							placeholder="Осложнения лечения..."
 						/>
 						<textarea
-							disabled={isLocked}
+							disabled={fieldsDisabled}
 							style={{ minHeight: "72px", overflowY: "hidden" }}
 							className="auto-resize-ta w-full bg-zinc-900/60 border border-zinc-800 rounded-xl p-3.5 text-sm text-zinc-200 focus:ring-1 focus:ring-rose-500/50 outline-none disabled:opacity-50 resize-none transition-all"
 							value={diary.comorbidities}
@@ -626,8 +644,52 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						}}
 					/>
 				</div>
+			) : isRevising ? (
+				<div
+					className="border-t border-amber-500/30 pt-4 flex flex-col gap-3"
+					data-testid="diary-revise-panel"
+				>
+					<div className="flex items-start gap-2 text-xs text-amber-200/90">
+						<AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+						<span>
+							Режим правки подписанного дневника. Прежний текст сохранится в
+							истории. Доступно только администратору клиники.
+						</span>
+					</div>
+					<label className="text-xs text-zinc-400 flex flex-col gap-1.5">
+						Причина правки (обязательно)
+						<input
+							data-testid="diary-revise-reason"
+							value={revisionReason}
+							onChange={(e) => setRevisionReason(e.target.value)}
+							placeholder="Например: исправление опечатки в диагнозе МКБ-10"
+							className="w-full bg-zinc-900/80 border border-amber-500/40 rounded-xl px-3 py-2 text-sm text-zinc-100 focus:ring-1 focus:ring-amber-500/50 outline-none"
+						/>
+					</label>
+					<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
+						<button
+							type="button"
+							data-testid="diary-revise-cancel"
+							onClick={() => cancelRevise()}
+							disabled={isRevisingBusy}
+							className="px-4 py-2 text-sm text-zinc-300 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl disabled:opacity-50"
+						>
+							Отмена
+						</button>
+						<button
+							type="button"
+							id="diary-revise-save-btn"
+							data-testid="diary-revise-save"
+							onClick={() => void doRevise()}
+							disabled={isRevisingBusy}
+							className="px-5 py-2 text-sm font-medium text-amber-50 bg-amber-600/90 hover:bg-amber-500 border border-amber-400/40 rounded-xl disabled:opacity-50"
+						>
+							{isRevisingBusy ? "Сохраняю правку…" : "Сохранить правку"}
+						</button>
+					</div>
+				</div>
 			) : (
-				<div className="border-t border-zinc-800/60 pt-4 flex items-center gap-3 text-xs text-zinc-500">
+				<div className="border-t border-zinc-800/60 pt-4 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
 					<ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
 					<span>
 						Дневник подписан
@@ -640,8 +702,19 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						)}
 					</span>
 					<button
+						type="button"
+						id="diary-revise-btn"
+						data-testid="diary-revise-begin"
+						onClick={() => beginRevise()}
+						className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-amber-300 hover:text-amber-100 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg transition-colors"
+						title="Исправить подписанный дневник (только администратор)"
+					>
+						<FileText className="w-3.5 h-3.5" /> Исправить
+					</button>
+					<button
+						type="button"
 						onClick={() => setShowPreview(true)}
-						className="ml-auto flex items-center gap-1 text-zinc-400 hover:text-zinc-200 transition-colors"
+						className="flex items-center gap-1 text-zinc-400 hover:text-zinc-200 transition-colors"
 					>
 						<Printer className="w-3.5 h-3.5" /> Форма 043/у
 					</button>
