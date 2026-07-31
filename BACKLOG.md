@@ -1,3 +1,9 @@
+## 2026-07-31 — Diary template CREATE (VisitDiaryTemplateSelector)
+
+- **Gap:** `POST /api/templates` already created custom visit templates (`isBuiltIn: false`, title required, optional category/prefilled*/defaultIcd10) under requireClinicalMutationAccess — but **zero web callers**. Doctor could seed built-ins and delete customs after prior ships, but could not add a clinic-specific protocol from the visit diary screen without SQL/CLI.
+- **Ship:** `VisitDiaryTemplateSelector.tsx` — create form (title required + category/anamnesis/objective/treatment/ICD-10); `createTemplate` via `POST /api/templates` + `denteClinicalMutationHeaders`; open «Свой» / «Создать свой протокол» when unlocked; reload list + select created id; server `message` on error. data-testid: `diary-template-create-open`, `diary-template-create-form`, `diary-template-create-title`, `diary-template-create-submit`, `diary-template-create-cancel`.
+- **Verify:** panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); live POST without session → 401/403 (route up); web grep method POST bare `/api/templates` → selector only.
+
 ## 2026-07-31 — Appointments byStatus table (ManagerReportsPanel)
 
 - **Gap:** `GET /api/reports/summary` already returned `appointments.byStatus` (group-by status counts from managerReports.ts) and the panel type included the field — but the UI only rendered arrival/completion/cancel/noShow **rates**. Owner saw «неявки 9 %» and could not see how many records were still «назначен» / «на приёме» / «подтверждён» — where the day stalls. No second API needed; numbers already in the summary payload.
