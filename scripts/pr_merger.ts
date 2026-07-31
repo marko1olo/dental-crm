@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execSync, execFileSync } from "child_process";
 import { readFileSync } from "fs";
 
 const TOKEN = readFileSync(
@@ -61,8 +61,15 @@ async function main() {
 
 		// Attempt to merge
 		try {
-			execSync(
-				`git merge --no-ff pr/${pr.number} -m "Merge PR #${pr.number}: ${pr.title.replace(/"/g, '\\"')}"`,
+			execFileSync(
+				"git",
+				[
+					"merge",
+					"--no-ff",
+					`pr/${pr.number}`,
+					"-m",
+					`Merge PR #${pr.number}: ${pr.title}`,
+				],
 				{ stdio: "inherit" },
 			);
 		} catch (e) {
