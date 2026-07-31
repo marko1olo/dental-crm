@@ -13,7 +13,10 @@ const ROOT = path.resolve(__dirname, "..");
 const OUT_DIR = path.join(ROOT, ".dente-ops-shots");
 const BASE = "http://127.0.0.1:5173";
 const API = "http://127.0.0.1:4100";
-const VISIT_URL = `${BASE}/visit/00000000-0000-0000-0000-000000000005`;
+// App uses hash routing (workspaceShell / useAppLogic syncView). Path
+// `/visit/:id` is NOT a deep-link into VisitView — it leaves the shift shell.
+// Live smoke uses `#visit` and mounts VisitView once dashboard has a patient.
+const VISIT_URL = `${BASE}/#visit`;
 
 const DEMO_EMAIL = "doctor@clinic.com";
 const DEMO_PASSWORD = "dente2026";
@@ -50,14 +53,43 @@ function resolveExecutablePath() {
 
 async function launchBrowser() {
 	const exe = resolveExecutablePath();
+	// Prefer Edge (more stable on Windows). Harden against UV_HANDLE_CLOSING.
 	const common = {
 		headless: true,
-		args: ["--no-sandbox", "--disable-web-security", "--window-size=1440,900"],
+		args: [
+			"--no-sandbox",
+			"--disable-web-security",
+			"--disable-gpu",
+			"--disable-dev-shm-usage",
+			"--disable-software-rasterizer",
+			"--disable-extensions",
+			"--window-size=1440,900",
+		],
 	};
+
+	// Prefer Edge path first if present among candidates
+	const edgePreferred = [...CANDIDATE_BROWSERS]
+		.filter((p) => p && /msedge|edge/i.test(p))
+		.concat(CANDIDATE_BROWSERS.filter((p) => p && !/msedge|edge/i.test(p)));
+
+	for (const p of edgePreferred) {
+		try {
+			if (p && fs.existsSync(p)) {
+				console.log(`[browser] executablePath=${p}`);
+				return await chromium.launch({ ...common, executablePath: p });
+			}
+		} catch (err) {
+			console.log(`[browser] exe failed:`, String(err?.message || err).slice(0, 160));
+		}
+	}
 
 	if (exe) {
 		console.log(`[browser] executablePath=${exe}`);
-		return chromium.launch({ ...common, executablePath: exe });
+		try {
+			return await chromium.launch({ ...common, executablePath: exe });
+		} catch (err) {
+			console.log(`[browser] exe fallback failed:`, String(err?.message || err).slice(0, 160));
+		}
 	}
 
 	for (const channel of ["msedge", "chrome", "chrome-beta"]) {
@@ -72,6 +104,7 @@ async function launchBrowser() {
 	console.log("[browser] falling back to bundled chromium");
 	return chromium.launch(common);
 }
+
 
 /** Real demo SaaS login — returns clinicToken + staffToken (never audit-bypass). */
 async function fetchDemoTokens() {
@@ -159,25 +192,91 @@ async function dismissOverlays(page) {
 	await page.waitForTimeout(400);
 }
 
+async function waitForVisitWorkspace(page) {
+	// Ensure hash is #visit (reload can drop it if seed navigated elsewhere).
+	await page.evaluate(() => {
+		if (!location.hash || location.hash === "#" || location.hash === "#/") {
+			location.hash = "visit";
+		} else if (!/#visit/i.test(location.hash)) {
+			location.hash = "visit";
+		}
+	});
+	await page.waitForTimeout(800);
+
+	// Wait for app shell + visit panel (or empty-state with patient picker).
+	for (let i = 0; i < 20; i++) {
+		const state = await page.evaluate(() => {
+			const hasShell = !!document.querySelector(".app-shell, [data-testid='app-shell']");
+			const hasVisit = !!document.querySelector('[data-testid="visit-view"]');
+			const hasAuth = !!(
+				document.querySelector(".auth-overlay") ||
+				document.querySelector('input[type="email"]') ||
+				document.querySelector('input[name="email"]')
+			);
+			const body = (document.body?.innerText || "").replace(/\s+/g, " ").trim();
+			return {
+				hasShell,
+				hasVisit,
+				hasAuth,
+				hash: location.hash,
+				snippet: body.slice(0, 180),
+			};
+		});
+		if (state.hasVisit) return state;
+		if (state.hasAuth) {
+			// tokens may not have applied — reload once after seed
+			break;
+		}
+		await page.waitForTimeout(500);
+	}
+	return page.evaluate(() => ({
+		hasShell: !!document.querySelector(".app-shell, [data-testid='app-shell']"),
+		hasVisit: !!document.querySelector('[data-testid="visit-view"]'),
+		hasAuth: !!(
+			document.querySelector(".auth-overlay") ||
+			document.querySelector('input[type="email"]')
+		),
+		hash: location.hash,
+		snippet: (document.body?.innerText || "").replace(/\s+/g, " ").trim().slice(0, 180),
+	}));
+}
+
 async function openDiaryAndPreview(page) {
 	await dismissOverlays(page);
 
-	// Prefer odontogram / diary tab
+	const visitState = await waitForVisitWorkspace(page);
+	console.log("[visit-workspace]", JSON.stringify(visitState));
+
+	// Prefer odontogram / diary tab — VisitView labels: «Зубная формула и Дневник»
 	const tabSelectors = [
 		'[data-testid="visit-tab-odontogram"]',
 		'[data-testid="tab-odontogram"]',
 		'button[data-tab="odontogram"]',
 		'[data-testid="visit-tab-diary"]',
 		'[href*="odontogram"]',
+		'button[role="tab"]',
 	];
 
 	for (const sel of tabSelectors) {
 		try {
 			const el = page.locator(sel).first();
 			if ((await el.count()) > 0) {
-				await el.click({ timeout: 2500 }).catch(() => {});
-				await page.waitForTimeout(900);
-				break;
+				// For generic role=tab, pick the diary one by text
+				if (sel.includes("role")) {
+					const diaryTab = page
+						.locator('button[role="tab"]')
+						.filter({ hasText: /Зубная|формула|Дневник|Одонтограмм/i })
+						.first();
+					if ((await diaryTab.count()) > 0) {
+						await diaryTab.click({ timeout: 2500 }).catch(() => {});
+						await page.waitForTimeout(900);
+						break;
+					}
+				} else {
+					await el.click({ timeout: 2500 }).catch(() => {});
+					await page.waitForTimeout(900);
+					break;
+				}
 			}
 		} catch {
 			/* try next */
@@ -472,24 +571,56 @@ async function run() {
 			});
 			const page = await context.newPage();
 
-			// Seed origin first
+			// Seed origin first, then hard-reload so apiAuthFetch + auth boot see tokens.
 			await page.goto(BASE, { waitUntil: "domcontentloaded", timeout: 45000 });
-			await page.evaluate((s) => {
-				for (const [k, v] of Object.entries(s)) {
-					localStorage.setItem(k, v);
-				}
-			}, seed);
-
-			await forceTheme(page, theme);
+			await page.evaluate(
+				({ s, t }) => {
+					for (const [k, v] of Object.entries(s)) {
+						localStorage.setItem(k, v);
+					}
+					localStorage.setItem("dente_theme_mode", t);
+				},
+				{ s: seed, t: theme },
+			);
 
 			await page.goto(VISIT_URL, {
-				waitUntil: "domcontentloaded",
-				timeout: 45000,
+				waitUntil: "networkidle",
+				timeout: 60000,
+			}).catch(async () => {
+				await page.goto(VISIT_URL, {
+					waitUntil: "domcontentloaded",
+					timeout: 45000,
+				});
 			});
-			await page.waitForTimeout(5500);
+			await page.waitForTimeout(4500);
 			await forceTheme(page, theme);
 			await dismissOverlays(page);
 			await page.waitForTimeout(600);
+
+			// If still on login, re-seed and reload once.
+			const needsRelogin = await page.evaluate(
+				() =>
+					!!(
+						document.querySelector(".auth-overlay") ||
+						document.querySelector('input[type="email"]') ||
+						document.querySelector('input[name="email"]')
+					),
+			);
+			if (needsRelogin) {
+				await page.evaluate((s) => {
+					for (const [k, v] of Object.entries(s)) {
+						localStorage.setItem(k, v);
+					}
+				}, seed);
+				await page.goto(VISIT_URL, {
+					waitUntil: "domcontentloaded",
+					timeout: 45000,
+				});
+				await page.waitForTimeout(5000);
+				await forceTheme(page, theme);
+				await dismissOverlays(page);
+			}
+
 
 			const openInfo = await openDiaryAndPreview(page);
 			console.log(`[${label}] open:`, JSON.stringify(openInfo));
@@ -532,11 +663,16 @@ async function run() {
 		console.log("\nAll 4 shots clean (no audit issues).");
 	}
 
-	await browser.close();
+	try {
+		await browser.close();
+	} catch (err) {
+		console.log("[browser] soft close:", String(err?.message || err).slice(0, 120));
+	}
 	process.exit(0);
 }
 
-run().catch((err) => {
+run().catch(async (err) => {
 	console.error(err);
 	process.exit(1);
 });
+

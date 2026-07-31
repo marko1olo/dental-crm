@@ -1,3 +1,9 @@
+## 2026-08-01 — Form 043/у layout polish + 4-state visual audit (VisitDiaryEditor)
+
+- **Gap:** Form № 043/у (VisitDiaryEditor SOAP diary) had incomplete draft-print path, sub-40px ICD clear touch target, and screenshot harness used path `/visit/:id` (hash router ignores it) plus a page.evaluate theme seed bug (`theme is not defined`). Visual audit could not prove Mobile/PC × Light/Dark.
+- **Ship:** `VisitDiaryEditor.tsx` — unconditional `useAppLogicContext` (Rules of Hooks); draft unlocked header «Печать 043/у» always available; ICD clear → `vde-043__btn--icon` 40×40 + aria-label. `visit-diary-043.css` — theme-safe vars, icon/mic ≥40px touch targets, mobile full-width excludes icon buttons. `scripts/form043-viewport-shots.mjs` — `#visit` hash routing, real demo auth, Edge preferred, theme seed fix `{s,t}`, open odontogram tab + print preview, overflow/touch/theme audit.
+- **Verify:** `npx tsc -p apps/web --noEmit` exit 0; 4 shots clean (form043_mobile_light/dark, form043_pc_light/dark): hasEditor+hasPreview, issues=[], smallTargets=0; report `.dente-ops-shots/form043_audit_report.json` (gitignored).
+
 ## 2026-07-31 — Speech chunks inspector (GET /api/speech/chunks)
 
 - **Gap:** `GET /api/speech/chunks?recordingId&visitId&patientId` (speech.ts handleSpeechChunks, requireClinicalReadAccess, scope validateSpeechClinicalScope) already returned per-chunk transcript/status/quality/warnings via `listSpeechTranscriptionChunks`, but **zero web callers**. Visit screen only showed recovery KPI from `GET /api/speech/recordings/recovery` — when recoveryState was missing_chunks / failed_chunks / quality_review the doctor could not see WHICH fragment was empty, failed, or needs edit, nor assemble that recording back into the dictation field from a fragment table.

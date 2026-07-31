@@ -184,6 +184,31 @@
   color: var(--ink);
 }
 
+/* Icon-only controls (ICD clear, etc.) — keep ≥40×40 touch target */
+.vde-043__btn--icon {
+  min-width: 40px;
+  min-height: 40px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.vde-043__label-mic {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.vde-043__label-mic button,
+.vde-043__label-mic [role="button"] {
+  min-width: 40px !important;
+  min-height: 40px !important;
+}
+
 .vde-043__badge {
   display: inline-flex;
   align-items: center;
@@ -278,10 +303,6 @@ html.dark .vde-043__letter--a {
 [data-theme="dark"] .vde-043__letter--p,
 html.dark .vde-043__letter--p {
   color: var(--teal);
-}
-
-.vde-043__label-mic {
-  margin-left: auto;
 }
 
 .vde-043__ta,
@@ -801,7 +822,7 @@ html.dark .vde-043__letter--p {
     font-size: 0.95rem;
   }
 
-  .vde-043__btn,
+  .vde-043__btn:not(.vde-043__btn--icon),
   .vde-043__badge {
     width: 100%;
   }
