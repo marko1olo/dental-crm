@@ -56,14 +56,38 @@ function formatLogTime(value: string): string {
  */
 async function accessFailureMessage(response: Response, prefix: string): Promise<string> {
 	let code = "";
+	let serverMessage = "";
 	try {
-		const payload = (await response.json()) as { error?: unknown };
+		const payload = (await response.json()) as { error?: unknown; message?: unknown };
 		if (typeof payload.error === "string") code = payload.error;
+		if (typeof payload.message === "string") serverMessage = payload.message.trim();
 	} catch {
 		// Тело не разобралось — останется код ответа.
 	}
+	/*
+	 * StaffAuthRequired — отдельное действие оператора (PIN смены), не «нет
+	 * доступа к кабинету». Код важнее общего message: guard отдаёт короткий
+	 * error-code, а человеку нужен именно сценарий входа сотрудника.
+	 */
 	if (code === "StaffAuthRequired") {
 		return `${prefix}: журнал ведётся от имени сотрудника. Войдите по PIN в разделе смены — записи в журнале подписываются именно им.`;
+	}
+	/*
+	 * MESSAGE-FIRST GAMEPLAY.
+	 *
+	 * API sterilization scan уже отдаёт 400 ValidationError с русской строкой
+	 * («Проверьте данные стерилизации: barcode, autoclaveId и status.» —
+	 * routes/sterilization.ts). Раньше читался только payload.error, и на 400
+	 * оператор видел status-only requestFailureCause — серверный текст выбрасывался.
+	 * Кириллическое message с сервера показываем как есть (как convert/booking
+	 * и workspace profile): это и есть ответ «что исправить на экране».
+	 */
+	if (
+		serverMessage &&
+		serverMessage !== "Internal Server Error" &&
+		/[А-Яа-яЁё]/.test(serverMessage)
+	) {
+		return serverMessage;
 	}
 	if (response.status === 401 || response.status === 403) {
 		return `${prefix}: нет доступа. Войдите в кабинет клиники заново.`;

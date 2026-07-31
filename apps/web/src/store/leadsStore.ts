@@ -26,6 +26,51 @@ interface LeadsState {
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4100/api";
 
+/**
+ * MESSAGE-FIRST: prefer Cyrillic `payload.message` from API ValidationError
+ * over hardcoded English ("Failed to …"). Same rule as convert's
+ * bookingFailureMessage and workspace profile — API already returns RU:
+ * «Проверьте поля лида: нужно непустое имя.» / «Проверьте статус лида.»
+ *
+ * Technical English error codes are not operator-facing; fall back to a
+ * short RU status-based line so the board never shows "Failed to fetch leads".
+ */
+async function leadsFailureMessage(
+	response: Response,
+	fallbackRu: string,
+): Promise<string> {
+	let payload: { error?: unknown; message?: unknown } = {};
+	try {
+		payload = (await response.json()) as typeof payload;
+	} catch {
+		// body unreadable — status fallback below
+	}
+	const serverMessage =
+		typeof payload.message === "string" ? payload.message.trim() : "";
+	if (
+		serverMessage &&
+		serverMessage !== "Internal Server Error" &&
+		/[А-Яа-яЁё]/.test(serverMessage)
+	) {
+		return serverMessage;
+	}
+	if (response.status === 401 || response.status === 403) {
+		return "Нет доступа к обращениям. Войдите как сотрудник клиники и повторите.";
+	}
+	if (response.status === 404) {
+		return "Обращение не найдено: его уже удалили или записали. Обновите доску.";
+	}
+	return fallbackRu;
+}
+
+function authHeaders(extra?: Record<string, string>): Record<string, string> {
+	return {
+		"x-dente-staff-token": readDenteStaffToken(),
+		"x-dente-clinic-token": readDenteClinicToken(),
+		...extra,
+	};
+}
+
 export const useLeadsStore = create<LeadsState>((set, get) => ({
 	leads: [],
 	isLoading: false,
@@ -34,91 +79,109 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 		set({ isLoading: true, error: null });
 		try {
 			const res = await fetch(`${API_URL}/leads`, {
-				headers: {
-					"x-dente-staff-token":
-						readDenteStaffToken(),
-					"x-dente-clinic-token":
-						readDenteClinicToken(),
-				},
+				headers: authHeaders(),
 			});
-			if (!res.ok) throw new Error("Failed to fetch leads");
+			if (!res.ok) {
+				throw new Error(
+					await leadsFailureMessage(
+						res,
+						"Обращения не загружены: сервер не принял запрос. Проверьте связь и повторите.",
+					),
+				);
+			}
 			const data = await res.json();
 			set({ leads: data, isLoading: false });
-		} catch (e: any) {
-			set({ error: e.message, isLoading: false });
+		} catch (e: unknown) {
+			const message =
+				e instanceof Error && e.message
+					? e.message
+					: "Обращения не загружены: нет связи с сервером.";
+			// Network / English browser noise → RU operator line
+			const operatorFacing =
+				/[А-Яа-яЁё]/.test(message) && !/\b(Failed to fetch|TypeError|NetworkError)\b/i.test(message)
+					? message
+					: "Обращения не загружены: нет связи с сервером. Проверьте, что кабинет открыт, и нажмите «Повторить».";
+			set({ error: operatorFacing, isLoading: false });
 		}
 	},
 	updateLeadStatus: async (id, status) => {
-		try {
-			// Optimistic update
-			const previousLeads = get().leads;
-			set({
-				leads: previousLeads.map((l) => (l.id === id ? { ...l, status } : l)),
-			});
+		// Optimistic update
+		const previousLeads = get().leads;
+		set({
+			leads: previousLeads.map((l) => (l.id === id ? { ...l, status } : l)),
+		});
 
+		try {
 			const res = await fetch(`${API_URL}/leads/${id}/status`, {
 				method: "PATCH",
-				headers: {
-					"Content-Type": "application/json",
-					"x-dente-staff-token":
-						readDenteStaffToken(),
-					"x-dente-clinic-token":
-						readDenteClinicToken(),
-				},
+				headers: authHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({ status }),
 			});
 			if (!res.ok) {
-				// Revert on failure
 				set({ leads: previousLeads });
-				throw new Error("Failed to update status");
+				throw new Error(
+					await leadsFailureMessage(
+						res,
+						"Статус обращения не изменён. Проверьте данные и повторите.",
+					),
+				);
 			}
-		} catch (e: any) {
+		} catch (e: unknown) {
+			set({ leads: previousLeads });
 			console.error("updateLeadStatus Error:", e);
+			// Rethrow so Kanban can toast the RU server message (gameplay).
+			if (e instanceof Error) throw e;
+			throw new Error("Статус обращения не изменён: нет связи с сервером.");
 		}
 	},
 	addLead: async (leadData) => {
 		try {
 			const res = await fetch(`${API_URL}/leads`, {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"x-dente-staff-token":
-						readDenteStaffToken(),
-					"x-dente-clinic-token":
-						readDenteClinicToken(),
-				},
+				headers: authHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(leadData),
 			});
-			if (!res.ok) throw new Error("Failed to add lead");
+			if (!res.ok) {
+				throw new Error(
+					await leadsFailureMessage(
+						res,
+						"Лид не создан. Проверьте поля и повторите.",
+					),
+				);
+			}
 			const lead = await res.json();
 			set({ leads: [...get().leads, lead] });
-		} catch (e: any) {
+		} catch (e: unknown) {
 			console.error("addLead Error:", e);
+			if (e instanceof Error) throw e;
+			throw new Error("Лид не создан: нет связи с сервером.");
 		}
 	},
 	updateLeadDetails: async (id, details) => {
 		try {
 			const res = await fetch(`${API_URL}/leads/${id}`, {
 				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					"x-dente-staff-token":
-						readDenteStaffToken(),
-					"x-dente-clinic-token":
-						readDenteClinicToken(),
-				},
+				headers: authHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(details),
 			});
-			if (!res.ok) throw new Error("Failed to update lead details");
+			if (!res.ok) {
+				throw new Error(
+					await leadsFailureMessage(
+						res,
+						"Лид не сохранён. Проверьте поля и повторите.",
+					),
+				);
+			}
 			const updatedLead = await res.json();
 			set({
 				leads: get().leads.map((l) =>
 					l.id === id ? { ...l, ...updatedLead } : l,
 				),
 			});
-		} catch (e: any) {
+		} catch (e: unknown) {
 			console.error("updateLeadDetails Error:", e);
-			throw e;
+			if (e instanceof Error) throw e;
+			throw new Error("Лид не сохранён: нет связи с сервером.");
 		}
 	},
 	wsUpdate: (updatedLead) => {

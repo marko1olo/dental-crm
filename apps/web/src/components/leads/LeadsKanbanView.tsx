@@ -252,7 +252,18 @@ export function LeadsKanbanView() {
 				setConvertingLeadId(id);
 				setIsConvertOpen(true);
 			} else {
-				updateLeadStatus(id, status);
+				/*
+				 * Store rethrows RU ValidationError message (leadsFailureMessage).
+				 * Without await+toast the card snaps back silently — API text never
+				 * reaches the operator (feature without gameplay = declined).
+				 */
+				void updateLeadStatus(id, status).catch((err: unknown) => {
+					const text =
+						err instanceof Error && err.message.trim()
+							? err.message
+							: "Статус обращения не изменён.";
+					showToast(text, "error");
+				});
 			}
 		}
 		setDraggedLeadId(null);
@@ -355,8 +366,16 @@ export function LeadsKanbanView() {
 				showToast("Лид обновлен", "success");
 			}
 			setIsEditOpen(false);
-		} catch (e) {
-			showToast("Ошибка сохранения", "error");
+		} catch (e: unknown) {
+			/*
+			 * Store throws RU ValidationError message (leadsFailureMessage).
+			 * Generic «Ошибка сохранения» hid «Проверьте поля лида: нужно непустое имя.»
+			 */
+			const text =
+				e instanceof Error && e.message.trim()
+					? e.message
+					: "Лид не сохранён. Проверьте поля и повторите.";
+			showToast(text, "error");
 		}
 	};
 
@@ -500,8 +519,12 @@ export function LeadsKanbanView() {
 					role="alert"
 					className="mb-4 rounded-xl border border-[var(--rust)] bg-[var(--rust-soft)] px-4 py-3 text-[0.8125rem] leading-relaxed text-[var(--rust)]"
 				>
-					<strong>Обращения не загружены.</strong> Показанные столбцы неполные — не
-					считайте их пустыми. Проверьте связь с сервером и нажмите «Повторить».
+					{/*
+					 * Store already carries RU message-first text (leadsFailureMessage).
+					 * Generic banner alone hid server detail — operator must see it.
+					 */}
+					<strong>Обращения не загружены.</strong> {loadError} Показанные столбцы
+					неполные — не считайте их пустыми.
 					<button
 						type="button"
 						className="secondary-button ml-3 mt-2 inline-flex"
@@ -511,6 +534,7 @@ export function LeadsKanbanView() {
 					</button>
 				</div>
 			) : null}
+
 
 			{/* KANBAN BOARD */}
 			<div
