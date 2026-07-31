@@ -24,6 +24,21 @@ describe("Opt-out detection", () => {
 
   test("Handles normalization: case, punctuation, and 'ё'", () => {
     assert.equal(detectOptOutIntent("  СтОп!!!  "), "opt_out");
+    assert.equal(detectOptOutIntent("  ОТпИсаТьСя  "), "opt_out");
+    assert.equal(detectOptOutIntent("!!стОп!!"), "opt_out");
+    assert.equal(detectOptOutIntent("  отписка  "), "opt_out");
+  });
+
+  test("Handles multiple spaces within phrases", () => {
+    assert.equal(detectOptOutIntent("не   пишите"), "opt_out");
+    assert.equal(detectOptOutIntent("больше   не    присылайте"), "opt_out");
+    assert.equal(detectOptOutIntent(" не     присылайте "), "opt_out");
+  });
+
+  test("Detects 'ё' character normalization", () => {
+    // "ё" should be normalized to "е"
+    assert.equal(detectOptOutIntent("не пишитё"), "opt_out");
+    assert.equal(detectOptOutIntent("прёкратите"), "opt_out"); // "прекратите" is a token
   });
 
   test("Detects opt-out phrases", () => {

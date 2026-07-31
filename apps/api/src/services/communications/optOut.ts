@@ -82,12 +82,6 @@ export function detectOptOutIntent(rawText: string | null | undefined): OptOutIn
 	if (OPT_OUT_TOKENS.includes(first)) return "opt_out";
 	if (OPT_IN_TOKENS.includes(first)) return "opt_in";
 
-	// Односложное сообщение целиком совпадает со словом — самый частый случай.
-	if (words.length === 1) {
-		if (OPT_OUT_TOKENS.includes(text)) return "opt_out";
-		if (OPT_IN_TOKENS.includes(text)) return "opt_in";
-	}
-
 	return null;
 }
 
