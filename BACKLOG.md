@@ -70,6 +70,16 @@
 - **Verify:** `npx tsc -p apps/web --noEmit` clean; live API AuthRequired then staff headers.
 
 # DENTE CRM — demon backlog (Lead Security + Full-Stack)
+## 2026-07-31 — communications/variables в редакторе шаблонов
+
+**БЫЛО:** GET `/api/communications/variables` отдавал каталог подстановок (`key`/`label`/`example`/`phi`) из `templateRenderer.communicationTemplateVariables`, но **zero web callers** — администратор набирал `{patient}` по памяти, мед. переменные не были видны до отказа предпросмотра.
+
+**ТЕПЕРЬ:** `MessageDeliveryConsole` грузит каталог вместе со шлюзами/шаблонами; под полем текста — чипы вставки `{key}` (phi помечены «мед.»).
+
+Файлы: `apps/web/src/components/communications/MessageDeliveryConsole.tsx`.
+
+---
+
 # Format: [ ] prio | what | where | proof
 # [~] in progress + agent id | [x] done + commit hash
 

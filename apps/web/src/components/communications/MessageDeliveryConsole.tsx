@@ -10,7 +10,7 @@
  * Здесь всё опирается на настоящие данные:
  *   • состояние шлюзов — что действительно настроено и сколько денег на счету;
  *   • журнал очереди с причиной отказа по каждому сообщению;
- *   • редактор шаблонов с предпросмотром и счётчиком сегментов SMS;
+ *   • редактор шаблонов с предпросмотром, справочником {переменных} и счётчиком сегментов SMS;
  *   • правила: тихие часы, суточный предел, автоматические напоминания.
  *
  * Ничего не подставляется «на всякий случай»: если данных нет, так и написано.
@@ -73,6 +73,14 @@ type TemplateItem = {
 	body: string;
 	variables: string[];
 	isActive: boolean;
+};
+
+/** Справочник подстановок из GET /api/communications/variables */
+type TemplateVariable = {
+	key: string;
+	label: string;
+	example: string;
+	phi: boolean;
 };
 
 type OutboxItem = {
@@ -240,6 +248,8 @@ export function MessageDeliveryConsole() {
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [preview, setPreview] = useState<PreviewResult | null>(null);
 	const [previewError, setPreviewError] = useState<string | null>(null);
+	/** Каталог {key} для редактора шаблона — GET /api/communications/variables */
+	const [variableCatalog, setVariableCatalog] = useState<TemplateVariable[]>([]);
 
 	const loadAll = useCallback(async () => {
 		setLoadError(null);
@@ -253,23 +263,37 @@ export function MessageDeliveryConsole() {
 			 * той же шапке среди проверенных.
 			 */
 			const readHeaders = auth ? auth.denteClinicalReadHeaders() : {};
-			const [gatewayResponse, templateResponse, outboxResponse, settingsResponse] = await Promise.all([
-				fetch("/api/communications/gateway-status", { headers: readHeaders }),
-				fetch("/api/communications/templates", { headers: readHeaders }),
-				fetch(`/api/communications/outbox${query}`, { headers: readHeaders }),
-				fetch("/api/communications/settings", { headers: readHeaders })
-			]);
+			const [gatewayResponse, templateResponse, outboxResponse, settingsResponse, variablesResponse] =
+				await Promise.all([
+					fetch("/api/communications/gateway-status", { headers: readHeaders }),
+					fetch("/api/communications/templates", { headers: readHeaders }),
+					fetch(`/api/communications/outbox${query}`, { headers: readHeaders }),
+					fetch("/api/communications/settings", { headers: readHeaders }),
+					fetch("/api/communications/variables", { headers: readHeaders })
+				]);
 
 			const gatewayData = await readJson<GatewayStatus>(gatewayResponse);
 			const templateData = await readJson<{ templates: TemplateItem[] }>(templateResponse);
 			const outboxData = await readJson<{ items: OutboxItem[]; summary: Record<string, number> }>(outboxResponse);
 			const settingsData = await readJson<{ settings: CommunicationSettings }>(settingsResponse);
+			const variablesData = await readJson<{ variables: TemplateVariable[] }>(variablesResponse);
 
 			setGateways(gatewayData);
 			setTemplates(templateData.templates);
 			setOutbox(outboxData.items);
 			setSummary(outboxData.summary);
 			setSettings(settingsData.settings);
+			setVariableCatalog(
+				Array.isArray(variablesData.variables)
+					? variablesData.variables.filter(
+							(v) =>
+								v &&
+								typeof v.key === "string" &&
+								v.key.trim().length > 0 &&
+								typeof v.label === "string",
+						)
+					: [],
+			);
 		} catch (error) {
 			// Пустой экран без объяснения — это то, от чего здесь уходим.
 			setLoadError(error instanceof Error ? error.message : String(error));
@@ -335,6 +359,26 @@ export function MessageDeliveryConsole() {
 		setDraftIntent("appointment_confirmation");
 		setPreview(null);
 		setPreviewError(null);
+	}
+
+	/** Вставить {key} в текст шаблона в позицию курсора textarea (или в конец). */
+	function insertTemplateVariable(key: string) {
+		const token = `{${key}}`;
+		const el = document.getElementById("template-body") as HTMLTextAreaElement | null;
+		if (el && typeof el.selectionStart === "number") {
+			const start = el.selectionStart;
+			const end = el.selectionEnd;
+			const next = draftBody.slice(0, start) + token + draftBody.slice(end);
+			setDraftBody(next);
+			// Восстановить курсор после токена на следующем тике.
+			requestAnimationFrame(() => {
+				const pos = start + token.length;
+				el.focus();
+				el.setSelectionRange(pos, pos);
+			});
+			return;
+		}
+		setDraftBody((prev) => (prev ? `${prev}${token}` : token));
 	}
 
 	async function saveTemplate() {
@@ -864,6 +908,61 @@ export function MessageDeliveryConsole() {
 					placeholder="{patient}, напоминаем: приём {date} в {time}."
 				/>
 				</span>
+
+				{/*
+				  Справочник подстановок GET /api/communications/variables.
+				  БЫЛО: маршрут отдавал полный каталог (key/label/example/phi), но web
+				  его не вызывал — администратор набирал {patient} по памяти и не видел
+				  мед. переменные (phi) до отказа предпросмотра/отправки.
+				  ТЕПЕРЬ: чипы вставляют {key} в текст; phi помечены «мед.» — для каналов
+				  без согласия на медданные сервер всё равно отклонит при allowPhi=false.
+				*/}
+				{variableCatalog.length > 0 ? (
+					<div
+						className="ops-variable-catalog"
+						data-testid="comm-template-variables"
+						aria-label="Подстановки для шаблона"
+						style={{
+							display: "flex",
+							flexWrap: "wrap",
+							gap: "6px",
+							marginTop: "6px",
+							marginBottom: "8px",
+						}}
+					>
+						<span className="ops-note" style={{ width: "100%", marginBottom: "2px" }}>
+							Подстановки — нажмите, чтобы вставить в текст:
+						</span>
+						{variableCatalog.map((v) => (
+							<button
+								key={v.key}
+								type="button"
+								data-testid={`comm-template-var-${v.key}`}
+								title={
+									v.phi
+										? `${v.label} · пример: ${v.example} · медицинские данные`
+										: `${v.label} · пример: ${v.example}`
+								}
+								onClick={() => insertTemplateVariable(v.key)}
+								className="quick-chip"
+								style={
+									v.phi
+										? {
+												borderColor: "rgba(244, 63, 94, 0.45)",
+												color: "var(--bad-fg, #b42318)",
+											}
+										: undefined
+								}
+							>
+								{`{${v.key}}`}
+								<span style={{ opacity: 0.75, marginLeft: 4, fontSize: "0.85em" }}>
+									{v.label}
+									{v.phi ? " · мед." : ""}
+								</span>
+							</button>
+						))}
+					</div>
+				) : null}
 
 				{previewError ? (
 					<p className="ops-notice ops-notice--error" role="alert">
