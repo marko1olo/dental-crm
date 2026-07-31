@@ -1,6 +1,7 @@
 import type { Dashboard, Patient, PaymentMethod } from "@dental/shared";
 import { useCallback } from "react";
 import { money as formatMoney } from "./AppHelpers";
+import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { FinanceLedger } from "./FinanceLedger";
@@ -314,7 +315,13 @@ export function FinanceView({
         summary={clinicalRuleSummary}
       />
 
+      <ClinicalAiPersonalizePanel
+        context="finance"
+        patientId={documentPatient?.id ?? null}
+      />
+
       <PaymentCapture
+
         {...remainingDebtProp}
         amount={paymentAmount}
         feedback={paymentFeedback}

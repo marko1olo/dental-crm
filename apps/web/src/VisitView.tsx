@@ -133,6 +133,8 @@ export interface VisitViewProps {
 
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { ClinicalTasksPanel } from "./ClinicalTasksPanel";
+import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
+
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
   const logicContext = useAppLogicContext();
@@ -1339,7 +1341,45 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               />
             ) : null}
 
+            {/*
+              ИИ-персонализация плана и памятки после приёма: backend
+              POST /api/ai/treatment-plan-personalize + post-visit-personalize
+              уже отдавали русский текст, но zero web callers. Панель сама
+              собирает payload из плана пациента и полей заметки.
+            */}
+            <ClinicalAiPersonalizePanel
+              context="visit"
+              patientId={
+                (typeof activePatient?.id === "string" && activePatient.id) ||
+                (typeof dashboard?.activeVisit?.patientId === "string" &&
+                  dashboard.activeVisit.patientId) ||
+                null
+              }
+              doctorFullName={
+                (typeof activeDoctor?.fullName === "string" && activeDoctor.fullName) ||
+                (typeof activeDoctor?.name === "string" && activeDoctor.name) ||
+                null
+              }
+              complaint={
+                (typeof visitNoteForm?.complaint === "string" && visitNoteForm.complaint) ||
+                (typeof draft?.complaint === "string" && draft.complaint) ||
+                null
+              }
+              diagnosis={
+                (typeof visitNoteForm?.diagnosis === "string" && visitNoteForm.diagnosis) ||
+                (typeof draft?.diagnosis === "string" && draft.diagnosis) ||
+                null
+              }
+              treatmentPlanText={
+                (typeof visitNoteForm?.treatmentPlan === "string" &&
+                  visitNoteForm.treatmentPlan) ||
+                (typeof draft?.treatmentPlan === "string" && draft.treatmentPlan) ||
+                null
+              }
+            />
+
                         {visitCloseChecklist ? (
+
 
               <div className="close-checklist" aria-label="Предупреждения перед закрытием приема">
                 <div className="close-checklist-head">

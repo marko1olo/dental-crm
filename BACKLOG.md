@@ -1,5 +1,13 @@
 
+## 2026-07-31 — AI personalize UI (Visit + Finance)
+
+- **Gap:** `POST /api/ai/treatment-plan-personalize` and `POST /api/ai/post-visit-personalize` already returned patient-friendly Russian text (rule fallback + optional neural), but **zero web callers** — doctor closed the visit and could only explain the plan / hand a memo manually.
+- **Ship:** `ClinicalAiPersonalizePanel.tsx` — self-contained panel (`useAppLogicContext` + `denteClinicalReadHeaders`); builds `treatmentPlanPayloadSchema`-valid body from `dashboard.treatmentPlanItems` / scenarios + visit note fields; buttons «Объяснить план пациенту» / «Памятка после приёма»; copy + markdownish render.
+- **Mount:** `VisitView.tsx` after ClinicalTasksPanel (complaint/diagnosis/treatmentPlan from visit note); `FinanceView.tsx` after ClinicalRulePanel (`patientId={documentPatient?.id ?? null}`, context=finance).
+- **Verify:** live empty body → 400 ValidationError; valid payload → 200 with `patientFriendlyExplanation` / `allowedAfter`+`telegramSummary`; mounts grep only Visit+Finance.
+
 ## 2026-07-31 — Live clinical rules evaluate UI (Visit + Finance)
+
 
 - **Gap:** `POST /api/clinical/rules/evaluate` already counted org-scoped rules from the live treatment plan (`evaluateClinicalRulesInDb`, enforceBlockers → 400 `ClinicalRuleBlocker`), but **zero web callers** — Visit/Finance only painted `dashboard.clinicalRuleEvaluations` snapshot from shift open. Doctor changed the plan → stale warnings until full dashboard reload.
 - **Ship:** `ClinicalRulePanel.tsx` — self-fetch via `useAppLogicContext` + `denteClinicalReadHeaders`; `collectServiceIdsForPatient` mirrors sampleData (plan items + active scenarios); buttons «Пересчитать по плану» / «Проверить с блокировкой» (visit only); blocker 400 is gameplay signal, not generic error.
