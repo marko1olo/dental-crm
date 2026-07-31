@@ -1614,7 +1614,11 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
         */}
         {settingsTab === "protocols" ? <SettingsProtocolsTab /> : null}
 
-        {settingsTab === "rules" ? <SettingsRulesTab /> : null}
+        {settingsTab === "rules" ? (
+          <ErrorBoundary moduleName="Правила и регламенты">
+            <SettingsRulesTab />
+          </ErrorBoundary>
+        ) : null}
 
         {settingsTab === "prices" ? (
           <>
@@ -1863,11 +1867,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
             <SettingsMessengersTab props={settingsProps} settingsTab={settingsTab} />
           </ErrorBoundary>
         ) : null}
-        {settingsTab === "rules" ? (
-          <ErrorBoundary moduleName="Правила и регламенты">
-            <SettingsRulesTab />
-          </ErrorBoundary>
-        ) : null}
+        
 
         {/*
           Мастер переноса стоит здесь, а не внутри SettingsImportsTab.

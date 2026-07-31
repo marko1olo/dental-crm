@@ -40,6 +40,8 @@
 [x] P1 | ScannerView sterilization message-first RU (payload.message Cyrillic; StaffAuthRequired kept) | ScannerView.tsx | 36dc0ce02
 [x] P1 | LeadsKanban message-first RU (leadsFailureMessage + toast on drag/edit; convert already OK) | leadsStore.ts + LeadsKanbanView.tsx | 36dc0ce02
 [x] P1 | API EN 500→RU message (files/waitlist/lab/inventory reply.send) | files.ts waitlist.ts lab.ts inventory.ts + en500ReplyMessageRu.test.ts | afb0fa8f0
+[x] P1 | useWorkspaceProfile applyWorkspacePreset message-first RU (no Failed to apply preset) | useWorkspaceProfile.ts | 28b2cef0f
+[x] P1 | ScheduleView DayConfirmations+FreedSlots panels + Settings messengers tab wire | ScheduleView.tsx SettingsView.tsx | 3f7dbcd6b
 
 
 
