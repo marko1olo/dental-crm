@@ -18,6 +18,7 @@ import { featureDistinguishes, patientListFeatureSalience } from "./components/p
 import { PatientCardSavePill } from "./components/patients/patientCardSavePill";
 import { PatientArchiveReasonsAndBlacklistsWidget } from "./components/crm/PatientArchiveReasonsAndBlacklistsWidget";
 import { PatientCommunicationTimelinesWidget } from "./components/crm/PatientCommunicationTimelinesWidget";
+import { PatientCommunicationConsentsPanel } from "./components/patients/PatientCommunicationConsentsPanel";
 import { PatientDuplicateMergeQueuesWidget } from "./components/crm/PatientDuplicateMergeQueuesWidget";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 
@@ -866,6 +867,12 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
               карточка показывает чужие звонки и чужие блокировки. */}
           <PatientArchiveReasonsAndBlacklistsWidget patientId={selectedPatientId} />
           <PatientCommunicationTimelinesWidget patientId={selectedPatientId} />
+          {selectedPatientId ? (
+            <div className="mt-4" data-testid="patient-comm-consents-mount">
+              <PatientCommunicationConsentsPanel patientId={selectedPatientId} />
+            </div>
+          ) : null}
+
           {/*
             Отсюда убраны <BulkImageOperationLogsWidget /> и
             <PatientServiceLineagesWidget />. Журнал массовых операций со

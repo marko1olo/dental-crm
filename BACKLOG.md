@@ -1,3 +1,9 @@
+## 2026-07-31 — Patient communication consents gameplay (Patients)
+
+- **Gap:** `GET/PUT /api/communications/consents/:patientId` already stored per-channel service/marketing consent (granted|revoked, defaults service=granted marketing=revoked), but **zero web callers** — staff could not record opt-in/out; campaigns/outbox had no UI source of truth on the patient card.
+- **Ship:** `PatientCommunicationConsentsPanel.tsx` — self-contained (`useAppLogicContext` + clinical read/mutation headers); matrix SMS/WhatsApp/Telegram/email/phone/MAX/VK/in_person × service|marketing; save dirty cells via PUT. Mounted on `PatientsView` when `selectedPatientId` is set (next to communication timelines).
+- **Verify:** `npx tsc -p apps/web --noEmit`; live GET empty patient → 401 AuthRequired or 400; web grep `communications/consents` → panel + PatientsView.
+
 ## 2026-07-31 — AI visit-note-draft gameplay (Visit)
 
 - **Gap:** `POST /api/ai/visit-note-draft` already built SOAP visit note fields from transcript + specialty (rule + optional neural, `visitNoteDraftRequestSchema` / `visitNoteDraftSchema`), but **zero web callers** — dictation never became a structured visit note on screen.

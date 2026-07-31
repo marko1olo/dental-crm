@@ -166,14 +166,19 @@ export const PatientCommunicationConsentsPanel: React.FC<
 			const rows: ConsentRow[] = Array.isArray(json?.consents)
 				? (json!.consents as unknown[])
 						.filter((r): r is Record<string, unknown> => typeof r === "object" && r !== null)
-						.map((r) => ({
-							channel: String(r.channel ?? "") as Channel,
-							scope: String(r.scope ?? "") as Scope,
-							state: (r.state === "granted" ? "granted" : "revoked") as ConsentState,
-							source: typeof r.source === "string" ? r.source : undefined,
-							evidence: typeof r.evidence === "string" ? r.evidence : null,
-							decidedAt: typeof r.decidedAt === "string" ? r.decidedAt : null,
-						}))
+						.map((r) => {
+							const row: ConsentRow = {
+								channel: String(r.channel ?? "") as Channel,
+								scope: String(r.scope ?? "") as Scope,
+								state: (r.state === "granted" ? "granted" : "revoked") as ConsentState,
+							};
+							if (typeof r.source === "string") row.source = r.source;
+							if (typeof r.evidence === "string") row.evidence = r.evidence;
+							else if (r.evidence === null) row.evidence = null;
+							if (typeof r.decidedAt === "string") row.decidedAt = r.decidedAt;
+							else if (r.decidedAt === null) row.decidedAt = null;
+							return row;
+						})
 				: [];
 			const next = buildMatrix(rows, defaults);
 			setMatrix(next);
