@@ -1,4 +1,11 @@
+## 2026-07-31 — Waitlist matches per appointment (schedule gameplay)
+
+- **Gap:** `GET /api/appointments/:appointmentId/waitlist-matches` already returned full ranked candidates (`WaitlistMatch` + reason, same doctor / time / priority / waiting days) for a cancelled or no_show future slot, but **zero web callers**. `FreedSlotsPanel` only showed `topMatches` (limit 3) from `/api/schedule/freed-slots`. Admin opening a cancelled card in the day timeline had no «кому звонить» list beyond the summary strip.
+- **Ship:** `WaitlistMatchesBlock.tsx` — self-contained (`useAppLogicContext` + clinical read headers); loads full report; phone / «Позвонил» / priority / reason. Mounted on `AppointmentCard` for future `cancelled`|`no_show`, and on `FreedSlotsPanel` expand («Полный подбор» / «Все из очереди»). data-testid: `waitlist-matches-block`, `appointment-card-waitlist-matches`, `freed-slot-full-matches`.
+- **Verify:** `npx tsc -p apps/web --noEmit` exit 0; live GET without auth → 401 AuthRequired; web grep `waitlist-matches` → block + AppointmentCard + FreedSlotsPanel.
+
 ## 2026-07-31 — Staff commissions GET overview (Settings → Персонал)
+
 
 ## 2026-07-31 — Ход рассылки в CampaignPanel (GET campaigns/:id/progress)
 

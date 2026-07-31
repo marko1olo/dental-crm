@@ -20,6 +20,7 @@
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
 
 type WaitlistMatch = {
 	entryId: string;
@@ -240,12 +241,36 @@ export const FreedSlotsPanel: React.FC = () => {
 													/*
 														Предлагать некому — и это сказано словами, а не пустой
 														ячейкой. Пустота читается как «не загрузилось».
+														Кнопка «полный подбор» всё равно есть: topMatches
+														ограничен тремя, а в очереди могут быть люди, которых
+														сводка не показала как «подходящих» (другой врач и т.п.).
 													*/
-													<span className="ops-note">
-														В листе ожидания подходящих нет
-														{slot.candidatesTotal > 0 ? ` (в очереди ${slot.candidatesTotal})` : ", очередь пуста"}. Окно
-														можно отдать под запись с улицы.
-													</span>
+													<>
+														<span className="ops-note">
+															В листе ожидания подходящих нет
+															{slot.candidatesTotal > 0
+																? ` (в очереди ${slot.candidatesTotal})`
+																: ", очередь пуста"}
+															. Окно можно отдать под запись с улицы.
+														</span>
+														{slot.candidatesTotal > 0 ? (
+															<button
+																className="link-button"
+																type="button"
+																onClick={() => setOpenSlot(isOpen ? null : slot.appointmentId)}
+															>
+																{isOpen ? "Скрыть полный подбор" : "Полный подбор из очереди"}
+															</button>
+														) : null}
+														{isOpen ? (
+															<div style={{ marginTop: 8 }}>
+																<WaitlistMatchesBlock
+																	appointmentId={slot.appointmentId}
+																	compact
+																/>
+															</div>
+														) : null}
+													</>
 												) : (
 													<>
 														<span className="ops-strong">{best?.patientName}</span>
@@ -269,26 +294,37 @@ export const FreedSlotsPanel: React.FC = () => {
 																Позвонил
 															</button>
 														)}
-														{slot.topMatches.length > 1 ? (
-															<button
-																className="link-button"
-																type="button"
-																onClick={() => setOpenSlot(isOpen ? null : slot.appointmentId)}
-															>
-																{isOpen ? "Скрыть остальных" : `Ещё ${slot.topMatches.length - 1}`}
-															</button>
+														{/*
+															Раньше «Ещё N» раскрывало только остальных из top-3.
+															Полный GET waitlist-matches отдаёт до 20 с теми же
+															правилами сортировки — его и показываем при раскрытии.
+														*/}
+														<button
+															className="link-button"
+															type="button"
+															onClick={() => setOpenSlot(isOpen ? null : slot.appointmentId)}
+															data-testid={`freed-slot-expand-${slot.appointmentId}`}
+														>
+															{isOpen
+																? "Скрыть полный подбор"
+																: slot.candidatesTotal > slot.topMatches.length
+																	? `Все из очереди (${slot.candidatesTotal})`
+																	: slot.topMatches.length > 1
+																		? `Ещё ${slot.topMatches.length - 1} и полный подбор`
+																		: "Полный подбор"}
+														</button>
+														{isOpen ? (
+															<div style={{ marginTop: 8 }} data-testid="freed-slot-full-matches">
+																<WaitlistMatchesBlock
+																	appointmentId={slot.appointmentId}
+																	compact
+																/>
+															</div>
 														) : null}
-														{isOpen
-															? slot.topMatches.slice(1).map((match) => (
-																	<span className="ops-note" key={match.entryId}>
-																		<strong>{match.patientName}</strong> · {match.phone ?? "телефона нет"} ·{" "}
-																		{match.reason}
-																	</span>
-																))
-															: null}
 													</>
 												)}
 											</td>
+
 										</tr>
 									);
 								})}
