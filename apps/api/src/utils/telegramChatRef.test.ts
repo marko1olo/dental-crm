@@ -47,7 +47,7 @@ describe("telegramChatRef", () => {
   });
 
   describe("encrypt and decrypt", () => {
-    const env = { DENTE_TELEGRAM_CHAT_ENCRYPTION_KEY: validKey32Hex };
+    const env = { DENTE_TELEGRAM_CHAT_ENCRYPTION_KEY: sampleHexBufStr };
 
     test("encrypt and decrypt a chat ID successfully", () => {
       const chatId = "123456789";
@@ -112,11 +112,12 @@ describe("telegramChatRef", () => {
       const encrypted = encryptTelegramChatId("123456789", env);
       assert.ok(encrypted);
       const parts = encrypted.split(".");
+      const cipherText = parts[3] || "";
 
       // Change the last character of the ciphertext
       const tamperedCiphertext =
-        parts[3].substring(0, parts[3].length - 1) +
-        (parts[3].endsWith("a") ? "b" : "a");
+        cipherText.substring(0, cipherText.length - 1) +
+        (cipherText.endsWith("a") ? "b" : "a");
       const tamperedRef = `v1.${parts[1]}.${parts[2]}.${tamperedCiphertext}`;
 
       assert.strictEqual(decryptTelegramChatId(tamperedRef, env), null);
@@ -127,8 +128,8 @@ describe("telegramChatRef", () => {
       assert.ok(encrypted);
       const parts = encrypted.split(".");
 
-      const tamperedTagBuffer = Buffer.from(parts[2], "base64url");
-      tamperedTagBuffer[0] ^= 1; // flip a bit
+      const tamperedTagBuffer = Buffer.from(parts[2] || "", "base64url");
+      tamperedTagBuffer[0] = (tamperedTagBuffer[0] || 0) ^ 1; // flip a bit
       const tamperedTag = tamperedTagBuffer.toString("base64url");
       const tamperedRef = `v1.${parts[1]}.${tamperedTag}.${parts[3]}`;
 

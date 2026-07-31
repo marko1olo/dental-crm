@@ -90,7 +90,7 @@ describe("Admin/setup auth — body guard (AUTH-first 403, Zod 400, не 500)", 
 			method: "POST";
 			url: string;
 			headers: Record<string, string>;
-			payload?: unknown;
+			payload?: any;
 		} = {
 			method: "POST",
 			url,
@@ -108,7 +108,7 @@ describe("Admin/setup auth — body guard (AUTH-first 403, Zod 400, не 500)", 
 		} catch {
 			json = {};
 		}
-		return { statusCode: response.statusCode, json, body: response.body };
+		return { statusCode: response.statusCode, json, body: String(response.body || "") };
 	}
 
 	// ── set-password: anon always 403 (no policy oracle) ──────────────────────

@@ -58,7 +58,7 @@ describe("Visiograph AI — body guard (null → 400, не 500)", () => {
 			method: "POST";
 			url: string;
 			headers: Record<string, string>;
-			payload?: unknown;
+			payload?: any;
 		} = {
 			method: "POST",
 			url: "/api/imaging/visiograph-ai",

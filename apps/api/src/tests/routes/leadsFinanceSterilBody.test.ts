@@ -51,10 +51,10 @@ describe("leads + finance_family + sterilization — body guards (AUTH-first; in
 			headers[STAFF_TOKEN_HEADER] = staffToken;
 		}
 		const injectOpts: {
-			method: "POST" | "PUT" | "PATCH" | "GET";
+			method: "GET" | "POST" | "PATCH" | "PUT";
 			url: string;
 			headers: Record<string, string>;
-			payload?: unknown;
+			payload?: any;
 		} = { method, url, headers };
 		if (opts.rawPayload !== undefined) {
 			if (opts.rawPayload !== null) injectOpts.payload = opts.rawPayload;
@@ -68,7 +68,7 @@ describe("leads + finance_family + sterilization — body guards (AUTH-first; in
 		} catch {
 			json = {};
 		}
-		return { statusCode: response.statusCode, json, body: response.body };
+		return { statusCode: response.statusCode, json, body: String(response.body || "") };
 	}
 
 	before(async () => {

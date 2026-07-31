@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { browserRenderableImageMimeType } from "./previewFormats";
+import { browserRenderableImageMimeType } from "./previewFormats.js";
 
 test("browserRenderableImageMimeType", async (t) => {
 	await t.test("returns null for null or undefined", () => {

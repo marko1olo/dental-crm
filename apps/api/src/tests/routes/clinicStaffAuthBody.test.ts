@@ -77,7 +77,7 @@ describe("Clinic/staff auth — body guard (null/typed → 400, не 500)", () =
 			method: "POST";
 			url: string;
 			headers: Record<string, string>;
-			payload?: unknown;
+			payload?: any;
 		} = {
 			method: "POST",
 			url,
@@ -95,7 +95,7 @@ describe("Clinic/staff auth — body guard (null/typed → 400, не 500)", () =
 		} catch {
 			json = {};
 		}
-		return { statusCode: response.statusCode, json, body: response.body };
+		return { statusCode: response.statusCode, json, body: String(response.body || "") };
 	}
 
 	// ── clinic/login ──────────────────────────────────────────────────────────

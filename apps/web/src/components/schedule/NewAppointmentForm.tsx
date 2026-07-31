@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ChangeEvent } from "react";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { Plus, Bot } from "lucide-react";
@@ -73,6 +73,26 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
     patientName: string;
     patientPhone: string;
   } | null>(null);
+
+  const [blacklistStatus, setBlacklistStatus] = useState<{ isBlocked: boolean; reason?: string } | null>(null);
+
+  useEffect(() => {
+    const patientId = newAppointmentDraft?.patientId;
+    if (!patientId) {
+      setBlacklistStatus(null);
+      return;
+    }
+    fetch(`/api/patients/${patientId}/archive-status`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && (data.isBookingBlocked || data.isBlacklisted)) {
+          setBlacklistStatus({ isBlocked: true, reason: data.reason || data.archiveReason || "Пациент в черном списке" });
+        } else {
+          setBlacklistStatus(null);
+        }
+      })
+      .catch(() => setBlacklistStatus(null));
+  }, [newAppointmentDraft?.patientId]);
 
   /*
     Правило «чего не хватает записи» одно на всё приложение и лежит в
@@ -465,6 +485,11 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
                         {patient.fullName}
                       </button>
                     ))}
+                </div>
+              )}
+              {blacklistStatus?.isBlocked && (
+                <div className="mt-2 p-2 bg-red-500/10 border border-red-500/40 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold flex items-center gap-1.5" role="alert">
+                  <span>⛔ ЧЕРНЫЙ СПИСОК: {blacklistStatus.reason || "Пациент заблокирован для записи на приём"}</span>
                 </div>
               )}
             </div>

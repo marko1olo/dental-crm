@@ -44,7 +44,7 @@ describe("пациент карта — Zod body (AUTH-first 401; empty → 400 
 			method: "POST" | "PUT";
 			url: string;
 			headers: Record<string, string>;
-			payload?: unknown;
+			payload?: any;
 		} = { method, url, headers };
 		if (opts.rawPayload !== undefined) {
 			if (opts.rawPayload !== null) injectOpts.payload = opts.rawPayload;

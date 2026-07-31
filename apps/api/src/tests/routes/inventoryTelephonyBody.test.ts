@@ -55,7 +55,7 @@ describe("склад + АТС — Zod body (null → 400, не 500)", () => {
 			method: "PATCH";
 			url: string;
 			headers: Record<string, string>;
-			payload?: unknown;
+			payload?: any;
 		} = {
 			method: "PATCH",
 			url: `/api/inventory/${ORGANIZATION_ID}/${ITEM_ID}/stock`,
@@ -90,7 +90,7 @@ describe("склад + АТС — Zod body (null → 400, не 500)", () => {
 			method: "POST";
 			url: string;
 			headers: Record<string, string>;
-			payload?: unknown;
+			payload?: any;
 		} = {
 			method: "POST",
 			url: `/api/telephony/${ORGANIZATION_ID}/${path}`,

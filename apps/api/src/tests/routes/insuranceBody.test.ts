@@ -56,7 +56,7 @@ describe("ДМС договоры — Zod body (null → 400, не 500)", () => 
 			method: "POST";
 			url: string;
 			headers: Record<string, string>;
-			payload?: unknown;
+			payload?: any;
 		} = {
 			method: "POST",
 			url: "/api/insurance/contracts",
@@ -74,7 +74,7 @@ describe("ДМС договоры — Zod body (null → 400, не 500)", () => 
 		} catch {
 			json = {};
 		}
-		return { statusCode: response.statusCode, json, body: response.body };
+		return { statusCode: response.statusCode, json, body: String(response.body || "") };
 	}
 
 	async function putContract(
@@ -95,7 +95,7 @@ describe("ДМС договоры — Zod body (null → 400, не 500)", () => 
 			method: "PUT";
 			url: string;
 			headers: Record<string, string>;
-			payload?: unknown;
+			payload?: any;
 		} = {
 			method: "PUT",
 			url: `/api/insurance/contracts/${contractId}`,
@@ -113,7 +113,7 @@ describe("ДМС договоры — Zod body (null → 400, не 500)", () => 
 		} catch {
 			json = {};
 		}
-		return { statusCode: response.statusCode, json, body: response.body };
+		return { statusCode: response.statusCode, json, body: String(response.body || "") };
 	}
 
 	before(async () => {

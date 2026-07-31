@@ -221,11 +221,28 @@ export async function applyWorkspacePreset(
 			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify(extraData || {}),
 		});
-		if (!res.ok) throw new Error(`Failed to apply preset: ${presetName}`);
+		if (!res.ok) {
+			// Message-first: Cyrillic payload.message before status EN (same helper as saveWorkspaceFlags).
+			const rawBody = await res.text();
+			const serverDetail = workspaceProfileServerDetail(rawBody);
+			const reason =
+				serverDetail ??
+				(res.status === 401 || res.status === 403
+					? "нет прав — войдите как сотрудник клиники"
+					: res.status >= 500
+						? "сервер клиники ответил отказом"
+						: `сервер не принял запрос (код ${res.status})`);
+			throw new Error(
+				`Пресет рабочего места не применён (${presetName}): ${reason}. Берём локальный набор.`,
+			);
+		}
 		const body = await res.json();
 		flags = body.flags as WorkspaceFeatureFlags;
 	} catch (error) {
-		console.warn("Failed to fetch preset from server, using local fallback:", error);
+		console.warn(
+			"Пресет с сервера не получен, используем локальный набор:",
+			error instanceof Error ? error.message : error,
+		);
 		// Local fallback for offline/MVP mode
 		const baseFlags = { ...useWorkspaceProfileStore.getState() };
 		

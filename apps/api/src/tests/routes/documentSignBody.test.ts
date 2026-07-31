@@ -65,7 +65,7 @@ describe("подпись документа — Zod body (null → 400, не 500
 			method: "POST";
 			url: string;
 			headers: Record<string, string>;
-			payload?: unknown;
+			payload?: any;
 		} = {
 			method: "POST",
 			url: `/api/documents/${id}/sign`,
@@ -107,7 +107,7 @@ describe("подпись документа — Zod body (null → 400, не 500
 			method: "POST";
 			url: string;
 			headers: Record<string, string>;
-			payload?: unknown;
+			payload?: any;
 		} = {
 			method: "POST",
 			url: `/api/documents/${id}/sign-ukep`,

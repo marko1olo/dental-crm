@@ -82,7 +82,7 @@ describe("Staff credentials — body guard (null/typed → 400, не 500)", () =
 			method: "POST";
 			url: string;
 			headers: Record<string, string>;
-			payload?: unknown;
+			payload?: any;
 		} = {
 			method: "POST",
 			url: CREDENTIALS_URL,

@@ -59,7 +59,7 @@ describe("next bare casts — Zod body (AUTH-first; empty → 400 ≠ 500)", () 
 			method: "POST" | "GET" | "PUT";
 			url: string;
 			headers: Record<string, string>;
-			payload?: unknown;
+			payload?: any;
 		} = { method, url, headers };
 		if (opts.rawPayload !== undefined) {
 			if (opts.rawPayload !== null) injectOpts.payload = opts.rawPayload;
@@ -73,7 +73,7 @@ describe("next bare casts — Zod body (AUTH-first; empty → 400 ≠ 500)", () 
 		} catch {
 			json = {};
 		}
-		return { statusCode: response.statusCode, json, body: response.body };
+		return { statusCode: response.statusCode, json, body: String(response.body || "") };
 	}
 
 	before(async () => {
