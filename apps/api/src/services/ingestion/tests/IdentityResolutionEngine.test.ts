@@ -21,7 +21,7 @@ describe("IdentityResolutionEngine - levenshteinDistance", () => {
 
   it("should calculate correct distance for substitutions", () => {
     assert.equal(IdentityResolutionEngine.levenshteinDistance("hello", "hallo"), 1);
-    assert.equal(IdentityResolutionEngine.levenshteinDistance("Иванов", "Ивановa"), 1);
+    assert.equal(IdentityResolutionEngine.levenshteinDistance("Иванов", "Иванова"), 1);
     assert.equal(IdentityResolutionEngine.levenshteinDistance("kitten", "sitten"), 1); // 1 substitution
     assert.equal(IdentityResolutionEngine.levenshteinDistance("sitten", "sittin"), 1); // 1 substitution
     assert.equal(IdentityResolutionEngine.levenshteinDistance("kitten", "sittin"), 2); // 2 substitutions
