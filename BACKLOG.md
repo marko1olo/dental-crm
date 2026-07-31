@@ -1,3 +1,9 @@
+## 2026-07-31 — Diary template DELETE (VisitDiaryTemplateSelector)
+
+- **Gap:** `DELETE /api/templates/:id` already enforced org scope, 404 NotFound, 403 CannotDeleteBuiltIn for `isBuiltIn`, and db delete for custom visit templates — but **zero web callers**. Doctor could seed/restore built-ins after seed ship, but could not remove an obsolete custom protocol from the visit diary dropdown without SQL/CLI.
+- **Ship:** `VisitDiaryTemplateSelector.tsx` — `isBuiltIn` on Template; `deleteSelectedTemplate` via `DELETE /api/templates/:id` + `denteClinicalMutationHeaders`; button «Удалить» only when selected template is custom and diary unlocked; Russian confirm; clear selection + reload list; server `message` on error (CannotDeleteBuiltIn). data-testid: `diary-template-delete`.
+- **Verify:** panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); live DELETE without session → 401/403 (route up); web grep `diary-template-delete` → selector only.
+
 ## 2026-07-31 — Diary clinical templates seed (VisitDiaryTemplateSelector)
 
 - **Gap:** `POST /api/templates/seed` already called `ensureClinicalTemplatesSeeded` (insert missing built-ins by title, `isBuiltIn: true`) and returned `{ success, count }`, but **zero web callers**. GET `/api/templates` auto-seeds only when the org list is fully empty; on 503 `ClinicalTemplatesSeedFailed`, partial customs without built-ins, or a failed first visit, the doctor saw a silent empty «Клинический шаблон» dropdown with no recovery — CLI/SQL only.

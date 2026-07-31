@@ -1,4 +1,4 @@
-import { Clipboard, Download, Loader2 } from "lucide-react";
+import { Clipboard, Download, Loader2, Trash2 } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { actionFailureToast } from "../lib/panelStateText";
@@ -12,6 +12,8 @@ interface Template {
 	prefilledObjective?: string;
 	prefilledTreatment?: string;
 	defaultIcd10?: string;
+	/** Встроенный протокол — DELETE /api/templates/:id отвечает 403 CannotDeleteBuiltIn. */
+	isBuiltIn?: boolean;
 }
 
 interface VisitDiaryTemplateSelectorProps {
@@ -39,6 +41,7 @@ export function VisitDiaryTemplateSelector({
 	const [loadFailed, setLoadFailed] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSeeding, setIsSeeding] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const [seedError, setSeedError] = useState<string | null>(null);
 
 	/*
@@ -177,6 +180,90 @@ export function VisitDiaryTemplateSelector({
 		}
 	}, [isLocked, isSeeding, loadTemplates]);
 
+	/**
+	 * Удаление своего (не встроенного) протокола приёма.
+	 * DELETE /api/templates/:id — requireClinicalMutationAccess; 403 CannotDeleteBuiltIn
+	 * для isBuiltIn; 404 NotFound. Без кнопки врач не мог убрать устаревший свой
+	 * протокол из списка на приёме — только SQL/CLI.
+	 */
+	const deleteSelectedTemplate = useCallback(async () => {
+		if (isDeleting || isLocked || isSeeding || !selectedTemplate) return;
+		const tmpl = templates.find((t) => t.id === selectedTemplate);
+		if (!tmpl) return;
+		if (tmpl.isBuiltIn) {
+			showToast(
+				"Это встроенный протокол приёма — удалить его нельзя. Создайте свой и выбирайте его.",
+				"error",
+			);
+			return;
+		}
+		const titleLabel = tmpl.title?.trim() || "протокол";
+		const ok = window.confirm(
+			`Удалить свой протокол «${titleLabel}» из списка клиники? На уже заполненные дневники это не влияет — только на выбор при следующих приёмах.`,
+		);
+		if (!ok) return;
+		setIsDeleting(true);
+		try {
+			const headerSource = authRef.current;
+			const res = await fetch(
+				`/api/templates/${encodeURIComponent(selectedTemplate)}`,
+				{
+					method: "DELETE",
+					headers:
+						headerSource &&
+						typeof headerSource.denteClinicalMutationHeaders === "function"
+							? headerSource.denteClinicalMutationHeaders({
+									"Content-Type": "application/json",
+								})
+							: { "Content-Type": "application/json" },
+				},
+			);
+			if (!res.ok) {
+				let serverMessage: string | null = null;
+				try {
+					const body = await res.json();
+					if (typeof body?.message === "string" && body.message.trim()) {
+						serverMessage = body.message.trim();
+					}
+				} catch {
+					/* ignore */
+				}
+				const toastText =
+					serverMessage ??
+					actionFailureToast("Протокол приёма не удалён", res.status);
+				showToast(toastText, "error");
+				return;
+			}
+			showToast(`Протокол «${titleLabel}» удалён из списка`, "success");
+			setSelectedTemplate("");
+			await loadTemplates();
+		} catch (error) {
+			console.error("Failed to delete template", error);
+			showToast(
+				actionFailureToast("Протокол приёма не удалён", null),
+				"error",
+			);
+		} finally {
+			setIsDeleting(false);
+		}
+	}, [
+		isDeleting,
+		isLocked,
+		isSeeding,
+		selectedTemplate,
+		templates,
+		loadTemplates,
+	]);
+
+	const selectedMeta = selectedTemplate
+		? templates.find((t) => t.id === selectedTemplate)
+		: undefined;
+	const canDeleteSelected =
+		Boolean(selectedMeta) &&
+		!selectedMeta?.isBuiltIn &&
+		!isLocked &&
+		!isLoading;
+
 	const templatesByCategory = React.useMemo(() => {
 		const groups: Record<string, Template[]> = {};
 		for (const t of templates) {
@@ -270,11 +357,33 @@ export function VisitDiaryTemplateSelector({
 					))}
 				</select>
 			</div>
+			{canDeleteSelected && (
+				<button
+					type="button"
+					data-testid="diary-template-delete"
+					disabled={isDeleting || isSeeding}
+					onClick={() => void deleteSelectedTemplate()}
+					title="Удалить выбранный свой протокол из списка клиники (встроенные удалить нельзя)"
+					className="inline-flex items-center justify-center gap-1.5 px-2.5 py-2 text-xs font-medium text-rose-200/90 bg-rose-950/40 hover:bg-rose-900/50 border border-rose-700/40 rounded-xl disabled:opacity-50 transition-colors whitespace-nowrap"
+				>
+					{isDeleting ? (
+						<>
+							<Loader2 className="w-3.5 h-3.5 animate-spin" />
+							Удаляю…
+						</>
+					) : (
+						<>
+							<Trash2 className="w-3.5 h-3.5" />
+							Удалить
+						</>
+					)}
+				</button>
+			)}
 			{showRestoreLink && (
 				<button
 					type="button"
 					data-testid="diary-template-restore"
-					disabled={isSeeding}
+					disabled={isSeeding || isDeleting}
 					onClick={() => void seedBuiltIns()}
 					title="Добавить недостающие встроенные протоколы (уже имеющиеся не дублируются)"
 					className="text-xs text-zinc-500 hover:text-emerald-400 underline-offset-2 hover:underline disabled:opacity-50 transition-colors whitespace-nowrap"
