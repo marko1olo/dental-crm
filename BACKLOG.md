@@ -1,3 +1,9 @@
+## 2026-07-31 — X-ray scan DELETE (VisiographAnalyzer)
+
+- **Gap:** `DELETE /api/xray/scans/:id` (xray.ts:238, requireClinicalMutationAccess, org-scoped) already removed a row from `xray_scans`, but **zero web callers**. Visiograph history could only open a scan — wrong upload or foreign report stayed in the patient card forever.
+- **Ship:** `VisiographAnalyzer.tsx` — `deleteScan` via `DELETE /api/xray/scans/:id` + `denteClinicalMutationHeaders`; confirm dialog; trash on each history row + «Удалить из архива» on open history view; optimistic filter of `scanHistory`; clear current scan if ids match; human `deleteFailure` separate from history/save failures. data-testid: `xray-scan-delete-${id}`, `xray-scan-open-${id}`, `xray-scan-delete-current`, `xray-scan-delete-failure`.
+- **Verify:** panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); markers Trash2 / method DELETE / denteClinicalMutationHeaders present; API route still 204/404 as before.
+
 ## 2026-07-31 — Diary template CREATE (VisitDiaryTemplateSelector)
 
 - **Gap:** `POST /api/templates` already created custom visit templates (`isBuiltIn: false`, title required, optional category/prefilled*/defaultIcd10) under requireClinicalMutationAccess — but **zero web callers**. Doctor could seed built-ins and delete customs after prior ships, but could not add a clinic-specific protocol from the visit diary screen without SQL/CLI.

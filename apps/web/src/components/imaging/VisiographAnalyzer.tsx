@@ -7,6 +7,7 @@
  * - Синхронный анализ через /api/imaging/visiograph-ai
  * - Сохранение снимка+результата в БД через /api/xray/scans
  * - История сканов пациента с загрузкой при открытии
+ * - Удаление снимка из архива (DELETE /api/xray/scans/:id)
  * - Рендеринг markdown-отчёта с подсветкой разделов
  * - Before/After image slider с CSS-enhanced режимом
  * - Запись находок в ЖИВУЮ зубную формулу пациента (POST
@@ -34,7 +35,8 @@ import {
   ZoomIn,
   FileX,
   ScanLine,
-  ChevronDown
+  ChevronDown,
+  Trash2
 } from 'lucide-react';
 // Общее правило FDI, а не свой список: «зуб 99» и «зуб 0» — это мусор, и
 // проверять его надо тем же кодом, что смета и одонтограмма.
@@ -216,8 +218,9 @@ export function VisiographAnalyzer() {
    *   POST /api/xray/scans              — requireClinicalMutationAccess (xray.ts:100)
    *   GET  /api/xray/scans              — requireClinicalReadAccess (xray.ts:207)
    *   GET  /api/xray/scans/:id          — requireClinicalReadAccess (xray.ts:228)
+   *   DELETE /api/xray/scans/:id        — requireClinicalMutationAccess (xray.ts:238)
    * Без заголовка `x-dente-admin-secret` охрана отвечает 403 даже при действительных
-   * токенах кабинета и сотрудника. Панель звала все четыре голым fetch, поэтому у
+   * токенах кабинета и сотрудника. Панель звала все пять голым fetch, поэтому у
    * заказчика разбор снимка не запускался вовсе — тело отказа охраны содержит поле
    * `error`, и врач получал плашку «Ошибка анализа: ClinicalReadSecretRequired»
    * (accessGuard.ts:79; человеческий текст лежит рядом, в поле `message`, но здесь
@@ -325,6 +328,15 @@ export function VisiographAnalyzer() {
   const [voicesReady, setVoicesReady] = useState(false);
   const [activeSection, setActiveSection] = useState<number | null>(null);
   const [historyExpanded, setHistoryExpanded] = useState(false);
+  /*
+   * Удаление снимка из архива. deletingScanId — id строки, по которой сейчас
+   * идёт DELETE (кнопка в этой строке крутит индикатор и disabled). deleteFailure
+   * — человеческий отказ рядом со списком архива, отдельно от historyFailure
+   * (чтение) и saveFailure (запись нового разбора): иначе врач не отличит
+   * «архив не прочитан» от «этот снимок не удалось убрать».
+   */
+  const [deletingScanId, setDeletingScanId] = useState<string | null>(null);
+  const [deleteFailure, setDeleteFailure] = useState<string | null>(null);
 
   // ── Voice init ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -347,6 +359,8 @@ export function VisiographAnalyzer() {
     if (!selectedPatientId) {
       setScanHistory([]);
       setHistoryFailure(null);
+      setDeleteFailure(null);
+      setDeletingScanId(null);
       // Индикатор гасим и здесь: запрос по прежнему пациенту вернётся уже
       // «просроченным» и свой finally пропустит, иначе счётчик в сводке остался
       // бы с «…» навсегда.
@@ -380,6 +394,7 @@ export function VisiographAnalyzer() {
   const loadHistory = async (patientId: string) => {
     setIsLoadingHistory(true);
     setHistoryFailure(null);
+    setDeleteFailure(null);
     setScanHistory([]);
     // null = до сервера не дошли; после ответа сюда попадает его код, поэтому
     // «непонятный ответ при 200» и «сервер не ответил» дают разные тексты.
@@ -782,6 +797,7 @@ export function VisiographAnalyzer() {
     setApplyNotice(null);
     setSaveFailure(null);
     setFormulaFailure(null);
+    setDeleteFailure(null);
     // Fetch full scan with image
     try {
       const res = await fetch(`/api/xray/scans/${scan.id}`, { headers: denteClinicalReadHeaders() });
@@ -791,6 +807,73 @@ export function VisiographAnalyzer() {
         if (full.imageDataUri) setCurrentImageUrl(full.imageDataUri);
       }
     } catch { /* silent */ }
+  };
+
+
+  /**
+   * Удаление снимка из архива пациента.
+   *
+   * ЗАЧЕМ. API DELETE /api/xray/scans/:id (xray.ts:238) уже снимал строку
+   * xray_scans по организации вызывающего, но веб нигде его не звал: история
+   * умела только открыть снимок. Ошибочно загруженный или чужой разбор оставался
+   * в карте навсегда. Здесь кнопка в строке архива и на открытом снимке из
+   * истории зовут тот же маршрут с denteClinicalMutationHeaders — без секрета
+   * охрана отвечает 403, как у POST /api/xray/scans.
+   *
+   * После 204 строка уходит из scanHistory сразу (не ждём повторного GET), а
+   * если удалённый id совпал с currentScan — экран разбора гасится, иначе врач
+   * продолжал бы читать уже несуществующее заключение.
+   */
+  const deleteScan = async (scan: XrayScan) => {
+    if (deletingScanId) return;
+    const label = scan.originalFilename?.trim() || "этот снимок";
+    const ok = window.confirm(
+      `Удалить «${label}» из архива пациента?\n\nЗаключение и привязка к карте будут сняты. Это нельзя отменить.`
+    );
+    if (!ok) return;
+
+    setDeletingScanId(scan.id);
+    setDeleteFailure(null);
+    try {
+      const res = await fetch(`/api/xray/scans/${encodeURIComponent(scan.id)}`, {
+        method: "DELETE",
+        headers: denteClinicalMutationHeaders(),
+      });
+      // Fastify 204 has empty body; res.ok is true for 204.
+      if (!res.ok) {
+        let message = `Снимок не удалён (ответ ${res.status}).`;
+        try {
+          const body = (await res.json()) as { message?: string; error?: string };
+          if (typeof body?.message === "string" && body.message.trim()) {
+            message = body.message.trim();
+          } else if (typeof body?.error === "string" && body.error.trim()) {
+            message = body.error.trim();
+          }
+        } catch {
+          /* non-json body */
+        }
+        setDeleteFailure(message);
+        return;
+      }
+      setScanHistory((prev) => prev.filter((s) => s.id !== scan.id));
+      if (currentScan?.id === scan.id) {
+        setCurrentScan(null);
+        setCurrentImageUrl(null);
+        setIsHistoryView(false);
+        setAppliedToothCodes([]);
+        setApplyNotice(null);
+        setSaveFailure(null);
+        setFormulaFailure(null);
+        setError(null);
+        if (synthRef.current) synthRef.current.cancel();
+        setIsSpeaking(false);
+      }
+    } catch (err) {
+      console.error("[VisiographAnalyzer] scan delete failed", err);
+      setDeleteFailure("Снимок не удалён: нет связи с сервером. Проверьте сеть и повторите.");
+    } finally {
+      setDeletingScanId(null);
+    }
   };
 
   // ── Voice ───────────────────────────────────────────────────────────────
@@ -1255,19 +1338,57 @@ export function VisiographAnalyzer() {
                 </div>
               )}
 
-              {/* New scan button */}
-              <button
-                onClick={handleClear}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center',
-                  padding: '9px 20px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.88rem',
-                  background: 'transparent', border: '1px solid var(--line)', color: 'var(--muted)',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <UploadCloud size={14} />
-                Загрузить другой снимок
-              </button>
+              {/* New scan / delete-from-archive actions */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center',
+                    padding: '9px 20px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.88rem',
+                    background: 'transparent', border: '1px solid var(--line)', color: 'var(--muted)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <UploadCloud size={14} />
+                  Загрузить другой снимок
+                </button>
+                {isHistoryView && currentScan && (
+                  <button
+                    type="button"
+                    data-testid="xray-scan-delete-current"
+                    aria-label="Удалить открытый снимок из архива"
+                    disabled={deletingScanId === currentScan.id}
+                    onClick={() => void deleteScan(currentScan)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center',
+                      padding: '9px 20px', borderRadius: '8px', fontSize: '0.88rem',
+                      background: 'transparent',
+                      border: '1px solid var(--rust, #c62828)',
+                      color: 'var(--rust, #c62828)',
+                      cursor: deletingScanId === currentScan.id ? 'wait' : 'pointer',
+                      opacity: deletingScanId === currentScan.id ? 0.7 : 1,
+                    }}
+                  >
+                    {deletingScanId === currentScan.id
+                      ? <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                      : <Trash2 size={14} aria-hidden="true" />}
+                    Удалить из архива
+                  </button>
+                )}
+              </div>
+              {deleteFailure && isHistoryView && (
+                <div
+                  role="alert"
+                  data-testid="xray-scan-delete-failure-current"
+                  style={{
+                    padding: '8px 12px', background: 'var(--warn-bg)', color: 'var(--warn-fg)',
+                    borderRadius: '8px', fontSize: '0.82rem',
+                  }}
+                >
+                  {deleteFailure}
+                </div>
+              )}
             </div>
           )}
 
@@ -1323,38 +1444,85 @@ export function VisiographAnalyzer() {
                   marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px',
                   maxHeight: '240px', overflowY: 'auto', paddingRight: '4px',
                 }}>
-                  {scanHistory.map(scan => (
-                    <button
-                      key={scan.id}
-                      onClick={() => loadHistoryScan(scan)}
+                  {deleteFailure && (
+                    <div
+                      role="alert"
+                      data-testid="xray-scan-delete-failure"
                       style={{
-                        display: 'flex', alignItems: 'center', gap: '10px',
-                        padding: '10px 12px', borderRadius: '8px',
-                        border: '1px solid var(--line)', background: 'var(--paper-soft)',
-                        cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
+                        padding: '8px 12px', background: 'var(--warn-bg)', color: 'var(--warn-fg)',
+                        borderRadius: '8px', fontSize: '0.82rem', display: 'flex', gap: '8px',
+                        alignItems: 'flex-start',
                       }}
                     >
-                      <div style={{
-                        width: '36px', height: '36px', borderRadius: '6px',
-                        background: 'var(--paper)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        border: '1px solid var(--line)', flexShrink: 0,
-                      }}>
-                        <ScanLine size={16} style={{ color: 'var(--teal)' }} />
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--ink)' }}>
-                          {scan.originalFilename ?? 'Снимок'}
+                      <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: '2px' }} aria-hidden="true" />
+                      <span>{deleteFailure}</span>
+                    </div>
+                  )}
+                  {scanHistory.map(scan => (
+                    <div
+                      key={scan.id}
+                      data-testid={`xray-scan-history-row-${scan.id}`}
+                      style={{
+                        display: 'flex', alignItems: 'stretch', gap: '6px',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => loadHistoryScan(scan)}
+                        data-testid={`xray-scan-open-${scan.id}`}
+                        style={{
+                          flex: 1, display: 'flex', alignItems: 'center', gap: '10px',
+                          padding: '10px 12px', borderRadius: '8px',
+                          border: '1px solid var(--line)', background: 'var(--paper-soft)',
+                          cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
+                          minWidth: 0,
+                        }}
+                      >
+                        <div style={{
+                          width: '36px', height: '36px', borderRadius: '6px',
+                          background: 'var(--paper)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          border: '1px solid var(--line)', flexShrink: 0,
+                        }}>
+                          <ScanLine size={16} style={{ color: 'var(--teal)' }} />
                         </div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: '2px' }}>
-                          {new Date(scan.capturedAt).toLocaleDateString('ru-RU')} ·{' '}
-                          {scan.aiToothStates ? Object.keys(scan.aiToothStates).length : 0} зубов
-                          {scan.aiSummary && (
-                            <span> · {scan.aiSummary.substring(0, 60)}…</span>
-                          )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--ink)' }}>
+                            {scan.originalFilename ?? 'Снимок'}
+                          </div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: '2px' }}>
+                            {new Date(scan.capturedAt).toLocaleDateString('ru-RU')} ·{' '}
+                            {scan.aiToothStates ? Object.keys(scan.aiToothStates).length : 0} зубов
+                            {scan.aiSummary && (
+                              <span> · {scan.aiSummary.substring(0, 60)}…</span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <ZoomIn size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
-                    </button>
+                        <ZoomIn size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                      </button>
+                      <button
+                        type="button"
+                        data-testid={`xray-scan-delete-${scan.id}`}
+                        aria-label={`Удалить снимок ${scan.originalFilename ?? scan.id}`}
+                        title="Удалить из архива"
+                        disabled={deletingScanId === scan.id}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          void deleteScan(scan);
+                        }}
+                        style={{
+                          width: '40px', flexShrink: 0, borderRadius: '8px',
+                          border: '1px solid var(--line)', background: 'var(--paper)',
+                          color: deletingScanId === scan.id ? 'var(--muted)' : 'var(--rust, #c62828)',
+                          cursor: deletingScanId === scan.id ? 'wait' : 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >
+                        {deletingScanId === scan.id
+                          ? <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                          : <Trash2 size={14} aria-hidden="true" />}
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
