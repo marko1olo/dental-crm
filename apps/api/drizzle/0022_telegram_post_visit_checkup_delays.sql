@@ -1,0 +1,1 @@
+ALTER TABLE "dente_telegram_bot_configs" ADD COLUMN IF NOT EXISTS "post_visit_checkup_delay_hours_json" text;

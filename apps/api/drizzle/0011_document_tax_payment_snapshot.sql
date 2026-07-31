@@ -1,0 +1,1 @@
+ALTER TABLE "generated_documents" ADD COLUMN IF NOT EXISTS "tax_payment_snapshot_json" jsonb;

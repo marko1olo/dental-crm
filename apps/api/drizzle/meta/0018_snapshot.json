@@ -1,0 +1,17 @@
+{
+  "tables": {
+    "public.generated_documents": {
+      "columns": {
+        "void_attestation": {
+          "type": "jsonb"
+        },
+        "voided_at": {
+          "type": "timestamp with time zone"
+        },
+        "voided_by_user_id": {
+          "type": "uuid"
+        }
+      }
+    }
+  }
+}
