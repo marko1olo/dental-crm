@@ -94,7 +94,8 @@ const DEFAULT_FLAGS: WorkspaceFeatureFlags = {
 	aiEnableRecommendations: true,
 	aiEnableDocuments: true,
 	hasEngineeringStatus: false,
-	hasClinicalRules: false,
+	hasClinicalRules: true,
+
 	hasReferralModule: false,
 	hasBpmWorkflows: false,
 };

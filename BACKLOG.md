@@ -42,9 +42,8 @@
 [x] P1 | API EN 500→RU message (files/waitlist/lab/inventory reply.send) | files.ts waitlist.ts lab.ts inventory.ts + en500ReplyMessageRu.test.ts | afb0fa8f0
 [x] P1 | useWorkspaceProfile applyWorkspacePreset message-first RU (no Failed to apply preset) | useWorkspaceProfile.ts | 28b2cef0f
 [x] P1 | ScheduleView DayConfirmations+FreedSlots panels + Settings messengers tab wire | ScheduleView.tsx SettingsView.tsx | 3f7dbcd6b
-
-
-
+[x] P0 | Schedule clipboard end-to-end (API writers + panel + AppointmentCard «В буфер» + ScheduleView toolbar) | schedule.ts + ScheduleClipboardPanel + AppointmentCard + ScheduleView | typecheck GREEN; scheduleMutationGuard 6/6 (clipboard POST/DELETE/paste under admin secret)
+[x] P1 | hasClinicalRules default true (API workspace + web DEFAULT_FLAGS) | workspaceProfile.ts + useWorkspaceProfile.ts | flipped both defaults
 
 
 [x] P2 | TODO/FIXME in settings components | apps/web/src/components/settings | none real (CSS .shift-todo only)

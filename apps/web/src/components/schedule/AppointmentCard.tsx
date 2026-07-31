@@ -24,14 +24,16 @@ export type AppointmentCardProps = {
   openAppointmentEditor: (appointment: Appointment) => void;
   /**
    * Переносит пациента, врача, ассистента, кресло, длительность и повод этой
-   * записи в форму новой и открывает её. Заменяет «Буфер обмена переноса
-   * записей расписания» — тот показывал пустую коробку с обещанием
-   * «из клика по визиту вы можете скопировать запись», хотя копировать было
-   * нечем: функция copyToBuffer не вызывалась ни из одного места, вставки не
-   * существовало вовсе, а у таблицы schedule_clipboard_items во всём проекте
-   * нет ни одного писателя — только чтение.
+   * записи в форму новой и открывает её. Удобно для «тот же пациент через
+   * неделю». Для переноса на произвольное время — «В буфер» + панель буфера.
    */
   repeatAppointment: (appointment: Appointment) => void;
+  /**
+   * Копирует снимок приёма в серверный буфер расписания (schedule_clipboard_items)
+   * и открывает панель «Буфер». Вставка создаёт новый приём на выбранное время.
+   */
+  copyAppointmentToBuffer?: (appointment: Appointment) => void;
+
   closeAppointmentEditor: (appointmentId: string) => void;
   updateAppointmentScheduleDraft: (appointmentId: string, key: any, value: any) => void;
   saveAppointmentSchedule: (appointmentId: string) => Promise<boolean>;
@@ -63,6 +65,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
     patientName,
     openAppointmentEditor,
     repeatAppointment,
+    copyAppointmentToBuffer,
     closeAppointmentEditor,
     updateAppointmentScheduleDraft,
     saveAppointmentSchedule,
@@ -166,6 +169,18 @@ export function AppointmentCard(props: AppointmentCardProps) {
         >
           Повторить
         </button>
+        {copyAppointmentToBuffer ? (
+          <button
+            className="secondary-button appointment-buffer-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+            type="button"
+            onClick={() => copyAppointmentToBuffer(appointment)}
+            aria-label={`В буфер: ${appointmentPatientName}`}
+            title="Скопировать в буфер расписания для вставки на другое время"
+            style={{ padding: '4px 12px', minHeight: '28px', fontSize: '12px' }}
+          >
+            В буфер
+          </button>
+        ) : null}
         <button
           className="secondary-button appointment-edit-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
           type="button"
@@ -179,6 +194,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
           Настроить
         </button>
       </div>
+
 
       {appointmentEditing ? (
         <div className="appointment-editor form-span-2" id={appointmentEditorId} aria-label={`Редактирование записи: ${appointmentPatientName}`}>

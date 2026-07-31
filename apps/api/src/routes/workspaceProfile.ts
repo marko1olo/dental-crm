@@ -142,7 +142,8 @@ export const DEFAULT_WORKSPACE_FEATURE_FLAGS: WorkspaceFeatureFlags = {
   hasLeadsKanban: false,
   hasOmnichannel: false,
   hasEngineeringStatus: false,
-  hasClinicalRules: false,
+  hasClinicalRules: true,
+
   hasReferralModule: false,
   hasBpmWorkflows: false,
   numberOfDoctors: 4,

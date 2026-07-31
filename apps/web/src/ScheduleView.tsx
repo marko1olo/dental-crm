@@ -3,7 +3,9 @@ import { AppointmentCard } from "./components/schedule/AppointmentCard";
 import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
 import { DayConfirmationsPanel } from "./components/schedule/DayConfirmationsPanel";
 import { FreedSlotsPanel } from "./components/schedule/FreedSlotsPanel";
+import { ScheduleClipboardPanel } from "./components/schedule/ScheduleClipboardPanel";
 import { EmptyState } from "./components/EmptyState";
+
 /*
  * auth — обычный экспорт модуля, читающий токен из localStorage, а не значение
  * из контекста.
@@ -20,7 +22,8 @@ import { EmptyState } from "./components/EmptyState";
  * вечно пустым, — а нужны они и вне рендера, где хука нет вовсе. Перевод на
  * контекст требует прогона живого расписания, поэтому здесь не делается.
  */
-import { appointmentScheduleMissingFields, auth } from "./AppHelpers";
+import { appointmentScheduleMissingFields, auth, denteAdminSecretRequestHeaders } from "./AppHelpers";
+
 
 import { useSettingsStore } from "./store/settingsStore";
 import { useScheduleStore } from "./store/scheduleStore";
@@ -227,6 +230,11 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   const [showConfirmationsPanel, setShowConfirmationsPanel] = useState(false);
   /** Открыта ли панель освободившихся окон и кандидатов из листа ожидания. */
   const [showFreedSlotsPanel, setShowFreedSlotsPanel] = useState(false);
+  /** Открыта ли панель буфера расписания (копирование/вставка приёмов). */
+  const [showClipboardPanel, setShowClipboardPanel] = useState(false);
+  /** Сигнал панели перечитать список после «В буфер» с карточки. */
+  const [clipboardReloadToken, setClipboardReloadToken] = useState(0);
+
   /**
    * Сколько человек стоит в очереди. Число живёт на кнопке, потому что очередь
    * — это то, о чём забывают: администратор открывает лист ожидания, только
@@ -370,8 +378,67 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     );
   };
 
+  /**
+   * Копирует снимок приёма в серверный буфер (schedule_clipboard_items) и
+   * открывает панель «Буфер». Вставка — отдельным действием с выбором времени.
+   * Исходная запись в сетке не трогается.
+   */
+  const copyAppointmentToBuffer = async (appointment: Appointment) => {
+    const patientLabel = patientName(dashboard.patients, appointment.patientId);
+    try {
+      let response: Response;
+      try {
+        response = await fetch("/api/schedule/clipboard-items", {
+          method: "POST",
+          headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ appointmentId: appointment.id })
+        });
+      } catch {
+        showToast(
+          "Сервер клиники не ответил. Запись в буфер не скопирована.",
+          "error"
+        );
+        return;
+      }
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        const serverMessage =
+          body && typeof body.message === "string" ? body.message.trim() : "";
+        if (serverMessage && /[а-яё]/i.test(serverMessage)) {
+          showToast(serverMessage, "error");
+        } else if (response.status === 401 || response.status === 403) {
+          showToast(
+            "Не удалось скопировать в буфер: нет прав. Введите секрет администратора расписания и повторите.",
+            "error"
+          );
+        } else {
+          showToast(
+            "Не удалось скопировать запись в буфер. Повторите, а если повторится — сообщите администратору.",
+            "error"
+          );
+        }
+        return;
+      }
+      showToast(
+        `«${patientLabel}» скопирован в буфер. Укажите новое время и нажмите «Вставить».`,
+        "success",
+        5000
+      );
+      setShowClipboardPanel(true);
+      setShowFreedSlotsPanel(false);
+      setShowConfirmationsPanel(false);
+      setClipboardReloadToken((token) => token + 1);
+    } catch {
+      showToast(
+        "Не удалось скопировать запись в буфер. Повторите, а если повторится — сообщите администратору.",
+        "error"
+      );
+    }
+  };
+
   /*
     Одно правило на всю запись. Здесь и ниже в списке приёмов лежали ещё две
+
     копии того же перечня «чего не хватает» — с расхождениями в тексте
     («проверьте дату начала» против «проверьте дату начала приема») и без
     различения «не выбрано» и «в клинике вообще нет». Правило живёт в
@@ -643,6 +710,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                   onClick={() => {
                     setShowConfirmationsPanel((prev) => !prev);
                     setShowFreedSlotsPanel(false);
+                    setShowClipboardPanel(false);
                   }}
                   title="Панель утреннего обзвона и подтверждений"
                 >
@@ -654,10 +722,23 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                   onClick={() => {
                     setShowFreedSlotsPanel((prev) => !prev);
                     setShowConfirmationsPanel(false);
+                    setShowClipboardPanel(false);
                   }}
                   title="Освободившиеся окна и подбор из листа ожидания"
                 >
                   Освободившиеся окна
+                </button>
+                <button
+                  className={`text-button ${showClipboardPanel ? "active" : ""}`}
+                  type="button"
+                  onClick={() => {
+                    setShowClipboardPanel((prev) => !prev);
+                    setShowFreedSlotsPanel(false);
+                    setShowConfirmationsPanel(false);
+                  }}
+                  title="Буфер расписания: скопированные приёмы для вставки на другое время"
+                >
+                  Буфер
                 </button>
               </div>
             </div>
@@ -671,6 +752,19 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 <FreedSlotsPanel />
               </div>
             )}
+            {showClipboardPanel && (
+              <div className="my-4 p-4 bg-slate-900/90 text-white rounded-xl border border-slate-700 shadow-xl">
+                <ScheduleClipboardPanel
+                  reloadToken={clipboardReloadToken}
+                  onPasted={() => {
+                    if (typeof props.loadDashboard === "function") {
+                      void props.loadDashboard();
+                    }
+                  }}
+                />
+              </div>
+            )}
+
             {showShiftAnalytics && (
               <div className="schedule-command-grid">
                 <article>
@@ -1058,7 +1152,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                         patientName={patientName}
                         openAppointmentEditor={openAppointmentEditor}
                         repeatAppointment={repeatAppointment}
+                        copyAppointmentToBuffer={copyAppointmentToBuffer}
                         closeAppointmentEditor={closeAppointmentEditor}
+
                         updateAppointmentScheduleDraft={updateAppointmentScheduleDraft as any}
                         saveAppointmentSchedule={saveAppointmentSchedule}
                         normalizedAppointmentStatus={normalizedAppointmentStatus}
@@ -1133,15 +1229,11 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 в отдельную очередь, которую некому наполнить.
               */}
               {/*
-                Здесь стоял <ScheduleClipboardItemsWidget />: постоянно пустая
-                коробка «Буфер обмена переноса записей расписания» с обещанием
-                «из клика по визиту вы можете скопировать запись для быстрого
-                вклеивания». Наполнить её было нечем — copyToBuffer не
-                вызывался ни из одного места, вставки не существовало, а у
-                таблицы schedule_clipboard_items во всём проекте нет ни одного
-                писателя, только чтение. Обещанное действие теперь есть на самой
-                записи кнопкой «Повторить».
+                Буфер расписания: раньше здесь висела пустая коробка без писателей.
+                Теперь — кнопка «Буфер» в шапке, «В буфер» на карточке, панель
+                ScheduleClipboardPanel и API POST/GET/DELETE/paste clipboard-items.
               */}
+
               {/*
                 Здесь стояли <ScheduleTimeReservationsWidget /> и
                 <CancellationReasonsTwoLevelWidget />: «Активные технические
