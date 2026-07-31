@@ -55,6 +55,29 @@ type CampaignPreview = {
 	problems: string[];
 };
 
+/**
+ * Ход рассылки после запуска: сколько сообщений в каком состоянии очереди.
+ * БЕЗ ЭТОГО администратор видел только «Выполняется» / «Завершена» и кнопку
+ * «Остановить» — сколько реально ушло, сколько зависло, сколько отказало,
+ * узнать было нельзя, пока не открыть общий журнал и не фильтровать вручную.
+ * API: GET /api/communications/campaigns/:campaignId/progress → byStatus + total.
+ */
+type CampaignProgress = {
+	byStatus: Record<string, number>;
+	total: number;
+};
+
+/** Подписи статусов очереди — те же, что в MessageDeliveryConsole. */
+const outboxStatusLabels: Record<string, string> = {
+	queued: "В очереди",
+	sending: "Отправляется",
+	sent: "Отправлено",
+	delivered: "Доставлено",
+	failed: "Не удалось",
+	cancelled: "Снято",
+	suppressed: "Задержано"
+};
+
 const campaignStatusLabels: Record<string, string> = {
 	draft: "Черновик",
 	scheduled: "Запланирована",
@@ -153,6 +176,16 @@ export function CampaignPanel() {
 	// предпросмотра навсегда оставалась полоса загрузки.
 	const [previewError, setPreviewError] = useState<string | null>(null);
 
+	/*
+	 * Ход отправки по выбранной рассылке. Загружается вместе с предпросмотром
+	 * и отдельно по кнопке «Ход отправки». Для running — автоопрос раз в 8 с,
+	 * пока панель открыта: иначе «Выполняется» остаётся пустой табличкой.
+	 */
+	const [progressFor, setProgressFor] = useState<string | null>(null);
+	const [progress, setProgress] = useState<CampaignProgress | null>(null);
+	const [progressError, setProgressError] = useState<string | null>(null);
+	const [progressLoading, setProgressLoading] = useState(false);
+
 	const [variables, setVariables] = useState<TemplateVariable[]>([]);
 
 	const load = useCallback(async () => {
@@ -244,7 +277,53 @@ export function CampaignPanel() {
 		} catch (error) {
 			setPreviewError(error instanceof Error ? error.message : String(error));
 		}
+		// Параллельно подтянуть ход: для draft total=0 — это нормально и честно.
+		void loadProgress(campaignId);
 	}
+
+	/**
+	 * GET /api/communications/campaigns/:id/progress — единственный способ увидеть
+	 * «сколько ушло / сколько зависло» без ручного фильтра журнала очереди.
+	 * Раньше маршрут жил на API, а веб его ни разу не вызывал.
+	 */
+	const loadProgress = useCallback(
+		async (campaignId: string) => {
+			setProgressFor(campaignId);
+			setProgressLoading(true);
+			setProgressError(null);
+			try {
+				const response = await fetch(`/api/communications/campaigns/${campaignId}/progress`, {
+					headers: auth ? auth.denteClinicalReadHeaders() : {}
+				});
+				const data = await readJson<{
+					byStatus?: Record<string, number>;
+					total?: number;
+				}>(response);
+				setProgress({
+					byStatus: data.byStatus ?? {},
+					total: typeof data.total === "number" ? data.total : 0
+				});
+			} catch (error) {
+				setProgress(null);
+				setProgressError(error instanceof Error ? error.message : String(error));
+			} finally {
+				setProgressLoading(false);
+			}
+		},
+		[auth]
+	);
+
+	// Пока рассылка «Выполняется» и открыт её ход — опрашивать, иначе цифры
+	// застывают после первого запроса, а сообщения продолжают уходить.
+	useEffect(() => {
+		if (!progressFor) return;
+		const row = campaigns.find((c) => c.id === progressFor);
+		if (!row || row.status !== "running") return;
+		const timer = window.setInterval(() => {
+			void loadProgress(progressFor);
+		}, 8000);
+		return () => window.clearInterval(timer);
+	}, [progressFor, campaigns, loadProgress]);
 
 	async function campaignAction(campaignId: string, action: "launch" | "cancel") {
 		setBusy(true);
@@ -275,6 +354,7 @@ export function CampaignPanel() {
 			});
 			await load();
 			if (previewFor === campaignId) await openPreview(campaignId);
+			else void loadProgress(campaignId);
 		} catch (error) {
 			setNotice(
 				failNotice(
@@ -402,13 +482,32 @@ export function CampaignPanel() {
 											</button>
 										</>
 									) : campaign.status === "running" ? (
+										<>
+											<button
+												className="secondary-button"
+												type="button"
+												data-testid={`campaign-progress-btn-${campaign.id}`}
+												onClick={() => void loadProgress(campaign.id)}
+											>
+												Ход отправки
+											</button>
+											<button
+												className="primary-button"
+												type="button"
+												disabled={busy}
+												onClick={() => void campaignAction(campaign.id, "cancel")}
+											>
+												Остановить
+											</button>
+										</>
+									) : campaign.status === "completed" || campaign.status === "cancelled" ? (
 										<button
-											className="primary-button"
+											className="secondary-button"
 											type="button"
-											disabled={busy}
-											onClick={() => void campaignAction(campaign.id, "cancel")}
+											data-testid={`campaign-progress-btn-${campaign.id}`}
+											onClick={() => void loadProgress(campaign.id)}
 										>
-											Остановить
+											Ход отправки
 										</button>
 									) : null}
 								</td>
@@ -418,6 +517,101 @@ export function CampaignPanel() {
 				</table>
 				</div>
 			)}
+
+			{progressFor ? (
+				<div className="ops-preview" data-testid="campaign-progress-panel">
+					<h3 className="ops-section-title">Ход отправки</h3>
+					{progressLoading && !progress ? (
+						<p className="ops-hint" role="status" aria-live="polite">
+							Считаем сообщения рассылки…
+						</p>
+					) : null}
+					{progressError ? (
+						<>
+							<p className="ops-notice ops-notice--error" role="alert">
+								Не удалось получить ход рассылки: {progressError}
+							</p>
+							<button
+								className="secondary-button"
+								type="button"
+								data-testid="campaign-progress-retry"
+								onClick={() => void loadProgress(progressFor)}
+							>
+								Повторить
+							</button>
+						</>
+					) : null}
+					{progress ? (
+						<>
+							<ul className="ops-metrics" data-testid="campaign-progress-metrics">
+								<li className="ops-metric ops-metric--primary">
+									<span className="ops-metric__value">{progress.total}</span>
+									<span className="ops-metric__label">всего в очереди</span>
+								</li>
+								{(
+									[
+										["sent", "ops-metric--primary"],
+										["delivered", "ops-metric--primary"],
+										["queued", ""],
+										["sending", ""],
+										["failed", "ops-metric--danger"],
+										["cancelled", ""],
+										["suppressed", ""]
+									] as const
+								).map(([status, cls]) => {
+									const count = progress.byStatus[status] ?? 0;
+									if (count <= 0) return null;
+									return (
+										<li className={`ops-metric ${cls}`.trim()} key={status} data-testid={`campaign-progress-${status}`}>
+											<span className="ops-metric__value">{count}</span>
+											<span className="ops-metric__label">{outboxStatusLabels[status] ?? status}</span>
+										</li>
+									);
+								})}
+							</ul>
+							{progress.total === 0 ? (
+								<p className="ops-hint">
+									Сообщений этой рассылки в очереди пока нет — либо она ещё не запускалась, либо все строки уже
+									сняты.
+								</p>
+							) : null}
+							{(progress.byStatus.failed ?? 0) > 0 ? (
+								<p className="ops-notice ops-notice--error" role="alert">
+									Не удалось отправить: {progress.byStatus.failed}. Откройте журнал доставки и повторите
+									отказные по одной, либо проверьте шлюз.
+								</p>
+							) : null}
+							{campaigns.find((c) => c.id === progressFor)?.status === "running" ? (
+								<p className="ops-hint" role="status" aria-live="polite">
+									Рассылка выполняется — цифры обновляются сами каждые несколько секунд.
+								</p>
+							) : null}
+						</>
+					) : null}
+					<div className="ops-toolbar">
+						<button
+							className="secondary-button"
+							type="button"
+							data-testid="campaign-progress-refresh"
+							disabled={progressLoading}
+							onClick={() => void loadProgress(progressFor)}
+						>
+							Обновить
+						</button>
+						<button
+							className="secondary-button"
+							type="button"
+							onClick={() => {
+								setProgressFor(null);
+								setProgress(null);
+								setProgressError(null);
+							}}
+						>
+							Закрыть ход
+						</button>
+					</div>
+				</div>
+			) : null}
 
 			{previewFor ? (
 				<div className="ops-preview">

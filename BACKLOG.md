@@ -1,5 +1,23 @@
 ## 2026-07-31 — Staff commissions GET overview (Settings → Персонал)
 
+## 2026-07-31 — Ход рассылки в CampaignPanel (GET campaigns/:id/progress)
+
+**Проблема.** API `GET /api/communications/campaigns/:campaignId/progress` отдавал
+`byStatus` + `total` по outbox-строкам рассылки, но веб **ни разу** не вызывал
+маршрут. Администратор видел только бейдж «Выполняется» / «Завершена» и кнопку
+«Остановить» — сколько ушло, сколько в очереди, сколько failed, узнать было
+нельзя без ручного фильтра журнала доставки.
+
+**Сделано.** `CampaignPanel`: тип `CampaignProgress`, `loadProgress`, кнопка
+«Ход отправки» для running/completed/cancelled, панель метрик (queued/sent/
+delivered/failed/…), автоопрос 8 с пока status=running, обновление после
+launch/cancel, подгрузка вместе с предпросмотром. data-testid:
+`campaign-progress-panel`, `campaign-progress-metrics`, `campaign-progress-btn-*`.
+
+**Проверка.** `npx tsc -p apps/web --noEmit` exit 0; live GET progress без
+секрета → 401/403 (маршрут жив).
+
+
 - **Gap:** `GET /api/settings/staff/commissions` already returned active `doctor_commissions` rates (`userId`, `commissionPct`, `materialCostDeductionPct`, `effectiveFrom`), and PUT `/api/settings/staff/:staffId/commission` was already wired in `DoctorPayoutDashboard` — but **zero web callers** on the GET list. Owner only saw rates inside the monthly payouts table; doctors with no visits that month looked “без ставки” even when a rate row existed.
 - **Ship:** `StaffCommissionsPanel.tsx` — self-contained (`useAppLogicContext` + `denteAdminSecretRequestHeaders`); loads GET list, joins staff FIO from dashboard, inline edit via existing PUT; mounted at top of `SettingsStaffTab` (`data-testid staff-commissions-panel`).
 - **Verify:** `npx tsc -p apps/web --noEmit`; live GET `/api/settings/staff/commissions` → 401/403 without admin secret (route up); web grep `settings/staff/commissions` → panel.
