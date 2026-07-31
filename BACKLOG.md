@@ -1,3 +1,11 @@
+
+## 2026-07-31 — Clinical phase handoff UI (VisitView)
+
+- **Gap:** `POST /api/clinical/phase-completions` + `GET /api/clinical/tasks` wrote to `clinical_tasks` (ClinicalRouter + clinicalTasksQuery) but had **zero web callers** — therapist/surgeon finished a phase and the prosthodontist never saw a task.
+- **Ship:** `apps/web/src/ClinicalTasksPanel.tsx` (self-contained FreedSlotsPanel pattern: `denteClinicalReadHeaders` / `denteClinicalMutationHeaders`).
+- **Mount:** `VisitView.tsx` after ClinicalRulePanel when `activePatient.id` is set; buttons «Завершить терапию — передать на ортопедию» / «Завершить хирургию — передать на ортопедию».
+- **Verify:** `npx tsc -p apps/web --noEmit` clean; live API AuthRequired then staff headers.
+
 # DENTE CRM — demon backlog (Lead Security + Full-Stack)
 # Format: [ ] prio | what | where | proof
 # [~] in progress + agent id | [x] done + commit hash

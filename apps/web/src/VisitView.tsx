@@ -132,6 +132,7 @@ export interface VisitViewProps {
 }
 
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { ClinicalTasksPanel } from "./ClinicalTasksPanel";
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
   const logicContext = useAppLogicContext();
@@ -1307,7 +1308,33 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               </div>
             </details>
 
+            {/*
+              Передача между этапами: backend POST /api/clinical/phase-completions
+              и GET /api/clinical/tasks уже писали в clinical_tasks, но на экране
+              приёма кнопок не было — следующий врач не видел задачу. Панель
+              самодостаточная (как FreedSlotsPanel): сама ходит в API с clinical
+              headers из контекста.
+            */}
+            {activePatient?.id ? (
+              <ClinicalTasksPanel
+                patientId={activePatient.id}
+                assignedDoctorId={
+                  (typeof activeDoctor?.id === "string" && activeDoctor.id) ||
+                  (typeof activeDoctor?.userId === "string" && activeDoctor.userId) ||
+                  null
+                }
+                treatmentPlanId={
+                  (typeof activePatient?.activeTreatmentPlanId === "string" &&
+                    activePatient.activeTreatmentPlanId) ||
+                  (typeof activeAppointment?.treatmentPlanId === "string" &&
+                    activeAppointment.treatmentPlanId) ||
+                  null
+                }
+              />
+            ) : null}
+
                         {visitCloseChecklist ? (
+
               <div className="close-checklist" aria-label="Предупреждения перед закрытием приема">
                 <div className="close-checklist-head">
                   <div>
