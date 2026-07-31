@@ -1,4 +1,10 @@
 
+## 2026-07-31 — NDFL Tax Certificate XML Export UI (DocumentsView)
+
+- **Gap:** `GET /api/documents/:id/tax-xml` generated valid KND 1151156 XML for FNS EDO submission, but button in `DocumentsView.tsx` had ambiguous label "Черновой файл ФНС" and lacked explicit ARIA metadata.
+- **Ship:** Updated `DocumentsView.tsx` with explicit action button «Справка НДФЛ в XML (ФНС)», emerald status styling, and full ARIA accessibility guidance.
+- **Verify:** `npm run check:encoding` clean (2819 files verified); `npm run typecheck` GREEN across `@dental/shared`, `@dental/api`, and `@dental/web`.
+
 ## 2026-07-31 — AI personalize UI (Visit + Finance)
 
 - **Gap:** `POST /api/ai/treatment-plan-personalize` and `POST /api/ai/post-visit-personalize` already returned patient-friendly Russian text (rule fallback + optional neural), but **zero web callers** — doctor closed the visit and could only explain the plan / hand a memo manually.

@@ -4290,14 +4290,14 @@ export function DocumentsView(props: DocumentsViewProps) {
                       ) : null}
                       {document.kind === "tax_deduction_certificate" && document.status === "issued" ? (
                         <button
-                          className="doc-link"
+                          className="doc-link font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
                           type="button"
                           onClick={() => void downloadTaxDocumentXml(document.id)}
                           aria-describedby={documentLifecycleGuidanceId}
-                          aria-label={`Скачать черновой файл ФНС: ${documentActionContext}`}
-                          title={`Скачать черновой файл ФНС: ${documentActionContext}`}
+                          aria-label={`Скачать XML-файл справки НДФЛ в формате ФНС (КНД 1151156): ${documentActionContext}`}
+                          title={`Скачать XML-файл справки НДФЛ в формате ФНС (КНД 1151156): ${documentActionContext}`}
                         >
-                          Черновой файл ФНС
+                          Справка НДФЛ в XML (ФНС)
                         </button>
                       ) : null}
                       {document.status === "draft" ? (
