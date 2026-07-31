@@ -194,7 +194,11 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 
 		const created = newItem[0];
 		if (!created)
-			return reply.status(500).send({ error: "Failed to create item" });
+			return reply.status(500).send({
+				error: "InventoryItemNotSaved",
+				message:
+					"Позиция склада не создана: сервер не сохранил запись. Проверьте название и повторите; если снова не выйдет — сообщите администратору клиники.",
+			});
 		return created;
 	});
 
@@ -457,7 +461,11 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			.returning();
 
 		if (!updated)
-			return reply.status(500).send({ error: "Failed to update item" });
+			return reply.status(500).send({
+				error: "InventoryItemNotSaved",
+				message:
+					"Позиция склада не сохранена: сервер не записал изменения. Проверьте данные и повторите; если снова не выйдет — сообщите администратору клиники.",
+			});
 		return updated;
 	});
 

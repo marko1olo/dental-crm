@@ -165,7 +165,11 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			.returning();
 
 		if (!newOrder) {
-			return reply.code(500).send({ error: "Failed to create lab order" });
+			return reply.code(500).send({
+				error: "LabOrderNotSaved",
+				message:
+					"Заказ в лабораторию не создан: сервер не сохранил запись. Проверьте данные и повторите; если снова не выйдет — сообщите администратору клиники.",
+			});
 		}
 
 		// Notify clinic clients via WS
@@ -309,7 +313,11 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			};
 		} catch (e) {
 			console.error("[LabPortal] GET error:", e);
-			return reply.code(500).send({ error: "DatabaseError" });
+			return reply.code(500).send({
+				error: "LabPortalError",
+				message:
+					"Портал лаборатории временно недоступен. Повторите попытку; если снова не выйдет — сообщите администратору клиники.",
+			});
 		}
 	});
 
@@ -354,7 +362,11 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			return { success: true, status: updated?.status };
 		} catch (e) {
 			console.error("[LabPortal] POST error:", e);
-			return reply.code(500).send({ error: "DatabaseError" });
+			return reply.code(500).send({
+				error: "LabPortalError",
+				message:
+					"Портал лаборатории временно недоступен. Повторите попытку; если снова не выйдет — сообщите администратору клиники.",
+			});
 		}
 	});
 }

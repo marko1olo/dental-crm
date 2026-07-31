@@ -141,7 +141,11 @@ export async function registerWaitlistRoutes(
 			.returning();
 
 		if (!newItem) {
-			return reply.code(500).send({ error: "Failed to add to waitlist" });
+			return reply.code(500).send({
+				error: "WaitlistNotSaved",
+				message:
+					"Пациент не добавлен в лист ожидания: сервер не сохранил запись. Проверьте данные и повторите; если снова не выйдет — сообщите администратору клиники.",
+			});
 		}
 
 		const responseItem = {

@@ -77,7 +77,11 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			.returning();
 
 		if (!attachment) {
-			return reply.code(500).send({ error: "Failed to insert attachment" });
+			return reply.code(500).send({
+				error: "AttachmentNotSaved",
+				message:
+					"Файл не сохранён: сервер не записал вложение. Повторите загрузку; если снова не выйдет — сообщите администратору клиники.",
+			});
 		}
 
 		return reply.code(201).send({ success: true, attachment });
@@ -175,7 +179,11 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			.returning();
 
 		if (!attachment) {
-			return reply.code(500).send({ error: "Failed to insert attachment" });
+			return reply.code(500).send({
+				error: "AttachmentNotSaved",
+				message:
+					"Файл не сохранён: сервер не записал вложение. Повторите загрузку; если снова не выйдет — сообщите администратору клиники.",
+			});
 		}
 
 		return reply.code(201).send({ 

@@ -39,6 +39,7 @@
 [x] P1 | workspace profile POST body Zod (AUTH→safeParse→org; array/string→400 RU≠500/404) + saveWorkspaceFlags message-first gameplay | workspaceProfile.ts + useWorkspaceProfile.ts + egiszVkBody.test.ts | 17/17 GREEN | c61e6cc36
 [x] P1 | ScannerView sterilization message-first RU (payload.message Cyrillic; StaffAuthRequired kept) | ScannerView.tsx | 36dc0ce02
 [x] P1 | LeadsKanban message-first RU (leadsFailureMessage + toast on drag/edit; convert already OK) | leadsStore.ts + LeadsKanbanView.tsx | 36dc0ce02
+[x] P1 | API EN 500→RU message (files/waitlist/lab/inventory reply.send) | files.ts waitlist.ts lab.ts inventory.ts + en500ReplyMessageRu.test.ts | PENDING_COMMIT
 
 
 
