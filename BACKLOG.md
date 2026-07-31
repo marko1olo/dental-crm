@@ -1,4 +1,10 @@
 
+## 2026-07-31 — EGISZ Multiple Diagnoses UI (VisitEmkTab)
+
+- **Gap:** `GET /api/egisz/multiple-diagnoses` queried structured accompanying diagnoses (`egiszMultipleDiagnoses` table) for EGISZ REMD CDA R2 compliance, but had zero web callers — doctors could not see or attach accompanying ICD-10 diagnoses to visit exports.
+- **Ship:** Built `EgiszMultipleDiagnosesWidget.tsx` — self-contained widget fetching `/api/egisz/multiple-diagnoses` with `denteClinicalReadHeaders`; mounted inside `VisitEmkTab.tsx` directly above the CDA R2 XML download section.
+- **Verify:** `npm run check:encoding` clean (2822 files verified); `npm run typecheck` GREEN across all packages.
+
 ## 2026-07-31 — EGISZ Doctor SNILS Validation UI (SettingsStaffTab)
 
 - **Gap:** `POST /api/clinical/egisz/validate-doctor-snils` validated doctor SNILS format and 11-digit checksum against state EGISZ/FRMR standards, but had zero web callers — administrators entered doctor credentials blindly without validation.

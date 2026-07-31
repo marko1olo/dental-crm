@@ -2,6 +2,7 @@ import React from "react";
 import { Check, ShieldCheck, Download, ScanLine, FileCode } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
+import { EgiszMultipleDiagnosesWidget } from "./EgiszMultipleDiagnosesWidget";
 import { CompletedServicesChecklist } from "./CompletedServicesChecklist";
 import { VisitFlowProgress } from "./VisitFlowProgress";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
@@ -647,6 +648,10 @@ export function VisitEmkTab() {
 									<Download className="w-3.5 h-3.5" />
 									{isExportingCda ? "Формирование XML…" : "Скачать CDA R2 (XML)"}
 								</button>
+							</div>
+
+							<div className="mb-3">
+								<EgiszMultipleDiagnosesWidget />
 							</div>
 
 							<hr className="my-3 border-t border-slate-200 dark:border-slate-800" />
