@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "savedAt": "2026-07-29T12:51:06.535Z",
+  "savedAt": "2026-07-31T12:23:18.701Z",
   "health": {
     "google_speech:26987e457b44": {
       "cooldownUntil": 0,
       "failures": 0,
-      "successes": 267,
-      "lastUsedAt": 1785329466534,
+      "successes": 270,
+      "lastUsedAt": 1785500598700,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -27,20 +27,20 @@
       "lastError": "GEMINI 400: [{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Unable to process input image. Please retry or report in https://developers.generativeai.google/guide/troubleshooting\",\n    \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n]"
     },
     "google_speech:5cdeb7e487c0": {
-      "cooldownUntil": 0,
-      "failures": 0,
+      "cooldownUntil": 1785499372964,
+      "failures": 1,
       "successes": 302,
-      "lastUsedAt": 1783088871221,
-      "lastStatusCode": null,
-      "lastError": null
+      "lastUsedAt": 1785498772964,
+      "lastStatusCode": 401,
+      "lastError": "401 Unauthorized"
     },
     "google_speech:5e36d93cca7c": {
-      "cooldownUntil": 0,
-      "failures": 0,
+      "cooldownUntil": 1785499372747,
+      "failures": 1,
       "successes": 276,
-      "lastUsedAt": 1783088898175,
-      "lastStatusCode": null,
-      "lastError": null
+      "lastUsedAt": 1785498772747,
+      "lastStatusCode": 401,
+      "lastError": "401 Unauthorized"
     },
     "google_speech:c5b553420348": {
       "cooldownUntil": 0,
@@ -59,12 +59,12 @@
       "lastError": null
     },
     "google_speech:c78fec9a5b53": {
-      "cooldownUntil": 0,
-      "failures": 0,
+      "cooldownUntil": 1785499372654,
+      "failures": 1,
       "successes": 281,
-      "lastUsedAt": 1783088891223,
-      "lastStatusCode": null,
-      "lastError": null
+      "lastUsedAt": 1785498772654,
+      "lastStatusCode": 401,
+      "lastError": "401 Unauthorized"
     },
     "groq_whisper:28098ef6adba": {
       "cooldownUntil": 1783090246790,

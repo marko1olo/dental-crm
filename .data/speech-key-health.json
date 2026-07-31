@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-07-30T00:50:31.904Z",
+  "savedAt": "2026-07-31T11:55:34.346Z",
   "health": {
     "google_speech:26987e457b44": {
       "cooldownUntil": 0,
@@ -11,28 +11,28 @@
       "lastError": null
     },
     "google_speech:3e0ef4ad3f5a": {
-      "cooldownUntil": 1785321464136,
-      "failures": 26,
+      "cooldownUntil": 1785497327888,
+      "failures": 27,
       "successes": 1,
-      "lastUsedAt": 1785320864136,
-      "lastStatusCode": 401,
-      "lastError": "401 Unauthorized"
+      "lastUsedAt": 1785497297888,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
     },
     "google_speech:401c79dc50d5": {
-      "cooldownUntil": 1785321463161,
-      "failures": 77,
+      "cooldownUntil": 1785499534019,
+      "failures": 79,
       "successes": 0,
-      "lastUsedAt": 1785320863161,
+      "lastUsedAt": 1785498934019,
       "lastStatusCode": 401,
       "lastError": "401 Unauthorized"
     },
     "google_speech:5cdeb7e487c0": {
-      "cooldownUntil": 1785319646584,
-      "failures": 16,
+      "cooldownUntil": 1785497257151,
+      "failures": 17,
       "successes": 4,
-      "lastUsedAt": 1785319046584,
-      "lastStatusCode": 401,
-      "lastError": "401 Unauthorized"
+      "lastUsedAt": 1785497227151,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
     },
     "google_speech:5e36d93cca7c": {
       "cooldownUntil": 1785321463901,
@@ -43,26 +43,26 @@
       "lastError": "401 Unauthorized"
     },
     "google_speech:c5b553420348": {
-      "cooldownUntil": 1785321935296,
-      "failures": 94,
+      "cooldownUntil": 1785499534346,
+      "failures": 97,
       "successes": 2,
-      "lastUsedAt": 1785321335296,
+      "lastUsedAt": 1785498934346,
       "lastStatusCode": 401,
       "lastError": "401 Unauthorized"
     },
     "google_speech:c637bdf62cb7": {
-      "cooldownUntil": 1785321934797,
-      "failures": 87,
+      "cooldownUntil": 1785497257136,
+      "failures": 88,
       "successes": 0,
-      "lastUsedAt": 1785321334797,
-      "lastStatusCode": 401,
-      "lastError": "401 Unauthorized"
+      "lastUsedAt": 1785497227136,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
     },
     "google_speech:c78fec9a5b53": {
-      "cooldownUntil": 1785321935560,
-      "failures": 130,
+      "cooldownUntil": 1785499534134,
+      "failures": 131,
       "successes": 0,
-      "lastUsedAt": 1785321335560,
+      "lastUsedAt": 1785498934134,
       "lastStatusCode": 401,
       "lastError": "401 Unauthorized"
     },

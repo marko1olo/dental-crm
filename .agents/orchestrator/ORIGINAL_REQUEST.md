@@ -1,23 +1,32 @@
 # Original User Request
 
-## 2026-07-27T03:47:10Z
+## 2026-07-31T12:21:20Z
 
-You are the Project Orchestrator for DENTE Dental CRM (`C:\Clinic_MVP\dental-crm`).
-Your mission is to execute an aggressive, uncompromising UI/UX overhaul of DENTE Dental CRM per the user request in `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md`.
+Full clinical and UI mounting sprint for Dental CRM (`C:\Clinic_MVP\dental-crm`) to bridge backend API capabilities with React web UI views, seed realistic clinical data, and verify visual quality across 4 layout/theme states.
 
-Working directory for project: `C:\Clinic_MVP\dental-crm`
-Your agent workspace directory: `C:\Clinic_MVP\dental-crm\.agents\orchestrator`
+Working directory: `C:\Clinic_MVP\dental-crm`
+Integrity mode: development
 
-Key Requirements & Acceptance Criteria:
-1. Elevate all 11 application views (Shift, Schedule, Patients, Imaging, Visit, Documents, Finance, Analytics, Communications, Settings, Marketing) to premium design standards with glassmorphism, smooth gradients, soft elevation shadows (`var(--shadow-1)`, `var(--shadow-2)`), micro-interactions, hover states, smooth focus rings, polished empty states, patient silhouette avatars, crisp badges, and multi-theme compatibility (Light, Dark, Night).
-2. Structural Code Reconnaissance & Refactoring: Use `ast-grep` (`sg`), `rg`, and `fd` to audit for hardcoded inline styles, inconsistent margins, missing accessibility attributes, replacing with clean CSS variables and modular styles.
-3. Automated 4-State Visual Proof Matrix: Run `dente-redesign-shots.mjs` to capture and verify all views across Desktop Light, Desktop Dark, Mobile Light, Mobile Dark. Self-audit all 4 states for visual defects.
-4. Strict Compliance with `C:\Clinic_MVP\dental-crm\AGENTS.md`:
-   - Commit every modified file individually per Clinic MVP Constitution.
-   - Start reports with real `HEAD: <hash>`.
-   - "compiles" != "works" — prove with numbers and visual proof.
-   - Direct file editing only (no fs-scripts / node -e / regex replace on source files).
-5. Quality Gate: `npm run typecheck` must pass with 0 errors across all workspaces.
+## Requirements
 
-Maintain `plan.md`, `progress.md`, and `context.md` in `C:\Clinic_MVP\dental-crm\.agents\orchestrator\`. Update `progress.md` continuously.
-When all work and verification are complete, report your completion/victory claim back to me (Sentinel).
+### R1. UI Feature Mounting & Workflow Integration
+Integrate unmounted backend query modules and Fastify routes into the React web client (`apps/web/src/`):
+- Mount "Потерянные пациенты" (Lost Patients Filter from `lostPatientsFiltersQuery.ts`) in `AnalyticsDashboardView.tsx` and `PatientsView.tsx`.
+- Mount No-Show Risk Indicator (`patientNoShowRiskQuery.ts`) badges on appointment cards in `ScheduleView.tsx`.
+- Ensure zero broken/unmounted routes or dead-end buttons.
+
+### R2. Clinical Seed Expansion & Realistic Demo Data
+Expand base seed dataset in `apps/api/.data/dental-crm-state.json` and `seedOpsScreenshotDemo.ts`:
+- Include at least 15 patients with full administrative profiles (Passport, SNILS, OMS/DMS).
+- Seed completed EMK visits with objective findings and tooth formula statuses (teeth 11–48 crowns, fillings, missing teeth).
+- Seed completed works acts, 54-FZ fiscal receipts, NDFL certificates (КНД 1151156 XML), and EGISZ CDA XML snapshots.
+
+### R3. Automated Visual Proof & 4-State Verification
+Verify UI quality and theme responsiveness using Playwright/CDP screenshot tools (`scripts/ops-panels-shots.mjs`):
+- Fix session token re-hydration during theme changes to prevent shift lock screen fallbacks.
+- Capture 4-state visual proof (PC Light, PC Dark, Mobile Light, Mobile Dark) without any `_ПУСТО.png` diagnostic screens.
+
+### R4. Compilation, Encoding & Code Quality Gates
+Enforce strict repository quality gates prior to commit:
+- `npm run check:encoding` must pass with 0 encoding/mojibake errors.
+- `npm run typecheck` must pass with 0 TypeScript compiler errors across all monorepo packages (`@dental/shared`, `@dental/api`, `@dental/web`).

@@ -1,25 +1,25 @@
-# BRIEFING — 2026-07-27T03:47:15Z
+# BRIEFING — 2026-07-31T16:24:50Z
 
 ## Mission
-Execute an aggressive, uncompromising UI/UX overhaul of DENTE Dental CRM across all 11 views, refactoring hardcoded inline styles, adhering to 4-state multi-theme visual standards, verifying zero typecheck errors, and individual file git commits per Clinic MVP Constitution.
+Lead the team to complete all requirements in the sprint for Dental CRM (`C:\Clinic_MVP\dental-crm`): R1 (UI feature mounting: lost patients filter, no-show risk badges, zero dead-ends), R2 (clinical seed data expansion: 15+ full administrative profiles, EMK visits with tooth formula 11-48, acts, 54-FZ receipts, NDFL КНД 1151156 XML, EGISZ CDA XML), R3 (session token re-hydration fix, 4-state visual proof matrix via `ops-panels-shots.mjs`), and R4 (encoding gate, typecheck gate, per-file git commits).
 
 ## 🔒 My Identity
 - Archetype: Project Orchestrator
 - Roles: orchestrator, user_liaison, human_reporter, successor
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\orchestrator
-- Original parent: Sentinel
-- Original parent conversation ID: 1db21cb1-22ae-442d-aca4-309946e1f2ab
+- Original parent: parent
+- Original parent conversation ID: 7bfa8898-a2c8-4e25-bcf7-c627d0aa809a
 
 ## 🔒 My Workflow
 - **Pattern**: Project Pattern (Orchestrator Procedure: Assess -> Decompose & Delegate -> Iteration Loop per Milestone)
 - **Scope document**: C:\Clinic_MVP\dental-crm\.agents\orchestrator\PROJECT.md
-1. **Decompose**: Split into 4 parallel/sequential milestones based on view groupings & core design tokens:
-   - Milestone 1: Reconnaissance, Theme System & CSS Design Tokens Audit (Glassmorphism, Shadows, Focus Rings, Avatars, Badges, Empty States)
-   - Milestone 2: View Batch A UI/UX Overhaul (Shift, Schedule, Patients, Visit, Imaging)
-   - Milestone 3: View Batch B UI/UX Overhaul (Documents, Finance, Analytics, Communications, Settings, Marketing)
-   - Milestone 4: 4-State Visual Proof Matrix, Typecheck Gate & Individual Per-File Commits
+1. **Decompose**: Split sprint into 4 milestones:
+   - Milestone 1: Reconnaissance & Codebase Audit (DONE)
+   - Milestone 2: R1 UI Feature Mounting & Route Integrity (IN_PROGRESS)
+   - Milestone 3: R2 Clinical Seed Data Expansion (IN_PROGRESS)
+   - Milestone 4: R3 & R4 Session Token Fix, 4-State Visual Proof, Encoding & Typecheck Gates, Per-file Commits (PLANNED)
 2. **Dispatch & Execute**:
-   - For each milestone: Explorer (investigate/plan) -> Worker (implement & commit per file) -> Reviewer (code & accessibility review) -> Challenger / Auditor (visual screenshot & build check).
+   - For each milestone: Explorer -> Worker -> Reviewer -> Auditor.
 3. **On failure**: Retry -> Replace -> Skip -> Redistribute -> Redesign
 4. **Succession**: Self-succeed at spawn count 16.
 
@@ -28,31 +28,31 @@ Execute an aggressive, uncompromising UI/UX overhaul of DENTE Dental CRM across 
 - Commit every modified file individually per Clinic MVP Constitution.
 - Start reports with real `HEAD: <hash>`.
 - "compiles" != "works" — prove with numbers and visual proof.
-- Direct file editing only in workers (no fs-scripts / node -e / regex replace on source files).
-- `npm run typecheck` must pass with 0 errors across all workspaces.
+- Direct file editing only in workers.
+- `npm run check:encoding` must pass with 0 errors.
+- `npm run typecheck` must pass with 0 errors across `@dental/shared`, `@dental/api`, `@dental/web`.
 
 ## Current Parent
-- Conversation ID: 1db21cb1-22ae-442d-aca4-309946e1f2ab
+- Conversation ID: 7bfa8898-a2c8-4e25-bcf7-c627d0aa809a
 - Recipient Name: parent
 
 ## Key Decisions Made
-- Decomposed the 11 views into 4 structured milestones to ensure clean parallelization and comprehensive visual matrix auditing.
-- Activated heartbeat cron timer every 10 minutes.
+- Dispatched Worker 1 (`f5f772cb-be7c-402f-a224-09455e935eb5`) for Milestone 2 (R1 UI Feature Mounting).
+- Dispatched Worker 2 (`b3ee4ede-7f33-48cd-9ae5-9ff1028acbed`) for Milestone 3 (R2 Clinical Seed Data Expansion).
 
 ## Team Roster
 | Agent | Type | Work Item | Status | Conv ID |
 |-------|------|-----------|--------|---------|
-| explorer_m1_tokens | teamwork_preview_explorer | Theme & CSS Design System Audit | completed | 7d444198-7d83-430a-9d79-231fe91a2666 |
-| explorer_m1_batch_a | teamwork_preview_explorer | Batch A Views Reconnaissance | completed | 82af6590-e70b-43b2-93bf-cd4e164f862d |
-| explorer_m1_batch_b | teamwork_preview_explorer | Batch B Views Reconnaissance | completed | f06a6e00-b89d-4aca-a6dd-818bbb794959 |
-
-| worker_batch_a | teamwork_preview_worker | Batch A UI Overhaul | in-progress | 3a39464e-4bbc-410e-9ca6-69564b0fd3a8 |
-| worker_batch_b | teamwork_preview_worker | Batch B UI Overhaul | completed | 2049dc68-81bc-43c9-b721-70ee4f86fa30 |
+| explorer_m1_r1 | teamwork_preview_explorer | R1 UI Feature Mounting Reconnaissance | completed | dde2e37f-9e32-44ed-b2c5-0757502bd846 |
+| explorer_m1_r2 | teamwork_preview_explorer | R2 Clinical Seed Data Reconnaissance | completed | e044937d-df2d-4f1a-9b9e-59a5d58152a3 |
+| explorer_m1_r3_r4 | teamwork_preview_explorer | R3/R4 Proof & Quality Gates Reconnaissance | completed | c8caa94b-cda4-404d-8ee6-1ad086687648 |
+| worker_m2 | teamwork_preview_worker | R1 UI Feature Mounting | in-progress | f5f772cb-be7c-402f-a224-09455e935eb5 |
+| worker_m3 | teamwork_preview_worker | R2 Clinical Seed Expansion | in-progress | b3ee4ede-7f33-48cd-9ae5-9ff1028acbed |
 
 ## Succession Status
 - Succession required: no
-- Spawn count: 6 / 16
-- Pending subagents: 3a39464e-4bbc-410e-9ca6-69564b0fd3a8, 2049dc68-81bc-43c9-b721-70ee4f86fa30
+- Spawn count: 5 / 16
+- Pending subagents: f5f772cb-be7c-402f-a224-09455e935eb5, b3ee4ede-7f33-48cd-9ae5-9ff1028acbed
 - Predecessor: none
 - Successor: not yet spawned
 
@@ -65,4 +65,3 @@ Execute an aggressive, uncompromising UI/UX overhaul of DENTE Dental CRM across 
 - C:\Clinic_MVP\dental-crm\.agents\orchestrator\PROJECT.md — Architecture & Milestone Decomposition
 - C:\Clinic_MVP\dental-crm\.agents\orchestrator\plan.md — Detailed step-by-step execution plan
 - C:\Clinic_MVP\dental-crm\.agents\orchestrator\progress.md — Dynamic progress tracker
-- C:\Clinic_MVP\dental-crm\.agents\orchestrator\context.md — Context log
