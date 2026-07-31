@@ -1,3 +1,9 @@
+## 2026-07-31 — Live audit logs GET UI (Settings → Аудит)
+
+- **Gap:** `GET /api/audit/logs` returned the full org audit trail (entityType/entityId/limit filters, immutability 152-ФЗ), but the Settings audit tab only rendered `dashboard.auditEvents` (dashboard slice) — zero web callers for the live route.
+- **Ship:** Created self-contained `apps/web/src/AuditLogsPanel.tsx` — fetches `GET /api/audit/logs` with `denteClinicalReadHeaders`, Russian UI, entity filters, limit, refresh, immutable notice; mounted above `SettingsAuditTab` when `settingsTab === "audit"` in `SettingsView.tsx`.
+- **Verify:** web caller hit on `AuditLogsPanel.tsx`; live API `GET /api/audit/logs` → 401 AuthRequired (route up); `DELETE /api/audit/logs` → 403 AuditLogImmutable; `npx tsc -p apps/web --noEmit` GREEN.
+
 
 ## 2026-07-31 — CRM Custom Task Types UI (ClinicalTasksPanel)
 
