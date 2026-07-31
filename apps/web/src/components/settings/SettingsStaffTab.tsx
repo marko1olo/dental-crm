@@ -3,6 +3,7 @@ import { UserPlus, ShieldCheck, Edit2, AlertTriangle, KeyRound, Phone } from "lu
 import type { StaffRole } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { DoctorSnilsValidationWidget } from "./DoctorSnilsValidationWidget";
+import { StaffCommissionsPanel } from "./StaffCommissionsPanel";
 import { actionFailureToast } from "../../lib/panelStateText";
 import {
   CREATABLE_STAFF_ROLES,
@@ -291,6 +292,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
       </div>
 
       <div className="settings-cards-grid">
+        <StaffCommissionsPanel />
         {/* Список сотрудников */}
         <article className="settings-card col-span-full">
           <div className="settings-card-header">
