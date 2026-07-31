@@ -1,4 +1,10 @@
 
+## 2026-07-31 — CRM Custom Task Types UI (ClinicalTasksPanel)
+
+- **Gap:** `GET /api/crm/custom-task-types` returned organization-customized task types from `custom_crm_task_types` DDL table, but had zero web callers — doctors were limited to standard hardcoded phase buttons.
+- **Ship:** Updated `ClinicalTasksPanel.tsx` — fetches `/api/crm/custom-task-types` via `denteClinicalReadHeaders` and dynamically renders organization-specific task buttons styled with `type.colorHex`.
+- **Verify:** `npm run check:encoding` clean (2822 files verified); `npm run typecheck` GREEN across all packages.
+
 ## 2026-07-31 — EGISZ Multiple Diagnoses UI (VisitEmkTab)
 
 - **Gap:** `GET /api/egisz/multiple-diagnoses` queried structured accompanying diagnoses (`egiszMultipleDiagnoses` table) for EGISZ REMD CDA R2 compliance, but had zero web callers — doctors could not see or attach accompanying ICD-10 diagnoses to visit exports.

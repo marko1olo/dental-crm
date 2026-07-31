@@ -23,6 +23,17 @@ import { useAppLogicContext } from "./contexts/AppLogicContext";
 
 type ClinicalTaskStatus = "pending" | "in_progress" | "completed" | "cancelled";
 
+type CustomTaskType = {
+	id: string;
+	organizationId: string;
+	typeCode: string;
+	typeLabel: string;
+	colorHex: string;
+	requiresPatientBinding: boolean;
+	defaultSlaHours: number;
+	createdAt: string;
+};
+
 type ClinicalTask = {
 	id: string;
 	organizationId: string;
@@ -96,6 +107,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 	const auth = appLogic?.auth;
 
 	const [tasks, setTasks] = useState<ClinicalTask[] | null>(null);
+	const [customTaskTypes, setCustomTaskTypes] = useState<CustomTaskType[] | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	/** Какой этап сейчас отправляем — чтобы кнопка не молчала. */
@@ -136,6 +148,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 		setLoading(true);
 		try {
 			let response: Response;
+			let customTypesResponse: Response;
 			try {
 				response = await fetch(
 					`/api/clinical/tasks?patientId=${encodeURIComponent(patientId)}`,
@@ -143,8 +156,12 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 						headers: auth ? auth.denteClinicalReadHeaders() : {},
 					},
 				);
+				customTypesResponse = await fetch("/api/crm/custom-task-types", {
+					headers: auth ? auth.denteClinicalReadHeaders() : {},
+				});
 			} catch {
 				setTasks(null);
+				setCustomTaskTypes(null);
 				setError(
 					"Сервер клиники не ответил. Проверьте, что программа клиники запущена и есть сеть.",
 				);
@@ -169,6 +186,13 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 				return;
 			}
 			setTasks(payload);
+
+			if (customTypesResponse && customTypesResponse.ok) {
+				const customData = await customTypesResponse.json().catch(() => null);
+				if (Array.isArray(customData)) {
+					setCustomTaskTypes(customData as CustomTaskType[]);
+				}
+			}
 		} finally {
 			setLoading(false);
 		}
@@ -320,6 +344,19 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 							onClick={() => void completePhase(option.code)}
 						>
 							{submittingPhase === option.code ? "Записываю…" : option.buttonLabel}
+						</button>
+					))}
+					{customTaskTypes?.map((type) => (
+						<button
+							key={type.typeCode}
+							className="secondary-button"
+							type="button"
+							title={type.typeLabel}
+							disabled={submittingPhase !== null}
+							style={{ borderColor: type.colorHex, color: type.colorHex }}
+							onClick={() => void completePhase(type.typeCode as ClinicalPhaseCode)}
+						>
+							{submittingPhase === type.typeCode ? "Записываю…" : type.typeLabel}
 						</button>
 					))}
 				</div>
