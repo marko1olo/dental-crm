@@ -297,6 +297,44 @@ export interface SaveWorkspaceFlagsResult {
 	readonly failureText: string | null;
 }
 
+/**
+ * RU message-first from API body. Inline (not AppHelpers.operatorReadableErrorDetail):
+ * this module must not import AppHelpers — that closes the static cycle
+ * AppHelpers → workspaceShell → useWorkspaceProfile → AppHelpers.
+ * Same rule as diary: Cyrillic human text wins; technical English is dropped.
+ */
+function workspaceProfileServerDetail(rawBody: string): string | null {
+	let payload: Record<string, unknown> | null = null;
+	try {
+		const parsed: unknown = JSON.parse(rawBody);
+		if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+			payload = parsed as Record<string, unknown>;
+		}
+	} catch {
+		payload = null;
+	}
+	const candidate =
+		typeof payload?.message === "string"
+			? payload.message
+			: typeof payload?.error === "string"
+				? payload.error
+				: null;
+	const message = candidate?.trim() ?? "";
+	if (!message) return null;
+	// Operator-facing: Cyrillic human text only. Do NOT block the word "JSON"
+	// inside RU ValidationError copy ("JSON-объект") — that is the gameplay text
+	// the Zod guard returns and the operator must see.
+	if (!/[А-Яа-яЁё]/.test(message)) return null;
+	if (
+		/\b(TypeError|DOMException|SyntaxError|ReferenceError|Failed to fetch|NetworkError|ENOENT|ECONNREFUSED|EACCES|ETIMEDOUT)\b|\/api\/|https?:\/\//i.test(
+			message,
+		)
+	) {
+		return null;
+	}
+	return message;
+}
+
 export async function saveWorkspaceFlags(
 	partial: Partial<WorkspaceFeatureFlags>,
 ): Promise<SaveWorkspaceFlagsResult> {
@@ -311,17 +349,24 @@ export async function saveWorkspaceFlags(
 		});
 		if (response.ok) {
 			savedOnServer = true;
-		} else if (response.status === 401 || response.status === 403) {
-			failureText =
-				"Набор модулей не сохранён: нет прав. Войдите как сотрудник клиники и повторите — иначе выбор пропадёт при следующем входе.";
-		} else if (response.status >= 500) {
-			failureText =
-				"Набор модулей не сохранён: сервер клиники ответил отказом. Повторите, а если повторится — сообщите администратору.";
 		} else {
-			failureText =
-				"Набор модулей не сохранён: сервер не принял запрос. Обновите страницу и повторите.";
+			// Prefer server RU ValidationError message (Zod body guard) over status-only text.
+			const rawBody = await response.text();
+			const serverDetail = workspaceProfileServerDetail(rawBody);
+			if (serverDetail) {
+				failureText = serverDetail;
+			} else if (response.status === 401 || response.status === 403) {
+				failureText =
+					"Набор модулей не сохранён: нет прав. Войдите как сотрудник клиники и повторите — иначе выбор пропадёт при следующем входе.";
+			} else if (response.status >= 500) {
+				failureText =
+					"Набор модулей не сохранён: сервер клиники ответил отказом. Повторите, а если повторится — сообщите администратору.";
+			} else {
+				failureText =
+					"Набор модулей не сохранён: сервер не принял запрос. Обновите страницу и повторите.";
+			}
 		}
-	} catch (error) {
+	} catch {
 		failureText =
 			"Набор модулей не сохранён: сервер клиники не ответил. Проверьте, что программа клиники запущена и есть сеть, и повторите.";
 	}

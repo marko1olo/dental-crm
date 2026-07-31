@@ -28,6 +28,17 @@ const workspacePresetBodySchema = z
 	.strict();
 
 /**
+ * POST /api/workspace/profile: partial flag toggles.
+ * Was bare `typeof req.body === "object"` — arrays are objects in JS, so `[]`
+ * spread into the merge as a weird object and answered 200. Non-object body
+ * must 400 ValidationError (RU), same AUTH-first pattern as preset.
+ * Empty object / null/undefined → {} (no-op partial is valid).
+ * Unknown keys and wrong types still filtered by workspaceFlagsFromStorage.
+ */
+const workspaceProfileBodySchema = z.object({}).passthrough();
+
+
+/**
  * БЫЛО: организация бралась из заголовка x-organization-id без всякой проверки,
  * иначе подставлялся жёстко зашитый UUID. Любой анонимный запрос мог прочитать и
  * ПЕРЕЗАПИСАТЬ настройки рабочего пространства любой клиники, а POST /preset/:name
@@ -643,6 +654,15 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
         return reply.code(401).send({ error: "Unauthorized" });
 
       /*
+       * Order (AUTH-first DoD, same as diary/preset):
+       *   1) auth → 401
+       *   2) body safeParse → 400 ValidationError RU (before any DB)
+       *   3) org lookup → 404
+       *   4) merge + write
+       * Body BEFORE org: inject tests use a signed token whose org is not in DB;
+       * if lookup ran first, array/string bodies returned 404 and hid the Zod
+       * guard. Arrays are typeof object in JS — bare guard used to accept [].
+       *
        * ЧТО БЫЛО. Здесь из тела разбирались семнадцать признаков — и не писался
        * НИ ОДИН: `.set({ updatedAt: new Date() })`, после чего ответ { ok: true }.
        * То есть «Сохранить» на вкладке «Модули» и выбор в мастере первого запуска
@@ -659,6 +679,21 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
        * true легла бы в базу и вернулась на клиент, где признак читается как
        * булев.
        */
+      // AUTH already passed. Non-object body (array/string/number) → 400 RU.
+      // null/undefined → empty partial (no-op merge is valid gameplay).
+      const rawBody = req.body;
+      const bodyCandidate =
+        rawBody === undefined || rawBody === null ? {} : rawBody;
+      const parsedBody = workspaceProfileBodySchema.safeParse(bodyCandidate);
+      if (!parsedBody.success) {
+        return reply.code(400).send({
+          error: "ValidationError",
+          message:
+            "Проверьте тело запроса: нужен JSON-объект с признаками модулей клиники (не массив и не строка).",
+        });
+      }
+      const incoming = parsedBody.data;
+
       const [existing] = await db
         .select({ flags: schema.organizations.workspaceFeatureFlags })
         .from(schema.organizations)
@@ -671,11 +706,11 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const incoming = req.body && typeof req.body === "object" ? req.body : {};
       const merged = workspaceFlagsFromStorage({
         ...workspaceFlagsFromStorage(existing.flags),
         ...incoming,
       });
+
 
       await db
         .update(schema.organizations)

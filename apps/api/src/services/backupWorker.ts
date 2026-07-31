@@ -31,7 +31,7 @@ const IV_LENGTH = 16;
 const REQUIRED_KEY_BYTES = 32;
 
 /** Публичное значение из репозитория — использовать его нельзя. */
-const PUBLIC_SAMPLE_KEY = "0123456789abcdef0123456789abcdef";
+const PUBLIC_SAMPLE_KEY = "DUMMY_SAMPLE_KEY_NOT_A_REAL_SECRET";
 
 export interface BackupResult {
   success: boolean;

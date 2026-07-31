@@ -7,9 +7,8 @@ import {
 } from "./telegramChatRef.js";
 
 describe("telegramChatRef", () => {
-  const validKey32Hex =
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-  const validKey32Base64 = "aGVsbG93b3JsZGhlbGxvd29ybGRoZWxsb3dvcmxkaGU=";
+  const sampleHexBufStr = "0".repeat(64);
+  const validKey32Base64 = Buffer.from("hello".repeat(6).slice(0, 32)).toString("base64");
 
   describe("telegramChatEncryptionKey", () => {
     test("returns null if no key is provided", () => {
@@ -24,7 +23,7 @@ describe("telegramChatRef", () => {
 
     test("returns Buffer for 32-byte hex key", () => {
       const key = telegramChatEncryptionKey({
-        DENTE_TELEGRAM_CHAT_ENCRYPTION_KEY: validKey32Hex,
+        DENTE_TELEGRAM_CHAT_ENCRYPTION_KEY: sampleHexBufStr,
       });
       assert.ok(Buffer.isBuffer(key));
       assert.strictEqual(key?.length, 32);

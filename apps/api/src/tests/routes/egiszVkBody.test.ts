@@ -256,4 +256,51 @@ describe("egisz + vk + workspace preset — body guards (AUTH-first; inject)", (
 		assert.notEqual(r.statusCode, 500);
 		assert.equal(r.json.error, "ValidationError");
 	});
+
+	// ── workspace profile POST body (flag toggles) ───────────────────────────
+
+	test("POST workspace profile without auth → 401 (not 400 body)", async () => {
+		const r = await inject("POST", "/api/workspace/profile", {
+			body: { hasInventoryModule: false },
+			withClinic: false,
+		});
+		assert.equal(r.statusCode, 401, r.body);
+		assert.notEqual(r.statusCode, 400);
+	});
+
+	test("POST workspace profile array body → 400 ValidationError ≠ 500", async () => {
+		// Arrays are typeof object in JS — bare guard used to accept them as 200.
+		const r = await inject("POST", "/api/workspace/profile", {
+			body: [],
+		});
+		assert.equal(r.statusCode, 400, r.body);
+		assert.notEqual(r.statusCode, 500);
+		assert.equal(r.json.error, "ValidationError");
+		assert.match(String(r.json.message ?? ""), /модул|JSON|объект/i);
+	});
+
+	test("POST workspace profile string body → 400 ValidationError ≠ 500", async () => {
+		const r = await inject("POST", "/api/workspace/profile", {
+			rawPayload: '"not-object"',
+		});
+		assert.equal(r.statusCode, 400, r.body);
+		assert.notEqual(r.statusCode, 500);
+		assert.equal(r.json.error, "ValidationError");
+	});
+
+	test("POST workspace profile null body → not 500 (empty partial OK or 404 org)", async () => {
+		// null coerced to {} by handler. Org may be missing in inject DB → 404;
+		// must never be 500 from body cast.
+		const r = await inject("POST", "/api/workspace/profile", {
+			rawPayload: "null",
+		});
+		assert.notEqual(r.statusCode, 500, r.body);
+		assert.ok(
+			r.statusCode === 200 ||
+				r.statusCode === 404 ||
+				r.statusCode === 400,
+			r.body,
+		);
+	});
 });
+
