@@ -24,6 +24,7 @@ import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useIsActiveTab } from "../hooks/useIsActiveTab";
 import { RecallListPanel } from "../components/patients/RecallListPanel";
 import { FreedSlotsPanel } from "../components/schedule/FreedSlotsPanel";
+import { LostPatientsPanel } from "../components/analytics/LostPatientsPanel";
 import { EmptyState } from "../components/EmptyState.js";
 import {
 	formatCompletionRate,
@@ -596,6 +597,10 @@ export function AnalyticsDashboardView() {
 
 					<div className="mt-6">
 						<RecallListPanel />
+					</div>
+
+					<div className="mt-6">
+						<LostPatientsPanel />
 					</div>
 
 					{/*
