@@ -131,6 +131,23 @@ const bucketLabels: Record<string, string> = {
 	undated: "дата не определена"
 };
 
+/**
+ * Подписи статусов записи из summary.appointments.byStatus.
+ * Ключи — как в БД (appointments.status); неизвестный статус печатаем как есть,
+ * чтобы новый код на сервере не превратился в пустую строку на экране.
+ */
+const appointmentStatusLabels: Record<string, string> = {
+	scheduled: "Назначен",
+	confirmed: "Подтверждён",
+	arrived: "Пришёл",
+	in_treatment: "На приёме",
+	completed: "Завершён",
+	cancelled: "Отменён",
+	no_show: "Неявка",
+	rescheduled: "Перенесён",
+	waiting: "Ожидает",
+};
+
 const weekdayNames = ["", "пн", "вт", "ср", "чт", "пт", "сб", "вс"];
 
 /*
@@ -836,7 +853,67 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 						</p>
 
 						{/*
+							── Разбивка по статусам ──────────────────────────────────
+							ЧТО БЫЛО. `summary.appointments.byStatus` приходил в сводке
+							с первого дня (managerReports.ts group by status), а панель
+							рисовала только проценты arrival/completion/cancel/noShow.
+							Владелец видел «неявки 9 %» и не мог узнать, сколько записей
+							ещё в «назначен» / «на приёме» / «подтверждён» — без этого
+							не видно, где застревает день.
+
+							НОВОГО ЗАПРОСА НЕТ: числа уже в сводке. Отдельный
+							/api/reports/appointments-by-status не зовём.
+						*/}
+						{Object.keys(summary.appointments.byStatus).length > 0 ? (
+							<div
+								className="ops-table-wrap"
+								data-testid="manager-reports-appointments-by-status"
+							>
+								<table className="ops-table">
+									<caption className="sr-only">
+										Число записей периода по статусу
+									</caption>
+									<thead>
+										<tr>
+											<th scope="col">Статус</th>
+											<th scope="col">Записей</th>
+											<th scope="col">Доля</th>
+										</tr>
+									</thead>
+									<tbody>
+										{Object.entries(summary.appointments.byStatus)
+											.filter(([, count]) => count > 0)
+											.sort((a, b) => b[1] - a[1])
+											.map(([status, count]) => {
+												const share =
+													summary.appointments.total > 0
+														? count / summary.appointments.total
+														: null;
+												return (
+													<tr key={status}>
+														<td
+															className="ops-strong"
+															data-label="Статус"
+														>
+															{appointmentStatusLabels[status] ?? status}
+														</td>
+														<td className="ops-num" data-label="Записей">
+															{count}
+														</td>
+														<td className="ops-num" data-label="Доля">
+															{formatPercent(share)}
+														</td>
+													</tr>
+												);
+											})}
+									</tbody>
+								</table>
+							</div>
+						) : null}
+
+						{/*
 							── Поток пациентов по месяцам ────────────────────────────
+
 							ЧТО ЗДЕСЬ БЫЛО НЕ ТАК. Разбивку `patientFlow.points` сводка
 							присылает с самого начала, а панель показывала из неё ОДНУ
 							плитку «7 / 0» в итогах периода. Отчёт существует ради

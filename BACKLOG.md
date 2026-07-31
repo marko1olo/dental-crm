@@ -1,3 +1,9 @@
+## 2026-07-31 — Appointments byStatus table (ManagerReportsPanel)
+
+- **Gap:** `GET /api/reports/summary` already returned `appointments.byStatus` (group-by status counts from managerReports.ts) and the panel type included the field — but the UI only rendered arrival/completion/cancel/noShow **rates**. Owner saw «неявки 9 %» and could not see how many records were still «назначен» / «на приёме» / «подтверждён» — where the day stalls. No second API needed; numbers already in the summary payload.
+- **Ship:** `ManagerReportsPanel.tsx` — `appointmentStatusLabels` (RU for scheduled/confirmed/arrived/in_treatment/completed/cancelled/no_show/rescheduled/waiting); table after rates hint: Статус / Записей / Доля; filter count>0, sort desc; share via formatPercent; unknown status printed raw. data-testid: `manager-reports-appointments-by-status`.
+- **Verify:** panel clean under `npx tsc -p apps/web --noEmit` (pre-existing dicom test noise only); no new fetch — data from existing summary load.
+
 ## 2026-07-31 — Diary template DELETE (VisitDiaryTemplateSelector)
 
 - **Gap:** `DELETE /api/templates/:id` already enforced org scope, 404 NotFound, 403 CannotDeleteBuiltIn for `isBuiltIn`, and db delete for custom visit templates — but **zero web callers**. Doctor could seed/restore built-ins after seed ship, but could not remove an obsolete custom protocol from the visit diary dropdown without SQL/CLI.
