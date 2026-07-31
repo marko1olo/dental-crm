@@ -312,7 +312,7 @@
     > message: "сумма должна быть больше нуля"
     > });
     > export const nonNegativeMoneyRubSchema = moneyRubSchema.refine((value) => value >= 0, {
-    > message: "с��мма не может быть отрицательной"
+    > message: "сумма не может быть отрицательной"
     > });
 
 ## Salvaged fix from closed PR #526

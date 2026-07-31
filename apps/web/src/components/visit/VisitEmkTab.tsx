@@ -1,6 +1,7 @@
 import React from "react";
-import { Check, ShieldCheck } from "lucide-react";
+import { Check, ShieldCheck, Download, ScanLine, FileCode } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { showToast } from "../GlobalToast";
 import { CompletedServicesChecklist } from "./CompletedServicesChecklist";
 import { VisitFlowProgress } from "./VisitFlowProgress";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
@@ -130,7 +131,79 @@ export function VisitEmkTab() {
 		rememberVisitFlowResultOwner(visitFlowResult, visitOwnerKey);
 	}, [visitFlowResult, visitOwnerKey, visitFlowResultIsOfAnotherVisit, setVisitFlowResult]);
 
-		const emkTabs = [
+	const [isExportingCda, setIsExportingCda] = React.useState(false);
+	const [trayBarcode, setTrayBarcode] = React.useState("");
+	const [linkedBarcode, setLinkedBarcode] = React.useState<string | null>(null);
+	const [isLinkingTray, setIsLinkingTray] = React.useState(false);
+
+	const handleDownloadCdaXml = async () => {
+		const visitId = dashboard?.activeVisit?.id || dashboard?.activeAppointment?.visitId;
+		if (!visitId) {
+			showToast("Сначала выберите или откройте активный визит для экспорта CDA R2", "warning");
+			return;
+		}
+		setIsExportingCda(true);
+		try {
+			const headers = appLogic.auth?.denteClinicalReadHeaders?.() ?? {};
+			const res = await fetch(`/api/egisz/visits/${visitId}/cda`, { headers });
+			if (!res.ok) {
+				const errJson = await res.json().catch(() => null);
+				showToast(`Ошибка экспорта CDA R2: ${errJson?.message || errJson?.error || res.statusText}`, "error");
+				return;
+			}
+			const xmlText = await res.text();
+			const blob = new Blob([xmlText], { type: "application/xml" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `cda_visit_${visitId.slice(0, 8)}.xml`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+			showToast("Документ CDA R2 (XML) успешно скачан", "success");
+		} catch (err: any) {
+			showToast(`Не удалось скачать CDA R2: ${err?.message || "Ошибка сети"}`, "error");
+		} finally {
+			setIsExportingCda(false);
+		}
+	};
+
+	const handleLinkSterilizationTray = async (e: React.FormEvent) => {
+		e.preventDefault();
+		const visitId = dashboard?.activeVisit?.id || dashboard?.activeAppointment?.visitId;
+		if (!visitId) {
+			showToast("Сначала выберите или откройте активный визит для привязки лотка", "warning");
+			return;
+		}
+		if (!trayBarcode.trim()) {
+			showToast("Укажите штрихкод простерилизованного лотка", "warning");
+			return;
+		}
+		setIsLinkingTray(true);
+		try {
+			const headers = appLogic.auth?.denteClinicalReadHeaders?.({ "Content-Type": "application/json" }) ?? { "Content-Type": "application/json" };
+			const res = await fetch("/api/sterilization/link", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({ visitId, barcode: trayBarcode.trim() }),
+			});
+			if (!res.ok) {
+				const errData = await res.json().catch(() => null);
+				showToast(errData?.message || errData?.error || "Лоток не прошёл стерилизацию или не найден в журнале", "error");
+				return;
+			}
+			setLinkedBarcode(trayBarcode.trim());
+			setTrayBarcode("");
+			showToast(`Лоток ${trayBarcode.trim()} успешно привязан к дневнику приема`, "success");
+		} catch (err: any) {
+			showToast(`Ошибка привязки лотка: ${err?.message || "Ошибка сети"}`, "error");
+		} finally {
+			setIsLinkingTray(false);
+		}
+	};
+
+	const emkTabs = [
 		{ id: "all", label: "Все поля" },
 		{ id: "complaint", label: "Жалобы" },
 		{ id: "anamnesis", label: "Анамнез" },
@@ -547,6 +620,71 @@ export function VisitEmkTab() {
 									</ul>
 								</div>
 							) : null}
+						</div>
+
+						{/* ── ЕГИСЗ CDA R2 и Инструменты Стерилизации ── */}
+						<div
+							className="visit-compliance-panel mt-6 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50"
+							data-testid="visit-compliance-panel"
+						>
+							<div className="flex items-center justify-between gap-4 flex-wrap mb-3">
+								<div>
+									<h4 className="m-0 text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+										<FileCode className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+										Минздрав & ЕГИСЗ РЭМД (CDA R2)
+									</h4>
+									<p className="m-0 text-xs text-slate-500 dark:text-slate-400">
+										Экспорт готового медицинского документа в формате CDA R2 XML
+									</p>
+								</div>
+								<button
+									className="secondary-button flex items-center gap-2 text-xs py-1.5 px-3"
+									type="button"
+									onClick={handleDownloadCdaXml}
+									disabled={isExportingCda}
+									data-testid="btn-download-cda-xml"
+								>
+									<Download className="w-3.5 h-3.5" />
+									{isExportingCda ? "Формирование XML…" : "Скачать CDA R2 (XML)"}
+								</button>
+							</div>
+
+							<hr className="my-3 border-t border-slate-200 dark:border-slate-800" />
+
+							<form onSubmit={handleLinkSterilizationTray} className="flex flex-col gap-2">
+								<div className="flex items-center justify-between gap-2">
+									<label htmlFor="visit-tray-barcode-input" className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+										<ScanLine className="w-4 h-4 text-slate-500" />
+										Привязка простерилизованного лотка
+									</label>
+									{linkedBarcode ? (
+										<span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-300 dark:border-emerald-800">
+											✓ Лоток {linkedBarcode} привязан
+										</span>
+									) : null}
+								</div>
+
+								<div className="flex items-center gap-2">
+									<input
+										id="visit-tray-barcode-input"
+										type="text"
+										className="flex-1 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+										placeholder="Отсканируйте или введите штрихкод лотка (напр. TRAY-2026-001)"
+										value={trayBarcode}
+										onChange={(e) => setTrayBarcode(e.target.value)}
+										disabled={isLinkingTray}
+										data-testid="input-tray-barcode"
+									/>
+									<button
+										className="secondary-button text-xs py-1.5 px-3"
+										type="submit"
+										disabled={isLinkingTray || !trayBarcode.trim()}
+										data-testid="btn-link-tray-barcode"
+									>
+										{isLinkingTray ? "Проверка…" : "Привязать лоток"}
+									</button>
+								</div>
+							</form>
 						</div>
 					</section>
 	);
