@@ -307,6 +307,7 @@ export function FinanceView({
         actionLabels={clinicalRuleActionLabels}
         context="finance"
         evaluations={clinicalRuleEvaluations ?? []}
+        patientId={documentPatient?.id ?? null}
         serviceTitle={serviceTitle}
         severityLabels={clinicalRuleSeverityLabels}
         staffRoleLabels={staffRoleLabels}

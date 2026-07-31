@@ -1,4 +1,11 @@
 
+## 2026-07-31 — Live clinical rules evaluate UI (Visit + Finance)
+
+- **Gap:** `POST /api/clinical/rules/evaluate` already counted org-scoped rules from the live treatment plan (`evaluateClinicalRulesInDb`, enforceBlockers → 400 `ClinicalRuleBlocker`), but **zero web callers** — Visit/Finance only painted `dashboard.clinicalRuleEvaluations` snapshot from shift open. Doctor changed the plan → stale warnings until full dashboard reload.
+- **Ship:** `ClinicalRulePanel.tsx` — self-fetch via `useAppLogicContext` + `denteClinicalReadHeaders`; `collectServiceIdsForPatient` mirrors sampleData (plan items + active scenarios); buttons «Пересчитать по плану» / «Проверить с блокировкой» (visit only); blocker 400 is gameplay signal, not generic error.
+- **Mount:** `VisitView.tsx` `patientId` from activePatient / activeVisit; `FinanceView.tsx` `patientId={documentPatient?.id ?? null}`.
+- **Verify:** `npx tsc -p apps/web --noEmit` clean; live POST without body → 400 `ClinicalRuleValidationError` (route up); web caller grep → only `ClinicalRulePanel.tsx`.
+
 ## 2026-07-31 — Clinical phase handoff UI (VisitView)
 
 - **Gap:** `POST /api/clinical/phase-completions` + `GET /api/clinical/tasks` wrote to `clinical_tasks` (ClinicalRouter + clinicalTasksQuery) but had **zero web callers** — therapist/surgeon finished a phase and the prosthodontist never saw a task.

@@ -1300,6 +1300,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                   context="visit"
                   // evaluations={activeVisitClinicalRuleEvaluations}
                   evaluations={dashboard?.clinicSettings?.profile?.mode === "solo_doctor" ? (activeVisitClinicalRuleEvaluations || []).filter((e: any) => e.ownerRole !== "assistant") : (activeVisitClinicalRuleEvaluations || [])}
+                  patientId={
+                    (typeof activePatient?.id === "string" && activePatient.id) ||
+                    (typeof dashboard?.activeVisit?.patientId === "string" &&
+                      dashboard.activeVisit.patientId) ||
+                    null
+                  }
                   serviceTitle={serviceTitle}
                   severityLabels={clinicalRuleSeverityLabels}
                   staffRoleLabels={staffRoleLabels}
