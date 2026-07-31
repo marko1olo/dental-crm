@@ -3,6 +3,7 @@ import test from "node:test";
 import {
 	channelBodyLimits,
 	checkChannelFit,
+	findTemplateVariable,
 	communicationTemplateVariables,
 	describeSmsPayload,
 	extractTemplateVariables,
@@ -144,4 +145,84 @@ test("превышение предела канала — отказ, а не �
 	const result = checkChannelFit("telegram", "я".repeat(limit + 1));
 	assert.equal(result.ok, false);
 	assert.equal(result.length, limit + 1);
+});
+
+test("пустая строка тарифицируется как 0 символов GSM-7", () => {
+	const empty = describeSmsPayload("");
+	assert.equal(empty.encoding, "gsm7");
+	assert.equal(empty.characters, 0);
+	assert.equal(empty.segments, 1);
+});
+
+test("эмодзи вне BMP занимает две единицы в UCS-2", () => {
+	// 🦷 (U+1F9B7) takes 2 code units in UTF-16
+	const emoji = describeSmsPayload("🦷");
+	assert.equal(emoji.encoding, "ucs2");
+	assert.equal(emoji.characters, 2);
+	assert.equal(emoji.segments, 1);
+});
+
+test("findTemplateVariable находит переменную или возвращает null", () => {
+	const patientVar = findTemplateVariable("patient");
+	assert.ok(patientVar !== null);
+	assert.equal(patientVar.key, "patient");
+
+	const nullVar = findTemplateVariable("unknown_variable");
+	assert.equal(nullVar, null);
+});
+
+test("пустой текст шаблона возвращает ошибку в validateTemplateBody", () => {
+	const validation = validateTemplateBody("   ");
+	assert.equal(validation.ok, false);
+	assert.ok(validation.problems.includes("Текст шаблона пуст."));
+});
+
+test("рендер возвращает ошибку, если после подстановки текст пуст", () => {
+	const result = renderTemplate("{patient}", { patient: "" }, { allowEmptyValues: false });
+	assert.equal(result.ok, false);
+	// In the allowEmptyValues = false case, it will actually trigger missingVariables first, which we already test.
+
+	// How to trigger the block "После подстановки текст оказался пустым."?
+	// It happens if body isn't fully empty (so validate passes), but normalizes to empty.
+	const result2 = renderTemplate("\x01", {});
+	assert.equal(result2.ok, false);
+	assert.ok(result2.ok === false && result2.problems.includes("После подстановки текст оказался пустым."));
+});
+
+test("базовые символы GSM-7 тарифицируются корректно и бьются на сегменты", () => {
+	// Standard GSM-7 string
+	const text = "Hello world @$!";
+	const payload = describeSmsPayload(text);
+	assert.equal(payload.encoding, "gsm7");
+	assert.equal(payload.characters, text.length);
+
+	// Test boundary for multi-part GSM-7
+	const text160 = "a".repeat(160);
+	const payload160 = describeSmsPayload(text160);
+	assert.equal(payload160.encoding, "gsm7");
+	assert.equal(payload160.segments, 1);
+	assert.equal(payload160.charactersLeftInSegment, 0);
+
+	const text161 = "a".repeat(161);
+	const payload161 = describeSmsPayload(text161);
+	assert.equal(payload161.encoding, "gsm7");
+	assert.equal(payload161.segments, 2);
+	// multipart is 153 chars per segment, so 2 segments = 306 chars. 306 - 161 = 145 left.
+	assert.equal(payload161.charactersLeftInSegment, 145);
+});
+
+test("многосоставные сообщения UCS-2 бьются на сегменты по 67 символов", () => {
+	// Test boundary for multi-part UCS-2
+	const text70 = "я".repeat(70);
+	const payload70 = describeSmsPayload(text70);
+	assert.equal(payload70.encoding, "ucs2");
+	assert.equal(payload70.segments, 1);
+	assert.equal(payload70.charactersLeftInSegment, 0);
+
+	const text71 = "я".repeat(71);
+	const payload71 = describeSmsPayload(text71);
+	assert.equal(payload71.encoding, "ucs2");
+	assert.equal(payload71.segments, 2);
+	// multipart is 67 chars per segment, so 2 segments = 134 chars. 134 - 71 = 63 left.
+	assert.equal(payload71.charactersLeftInSegment, 63);
 });
