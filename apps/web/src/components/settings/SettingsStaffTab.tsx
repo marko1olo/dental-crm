@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { UserPlus, ShieldCheck, Edit2, AlertTriangle, KeyRound, Phone } from "lucide-react";
 import type { StaffRole } from "@dental/shared";
 import { showToast } from "../GlobalToast";
+import { DoctorSnilsValidationWidget } from "./DoctorSnilsValidationWidget";
 import { actionFailureToast } from "../../lib/panelStateText";
 import {
   CREATABLE_STAFF_ROLES,
@@ -499,6 +500,10 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
                 onChange={(e) => setNewStaffEmail(e.target.value)}
               />
             </label>
+
+            {newStaffRole === "doctor" ? (
+              <DoctorSnilsValidationWidget />
+            ) : null}
 
             <div className="form-actions">
               <button className="primary-button" type="submit" disabled={loading}>

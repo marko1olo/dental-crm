@@ -1,4 +1,10 @@
 
+## 2026-07-31 — EGISZ Doctor SNILS Validation UI (SettingsStaffTab)
+
+- **Gap:** `POST /api/clinical/egisz/validate-doctor-snils` validated doctor SNILS format and 11-digit checksum against state EGISZ/FRMR standards, but had zero web callers — administrators entered doctor credentials blindly without validation.
+- **Ship:** Created `DoctorSnilsValidationWidget.tsx` — self-contained widget calling `POST /api/clinical/egisz/validate-doctor-snils` with staff token headers; mounted in `SettingsStaffTab.tsx` when adding or editing doctor staff.
+- **Verify:** `npm run check:encoding` clean (2820 files verified); `npm run typecheck` GREEN across `@dental/shared`, `@dental/api`, and `@dental/web`.
+
 ## 2026-07-31 — NDFL Tax Certificate XML Export UI (DocumentsView)
 
 - **Gap:** `GET /api/documents/:id/tax-xml` generated valid KND 1151156 XML for FNS EDO submission, but button in `DocumentsView.tsx` had ambiguous label "Черновой файл ФНС" and lacked explicit ARIA metadata.
