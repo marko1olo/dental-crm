@@ -36,6 +36,9 @@
 
 [x] P1 | diary POST /api/diaries upsert body Zod (AUTH-first; null/array/{}→400≠500; RU ValidationError) | diary.ts + nextCastsBody.test.ts | 22/22 GREEN typecheck OK | 18050f0ec
 [x] P0 | diary gameplay: doSave → POST /api/diaries (not visit draft/autosave); return id for doLock; message-first RU toasts | useVisitDiaryLogic.ts | ee9c055a9
+[x] P1 | workspace profile POST body Zod (AUTH→safeParse→org; array/string→400 RU≠500/404) + saveWorkspaceFlags message-first gameplay | workspaceProfile.ts + useWorkspaceProfile.ts + egiszVkBody.test.ts | 17/17 GREEN | PENDING_HASH
+[ ] P1 | ScannerView sterilization message-first RU (status-only today) | ScannerView.tsx | gameplay
+[ ] P1 | LeadsKanbanView message-first RU (status-only today) | LeadsKanbanView.tsx | gameplay
 
 
 
