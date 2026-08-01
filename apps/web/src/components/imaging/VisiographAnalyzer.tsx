@@ -667,6 +667,15 @@ export function VisiographAnalyzer() {
            * заданный руками заголовок ломает разбор тела на сервере. Если этот вызов
            * когда-нибудь переведут на FormData, Content-Type надо убрать, а
            * `denteClinicalMutationHeaders()` вызвать без аргументов.
+           *
+           * БЫЛО: POST только картинки → status pending, затем второй PUT с
+           * aiReport/aiSummary/aiToothStates. PUT какое-то время отсутствовал
+           * (404), а даже после появления маршрута обрыв между POST и PUT
+           * оставлял в карте снимок БЕЗ заключения — врач видел текст на
+           * экране, F5 — пусто. Комментарий ниже ещё и врал, что PUT «на
+           * сервере нет», хотя маршрут уже был.
+           * СТАЛО: один POST с AI-полями; сервер пишет снимок+заключение
+           * атомарно (status done). PUT остаётся для ручной правки позже.
            */
           const saveRes = await fetch('/api/xray/scans', {
             method: 'POST',
@@ -677,6 +686,10 @@ export function VisiographAnalyzer() {
               originalFilename: file.name,
               mimeType: file.type || 'image/jpeg',
               kind: 'periapical',
+              aiReport: aiResult.report,
+              aiSummary: fakeScan.aiSummary,
+              aiToothStates: aiResult.toothStates,
+              status: 'done',
             }),
           });
           if (!saveRes.ok) {
@@ -688,62 +701,16 @@ export function VisiographAnalyzer() {
             );
           } else {
             const saved: XrayScan = await saveRes.json();
-            // Заключение дописывается вторым запросом, поэтому его отказ надо
-            // проверять отдельно: снимок уже в карте, а текста разбора в нём нет.
-            let reportSaved = false;
-            try {
-              /*
-               * ЭТОГО МАРШРУТА НА СЕРВЕРЕ НЕТ. В xray.ts зарегистрированы только
-               * POST /api/xray/scans, POST /api/xray/scans/:id/analyze,
-               * GET /api/xray/scans, GET /api/xray/scans/:id и
-               * DELETE /api/xray/scans/:id — ни PUT, ни PATCH. Проверено живьём на
-               * работающем API (127.0.0.1:4100): PUT /api/xray/scans/<id> отвечает
-               * 404, причём без всякой охраны, потому что маршрутизация идёт до
-               * обработчиков. Значит текст заключения в карту не попадает НИКОГДА и
-               * ни на какой машине, и врач всегда видит ниже плашку «Снимок в карту
-               * лёг, а текст заключения сохранить не удалось».
-               *
-               * Здесь это не лечится: маршрут добавляется в apps/api (правка сервера),
-               * и вынесено это в долг отдельно. Пишущие заголовки поставлены всё
-               * равно — когда маршрут появится, он будет закрыт
-               * requireClinicalMutationAccess, как и остальная запись снимков, и
-               * вызов не придётся починять второй раз.
-               */
-              const reportRes = await fetch(`/api/xray/scans/${saved.id}`, {
-                method: 'PUT',
-                headers: denteClinicalMutationHeaders({ 'Content-Type': 'application/json' }),
-                body: JSON.stringify({
-                  aiReport: aiResult.report,
-                  aiSummary: fakeScan.aiSummary,
-                  aiToothStates: aiResult.toothStates,
-                  status: 'done',
-                }),
-              });
-              reportSaved = reportRes.ok;
-              if (!reportRes.ok) {
-                console.error(`[VisiographAnalyzer] заключение не сохранено, ответ ${reportRes.status}`);
-              }
-            } catch (reportErr) {
-              console.error('[VisiographAnalyzer] заключение не сохранено', reportErr);
-            }
-            if (!reportSaved) {
-              setSaveFailure(
-                'Снимок в карту лёг, а текст заключения сохранить не удалось — после перезагрузки страницы его в карте не будет. Скопируйте заключение в заметки визита или повторите разбор.',
-              );
-            }
-            /*
-             * В список пишем то, что реально сохранено. Раньше заключение
-             * подставлялось в строку истории всегда, и после отказа PUT список
-             * показывал «есть заключение» там, где на сервере его нет.
-             */
-            setScanHistory(prev => [
-              reportSaved
-                ? { ...saved, aiReport: aiResult.report, aiToothStates: aiResult.toothStates, status: 'done' }
-                : saved,
-              ...prev,
-            ]);
+            // Ответ сервера — источник истины: в историю только то, что реально легло.
+            setCurrentScan({
+              ...saved,
+              imageDataUri: compressed,
+              hasImage: true,
+            });
+            setScanHistory(prev => [saved, ...prev]);
           }
         } catch (saveErr) {
+
           console.error('[VisiographAnalyzer] запись снимка в карту не выполнена', saveErr);
           setSaveFailure(
             'Сервер не ответил на сохранение, заключение осталось только на этом экране и после перезагрузки исчезнет. Проверьте связь и повторите загрузку снимка.',

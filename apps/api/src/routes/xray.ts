@@ -31,6 +31,19 @@ const createXrayScanSchema = z.object({
   toothCode: z.string().optional(), // e.g. "46"
   notes: z.string().optional(),
   organizationId: z.string().uuid().optional(), // resolved from session context
+  /*
+   * БЫЛО: create принимал только картинку+notes → status всегда "pending".
+   * VisiographAnalyzer после синхронного /api/imaging/visiograph-ai делал
+   * POST (снимок без заключения) + PUT (текст). Если PUT отваливался
+   * (сеть, 403, рестарт), в карте оставался «голый» снимок без aiReport —
+   * врач видел заключение на экране, F5 — пусто.
+   * СТАЛО: опциональные AI-поля на create; при наличии отчёта статус "done"
+   * в одной транзакции insert. PUT остаётся для ручной правки позже.
+   */
+  aiReport: z.string().max(50000).nullable().optional(),
+  aiSummary: z.string().max(2000).nullable().optional(),
+  aiToothStates: z.record(z.string(), z.string()).nullable().optional(),
+  status: z.enum(["pending", "analyzing", "done", "error"]).optional(),
 });
 
 const xrayScanResponseSchema = z.object({
@@ -112,6 +125,18 @@ export async function registerXrayRoutes(app: FastifyInstance) {
       ? data.imageBase64
       : `data:${data.mimeType};base64,${data.imageBase64}`;
 
+    // Заключение с клиента (синхронный visiograph-ai) — в ту же строку, что и снимок.
+    const hasInlineReport =
+      typeof data.aiReport === "string" && data.aiReport.trim().length > 0;
+    const inlineSummary =
+      data.aiSummary !== undefined && data.aiSummary !== null
+        ? data.aiSummary
+        : hasInlineReport
+          ? extractSummary(data.aiReport!)
+          : null;
+    const createStatus =
+      data.status ?? (hasInlineReport ? "done" : "pending");
+
     const [inserted] = await db
       .insert(xrayScans)
       .values({
@@ -124,7 +149,11 @@ export async function registerXrayRoutes(app: FastifyInstance) {
         kind: data.kind,
         toothCode: data.toothCode ?? null,
         notes: data.notes ?? null,
-        status: "pending",
+        status: createStatus,
+        aiReport: data.aiReport ?? null,
+        aiSummary: inlineSummary,
+        aiToothStates: (data.aiToothStates ?? null) as Record<string, string> | null,
+        aiAnalyzedAt: hasInlineReport ? new Date() : null,
       })
       .returning();
 
