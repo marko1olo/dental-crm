@@ -325,16 +325,19 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 							</div>
 							{(diary.complications || diary.comorbidities) && (
 								<div className="vde-043-soap-block page-break-avoid">
+									{/*
+									 * БЫЛО: один <p> и "\n" между осложнениями и сопутствующими.
+									 * В HTML перевод строки схлопывается в пробел — в печати 043/у
+									 * две юридически разные строки сливались в одну.
+									 * СТАЛО: отдельные <p> на каждое непустое поле.
+									 */}
 									<h4>Осложнения и сопутствующие</h4>
-									<p>
-										{diary.complications
-											? `Осложнения: ${diary.complications}`
-											: ""}
-										{diary.complications && diary.comorbidities ? "\n" : ""}
-										{diary.comorbidities
-											? `Сопутствующие: ${diary.comorbidities}`
-											: ""}
-									</p>
+									{diary.complications ? (
+										<p>Осложнения: {diary.complications}</p>
+									) : null}
+									{diary.comorbidities ? (
+										<p>Сопутствующие: {diary.comorbidities}</p>
+									) : null}
 								</div>
 							)}
 						</div>
