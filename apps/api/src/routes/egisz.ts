@@ -317,12 +317,37 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				first: "",
 				last: "Не указан",
 			};
+			/*
+			 * DEFECT #56: CDA documentationOf/serviceEvent must use encounter time.
+			 * БЫЛО: visitDate: row.visit.createdAt — момент создания строки EMK
+			 * (часто день записи/черновика), а не дата приёма в расписании.
+			 * После #55 РЭМД получил documentationOf, но с неверной датой случая.
+			 * СТАЛО: appointments.startsAt (slot) when linked; else createdAt.
+			 */
+			let encounterDate: Date = row.visit.createdAt;
 			if (row.visit.appointmentId) {
 				const [appointment] = await db
-					.select({ doctorUserId: schema.appointments.doctorUserId })
+					.select({
+						doctorUserId: schema.appointments.doctorUserId,
+						startsAt: schema.appointments.startsAt,
+					})
 					.from(schema.appointments)
-					.where(eq(schema.appointments.id, row.visit.appointmentId))
+					.where(
+						and(
+							eq(schema.appointments.id, row.visit.appointmentId),
+							eq(schema.appointments.organizationId, orgId),
+						),
+					)
 					.limit(1);
+				if (appointment?.startsAt instanceof Date) {
+					encounterDate = appointment.startsAt;
+				} else if (
+					appointment?.startsAt &&
+					typeof appointment.startsAt === "string"
+				) {
+					const parsed = new Date(appointment.startsAt);
+					if (!Number.isNaN(parsed.getTime())) encounterDate = parsed;
+				}
 				if (appointment?.doctorUserId) {
 					const [doctor] = await db
 						.select({ fullName: schema.users.fullName })
@@ -431,7 +456,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				doctorName,
 				icd10Code: diaryIcd || extractIcd10(effectiveDiagnosis),
 				diagnosisText: effectiveDiagnosis,
-				visitDate: row.visit.createdAt,
+				visitDate: encounterDate,
 				documentId: row.visit.id,
 				...(clinicOid ? { clinicOid } : {}),
 				...(anamnesis ? { anamnesis } : {}),
