@@ -7,7 +7,12 @@ interface CryptoProSignerProps {
 	diaryHash: string | null;
 	isLocked: boolean;
 	lockedAt: string | null;
-	onLock: (certThumbprint: string, signature: string) => Promise<void>;
+	ensureDraftSaved: () => Promise<{ id: string; hash: string | null } | null>;
+	onLock: (
+		certThumbprint: string,
+		signature: string,
+		alreadySavedId?: string | null,
+	) => Promise<void>;
 }
 
 /*
@@ -88,6 +93,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	diaryHash,
 	isLocked,
 	lockedAt,
+	ensureDraftSaved,
 	onLock,
 }) => {
 	const [certificates, setCertificates] = useState<CertificateInfo[]>([]);
@@ -232,13 +238,20 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 			}
 			setIsSigning(true);
 			try {
+				const draft = await ensureDraftSaved();
+				if (!draft?.id || !draft.hash) {
+					setFailureText(
+						"Черновик не сохранился — отпечаток для подписи не получен. Нажмите «Сохранить черновик» и повторите подписание.",
+					);
+					return;
+				}
 				const { signatureBase64 } = await signatureService.signData(
 					selectedCert,
-					diaryHash,
+					draft.hash,
 					pinCode,
 					selectedCertInfo?.deviceId,
 				);
-				await onLock(selectedCert, signatureBase64);
+				await onLock(selectedCert, signatureBase64, draft.id);
 				// ПИН носителя в памяти дольше подписания не держим, а окно закроется
 				// само, когда придёт подтверждение подписи.
 				setPinCode("");

@@ -471,11 +471,16 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	// ── Save
 	/**
 	 * Сохраняет черновик дневника на сервер.
-	 * @returns id дневника при успехе (для doLock без гонки setState), иначе null.
+	 * @returns { id, hash } при успехе (hash — отпечаток для КриптоПро до /lock), иначе null.
 	 */
 	const doSave = useCallback(
-		async (silent = false): Promise<string | null> => {
-			if (isLocked) return diaryId;
+		async (
+			silent = false,
+		): Promise<{ id: string; hash: string | null } | null> => {
+			if (isLocked) {
+				return diaryId ? { id: diaryId, hash: diaryHash } : null;
+			}
+
 			if (!activeDoctor) {
 				if (!silent) showToast("Выберите врача для приема", "error");
 				return null;
@@ -596,7 +601,13 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				autosaveFailureReportedRef.current = false;
 				setLastSavedAt(new Date());
 				if (!silent) showToast("Черновик сохранен", "success");
-				return savedId ?? diaryId;
+				const resolvedId = savedId ?? diaryId;
+				if (!resolvedId) return null;
+				const resolvedHash =
+					typeof data?.hash === "string" && data.hash
+						? data.hash
+						: diaryHash;
+				return { id: resolvedId, hash: resolvedHash };
 			} catch (err) {
 				// До сервера не дошли: сеть или выключенный сервер клиники.
 				console.error("[diary save] запрос не выполнен", err);
@@ -612,7 +623,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				setIsSaving(false);
 			}
 		},
-		[activeDoctor, diary, diaryId, isLocked, loadState, patientId, trayBarcode, visitId],
+		[activeDoctor, diary, diaryHash, diaryId, isLocked, loadState, patientId, trayBarcode, visitId],
 	);
 
 	// ── Autosave
@@ -759,7 +770,12 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 
 	// ── Lock (Sign & Seal)
 
-	const doLock = async (certThumbprint: string, pkcs7Signature: string) => {
+	const doLock = async (
+		certThumbprint: string,
+		pkcs7Signature: string,
+		/** Crypto-path: draft already saved+signed - skip second doSave. */
+		alreadySavedId?: string | null,
+	) => {
 		if (!activeDoctor) {
 			showToast("Сначала выберите врача для приема!", "error");
 			return;
@@ -778,9 +794,14 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			return;
 		}
 
-		// doSave возвращает id сразу: setState из сохранения ещё не виден в этом
-		// замыкании, поэтому lock нельзя строить на diaryId из рендера.
-		const savedDiaryId = await doSave(true);
+		// doSave returns {id,hash}; setState not yet visible in this closure.
+		// Crypto-path: alreadySavedId means draft was saved before PKCS7 -
+		// a second save after sign would change hash and break ECP integrity.
+		let savedDiaryId: string | null = alreadySavedId ?? null;
+		if (!savedDiaryId) {
+			const savedDraft = await doSave(true);
+			savedDiaryId = savedDraft?.id ?? null;
+		}
 
 		if (trayBarcode) {
 			try {
