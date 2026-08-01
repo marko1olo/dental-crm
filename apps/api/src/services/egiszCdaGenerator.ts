@@ -14,6 +14,10 @@ export interface EgiszCdaParams {
 	anamnesis?: string;
 	/** Status localis / objective exam (043 O-block → visits.objectiveStatus). */
 	objectiveStatus?: string;
+	/** 043 complications — clinical events during/after visit. */
+	complications?: string;
+	/** 043 comorbidities / concomitant diseases. */
+	comorbidities?: string;
 	treatmentDescription?: string;
 	visitDate: Date;
 	documentId: string;
@@ -133,6 +137,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<title>Проведенное лечение</title>
 					<text>
 						<paragraph>${params.treatmentDescription || "Осмотр и консультация"}</paragraph>
+					</text>
+				</section>
+			</component>
+			<!-- Осложнения (043) -->
+			<component>
+				<section>
+					<code code="55109-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Complications"/>
+					<title>Осложнения</title>
+					<text>
+						<paragraph>${params.complications || "Не отмечены"}</paragraph>
+					</text>
+				</section>
+			</component>
+			<!-- Сопутствующие заболевания (043) -->
+			<component>
+				<section>
+					<code code="11348-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Past illness"/>
+					<title>Сопутствующие заболевания</title>
+					<text>
+						<paragraph>${params.comorbidities || "Не отмечены"}</paragraph>
 					</text>
 				</section>
 			</component>

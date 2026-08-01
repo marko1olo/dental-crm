@@ -260,6 +260,9 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					diagnosisIcd10: schema.visitDiaries.diagnosisIcd10,
 					diagnosisTooth: schema.visitDiaries.diagnosisTooth,
 					treatmentDescription: schema.visitDiaries.treatmentDescription,
+					/* DEFECT #48: 043 complications/comorbidities → CDA */
+					complications: schema.visitDiaries.complications,
+					comorbidities: schema.visitDiaries.comorbidities,
 					doctorId: schema.visitDiaries.doctorId,
 				})
 				.from(schema.visitDiaries)
@@ -359,6 +362,20 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					: "";
 			const objectiveStatus = diaryObjective || visitObjective;
 
+			/*
+			 * DEFECT #48: complications/comorbidities live only on visit_diaries
+			 * (no EMK twin on visits). Without this, signed 043 text never
+			 * reaches EGISZ CDA.
+			 */
+			const complications =
+				typeof diaryRow?.complications === "string"
+					? diaryRow.complications.trim()
+					: "";
+			const comorbidities =
+				typeof diaryRow?.comorbidities === "string"
+					? diaryRow.comorbidities.trim()
+					: "";
+
 			// Врач 043 (doctorId) приоритетнее appointment.doctorUserId — это кто вёл карту.
 			if (diaryRow?.doctorId) {
 				const [diaryDoctor] = await db
@@ -392,6 +409,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				...(clinicOid ? { clinicOid } : {}),
 				...(anamnesis ? { anamnesis } : {}),
 				...(objectiveStatus ? { objectiveStatus } : {}),
+				...(complications ? { complications } : {}),
+				...(comorbidities ? { comorbidities } : {}),
 				...(treatmentPlan ? { treatmentDescription: treatmentPlan } : {}),
 			};
 
