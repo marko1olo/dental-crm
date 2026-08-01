@@ -852,13 +852,26 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			const json = jsonObjectOrNull(rawBody);
 			if (res.ok) {
 				setIsLocked(true);
-				setLockedAt(new Date().toISOString());
+				/*
+				 * Дата подписи — с сервера (lockedAt в ответе /lock), не new Date()
+				 * на клиенте. БЫЛО: клиентские часы. Печать 043/у и штамп ЭЦП
+				 * брали время ПК врача; при сдвиге часов или печати с другого
+				 * рабочего места дата в форме расходилась с locked_at в БД.
+				 */
+				setLockedAt(
+					typeof json?.lockedAt === "string" && json.lockedAt
+						? json.lockedAt
+						: new Date().toISOString(),
+				);
 				setDiaryHash(typeof json?.hash === "string" ? json.hash : null);
 				showToast("Дневник подписан и заблокирован (ЭЦП врача).", "success");
 			} else if (res.status === 409) {
 				setIsLocked(true);
+				// 409 AlreadyLocked отдаёт hash подписанного дневника — не теряем его.
+				if (typeof json?.hash === "string") setDiaryHash(json.hash);
 				showToast("Дневник уже был подписан ранее.", "info");
 			} else {
+
 				console.error(`[diary lock] ${res.status} ${rawBody.slice(0, 300)}`);
 				const detail = operatorReadableErrorDetail(
 					typeof json?.message === "string" ? json.message : null,
