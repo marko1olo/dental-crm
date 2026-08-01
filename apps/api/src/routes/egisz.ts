@@ -610,13 +610,31 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				});
 			}
 
+			/*
+			 * DEFECT #68: patient gender must be male/female for EGISZ/REMD CDA.
+			 * БЫЛО: readGenderFromProfile could return null; generator mapped
+			 * null/other → administrativeGenderCode code="0". РЭМД/identity
+			 * match with SNILS+DOB rejects unknown sex; clinic already had XML.
+			 * СТАЛО: 422 PatientGenderRequired when profile has no male/female.
+			 */
+			const patientGender = readGenderFromProfile(
+				row.patient.administrativeProfile,
+			);
+			if (patientGender !== "male" && patientGender !== "female") {
+				return reply.status(422).send({
+					error: "PatientGenderRequired",
+					message:
+						"Для выгрузки в ЕГИСЗ у пациента должен быть указан пол (мужской или женский) в административной карточке.",
+				});
+			}
+
 			const params: EgiszCdaParams = {
 				patientId: row.patient.id,
 				patientName: splitFullName(row.patient.fullName),
 				// СНИЛС пациента живёт в административном профиле (jsonb).
 				patientSnils: patientSnilsDigits,
 				patientBirthDate: birthStr,
-				patientGender: readGenderFromProfile(row.patient.administrativeProfile),
+				patientGender,
 				clinicName: row.organization.name,
 				doctorName,
 				...(doctorPosition ? { doctorPosition } : {}),
