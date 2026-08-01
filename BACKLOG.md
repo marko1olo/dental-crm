@@ -1,3 +1,9 @@
+## 2026-08-01 — Leads permanent DELETE (Kanban + store)
+
+- **Gap:** `DELETE /api/leads/:id` (leads.ts, requireResolvedStaffOrAdminOrganizationId, org-scoped, LEAD_DELETED WS) already removed a row from `crm_leads`, but **zero web callers**. Kanban could only drag to «Отказ» (status=trash) — card stayed in DB forever; spam/test/wrong inquiries could not be erased from the funnel without SQL/CLI. Store had GET/POST/PATCH/PUT + convert bare fetch; no `deleteLead`.
+- **Ship:** `leadsStore.ts` — `deleteLead(id)` via `DELETE ${API_URL}/leads/:id` + clinic/staff token headers; optimistic remove + rollback; RU `leadsFailureMessage` on failure. `LeadsKanbanView.tsx` — «Удалить» in edit modal (existing lead only, not «new»); confirm explains trash column vs hard-delete; toast on success/error; `data-testid="lead-delete-permanent"`; Trash2 + min 44×44 touch. Distinct from drag-to-«Отказ».
+- **Verify:** `npx tsc -p apps/web --noEmit` exit 0; live POST lead → DELETE 200 `{success:true}` → GET list absent (probe); WS LEAD_DELETED already refreshes board.
+
 ## 2026-08-01 — Form 043/у layout polish + 4-state visual audit (VisitDiaryEditor)
 
 - **Gap:** Form № 043/у (VisitDiaryEditor SOAP diary) had incomplete draft-print path, sub-40px ICD clear touch target, and screenshot harness used path `/visit/:id` (hash router ignores it) plus a page.evaluate theme seed bug (`theme is not defined`). Visual audit could not prove Mobile/PC × Light/Dark.

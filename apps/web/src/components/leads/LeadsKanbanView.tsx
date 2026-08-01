@@ -110,9 +110,11 @@ export function LeadsKanbanView() {
 		updateLeadStatus,
 		updateLeadDetails,
 		addLead,
+		deleteLead,
 		isLoading,
 		error: loadError,
 	} = useLeadsStore();
+	const [isDeleting, setIsDeleting] = useState(false);
 	const { auth, dashboard } = useAppLogicContext();
 	const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
 
@@ -378,6 +380,36 @@ export function LeadsKanbanView() {
 			showToast(text, "error");
 		}
 	};
+
+	/*
+	 * Permanent delete (DELETE /api/leads/:id) — not drag-to-«Отказ».
+	 * Trash column keeps the card for review; this removes the row from the DB.
+	 * Confirm first so a misclick does not erase a live inquiry.
+	 */
+	const handleDeleteLead = async () => {
+		if (!editingLeadId || editingLeadId === "new" || isDeleting) return;
+		const label = (editForm.name || "").trim() || "это обращение";
+		const ok = window.confirm(
+			`Удалить «${label}» навсегда? Карточка исчезнет с доски и из базы. Столбец «Отказ» обращение не удаляет — только помечает отказ.`,
+		);
+		if (!ok) return;
+		setIsDeleting(true);
+		try {
+			await deleteLead(editingLeadId);
+			showToast("Обращение удалено", "success");
+			setIsEditOpen(false);
+			setEditingLeadId(null);
+		} catch (e: unknown) {
+			const text =
+				e instanceof Error && e.message.trim()
+					? e.message
+					: "Обращение не удалено. Проверьте доступ и повторите.";
+			showToast(text, "error");
+		} finally {
+			setIsDeleting(false);
+		}
+	};
+
 
 	const filteredLeads = useMemo(() => {
 		return leads.filter((l) => {
@@ -1160,17 +1192,52 @@ export function LeadsKanbanView() {
 								/>
 							</div>
 
-							<button
-								type="submit"
-								className="primary-button"
+							<div
 								style={{
+									display: "flex",
+									gap: 10,
 									marginTop: 8,
-									width: "100%",
-									justifyContent: "center",
+									alignItems: "stretch",
 								}}
 							>
-								Сохранить
-							</button>
+								<button
+									type="submit"
+									className="primary-button"
+									disabled={isDeleting}
+									style={{
+										flex: 1,
+										justifyContent: "center",
+									}}
+								>
+									Сохранить
+								</button>
+								{/*
+								 * Permanent DELETE — not drag-to-«Отказ».
+								 * Shown only when editing an existing lead (not «new»).
+								 * Confirm dialog explains trash vs hard-delete.
+								 */}
+								{editingLeadId && editingLeadId !== "new" ? (
+									<button
+										type="button"
+										className="secondary-button"
+										data-testid="lead-delete-permanent"
+										disabled={isDeleting}
+										onClick={() => void handleDeleteLead()}
+										title="Удалить обращение из базы навсегда"
+										aria-label="Удалить обращение навсегда"
+										style={{
+											justifyContent: "center",
+											color: "var(--rust)",
+											borderColor: "var(--rust)",
+											minWidth: 44,
+											minHeight: 44,
+										}}
+									>
+										<Trash2 size={16} />
+										{isDeleting ? " Удаляем…" : " Удалить"}
+									</button>
+								) : null}
+							</div>
 						</form>
 					</motion.div>
 				</div>
@@ -1178,3 +1245,4 @@ export function LeadsKanbanView() {
 		</div>
 	);
 }
+

@@ -21,6 +21,8 @@ interface LeadsState {
 		details: Partial<Omit<Lead, "id">>,
 	) => Promise<void>;
 	addLead: (lead: Omit<Lead, "id" | "status">) => Promise<void>;
+	/** Permanent remove via DELETE /api/leads/:id — not the trash column. */
+	deleteLead: (id: string) => Promise<void>;
 	wsUpdate: (lead: Lead) => void;
 }
 
@@ -184,7 +186,37 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 			throw new Error("Лид не сохранён: нет связи с сервером.");
 		}
 	},
+	/*
+	 * Permanent DELETE /api/leads/:id — distinct from drag-to-trash status.
+	 * Trash column keeps the card for review; this removes the row from the DB.
+	 * Optimistic remove + rollback so the board never lies about still-present leads.
+	 */
+	deleteLead: async (id) => {
+		const previousLeads = get().leads;
+		set({ leads: previousLeads.filter((l) => l.id !== id) });
+		try {
+			const res = await fetch(`${API_URL}/leads/${id}`, {
+				method: "DELETE",
+				headers: authHeaders(),
+			});
+			if (!res.ok) {
+				set({ leads: previousLeads });
+				throw new Error(
+					await leadsFailureMessage(
+						res,
+						"Обращение не удалено. Проверьте доступ и повторите.",
+					),
+				);
+			}
+		} catch (e: unknown) {
+			set({ leads: previousLeads });
+			console.error("deleteLead Error:", e);
+			if (e instanceof Error) throw e;
+			throw new Error("Обращение не удалено: нет связи с сервером.");
+		}
+	},
 	wsUpdate: (updatedLead) => {
+
 		const leads = get().leads;
 		const exists = leads.find((l) => l.id === updatedLead.id);
 		if (exists) {
