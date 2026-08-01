@@ -592,10 +592,22 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				.code(404)
 				.send({ error: "NotFound", message: DIARY_NOT_FOUND_REVISIONS_MESSAGE });
 
+		/*
+		 * Tenant isolation: organizationId на каждом запросе.
+		 * БЫЛО: where только по diaryId — при известном UUID дневника чужой
+		 * клиники (или битой строке ревизии с чужим org) forensic-история
+		 * 043/у могла уйти не тому арендатору. diaryId уже проверен выше,
+		 * orgId в where — второй замок по правилу изоляции.
+		 */
 		const revisions = await db
 			.select()
 			.from(visitDiaryRevisions)
-			.where(eq(visitDiaryRevisions.diaryId, id))
+			.where(
+				and(
+					eq(visitDiaryRevisions.diaryId, id),
+					eq(visitDiaryRevisions.organizationId, orgId),
+				),
+			)
 			.orderBy(desc(visitDiaryRevisions.revisedAt));
 
 		return reply.send({ revisions });
