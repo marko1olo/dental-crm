@@ -58,6 +58,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		isLocked,
 		lockedAt,
 		diaryHash,
+		hasCryptoSignature,
 		lastSavedAt,
 		revisionCount,
 		isSaving,
@@ -278,7 +279,12 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						</div>
 					)}
 
-					{isLocked && diaryHash && !isRevising && (
+					{/*
+					 * Штамп «ЭЦП» только при реальном crypto_signature_pkcs7.
+					 * БЫЛО: isLocked && diaryHash — после revise PKCS#7 null, hash
+					 * новый, печать 043/у всё равно выглядела заверенной УКЭП.
+					 */}
+					{isLocked && diaryHash && hasCryptoSignature && !isRevising && (
 						<div
 							className="vde-043-ecp page-break-avoid"
 							data-testid="form-043-ecp"
@@ -297,6 +303,27 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 									⚠ Ревизий: {revisionCount}
 								</span>
 							)}
+						</div>
+					)}
+					{isLocked && diaryHash && !hasCryptoSignature && !isRevising && (
+						<div
+							className="vde-043-soap-block page-break-avoid"
+							data-testid="form-043-ecp-missing"
+						>
+							<p>
+								Дневник закрыт замком
+								{lockedAt
+									? ` (${new Date(lockedAt).toLocaleString("ru-RU")})`
+									: ""}
+								, отпечаток SHA-256: {diaryHash.slice(0, 16)}… Оттиск УКЭП
+								отсутствует
+								{revisionCount > 0
+									? " (сброшен после правки подписанной записи)"
+									: ""}
+								— приложите подпись заново, прежде чем выдавать юридическую
+								копию 043/у.
+								{revisionCount > 0 ? ` Ревизий: ${revisionCount}.` : ""}
+							</p>
 						</div>
 					)}
 					{isRevising && (
@@ -935,7 +962,9 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						style={{ color: "var(--green, #15803d)" }}
 					/>
 					<span>
-						Дневник подписан
+						{hasCryptoSignature
+							? "Дневник подписан"
+							: "Дневник закрыт, оттиск УКЭП отсутствует"}
 						{lockedAt ? ` • ${new Date(lockedAt).toLocaleString("ru-RU")}` : ""}
 						.
 						{diaryHash && (
@@ -944,6 +973,23 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 							</span>
 						)}
 					</span>
+					{!hasCryptoSignature && (
+						<CryptoProSigner
+							diaryHash={diaryHash}
+							isLocked={false}
+							lockedAt={lockedAt}
+							ensureDraftSaved={async () =>
+								diaryId ? { id: diaryId, hash: diaryHash } : null
+							}
+							onLock={async (thumbprint, signature, alreadySavedId) => {
+								await doLock(
+									thumbprint,
+									signature,
+									alreadySavedId ?? diaryId,
+								);
+							}}
+						/>
+					)}
 					<button
 						type="button"
 						id="diary-revise-btn"

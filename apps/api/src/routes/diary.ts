@@ -924,7 +924,72 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				message:
 					"Дневник приёма не найден в этой клинике, подписывать нечего. Так бывает, если страница приёма открыта давно и дневник с тех пор удалён. Откройте приём заново, нажмите «Сохранить черновик» и повторите подписание.",
 			});
-		if (existing.isLocked)
+		/*
+		 * Повторная УКЭП после admin-revise.
+		 *
+		 * БЫЛО: revise обнуляет crypto_signature_pkcs7 (хеш уже другой — старый
+		 * PKCS#7 врал бы «подпись ↔ содержимое»), но /lock при is_locked сразу
+		 * отвечал 409 AlreadyLocked. Клиент после правки показывал штамп
+		 * «ЭЦП (SHA-256)» по одному diaryHash, без PKCS#7, и повторно приложить
+		 * подпись к новому хешу было нечем. Печать 043/у выглядела заверенной
+		 * УКЭП, хотя оттиска в БД нет.
+		 *
+		 * СТАЛО: locked + crypto_signature_pkcs7 IS NULL + в теле есть PKCS#7 →
+		 * только прикрепляем подпись и пересчитываем hash по строке (без
+		 * повторной складской церемонии — услуги/склад уже закрыты первым lock).
+		 * locked + PKCS#7 уже есть → по-прежнему 409.
+		 */
+		if (existing.isLocked) {
+			const lockedAtIso =
+				existing.lockedAt instanceof Date
+					? existing.lockedAt.toISOString()
+					: typeof existing.lockedAt === "string"
+						? existing.lockedAt
+						: null;
+			const hasPkcs7 =
+				typeof existing.cryptoSignaturePkcs7 === "string" &&
+				existing.cryptoSignaturePkcs7.length > 0;
+			const incomingPkcs7 =
+				typeof pkcs7Signature === "string" && pkcs7Signature.length > 0
+					? pkcs7Signature
+					: null;
+
+			if (!hasPkcs7 && incomingPkcs7) {
+				const reattachHash = computeDiaryHash(
+					existing.visitId,
+					existing.patientId ?? "",
+					existing.anamnesis,
+					existing.statusLocalis,
+					existing.treatmentDescription,
+					existing.diagnosisIcd10,
+					existing.diagnosisTooth,
+					existing.complications,
+					existing.comorbidities,
+				);
+				const now = new Date();
+				await db
+					.update(visitDiaries)
+					.set({
+						diaryHash: reattachHash,
+						cryptoSignaturePkcs7: incomingPkcs7,
+						coSignedByUserId: userId,
+						updatedAt: now,
+					})
+					.where(
+						and(
+							eq(visitDiaries.id, id),
+							eq(visitDiaries.organizationId, orgId),
+						),
+					);
+				return reply.send({
+					success: true,
+					hash: reattachHash,
+					lockedAt: lockedAtIso,
+					cryptoSignatureAttached: true,
+					reattached: true,
+				});
+			}
+
 			/*
 			 * БЫЛО: 409 отдавал hash, но не lockedAt. Клиент doLock на 409 ставил
 			 * isLocked=true и hash, а lockedAt оставался null — печать 043/у и
@@ -933,15 +998,13 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			return reply.code(409).send({
 				error: "AlreadyLocked",
 				hash: existing.diaryHash,
-				lockedAt:
-					existing.lockedAt instanceof Date
-						? existing.lockedAt.toISOString()
-						: typeof existing.lockedAt === "string"
-							? existing.lockedAt
-							: null,
-				message:
-					"Дневник этого приёма уже подписан и заблокирован, второй раз подписывать его не нужно. Если нужна правка подписанного дневника, её проводит администратор клиники через ревизию.",
+				lockedAt: lockedAtIso,
+				cryptoSignatureAttached: hasPkcs7,
+				message: hasPkcs7
+					? "Дневник этого приёма уже подписан и заблокирован, второй раз подписывать его не нужно. Если нужна правка подписанного дневника, её проводит администратор клиники через ревизию."
+					: "Дневник уже закрыт замком, но оттиск УКЭП после правки сброшен. Откройте подписание и приложите подпись КриптоПро или простую подпись к текущему отпечатку — склад и услуги повторно не спишутся.",
 			});
+		}
 
 		// Церемония — общая с POST /api/diaries, см. runDiarySigningCeremony.
 		try {
@@ -957,6 +1020,9 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				success: true,
 				hash: signing.hash,
 				lockedAt: signing.lockedAt.toISOString(),
+				cryptoSignatureAttached: Boolean(
+					pkcs7Signature && String(pkcs7Signature).length > 0,
+				),
 			});
 		} catch (err) {
 			if (err instanceof DiarySigningError) {
@@ -1198,7 +1264,17 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			return tally?.total ?? 0;
 		});
 
-		return reply.send({ success: true, hash: newHash, revisionCount });
+		/*
+		 * cryptoSignatureAttached: false — PKCS#7 обнулён вместе с newHash.
+		 * Клиент обязан снять hasCryptoSignature, иначе печать 043/у продолжит
+		 * показывать штамп «ЭЦП» без оттиска в БД.
+		 */
+		return reply.send({
+			success: true,
+			hash: newHash,
+			revisionCount,
+			cryptoSignatureAttached: false,
+		});
 	});
 
 	// Legacy endpoint: sync-progress + plan signature (kept for backwards compat)

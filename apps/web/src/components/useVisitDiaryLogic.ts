@@ -159,6 +159,14 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	const [isLocked, setIsLocked] = useState(false);
 	const [lockedAt, setLockedAt] = useState<string | null>(null);
 	const [diaryHash, setDiaryHash] = useState<string | null>(null);
+	/**
+	 * Есть ли в БД оттиск УКЭП (crypto_signature_pkcs7).
+	 * БЫЛО: клиент смотрел только isLocked+diaryHash. После admin-revise
+	 * PKCS#7 обнуляется, hash меняется — печать 043/у всё равно рисовала
+	 * «ЭЦП (SHA-256)» как будто подпись на месте. hasCryptoSignature=false
+	 * до повторного /lock с телом pkcs7.
+	 */
+	const [hasCryptoSignature, setHasCryptoSignature] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 	const [showScanner, setShowScanner] = useState(false);
 	const [trayBarcode, setTrayBarcode] = useState<string | null>(null);
@@ -249,6 +257,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setDiaryId(null);
 		setLockedAt(null);
 		setDiaryHash(null);
+		setHasCryptoSignature(false);
 		setLastSavedAt(null);
 		setRevisionCount(0);
 		/*
@@ -331,6 +340,10 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				setDiaryId(d.id ?? null);
 				setLockedAt(d.lockedAt ?? null);
 				setDiaryHash(d.diaryHash ?? null);
+				setHasCryptoSignature(
+					typeof d.cryptoSignaturePkcs7 === "string" &&
+						d.cryptoSignaturePkcs7.length > 0,
+				);
 				if (d.diagnosisIcd10) setIcdSearch(d.diagnosisIcd10);
 				setLoadState({ phase: "ready" });
 				if (typeof d.id === "string" && d.id) {
@@ -747,6 +760,15 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			const json = jsonObjectOrNull(rawBody);
 			if (res.ok) {
 				if (typeof json?.hash === "string") setDiaryHash(json.hash);
+				/*
+				 * После revise сервер обнуляет PKCS#7. Без сброса флага печать
+				 * 043/у продолжала бы штамп «ЭЦП» при пустом crypto_signature_pkcs7.
+				 */
+				if (json?.cryptoSignatureAttached === true) {
+					setHasCryptoSignature(true);
+				} else {
+					setHasCryptoSignature(false);
+				}
 				if (typeof json?.revisionCount === "number") {
 					setRevisionCount(json.revisionCount);
 				} else {
@@ -919,7 +941,27 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 						: new Date().toISOString(),
 				);
 				setDiaryHash(typeof json?.hash === "string" ? json.hash : null);
-				showToast("Дневник подписан и заблокирован (ЭЦП врача).", "success");
+				/*
+				 * Оттиск УКЭП: true если сервер подтвердил PKCS#7 / re-attach,
+				 * иначе — если мы сами отправили непустой pkcs7Signature
+				 * (первый lock). PIN:<…> тоже пишется в crypto_signature_pkcs7.
+				 */
+				if (json?.cryptoSignatureAttached === true) {
+					setHasCryptoSignature(true);
+				} else if (
+					typeof pkcs7Signature === "string" &&
+					pkcs7Signature.length > 0
+				) {
+					setHasCryptoSignature(true);
+				} else if (json?.cryptoSignatureAttached === false) {
+					setHasCryptoSignature(false);
+				}
+				showToast(
+					json?.reattached
+						? "Оттиск УКЭП прикреплён к отредактированному дневнику."
+						: "Дневник подписан и заблокирован (ЭЦП врача).",
+					"success",
+				);
 			} else if (res.status === 409) {
 				setIsLocked(true);
 				// 409 AlreadyLocked: hash + lockedAt с сервера — печать 043/у
@@ -928,7 +970,16 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				if (typeof json?.lockedAt === "string" && json.lockedAt) {
 					setLockedAt(json.lockedAt);
 				}
-				showToast("Дневник уже был подписан ранее.", "info");
+				if (typeof json?.cryptoSignatureAttached === "boolean") {
+					setHasCryptoSignature(json.cryptoSignatureAttached);
+				}
+				showToast(
+					typeof json?.message === "string" && json.message
+						? json.message
+						: "Дневник уже был подписан ранее.",
+					"info",
+					12000,
+				);
 			} else {
 
 
@@ -976,6 +1027,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		isLocked,
 		lockedAt,
 		diaryHash,
+		hasCryptoSignature,
 		lastSavedAt,
 		revisionCount,
 		isSaving,
