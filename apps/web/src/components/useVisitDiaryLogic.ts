@@ -152,6 +152,41 @@ function jsonObjectOrNull(rawBody: string): Record<string, unknown> | null {
 	}
 }
 
+export type DiaryRevisionRow = {
+	id: string;
+	revisedAt: string | null;
+	revisionReason: string | null;
+	previousAnamnesis: string | null;
+	previousStatusLocalis: string | null;
+	previousDiagnosisIcd10: string | null;
+	previousDiagnosisTooth: string | null;
+	previousTreatmentDescription: string | null;
+	previousComplications: string | null;
+	previousComorbidities: string | null;
+	revisedByUserId: string | null;
+};
+
+function asDiaryRevisionRow(raw: unknown): DiaryRevisionRow | null {
+	if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+	const o = raw as Record<string, unknown>;
+	if (typeof o.id !== "string" || !o.id) return null;
+	const strOrNull = (v: unknown): string | null =>
+		typeof v === "string" ? v : v == null ? null : String(v);
+	return {
+		id: o.id,
+		revisedAt: strOrNull(o.revisedAt),
+		revisionReason: strOrNull(o.revisionReason),
+		previousAnamnesis: strOrNull(o.previousAnamnesis),
+		previousStatusLocalis: strOrNull(o.previousStatusLocalis),
+		previousDiagnosisIcd10: strOrNull(o.previousDiagnosisIcd10),
+		previousDiagnosisTooth: strOrNull(o.previousDiagnosisTooth),
+		previousTreatmentDescription: strOrNull(o.previousTreatmentDescription),
+		previousComplications: strOrNull(o.previousComplications),
+		previousComorbidities: strOrNull(o.previousComorbidities),
+		revisedByUserId: strOrNull(o.revisedByUserId),
+	};
+}
+
 export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	const { activeDoctor } = useAppLogic();
 	const [diary, setDiary] = useState<DiaryState>(EMPTY_DIARY);
@@ -175,6 +210,14 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	const [showPreview, setShowPreview] = useState(false);
 	const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 	const [revisionCount, setRevisionCount] = useState(0);
+	/*
+	 * Forensic 043/у: полный список ревизий, не только length.
+	 * БЫЛО: GET …/revisions отдавал previous_* + revisionReason, клиент
+	 * брал только .length → badge «N ревиз.». Админ/суд/проверка качества
+	 * не видели, ЧТО было до правки и ПОЧЕМУ правили. Forensic-поля
+	 * previousComplications/previousComorbidities (0149) в UI не доходили.
+	 */
+	const [diaryRevisions, setDiaryRevisions] = useState<DiaryRevisionRow[]>([]);
 	const [loadState, setLoadState] = useState<DiaryLoadState>({ phase: "loading" });
 	/**
 	 * Счётчик принудительного перечитывания. PanelLoadFailure требует onRetry —
@@ -260,6 +303,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setHasCryptoSignature(false);
 		setLastSavedAt(null);
 		setRevisionCount(0);
+		setDiaryRevisions([]);
 		/*
 		 * Лоток обязан сбрасываться при смене приёма.
 		 *
@@ -368,7 +412,13 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 						}
 						const revisionsPayload = jsonObjectOrNull(revisionsBody);
 						const revisions = revisionsPayload?.revisions;
-						if (alive && Array.isArray(revisions)) setRevisionCount(revisions.length);
+						if (alive && Array.isArray(revisions)) {
+							const rows = revisions
+								.map(asDiaryRevisionRow)
+								.filter((r): r is DiaryRevisionRow => r != null);
+							setDiaryRevisions(rows);
+							setRevisionCount(rows.length);
+						}
 					} catch (revisionsError) {
 						console.error("[diary revisions] запрос не выполнен", revisionsError);
 					}
@@ -774,6 +824,27 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				} else {
 					setRevisionCount((n) => n + 1);
 				}
+				/*
+				 * Forensic UI: /revise не возвращает rows — строка из snapshot
+				 * «что было». Полный список придёт при следующей загрузке GET.
+				 * Snapshot читаем ДО setReviseSnapshot(null).
+				 */
+				if (reviseSnapshot) {
+					const localRow: DiaryRevisionRow = {
+						id: `local-${Date.now()}`,
+						revisedAt: new Date().toISOString(),
+						revisionReason: revisionReason.trim() || null,
+						previousAnamnesis: reviseSnapshot.anamnesis,
+						previousStatusLocalis: reviseSnapshot.statusLocalis,
+						previousDiagnosisIcd10: reviseSnapshot.diagnosisIcd10,
+						previousDiagnosisTooth: reviseSnapshot.diagnosisTooth,
+						previousTreatmentDescription: reviseSnapshot.treatmentDescription,
+						previousComplications: reviseSnapshot.complications,
+						previousComorbidities: reviseSnapshot.comorbidities,
+						revisedByUserId: null,
+					};
+					setDiaryRevisions((prev) => [localRow, ...prev]);
+				}
 				setIsRevising(false);
 				setRevisionReason("");
 				setReviseSnapshot(null);
@@ -1030,6 +1101,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		hasCryptoSignature,
 		lastSavedAt,
 		revisionCount,
+		diaryRevisions,
 		isSaving,
 		showScanner,
 		setShowScanner,

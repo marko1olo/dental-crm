@@ -61,6 +61,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		hasCryptoSignature,
 		lastSavedAt,
 		revisionCount,
+		diaryRevisions,
 		isSaving,
 		showScanner,
 		setShowScanner,
@@ -1020,6 +1021,82 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 				</div>
 			)}
 
+
+			{/*
+			  Forensic 043/у: история правок подписанного дневника.
+			  БЫЛО: только badge «N ревиз.» — reason и previous_* с API
+			  (в т.ч. complications/comorbidities после 0149) нигде не
+			  показывались. Админ не мог сверить, что именно заменили.
+			*/}
+			{diaryRevisions.length > 0 && (
+				<details
+					className="vde-043__revisions no-print"
+					data-testid="diary-revisions-history"
+				>
+					<summary className="vde-043__revisions-summary">
+						История правок ({diaryRevisions.length})
+					</summary>
+					<ol className="vde-043__revisions-list">
+						{diaryRevisions.map((rev, idx) => {
+							const when = rev.revisedAt
+								? new Date(rev.revisedAt).toLocaleString("ru-RU")
+								: "дата не указана";
+							const prevBits: { label: string; text: string }[] = [];
+							const pushPrev = (label: string, text: string | null) => {
+								if (typeof text === "string" && text.trim().length > 0) {
+									prevBits.push({ label, text: text.trim() });
+								}
+							};
+							pushPrev("S (жалобы/анамнез)", rev.previousAnamnesis);
+							pushPrev("O (status localis)", rev.previousStatusLocalis);
+							pushPrev("A (МКБ-10)", rev.previousDiagnosisIcd10);
+							pushPrev("Зуб", rev.previousDiagnosisTooth);
+							pushPrev("P (лечение)", rev.previousTreatmentDescription);
+							pushPrev("Осложнения", rev.previousComplications);
+							pushPrev("Сопутствующие", rev.previousComorbidities);
+							return (
+								<li
+									key={rev.id}
+									className="vde-043__revision-item"
+									data-testid={`diary-revision-item-${idx}`}
+								>
+									<div className="vde-043__revision-meta">
+										<span className="vde-043__revision-when">{when}</span>
+										{rev.revisionReason ? (
+											<span className="vde-043__revision-reason">
+												Причина: {rev.revisionReason}
+											</span>
+										) : (
+											<span className="vde-043__revision-reason vde-043__revision-reason--missing">
+												Причина не указана
+											</span>
+										)}
+									</div>
+									{prevBits.length > 0 ? (
+										<ul className="vde-043__revision-prev">
+											{prevBits.map((b) => (
+												<li key={b.label}>
+													<strong>{b.label}:</strong>{" "}
+													<span className="vde-043__revision-prev-text">
+														{b.text.length > 280
+															? `${b.text.slice(0, 280)}…`
+															: b.text}
+													</span>
+												</li>
+											))}
+										</ul>
+									) : (
+										<p className="vde-043__revision-empty-prev">
+											Снимок прежних полей пуст (ревизия до forensic-полей
+											или поля были пустыми).
+										</p>
+									)}
+								</li>
+							);
+						})}
+					</ol>
+				</details>
+			)}
 			{showScanner &&
 				createPortal(
 					<div className="vde-043-scanner-overlay">

@@ -927,3 +927,62 @@ html.dark .vde-043__letter--p {
   pointer-events: none;
   animation: visitScanLaser 2s linear infinite;
 }
+
+/* Forensic 043/у — история правок подписанного дневника */
+.vde-043__revisions {
+	margin: 0.75rem 1rem 1rem;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid var(--border, #e2e8f0);
+	border-radius: 8px;
+	background: var(--surface-2, #f8fafc);
+	font-size: 0.8125rem;
+}
+.vde-043__revisions-summary {
+	cursor: pointer;
+	font-weight: 600;
+	color: var(--amber-800, #92400e);
+	list-style: none;
+}
+.vde-043__revisions-summary::-webkit-details-marker { display: none; }
+.vde-043__revisions-list {
+	margin: 0.5rem 0 0;
+	padding: 0 0 0 1.1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+.vde-043__revision-item {
+	margin: 0;
+}
+.vde-043__revision-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	margin-bottom: 0.35rem;
+}
+.vde-043__revision-when {
+	color: var(--muted, #64748b);
+	font-size: 0.75rem;
+}
+.vde-043__revision-reason {
+	color: var(--text, #0f172a);
+}
+.vde-043__revision-reason--missing {
+	color: var(--muted, #94a3b8);
+	font-style: italic;
+}
+.vde-043__revision-prev {
+	margin: 0;
+	padding: 0.35rem 0 0 1rem;
+	color: var(--text-2, #334155);
+	line-height: 1.35;
+}
+.vde-043__revision-prev-text {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+.vde-043__revision-empty-prev {
+	margin: 0;
+	color: var(--muted, #94a3b8);
+	font-style: italic;
+}
