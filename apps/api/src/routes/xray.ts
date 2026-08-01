@@ -5,8 +5,10 @@
  * POST /api/xray/scans/:id/analyze — запустить AI-анализ для конкретного скана
  * GET  /api/xray/scans          — список сканов пациента (?patientId=...)
  * GET  /api/xray/scans/:id      — один скан со всеми результатами
+ * PUT  /api/xray/scans/:id      — сохранить заключение врача (aiReport/notes)
  * DELETE /api/xray/scans/:id    — удалить скан
  */
+
 
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -235,7 +237,93 @@ export async function registerXrayRoutes(app: FastifyInstance) {
     return scanToResponse(scan, true); // Include image
   });
 
+  /*
+   * PUT /api/xray/scans/:id — заключение врача / правки AI-отчёта.
+   *
+   * БЫЛО: маршрута не было. VisiographAnalyzer.tsx слал
+   *   PUT /api/xray/scans/:id  { aiReport, notes, status: "done" }
+   * и получал 404. Кнопка «Сохранить заключение» врала успехом на клиенте
+   * или показывала ошибку сети; после F5 текст заключения пропадал.
+   * СТАЛО: org-scoped update только aiReport/notes/status (+ optional toothCode).
+   * imageDataUri и AI-метаданные этим маршрутом не трогаем.
+   */
+  const updateXrayScanSchema = z.object({
+    aiReport: z.string().max(50000).nullable().optional(),
+    /*
+     * UI VisiographAnalyzer шлёт aiSummary + aiToothStates вместе с
+     * aiReport (см. saveConclusion). Без них Zod strip → поля AI после
+     * ручной правки заключения оставались от старого analyze, а summary
+     * в списке снимков врал.
+     */
+    aiSummary: z.string().max(2000).nullable().optional(),
+    aiToothStates: z.record(z.string(), z.string()).nullable().optional(),
+    notes: z.string().max(5000).nullable().optional(),
+    status: z.enum(["pending", "analyzing", "done", "error"]).optional(),
+    toothCode: z.string().max(16).nullable().optional(),
+  });
+
+  app.put("/api/xray/scans/:id", async (request, reply) => {
+    if (!(await requireClinicalMutationAccess(request, reply, "update xray scan conclusion"))) return;
+
+    const organizationId = requireOrganizationId(request, reply);
+    if (!organizationId) return;
+
+    const { id } = request.params as { id: string };
+    const parsed = updateXrayScanSchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      return reply.code(400).send({
+        error: "XrayScanValidationError",
+        message: "Неверный формат запроса сохранения заключения.",
+      });
+    }
+
+    const patch = parsed.data;
+    if (
+      patch.aiReport === undefined &&
+      patch.aiSummary === undefined &&
+      patch.aiToothStates === undefined &&
+      patch.notes === undefined &&
+      patch.status === undefined &&
+      patch.toothCode === undefined
+    ) {
+      return reply.code(400).send({
+        error: "XrayScanValidationError",
+        message: "Нет полей для обновления.",
+      });
+    }
+
+    const updateData: {
+      aiReport?: string | null;
+      aiSummary?: string | null;
+      aiToothStates?: Record<string, string> | null;
+      notes?: string | null;
+      status?: string;
+      toothCode?: string | null;
+      updatedAt: Date;
+    } = { updatedAt: new Date() };
+    if (patch.aiReport !== undefined) updateData.aiReport = patch.aiReport;
+    if (patch.aiSummary !== undefined) updateData.aiSummary = patch.aiSummary;
+    if (patch.aiToothStates !== undefined) updateData.aiToothStates = patch.aiToothStates;
+    if (patch.notes !== undefined) updateData.notes = patch.notes;
+    if (patch.status !== undefined) updateData.status = patch.status;
+    if (patch.toothCode !== undefined) updateData.toothCode = patch.toothCode;
+
+    const [updated] = await db
+      .update(xrayScans)
+      .set(updateData)
+      .where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)))
+      .returning();
+
+    if (!updated) {
+      return reply.code(404).send({ error: "XrayScanNotFound", message: "Снимок не найден." });
+    }
+
+    return scanToResponse(updated, false);
+  });
+
+
   app.delete("/api/xray/scans/:id", async (request, reply) => {
+
     if (!(await requireClinicalMutationAccess(request, reply, "delete xray scan"))) return;
 
     const organizationId = requireOrganizationId(request, reply);
