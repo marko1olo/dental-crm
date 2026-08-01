@@ -768,10 +768,17 @@ function buildEmkDiagnosisText(
 ): string | null {
 	const icd = (diagnosisIcd10 ?? "").trim();
 	const tooth = (diagnosisTooth ?? "").trim();
-	if (!icd && !tooth) return null;
-	if (icd && tooth) return `${icd} | Зуб ${tooth}`;
-	if (icd) return icd;
-	return `Зуб ${tooth}`;
+	/*
+	 * DEFECT #53: tooth-only must not become visits.diagnosis.
+	 * БЫЛО: return `Зуб ${tooth}` when ICD empty → draft/lock/revise sync
+	 * overwrote EMK diagnosis that still had МКБ (e.g. «K02.1 Кариес»)
+	 * with «Зуб 36». EGISZ gate and tab ЭМК lost the code; CDA then had to
+	 * recover via #52 fallback. СТАЛО: push diagnosis only when ICD present
+	 * (optionally with tooth). Tooth alone stays on visit_diaries only.
+	 */
+	if (!icd) return null;
+	if (tooth) return `${icd} | Зуб ${tooth}`;
+	return icd;
 }
 
 async function syncVisitEmkFromDiarySoap(
