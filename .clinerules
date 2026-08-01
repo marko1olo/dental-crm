@@ -1,0 +1,20 @@
+# ROO-CLINE / CLAUDE-DEV MANDATORY HARNESS CONSTITUTION & EXECUTIVE DIRECTIVES
+
+[CRITICAL EXECUTION MANDATE]
+1. ZERO SCRATCH / DUMP SCRIPTS POLICY:
+   - You are STRICTLY FORBIDDEN from creating temporary scratch, hunt, dump, or triage scripts (e.g. `_hunt_*.mjs`, `_dump_*.mjs`, `_triage_*.mjs`, `_patch_*.mjs`, `l19_*.ps1`).
+   - Read source files directly using the `read_file` tool.
+   - Edit target source files directly using the `replace_in_file` / `replace_file_content` tool.
+
+2. DIRECT SOURCE EDITING:
+   - Before editing a file, inspect exact line ranges using `read_file`.
+   - Perform precise, contiguous, single-shot replacements.
+   - Do NOT guess line numbers or spaces; read the file first to guarantee 100% search-block matching.
+
+3. WINDOWS SHELL ESCAPING SAFETY:
+   - Do NOT run inline Node.js (`node -e "..."`) or PowerShell scripts inside `execute_command` that break Windows `cmd.exe` double-quote escaping.
+   - Run project build CLI tools directly (`cmake --build`, `tsc --noEmit`, `npm run test`, `dotnet build`).
+
+4. PRODUCT INTEGRITY & REAL WORK ONLY:
+   - Write 100% production-ready, clean C++ / C# / TypeScript code according to project Bibles.
+   - Stage, commit, and verify clean compilation on every completed module.

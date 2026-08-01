@@ -986,3 +986,37 @@ html.dark .vde-043__letter--p {
 	color: var(--muted, #94a3b8);
 	font-style: italic;
 }
+
+/* Фото лечения в печати/превью 043/у (DEFECT #27) */
+.vde-043-print-photos__grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	margin-top: 0.5rem;
+}
+.vde-043-print-photos__item {
+	margin: 0;
+	width: 140px;
+	text-align: center;
+}
+.vde-043-print-photos__item img {
+	width: 140px;
+	height: 140px;
+	object-fit: cover;
+	border: 1px solid #cbd5e1;
+	border-radius: 4px;
+	display: block;
+}
+.vde-043-print-photos__item figcaption {
+	font-size: 0.65rem;
+	color: #475569;
+	margin-top: 0.25rem;
+	word-break: break-all;
+	line-height: 1.2;
+}
+@media print {
+	.vde-043-print-photos__item img {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+	}
+}

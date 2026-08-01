@@ -12,10 +12,24 @@ interface Attachment {
 	name: string;
 }
 
+/** Снимок, готовый к печати 043/у (blob: уже с токеном кабинета). */
+export type DiaryPrintPhoto = {
+	id: string;
+	name: string;
+	objectUrl: string;
+};
+
 interface VisitDiaryPhotoUploadProps {
 	visitId: string;
 	diaryId: string | null;
 	isLocked: boolean;
+	/**
+	 * БЫЛО: снимки жили только внутри галереи на экране приёма.
+	 * PrintPreviewContent в VisitDiaryEditor не знал про attachments —
+	 * юридическая 043/у печаталась без фотодоказательства лечения.
+	 * СТАЛО: отдаём готовые objectUrl вверх, когда blob загружен.
+	 */
+	onPrintPhotosChange?: (photos: readonly DiaryPrintPhoto[]) => void;
 }
 
 /**
@@ -38,6 +52,7 @@ export function VisitDiaryPhotoUpload({
 	visitId,
 	diaryId,
 	isLocked,
+	onPrintPhotosChange,
 }: VisitDiaryPhotoUploadProps) {
 	const [attachments, setAttachments] = useState<Attachment[]>([]);
 	const [isUploading, setIsUploading] = useState(false);
@@ -184,6 +199,35 @@ export function VisitDiaryPhotoUpload({
 		};
 	}, [attachments]);
 
+
+	/*
+	 * Отдать снимки в печать 043/у только когда blob: готов.
+	 * Иначе <img src=/api/...> в window.print уйдёт без x-dente-clinic-token
+	 * и на бумаге будут битые картинки / 401.
+	 */
+	useEffect(() => {
+		if (!onPrintPhotosChange) return;
+		const ready: DiaryPrintPhoto[] = [];
+		for (const att of attachments) {
+			const objectUrl = photoObjectUrls[att.id];
+			if (!objectUrl) continue;
+			if (unreadablePhotoIds.includes(att.id)) continue;
+			ready.push({
+				id: att.id,
+				name: typeof att.name === "string" && att.name ? att.name : "снимок",
+				objectUrl,
+			});
+		}
+		onPrintPhotosChange(ready);
+	}, [attachments, photoObjectUrls, unreadablePhotoIds, onPrintPhotosChange]);
+
+	// Сброс списка печати при смене приёма / размонтировании — иначе
+	// в 043/у другого визита останутся чужие blob:.
+	useEffect(() => {
+		return () => {
+			onPrintPhotosChange?.([]);
+		};
+	}, [visitId, onPrintPhotosChange]);
 	const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;

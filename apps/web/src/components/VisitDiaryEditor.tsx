@@ -11,6 +11,7 @@ import {
 	X,
 } from "lucide-react";
 import type React from "react";
+import { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { getIcdColor, ICD_GROUP_COLORS, ICD10_DICTIONARY } from "../lib/icd10";
@@ -18,7 +19,10 @@ import { showToast } from "./GlobalToast";
 import { PanelLoadFailure } from "./PanelLoadFailure";
 import { SmartMicrophoneButton } from "./SmartMicrophoneButton";
 import { useVisitDiaryLogic } from "./useVisitDiaryLogic";
-import { VisitDiaryPhotoUpload } from "./VisitDiaryPhotoUpload";
+import {
+	VisitDiaryPhotoUpload,
+	type DiaryPrintPhoto,
+} from "./VisitDiaryPhotoUpload";
 import { VisitDiaryTemplateSelector } from "./VisitDiaryTemplateSelector";
 import { CryptoProSigner } from "./visit/CryptoProSigner";
 import "../styles/visit-diary-043.css";
@@ -84,6 +88,21 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		doRevise,
 		icdRef,
 	} = useVisitDiaryLogic(visitId, patientId);
+
+	/*
+	 * Снимки для печати 043/у. БЫЛО: PrintPreviewContent не знал про
+	 * VisitDiaryPhotoUpload — на бумаге не было фото лечения, хотя они
+	 * висели в галерее приёма. objectUrl = blob: с токеном (см. upload).
+	 */
+	const [printPhotos, setPrintPhotos] = useState<readonly DiaryPrintPhoto[]>(
+		[],
+	);
+	const handlePrintPhotosChange = useCallback(
+		(photos: readonly DiaryPrintPhoto[]) => {
+			setPrintPhotos(photos);
+		},
+		[],
+	);
 
 	/**
 	 * Поля закрыты, пока дневник не прочитан, и в подписанном виде (кроме revise).
@@ -404,6 +423,34 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 								<div className="vde-043-soap-block page-break-avoid">
 									<h4>Инструментальный лоток</h4>
 									<p>Штрихкод: {trayBarcode}</p>
+								</div>
+							) : null}
+							{/*
+							 * Фото лечения в юридической 043/у.
+							 * БЫЛО: снимки только в no-print галерее — распечатка
+							 * карты не содержала визуального доказательства.
+							 * Печатаем blob: (уже авторизованные), не /api/... URL.
+							 */}
+							{printPhotos.length > 0 ? (
+								<div
+									className="vde-043-soap-block vde-043-print-photos page-break-avoid"
+									data-testid="form-043-photos"
+								>
+									<h4>Вложения (фотографии лечения)</h4>
+									<div className="vde-043-print-photos__grid">
+										{printPhotos.map((ph) => (
+											<figure
+												key={ph.id}
+												className="vde-043-print-photos__item"
+											>
+												<img
+													src={ph.objectUrl}
+													alt={ph.name}
+												/>
+												<figcaption>{ph.name}</figcaption>
+											</figure>
+										))}
+									</div>
 								</div>
 							) : null}
 						</div>
@@ -863,6 +910,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 					visitId={visitId}
 					diaryId={diaryId}
 					isLocked={isLocked}
+					onPrintPhotosChange={handlePrintPhotosChange}
 				/>
 			</div>
 
