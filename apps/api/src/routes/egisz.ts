@@ -493,8 +493,16 @@ function readGenderFromProfile(
  * Достаёт код МКБ-10 из текста диагноза («K02.1 Кариес дентина» → «K02.1»).
  * Если кода нет, возвращается пустая строка — CDA соберётся, но Минздрав его
  * отклонит, и это лучше молчаливой подстановки произвольного кода.
+ *
+ * DEFECT #54: was case-sensitive [A-ZА-Я] and only \d{1,2} after the dot.
+ * EMK free-text often has «k02.1 …» or extended subcodes (K05.31). Empty
+ * extract left CDA CD@code blank while diagnosisText still showed the line —
+ * РЭМД rejects empty codeSystem value. Align with web icd10CodeFromDiagnosisText:
+ * case-insensitive, A–T/V–Z (not U), up to 4 fraction digits, uppercase result.
  */
 function extractIcd10(diagnosis: string): string {
-	const match = diagnosis.match(/\b([A-ZА-Я]\d{2}(?:\.\d{1,2})?)\b/);
-	return match?.[1] ?? "";
+	const trimmed = diagnosis.trim();
+	if (!trimmed) return "";
+	const match = trimmed.match(/\b([A-TV-Za-tv-z]\d{2}(?:\.\d{1,4})?)\b/);
+	return match?.[1] ? match[1].toUpperCase() : "";
 }
