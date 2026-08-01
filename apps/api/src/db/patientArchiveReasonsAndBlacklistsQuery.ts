@@ -85,6 +85,21 @@ export async function isPatientBookingBlocked(orgId: string, patientId: string):
 	}
 }
 
+/**
+ * Запись/снятие запрета записи (чёрный список).
+ *
+ * БЫЛО: inMemoryBlacklist менялся ДО обращения к базе, а любая ошибка
+ * INSERT/DELETE глоталась пустым catch («safe in-memory fallback»).
+ * Маршрут patients archive-status уже перечитывает базу и отвечает 500,
+ * если строка не совпала — но набор в памяти оставался рассинхронен:
+ *   • INSERT упал → ключ в памяти, базы нет → isPatientBookingBlocked
+ *     до перезапуска запрещал запись «из ниоткуда»;
+ *   • DELETE упал → ключ из памяти снят, строка в базе жива → до
+ *     перезапуска быстрый путь «запрещено» не срабатывал (чтение БД
+ *     ещё спасало, но при сбое БД чтение падает fail-closed, а память
+ *     уже «разрешила»).
+ * СТАЛО: сначала база; память только после успеха; ошибка пробрасывается.
+ */
 export async function setPatientArchiveStatusInDb(
 	orgId: string,
 	patientId: string,
@@ -92,35 +107,28 @@ export async function setPatientArchiveStatusInDb(
 	patientName?: string,
 ) {
 	if (isBlacklisted) {
+		await db.insert(patientArchiveReasonsAndBlacklists).values({
+			organizationId: orgId,
+			patientId: patientId,
+			patientName: patientName || "Пациент",
+			archiveReason: "Внесен в черный список администратором",
+			isBookingBlocked: true,
+			warningBadge: "⛔ ЧЕРНЫЙ СПИСОК (Запрет записи)",
+		});
 		inMemoryBlacklist.add(`${orgId}:${patientId}`);
 	} else {
-		inMemoryBlacklist.delete(`${orgId}:${patientId}`);
-	}
-	try {
-		if (isBlacklisted) {
-			await db.insert(patientArchiveReasonsAndBlacklists).values({
-				organizationId: orgId,
-				patientId: patientId,
-				patientName: patientName || "Пациент",
-				archiveReason: "Внесен в черный список администратором",
-				isBookingBlocked: true,
-				warningBadge: "⛔ ЧЕРНЫЙ СПИСОК (Запрет записи)",
-			});
-		} else {
-			await db
-				.delete(patientArchiveReasonsAndBlacklists)
-				.where(
-					and(
-						eq(patientArchiveReasonsAndBlacklists.organizationId, orgId),
-						or(
-							eq(patientArchiveReasonsAndBlacklists.patientId, patientId),
-							eq(patientArchiveReasonsAndBlacklists.patientName, patientName || "")
-						),
+		await db
+			.delete(patientArchiveReasonsAndBlacklists)
+			.where(
+				and(
+					eq(patientArchiveReasonsAndBlacklists.organizationId, orgId),
+					or(
+						eq(patientArchiveReasonsAndBlacklists.patientId, patientId),
+						eq(patientArchiveReasonsAndBlacklists.patientName, patientName || "")
 					),
-				);
-		}
-	} catch (err) {
-		// safe in-memory fallback
+				),
+			);
+		inMemoryBlacklist.delete(`${orgId}:${patientId}`);
 	}
 }
 

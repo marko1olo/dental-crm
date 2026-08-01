@@ -74,13 +74,28 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
           throw new Error("Задача коммуникации не найдена");
         }
 
+        /*
+         * БЫЛО: SELECT задачи с organizationId, а UPDATE — только по id.
+         * Defense-in-depth того же класса, что visits/appointments:
+         * чужая строка с совпавшим UUID могла сменить статус. Событие
+         * писалось с org токена даже если UPDATE задел не ту задачу.
+         * СТАЛО: organizationId в WHERE; пустой RETURNING → не пишем
+         * событие и не отдаём успех.
+         */
         const [updatedTask] = await tx.update(communicationTasks)
           .set({
             status: parsedInput.data.outcome as any,
             lastEventAt: new Date()
           })
-          .where(eq(communicationTasks.id, task.id))
+          .where(and(
+            eq(communicationTasks.id, task.id),
+            eq(communicationTasks.organizationId, organizationId),
+          ))
           .returning();
+
+        if (!updatedTask) {
+          throw new Error("Задача коммуникации не найдена");
+        }
 
         await tx.insert(communicationEvents).values({
           organizationId,
