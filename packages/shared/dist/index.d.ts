@@ -7464,6 +7464,7 @@ export declare const patientAdministrativeProfileSchema: z.ZodEffects<z.ZodObjec
     preferredAppointmentNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
     dataProcessingBasisNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
     orthodonticProgress: z.ZodDefault<z.ZodNullable<z.ZodString>>;
+    loyaltyTier: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodEnum<["standard", "silver", "gold", "platinum"]>>>>;
 }, "strip", z.ZodTypeAny, {
     identityDocument: string | null;
     taxpayerInn: string | null;
@@ -7482,6 +7483,7 @@ export declare const patientAdministrativeProfileSchema: z.ZodEffects<z.ZodObjec
     preferredAppointmentNote: string | null;
     dataProcessingBasisNote: string | null;
     orthodonticProgress: string | null;
+    loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
 }, {
     identityDocument?: string | null | undefined;
     taxpayerInn?: string | null | undefined;
@@ -7500,6 +7502,7 @@ export declare const patientAdministrativeProfileSchema: z.ZodEffects<z.ZodObjec
     preferredAppointmentNote?: string | null | undefined;
     dataProcessingBasisNote?: string | null | undefined;
     orthodonticProgress?: string | null | undefined;
+    loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
 }>, {
     identityDocument: string | null;
     taxpayerInn: string | null;
@@ -7518,6 +7521,7 @@ export declare const patientAdministrativeProfileSchema: z.ZodEffects<z.ZodObjec
     preferredAppointmentNote: string | null;
     dataProcessingBasisNote: string | null;
     orthodonticProgress: string | null;
+    loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
 }, {
     identityDocument?: string | null | undefined;
     taxpayerInn?: string | null | undefined;
@@ -7536,6 +7540,7 @@ export declare const patientAdministrativeProfileSchema: z.ZodEffects<z.ZodObjec
     preferredAppointmentNote?: string | null | undefined;
     dataProcessingBasisNote?: string | null | undefined;
     orthodonticProgress?: string | null | undefined;
+    loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
 }>;
 export type PatientAdministrativeProfile = z.infer<typeof patientAdministrativeProfileSchema>;
 export declare const patientSchema: z.ZodObject<{
@@ -7565,6 +7570,7 @@ export declare const patientSchema: z.ZodObject<{
         preferredAppointmentNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
         dataProcessingBasisNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
         orthodonticProgress: z.ZodDefault<z.ZodNullable<z.ZodString>>;
+        loyaltyTier: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodEnum<["standard", "silver", "gold", "platinum"]>>>>;
     }, "strip", z.ZodTypeAny, {
         identityDocument: string | null;
         taxpayerInn: string | null;
@@ -7583,6 +7589,7 @@ export declare const patientSchema: z.ZodObject<{
         preferredAppointmentNote: string | null;
         dataProcessingBasisNote: string | null;
         orthodonticProgress: string | null;
+        loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
     }, {
         identityDocument?: string | null | undefined;
         taxpayerInn?: string | null | undefined;
@@ -7601,6 +7608,7 @@ export declare const patientSchema: z.ZodObject<{
         preferredAppointmentNote?: string | null | undefined;
         dataProcessingBasisNote?: string | null | undefined;
         orthodonticProgress?: string | null | undefined;
+        loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
     }>, {
         identityDocument: string | null;
         taxpayerInn: string | null;
@@ -7619,6 +7627,7 @@ export declare const patientSchema: z.ZodObject<{
         preferredAppointmentNote: string | null;
         dataProcessingBasisNote: string | null;
         orthodonticProgress: string | null;
+        loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
     }, {
         identityDocument?: string | null | undefined;
         taxpayerInn?: string | null | undefined;
@@ -7637,6 +7646,7 @@ export declare const patientSchema: z.ZodObject<{
         preferredAppointmentNote?: string | null | undefined;
         dataProcessingBasisNote?: string | null | undefined;
         orthodonticProgress?: string | null | undefined;
+        loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
     }>>>;
     balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
     familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -7671,6 +7681,7 @@ export declare const patientSchema: z.ZodObject<{
         preferredAppointmentNote: string | null;
         dataProcessingBasisNote: string | null;
         orthodonticProgress: string | null;
+        loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
     } | null;
     balanceRub: number;
     familyGroupId?: string | null | undefined;
@@ -7703,6 +7714,7 @@ export declare const patientSchema: z.ZodObject<{
         preferredAppointmentNote?: string | null | undefined;
         dataProcessingBasisNote?: string | null | undefined;
         orthodonticProgress?: string | null | undefined;
+        loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
     } | null | undefined;
     balanceRub?: number | undefined;
     familyGroupId?: string | null | undefined;
@@ -16423,6 +16435,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             preferredAppointmentNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
             dataProcessingBasisNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
             orthodonticProgress: z.ZodDefault<z.ZodNullable<z.ZodString>>;
+            loyaltyTier: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodEnum<["standard", "silver", "gold", "platinum"]>>>>;
         }, "strip", z.ZodTypeAny, {
             identityDocument: string | null;
             taxpayerInn: string | null;
@@ -16441,6 +16454,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             preferredAppointmentNote: string | null;
             dataProcessingBasisNote: string | null;
             orthodonticProgress: string | null;
+            loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
         }, {
             identityDocument?: string | null | undefined;
             taxpayerInn?: string | null | undefined;
@@ -16459,6 +16473,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             preferredAppointmentNote?: string | null | undefined;
             dataProcessingBasisNote?: string | null | undefined;
             orthodonticProgress?: string | null | undefined;
+            loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
         }>, {
             identityDocument: string | null;
             taxpayerInn: string | null;
@@ -16477,6 +16492,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             preferredAppointmentNote: string | null;
             dataProcessingBasisNote: string | null;
             orthodonticProgress: string | null;
+            loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
         }, {
             identityDocument?: string | null | undefined;
             taxpayerInn?: string | null | undefined;
@@ -16495,6 +16511,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             preferredAppointmentNote?: string | null | undefined;
             dataProcessingBasisNote?: string | null | undefined;
             orthodonticProgress?: string | null | undefined;
+            loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
         }>>>;
         balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
         familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -16529,6 +16546,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             preferredAppointmentNote: string | null;
             dataProcessingBasisNote: string | null;
             orthodonticProgress: string | null;
+            loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
         } | null;
         balanceRub: number;
         familyGroupId?: string | null | undefined;
@@ -16561,6 +16579,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             preferredAppointmentNote?: string | null | undefined;
             dataProcessingBasisNote?: string | null | undefined;
             orthodonticProgress?: string | null | undefined;
+            loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
         } | null | undefined;
         balanceRub?: number | undefined;
         familyGroupId?: string | null | undefined;
@@ -16841,6 +16860,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             preferredAppointmentNote: string | null;
             dataProcessingBasisNote: string | null;
             orthodonticProgress: string | null;
+            loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
         } | null;
         balanceRub: number;
         familyGroupId?: string | null | undefined;
@@ -16948,6 +16968,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             preferredAppointmentNote?: string | null | undefined;
             dataProcessingBasisNote?: string | null | undefined;
             orthodonticProgress?: string | null | undefined;
+            loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
         } | null | undefined;
         balanceRub?: number | undefined;
         familyGroupId?: string | null | undefined;
@@ -21801,6 +21822,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 preferredAppointmentNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
                 dataProcessingBasisNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
                 orthodonticProgress: z.ZodDefault<z.ZodNullable<z.ZodString>>;
+                loyaltyTier: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodEnum<["standard", "silver", "gold", "platinum"]>>>>;
             }, "strip", z.ZodTypeAny, {
                 identityDocument: string | null;
                 taxpayerInn: string | null;
@@ -21819,6 +21841,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 preferredAppointmentNote: string | null;
                 dataProcessingBasisNote: string | null;
                 orthodonticProgress: string | null;
+                loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
             }, {
                 identityDocument?: string | null | undefined;
                 taxpayerInn?: string | null | undefined;
@@ -21837,6 +21860,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 preferredAppointmentNote?: string | null | undefined;
                 dataProcessingBasisNote?: string | null | undefined;
                 orthodonticProgress?: string | null | undefined;
+                loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
             }>, {
                 identityDocument: string | null;
                 taxpayerInn: string | null;
@@ -21855,6 +21879,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 preferredAppointmentNote: string | null;
                 dataProcessingBasisNote: string | null;
                 orthodonticProgress: string | null;
+                loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
             }, {
                 identityDocument?: string | null | undefined;
                 taxpayerInn?: string | null | undefined;
@@ -21873,6 +21898,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 preferredAppointmentNote?: string | null | undefined;
                 dataProcessingBasisNote?: string | null | undefined;
                 orthodonticProgress?: string | null | undefined;
+                loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
             }>>>;
             balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
             familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -21907,6 +21933,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 preferredAppointmentNote: string | null;
                 dataProcessingBasisNote: string | null;
                 orthodonticProgress: string | null;
+                loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
             } | null;
             balanceRub: number;
             familyGroupId?: string | null | undefined;
@@ -21939,6 +21966,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 preferredAppointmentNote?: string | null | undefined;
                 dataProcessingBasisNote?: string | null | undefined;
                 orthodonticProgress?: string | null | undefined;
+                loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
             } | null | undefined;
             balanceRub?: number | undefined;
             familyGroupId?: string | null | undefined;
@@ -22219,6 +22247,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 preferredAppointmentNote: string | null;
                 dataProcessingBasisNote: string | null;
                 orthodonticProgress: string | null;
+                loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
             } | null;
             balanceRub: number;
             familyGroupId?: string | null | undefined;
@@ -22326,6 +22355,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 preferredAppointmentNote?: string | null | undefined;
                 dataProcessingBasisNote?: string | null | undefined;
                 orthodonticProgress?: string | null | undefined;
+                loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
             } | null | undefined;
             balanceRub?: number | undefined;
             familyGroupId?: string | null | undefined;
@@ -23311,6 +23341,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 preferredAppointmentNote: string | null;
                 dataProcessingBasisNote: string | null;
                 orthodonticProgress: string | null;
+                loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
             } | null;
             balanceRub: number;
             familyGroupId?: string | null | undefined;
@@ -24281,6 +24312,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 preferredAppointmentNote?: string | null | undefined;
                 dataProcessingBasisNote?: string | null | undefined;
                 orthodonticProgress?: string | null | undefined;
+                loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
             } | null | undefined;
             balanceRub?: number | undefined;
             familyGroupId?: string | null | undefined;
@@ -29196,6 +29228,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 preferredAppointmentNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
                 dataProcessingBasisNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
                 orthodonticProgress: z.ZodDefault<z.ZodNullable<z.ZodString>>;
+                loyaltyTier: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodEnum<["standard", "silver", "gold", "platinum"]>>>>;
             }, "strip", z.ZodTypeAny, {
                 identityDocument: string | null;
                 taxpayerInn: string | null;
@@ -29214,6 +29247,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 preferredAppointmentNote: string | null;
                 dataProcessingBasisNote: string | null;
                 orthodonticProgress: string | null;
+                loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
             }, {
                 identityDocument?: string | null | undefined;
                 taxpayerInn?: string | null | undefined;
@@ -29232,6 +29266,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 preferredAppointmentNote?: string | null | undefined;
                 dataProcessingBasisNote?: string | null | undefined;
                 orthodonticProgress?: string | null | undefined;
+                loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
             }>, {
                 identityDocument: string | null;
                 taxpayerInn: string | null;
@@ -29250,6 +29285,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 preferredAppointmentNote: string | null;
                 dataProcessingBasisNote: string | null;
                 orthodonticProgress: string | null;
+                loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
             }, {
                 identityDocument?: string | null | undefined;
                 taxpayerInn?: string | null | undefined;
@@ -29268,6 +29304,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 preferredAppointmentNote?: string | null | undefined;
                 dataProcessingBasisNote?: string | null | undefined;
                 orthodonticProgress?: string | null | undefined;
+                loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
             }>>>;
             balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
             familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -29302,6 +29339,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 preferredAppointmentNote: string | null;
                 dataProcessingBasisNote: string | null;
                 orthodonticProgress: string | null;
+                loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
             } | null;
             balanceRub: number;
             familyGroupId?: string | null | undefined;
@@ -29334,6 +29372,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 preferredAppointmentNote?: string | null | undefined;
                 dataProcessingBasisNote?: string | null | undefined;
                 orthodonticProgress?: string | null | undefined;
+                loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
             } | null | undefined;
             balanceRub?: number | undefined;
             familyGroupId?: string | null | undefined;
@@ -29614,6 +29653,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 preferredAppointmentNote: string | null;
                 dataProcessingBasisNote: string | null;
                 orthodonticProgress: string | null;
+                loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
             } | null;
             balanceRub: number;
             familyGroupId?: string | null | undefined;
@@ -29721,6 +29761,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 preferredAppointmentNote?: string | null | undefined;
                 dataProcessingBasisNote?: string | null | undefined;
                 orthodonticProgress?: string | null | undefined;
+                loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
             } | null | undefined;
             balanceRub?: number | undefined;
             familyGroupId?: string | null | undefined;
@@ -31491,6 +31532,7 @@ export declare const dashboardSchema: z.ZodObject<{
             preferredAppointmentNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
             dataProcessingBasisNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
             orthodonticProgress: z.ZodDefault<z.ZodNullable<z.ZodString>>;
+            loyaltyTier: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodEnum<["standard", "silver", "gold", "platinum"]>>>>;
         }, "strip", z.ZodTypeAny, {
             identityDocument: string | null;
             taxpayerInn: string | null;
@@ -31509,6 +31551,7 @@ export declare const dashboardSchema: z.ZodObject<{
             preferredAppointmentNote: string | null;
             dataProcessingBasisNote: string | null;
             orthodonticProgress: string | null;
+            loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
         }, {
             identityDocument?: string | null | undefined;
             taxpayerInn?: string | null | undefined;
@@ -31527,6 +31570,7 @@ export declare const dashboardSchema: z.ZodObject<{
             preferredAppointmentNote?: string | null | undefined;
             dataProcessingBasisNote?: string | null | undefined;
             orthodonticProgress?: string | null | undefined;
+            loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
         }>, {
             identityDocument: string | null;
             taxpayerInn: string | null;
@@ -31545,6 +31589,7 @@ export declare const dashboardSchema: z.ZodObject<{
             preferredAppointmentNote: string | null;
             dataProcessingBasisNote: string | null;
             orthodonticProgress: string | null;
+            loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
         }, {
             identityDocument?: string | null | undefined;
             taxpayerInn?: string | null | undefined;
@@ -31563,6 +31608,7 @@ export declare const dashboardSchema: z.ZodObject<{
             preferredAppointmentNote?: string | null | undefined;
             dataProcessingBasisNote?: string | null | undefined;
             orthodonticProgress?: string | null | undefined;
+            loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
         }>>>;
         balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
         familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -31597,6 +31643,7 @@ export declare const dashboardSchema: z.ZodObject<{
             preferredAppointmentNote: string | null;
             dataProcessingBasisNote: string | null;
             orthodonticProgress: string | null;
+            loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
         } | null;
         balanceRub: number;
         familyGroupId?: string | null | undefined;
@@ -31629,6 +31676,7 @@ export declare const dashboardSchema: z.ZodObject<{
             preferredAppointmentNote?: string | null | undefined;
             dataProcessingBasisNote?: string | null | undefined;
             orthodonticProgress?: string | null | undefined;
+            loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
         } | null | undefined;
         balanceRub?: number | undefined;
         familyGroupId?: string | null | undefined;
@@ -36697,6 +36745,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     preferredAppointmentNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
                     dataProcessingBasisNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
                     orthodonticProgress: z.ZodDefault<z.ZodNullable<z.ZodString>>;
+                    loyaltyTier: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodEnum<["standard", "silver", "gold", "platinum"]>>>>;
                 }, "strip", z.ZodTypeAny, {
                     identityDocument: string | null;
                     taxpayerInn: string | null;
@@ -36715,6 +36764,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     preferredAppointmentNote: string | null;
                     dataProcessingBasisNote: string | null;
                     orthodonticProgress: string | null;
+                    loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
                 }, {
                     identityDocument?: string | null | undefined;
                     taxpayerInn?: string | null | undefined;
@@ -36733,6 +36783,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     preferredAppointmentNote?: string | null | undefined;
                     dataProcessingBasisNote?: string | null | undefined;
                     orthodonticProgress?: string | null | undefined;
+                    loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
                 }>, {
                     identityDocument: string | null;
                     taxpayerInn: string | null;
@@ -36751,6 +36802,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     preferredAppointmentNote: string | null;
                     dataProcessingBasisNote: string | null;
                     orthodonticProgress: string | null;
+                    loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
                 }, {
                     identityDocument?: string | null | undefined;
                     taxpayerInn?: string | null | undefined;
@@ -36769,6 +36821,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     preferredAppointmentNote?: string | null | undefined;
                     dataProcessingBasisNote?: string | null | undefined;
                     orthodonticProgress?: string | null | undefined;
+                    loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
                 }>>>;
                 balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
                 familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -36803,6 +36856,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     preferredAppointmentNote: string | null;
                     dataProcessingBasisNote: string | null;
                     orthodonticProgress: string | null;
+                    loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
                 } | null;
                 balanceRub: number;
                 familyGroupId?: string | null | undefined;
@@ -36835,6 +36889,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     preferredAppointmentNote?: string | null | undefined;
                     dataProcessingBasisNote?: string | null | undefined;
                     orthodonticProgress?: string | null | undefined;
+                    loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
                 } | null | undefined;
                 balanceRub?: number | undefined;
                 familyGroupId?: string | null | undefined;
@@ -37115,6 +37170,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     preferredAppointmentNote: string | null;
                     dataProcessingBasisNote: string | null;
                     orthodonticProgress: string | null;
+                    loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
                 } | null;
                 balanceRub: number;
                 familyGroupId?: string | null | undefined;
@@ -37222,6 +37278,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     preferredAppointmentNote?: string | null | undefined;
                     dataProcessingBasisNote?: string | null | undefined;
                     orthodonticProgress?: string | null | undefined;
+                    loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
                 } | null | undefined;
                 balanceRub?: number | undefined;
                 familyGroupId?: string | null | undefined;
@@ -38446,6 +38503,7 @@ export declare const dashboardSchema: z.ZodObject<{
             preferredAppointmentNote: string | null;
             dataProcessingBasisNote: string | null;
             orthodonticProgress: string | null;
+            loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
         } | null;
         balanceRub: number;
         familyGroupId?: string | null | undefined;
@@ -39110,6 +39168,7 @@ export declare const dashboardSchema: z.ZodObject<{
             preferredAppointmentNote?: string | null | undefined;
             dataProcessingBasisNote?: string | null | undefined;
             orthodonticProgress?: string | null | undefined;
+            loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
         } | null | undefined;
         balanceRub?: number | undefined;
         familyGroupId?: string | null | undefined;
@@ -39689,6 +39748,7 @@ export declare const createPatientSchema: z.ZodObject<{
         preferredAppointmentNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
         dataProcessingBasisNote: z.ZodDefault<z.ZodNullable<z.ZodString>>;
         orthodonticProgress: z.ZodDefault<z.ZodNullable<z.ZodString>>;
+        loyaltyTier: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodEnum<["standard", "silver", "gold", "platinum"]>>>>;
     }, "strip", z.ZodTypeAny, {
         identityDocument: string | null;
         taxpayerInn: string | null;
@@ -39707,6 +39767,7 @@ export declare const createPatientSchema: z.ZodObject<{
         preferredAppointmentNote: string | null;
         dataProcessingBasisNote: string | null;
         orthodonticProgress: string | null;
+        loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
     }, {
         identityDocument?: string | null | undefined;
         taxpayerInn?: string | null | undefined;
@@ -39725,6 +39786,7 @@ export declare const createPatientSchema: z.ZodObject<{
         preferredAppointmentNote?: string | null | undefined;
         dataProcessingBasisNote?: string | null | undefined;
         orthodonticProgress?: string | null | undefined;
+        loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
     }>, {
         identityDocument: string | null;
         taxpayerInn: string | null;
@@ -39743,6 +39805,7 @@ export declare const createPatientSchema: z.ZodObject<{
         preferredAppointmentNote: string | null;
         dataProcessingBasisNote: string | null;
         orthodonticProgress: string | null;
+        loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
     }, {
         identityDocument?: string | null | undefined;
         taxpayerInn?: string | null | undefined;
@@ -39761,6 +39824,7 @@ export declare const createPatientSchema: z.ZodObject<{
         preferredAppointmentNote?: string | null | undefined;
         dataProcessingBasisNote?: string | null | undefined;
         orthodonticProgress?: string | null | undefined;
+        loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
     }>>>;
 }, "strip", z.ZodTypeAny, {
     fullName: string;
@@ -39786,6 +39850,7 @@ export declare const createPatientSchema: z.ZodObject<{
         preferredAppointmentNote: string | null;
         dataProcessingBasisNote: string | null;
         orthodonticProgress: string | null;
+        loyaltyTier: "standard" | "silver" | "gold" | "platinum" | null;
     } | null | undefined;
 }, {
     fullName: string;
@@ -39811,6 +39876,7 @@ export declare const createPatientSchema: z.ZodObject<{
         preferredAppointmentNote?: string | null | undefined;
         dataProcessingBasisNote?: string | null | undefined;
         orthodonticProgress?: string | null | undefined;
+        loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
     } | null | undefined;
 }>;
 export type CreatePatientInput = z.infer<typeof createPatientSchema>;
@@ -39855,6 +39921,7 @@ export declare const updatePatientAdministrativeProfileSchema: z.ZodEffects<z.Zo
     preferredAppointmentNote: z.ZodOptional<z.ZodDefault<z.ZodNullable<z.ZodString>>>;
     dataProcessingBasisNote: z.ZodOptional<z.ZodDefault<z.ZodNullable<z.ZodString>>>;
     orthodonticProgress: z.ZodOptional<z.ZodDefault<z.ZodNullable<z.ZodString>>>;
+    loyaltyTier: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodEnum<["standard", "silver", "gold", "platinum"]>>>>>;
 }, "strip", z.ZodTypeAny, {
     identityDocument?: string | null | undefined;
     taxpayerInn?: string | null | undefined;
@@ -39873,6 +39940,7 @@ export declare const updatePatientAdministrativeProfileSchema: z.ZodEffects<z.Zo
     preferredAppointmentNote?: string | null | undefined;
     dataProcessingBasisNote?: string | null | undefined;
     orthodonticProgress?: string | null | undefined;
+    loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
 }, {
     identityDocument?: string | null | undefined;
     taxpayerInn?: string | null | undefined;
@@ -39891,6 +39959,7 @@ export declare const updatePatientAdministrativeProfileSchema: z.ZodEffects<z.Zo
     preferredAppointmentNote?: string | null | undefined;
     dataProcessingBasisNote?: string | null | undefined;
     orthodonticProgress?: string | null | undefined;
+    loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
 }>, {
     identityDocument?: string | null | undefined;
     taxpayerInn?: string | null | undefined;
@@ -39909,6 +39978,7 @@ export declare const updatePatientAdministrativeProfileSchema: z.ZodEffects<z.Zo
     preferredAppointmentNote?: string | null | undefined;
     dataProcessingBasisNote?: string | null | undefined;
     orthodonticProgress?: string | null | undefined;
+    loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
 }, {
     identityDocument?: string | null | undefined;
     taxpayerInn?: string | null | undefined;
@@ -39927,6 +39997,7 @@ export declare const updatePatientAdministrativeProfileSchema: z.ZodEffects<z.Zo
     preferredAppointmentNote?: string | null | undefined;
     dataProcessingBasisNote?: string | null | undefined;
     orthodonticProgress?: string | null | undefined;
+    loyaltyTier?: "standard" | "silver" | "gold" | "platinum" | null | undefined;
 }>;
 export type UpdatePatientAdministrativeProfileInput = z.infer<typeof updatePatientAdministrativeProfileSchema>;
 export declare const updateClinicModeSchema: z.ZodObject<{

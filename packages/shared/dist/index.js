@@ -2235,7 +2235,20 @@ const patientAdministrativeProfileBaseSchema = z.object({
     preferredAppointmentEnd: clockTimeSchema.nullable().default(null),
     preferredAppointmentNote: patientAdministrativeTextSchema,
     dataProcessingBasisNote: patientAdministrativeTextSchema,
-    orthodonticProgress: patientAdministrativeTextSchema
+    orthodonticProgress: patientAdministrativeTextSchema,
+    /*
+     * Уровень лояльности (ручной выбор администратором).
+     * БЫЛО: поля не было в patientAdministrativeProfileBaseSchema. UI
+     * PatientLoyaltyHeader шлёт PUT .../administrative-profile с { loyaltyTier },
+     * Zod вырезал ключ → HTTP 200, JSONB не менялся → после F5 tier сбрасывался.
+     * СТАЛО: enum стандартных уровней + null (снять уровень). Неизвестные
+     * строки отклоняются на контракте, а не молча проглатываются.
+     */
+    loyaltyTier: z
+        .enum(["standard", "silver", "gold", "platinum"])
+        .nullable()
+        .optional()
+        .default(null)
 });
 export const patientAdministrativeProfileSchema = patientAdministrativeProfileBaseSchema.superRefine((value, context) => {
     if (value.preferredAppointmentStart &&
