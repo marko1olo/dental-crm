@@ -361,6 +361,7 @@ type DiarySigningFailureCode =
 	| "NotSaved"
 	| "AlreadyLocked"
 	| "InsufficientStock"
+	| "Icd10Required"
 	| "PinRejected";
 
 /**
@@ -449,6 +450,24 @@ async function runDiarySigningCeremony(
 	}
 	if (diary.isLocked) {
 		throw new DiarySigningError("AlreadyLocked", "Дневник уже подписан.");
+	}
+
+	/*
+	 * DEFECT #69: signed 043/у must carry МКБ-10 before lock.
+	 * БЫЛО: runDiarySigningCeremony / POST lock / status:signed принимали
+	 * пустой diagnosisIcd10. Бумажная 043/у и diary_hash уходили без кода
+	 * диагноза; EGISZ CDA уже режет пустой МКБ (#62), а подписанная карта
+	 * клиники — нет. Суд/проверка качества видят заверенный дневник без
+	 * обязательного поля приказа 834н.
+	 * СТАЛО: trim diagnosisIcd10; пусто → 422 Icd10Required до замка/склада.
+	 */
+	const icdForLock =
+		typeof diary.diagnosisIcd10 === "string" ? diary.diagnosisIcd10.trim() : "";
+	if (!icdForLock) {
+		throw new DiarySigningError(
+			"Icd10Required",
+			"Перед подписью дневника 043/у укажите код диагноза по МКБ-10. Сохраните черновик с кодом и повторите подписание.",
+		);
 	}
 
 	// Хеш считается по СОХРАНЁННОЙ строке, а не по телу запроса.
@@ -1337,6 +1356,11 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 						.code(403)
 						.send({ error: "DiaryLocked", message: err.message });
 				}
+				if (err.code === "Icd10Required") {
+					return reply
+						.code(422)
+						.send({ error: "Icd10Required", message: err.message });
+				}
 				if (err.code === "InsufficientStock") {
 					return reply
 						.code(400)
@@ -1618,6 +1642,11 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					return reply
 						.code(500)
 						.send({ error: "DiaryNotSaved", message: err.message });
+				}
+				if (err.code === "Icd10Required") {
+					return reply
+						.code(422)
+						.send({ error: "Icd10Required", message: err.message });
 				}
 				return reply
 					.code(400)
