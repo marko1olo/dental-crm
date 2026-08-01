@@ -647,6 +647,25 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				});
 			}
 
+			/*
+			 * DEFECT #71: empty clinic name must not reach EGISZ/REMD CDA.
+			 * БЫЛО: clinicName: row.organization.name without trim/gate.
+			 * organizations.name is NOT NULL but can be "" / whitespace —
+			 * custodian <name></name> and author representedOrganization blank.
+			 * РЭМД rejects unattributable MO name after clinic downloaded XML.
+			 * СТАЛО: 422 ClinicNameRequired when trimmed name empty.
+			 */
+			const clinicNameRaw =
+				typeof row.organization.name === "string" ? row.organization.name : "";
+			const clinicName = clinicNameRaw.trim();
+			if (!clinicName) {
+				return reply.status(422).send({
+					error: "ClinicNameRequired",
+					message:
+						"Для выгрузки в ЕГИСЗ у медицинской организации должно быть указано наименование.",
+				});
+			}
+
 			const params: EgiszCdaParams = {
 				patientId: row.patient.id,
 				patientName: patientNameParts,
@@ -654,7 +673,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				patientSnils: patientSnilsDigits,
 				patientBirthDate: birthStr,
 				patientGender,
-				clinicName: row.organization.name,
+				clinicName,
 				doctorName,
 				...(doctorPosition ? { doctorPosition } : {}),
 				icd10Code: resolvedIcd10,
