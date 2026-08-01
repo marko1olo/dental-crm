@@ -867,10 +867,15 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				showToast("Дневник подписан и заблокирован (ЭЦП врача).", "success");
 			} else if (res.status === 409) {
 				setIsLocked(true);
-				// 409 AlreadyLocked отдаёт hash подписанного дневника — не теряем его.
+				// 409 AlreadyLocked: hash + lockedAt с сервера — печать 043/у
+				// не остаётся без даты подписи и без штампа ЭЦП.
 				if (typeof json?.hash === "string") setDiaryHash(json.hash);
+				if (typeof json?.lockedAt === "string" && json.lockedAt) {
+					setLockedAt(json.lockedAt);
+				}
 				showToast("Дневник уже был подписан ранее.", "info");
 			} else {
+
 
 				console.error(`[diary lock] ${res.status} ${rawBody.slice(0, 300)}`);
 				const detail = operatorReadableErrorDetail(

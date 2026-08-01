@@ -122,14 +122,42 @@ const diaryReviseBodySchema = z.object({
 	revisionReason: z.unknown().optional(),
 });
 
+/**
+ * SHA-256 печать содержимого дневника 043/у.
+ *
+ * БЫЛО: в сырьё входили только visitId|patientId|S|O|P. Поля A (МКБ-10, зуб),
+ * осложнений и сопутствующих в хеш не попадали. Админ правил только диагноз или
+ * «Осложнения» через /revise — newHash совпадал со старым diaryHash, ЭЦП-штамп
+ * в печати 043/у не менялся, хотя юридический текст карты уже другой. Проверка
+ * целостности «хеш = содержимое» молча врала.
+ *
+ * СТАЛО: все семь клинических полей visit_diaries, которые печатает 043/у.
+ * Порядок фиксирован; пустое = "". Менять порядок/набор нельзя без миграции
+ * пересчёта уже выданных diary_hash (старые подписи останутся на прежнем
+ * пятиполевом хеше до ближайшей ревизии/подписи).
+ */
 function computeDiaryHash(
 	visitId: string,
 	patientId: string,
 	anamnesis: string | null | undefined,
 	statusLocalis: string | null | undefined,
 	treatmentDescription: string | null | undefined,
+	diagnosisIcd10?: string | null | undefined,
+	diagnosisTooth?: string | null | undefined,
+	complications?: string | null | undefined,
+	comorbidities?: string | null | undefined,
 ): string {
-	const raw = `${visitId}|${patientId}|${anamnesis ?? ""}|${statusLocalis ?? ""}|${treatmentDescription ?? ""}`;
+	const raw = [
+		visitId,
+		patientId,
+		anamnesis ?? "",
+		statusLocalis ?? "",
+		treatmentDescription ?? "",
+		diagnosisIcd10 ?? "",
+		diagnosisTooth ?? "",
+		complications ?? "",
+		comorbidities ?? "",
+	].join("|");
 	return crypto.createHash("sha256").update(raw).digest("hex");
 }
 
@@ -265,6 +293,10 @@ async function runDiarySigningCeremony(
 		diary.anamnesis,
 		diary.statusLocalis,
 		diary.treatmentDescription,
+		diary.diagnosisIcd10,
+		diary.diagnosisTooth,
+		diary.complications,
+		diary.comorbidities,
 	);
 	const lockedAt = new Date();
 
@@ -822,9 +854,20 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					"Дневник приёма не найден в этой клинике, подписывать нечего. Так бывает, если страница приёма открыта давно и дневник с тех пор удалён. Откройте приём заново, нажмите «Сохранить черновик» и повторите подписание.",
 			});
 		if (existing.isLocked)
+			/*
+			 * БЫЛО: 409 отдавал hash, но не lockedAt. Клиент doLock на 409 ставил
+			 * isLocked=true и hash, а lockedAt оставался null — печать 043/у и
+			 * штамп «Подписан:» показывали «—» / дату с ПК, хотя в БД locked_at есть.
+			 */
 			return reply.code(409).send({
 				error: "AlreadyLocked",
 				hash: existing.diaryHash,
+				lockedAt:
+					existing.lockedAt instanceof Date
+						? existing.lockedAt.toISOString()
+						: typeof existing.lockedAt === "string"
+							? existing.lockedAt
+							: null,
 				message:
 					"Дневник этого приёма уже подписан и заблокирован, второй раз подписывать его не нужно. Если нужна правка подписанного дневника, её проводит администратор клиники через ревизию.",
 			});
@@ -975,6 +1018,10 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			body.anamnesis ?? existing.anamnesis,
 			body.statusLocalis ?? existing.statusLocalis,
 			body.treatmentDescription ?? existing.treatmentDescription,
+			body.diagnosisIcd10 ?? existing.diagnosisIcd10,
+			body.diagnosisTooth ?? existing.diagnosisTooth,
+			body.complications ?? existing.complications,
+			body.comorbidities ?? existing.comorbidities,
 		);
 
 		// Одна транзакция на запись ревизии и правку дневника. БЫЛО: два отдельных
