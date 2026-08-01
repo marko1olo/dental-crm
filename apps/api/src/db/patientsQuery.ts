@@ -232,8 +232,19 @@ export async function getPatientByIdFromDb(organizationId: string, id: string): 
 		if (!p) return null;
 		const balances = await patientAccountBalancesRub(organizationId, [p.id]);
 		return rowToPatient(p, balances.get(p.id) ?? null);
-	} catch {
-		return (inMemoryPatients.find((p) => p.id === id) as unknown as Patient) ?? null;
+	} catch (error) {
+		/* БЫЛО: `catch { return inMemoryPatients.find(...) }`. Любой сбой базы
+		   (обрыв связи, таймаут, ошибка парсинга сальдо) подменял ответ
+		   карточкой из глобального массива-образца — без фильтра по организации
+		   и без реального сальдо. Маршрут GET /api/patients/:id отвечал 200 с
+		   чужим ФИО/телефоном, а при отсутствии id в образце — null (404), хотя
+		   в базе пациент есть. Регистратор видел «не того человека» или «карточка
+		   пропала» и заводил дубль.
+		   Тот же класс дефекта уже убран у getPatientsFromDb / createPatientInDb:
+		   подмена памятью только в useInMemory(); живой сбой базы обязан дойти
+		   до маршрута честной ошибкой. */
+		console.error("[patientsQuery] Не удалось прочитать карточку пациента из базы:", error);
+		throw error;
 	}
 }
 
