@@ -127,16 +127,17 @@ const diaryReviseBodySchema = z.object({
 /**
  * SHA-256 печать содержимого дневника 043/у.
  *
- * БЫЛО: в сырьё входили только visitId|patientId|S|O|P. Поля A (МКБ-10, зуб),
- * осложнений и сопутствующих в хеш не попадали. Админ правил только диагноз или
- * «Осложнения» через /revise — newHash совпадал со старым diaryHash, ЭЦП-штамп
- * в печати 043/у не менялся, хотя юридический текст карты уже другой. Проверка
- * целостности «хеш = содержимое» молча врала.
+ * БЫЛО (раньше): visitId|patientId|S|O|P — без A (МКБ/зуб), осложнений,
+ * сопутствующих. Правка диагноза через /revise не меняла diaryHash.
  *
- * СТАЛО: все семь клинических полей visit_diaries, которые печатает 043/у.
- * Порядок фиксирован; пустое = "". Менять порядок/набор нельзя без миграции
- * пересчёта уже выданных diary_hash (старые подписи останутся на прежнем
- * пятиполевом хеше до ближайшей ревизии/подписи).
+ * БЫЛО (после семи полей): instrument_tray_barcode печатается в 043/у
+ * («Инструментальный лоток»), но в хеш не входил. Смена лотка после
+ * черновика/подписи оставляла тот же diaryHash — ЭЦП-штамп «заверял»
+ * другую упаковку стерилизации, чем в карте.
+ *
+ * СТАЛО: семь клинических полей + instrumentTrayBarcode (8-й сегмент).
+ * Порядок фиксирован; пустое = "". Старые diary_hash без лотка остаются
+ * до ближайшего draft save / lock / revise (тогда пересчёт).
  */
 function computeDiaryHash(
 	visitId: string,
@@ -148,6 +149,7 @@ function computeDiaryHash(
 	diagnosisTooth?: string | null | undefined,
 	complications?: string | null | undefined,
 	comorbidities?: string | null | undefined,
+	instrumentTrayBarcode?: string | null | undefined,
 ): string {
 	const raw = [
 		visitId,
@@ -159,6 +161,7 @@ function computeDiaryHash(
 		diagnosisTooth ?? "",
 		complications ?? "",
 		comorbidities ?? "",
+		instrumentTrayBarcode ?? "",
 	].join("|");
 	return crypto.createHash("sha256").update(raw).digest("hex");
 }
@@ -421,6 +424,7 @@ async function runDiarySigningCeremony(
 		diary.diagnosisTooth,
 		diary.complications,
 		diary.comorbidities,
+		diary.instrumentTrayBarcode,
 	);
 	const lockedAt = new Date();
 
@@ -928,6 +932,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 						savedRow.diagnosisTooth,
 						savedRow.complications,
 						savedRow.comorbidities,
+						savedRow.instrumentTrayBarcode,
 					);
 					await tx
 						.update(visitDiaries)
@@ -1132,6 +1137,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					existing.diagnosisTooth,
 					existing.complications,
 					existing.comorbidities,
+					existing.instrumentTrayBarcode,
 				);
 				const resolvedReattach = await resolveSignatureForStorage({
 					pkcs7Signature: incomingPkcs7,
@@ -1380,6 +1386,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			body.diagnosisTooth ?? existing.diagnosisTooth,
 			body.complications ?? existing.complications,
 			body.comorbidities ?? existing.comorbidities,
+			existing.instrumentTrayBarcode,
 		);
 
 		// Одна транзакция на запись ревизии и правку дневника. БЫЛО: два отдельных
