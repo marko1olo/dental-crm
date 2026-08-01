@@ -1279,7 +1279,19 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 						diaryHash: reattachHash,
 						cryptoSignaturePkcs7: resolvedReattach.stored,
 						coSignedByUserId: userId,
-						updatedAt: now,
+						/*
+					 * DEFECT #39: progressive fill author/doctor on re-attach.
+					 * БЫЛО: reattach писал только coSignedByUserId. Legacy-строки
+					 * (до DEFECT #35) оставались с doctorId/authorId = null даже
+					 * после повторной УКЭП — BI/print/toothHistory без врача.
+					 * СТАЛО: заполняем authorId/doctorId/lockedByUserId ТОЛЬКО
+					 * если колонка ещё null. После revise исходный doctorId
+					 * сохраняется — re-attach не подменяет лечащего врача.
+					 */
+					authorId: existing.authorId ?? userId,
+					doctorId: existing.doctorId ?? userId,
+					lockedByUserId: existing.lockedByUserId ?? userId,
+					updatedAt: now,
 					})
 					.where(
 						and(
