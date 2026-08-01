@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import { test, describe } from "node:test";
 import { generateDentalCdaXml, type EgiszCdaParams } from "../egiszCdaGenerator.js";
 
@@ -82,5 +83,44 @@ describe("egiszCdaGenerator", () => {
         params.patientGender = "other"; // Test other gender
         const xmlOther = generateDentalCdaXml(params);
         t.assert.snapshot(xmlOther);
+	});
+
+	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+		const params: EgiszCdaParams = {
+			patientId: "pat-esc",
+			patientName: { first: "A<B", last: "C&D", middle: 'E"F' },
+			patientSnils: "12<3&4'",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicName: "Clinic <Main> & Co",
+			doctorName: { first: "Doc<", last: "Tor&" },
+			doctorSnils: "98>76&'",
+			icd10Code: "K02.<1>",
+			diagnosisText: 'Diag <x> & "y"\'',
+			anamnesis: 'Pain <2> & "sharp"\'',
+			objectiveStatus: "Status <O> & x",
+			complications: "Comp <c> & d",
+			comorbidities: "Comorb <m> & n",
+			treatmentDescription: "Treat <t> & u",
+			visitDate: new Date("2024-05-15T10:00:00.000Z"),
+			documentId: "doc<001>&'",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		assert.ok(xml.includes("&lt;"));
+		assert.ok(xml.includes("&gt;"));
+		assert.ok(xml.includes("&amp;"));
+		assert.ok(xml.includes("&quot;"));
+		assert.ok(xml.includes("&apos;"));
+		// Raw special chars must not appear unescaped in clinical free text
+		assert.ok(!xml.includes("<paragraph>Pain <2>"));
+		assert.ok(xml.includes("<paragraph>Pain &lt;2&gt; &amp; &quot;sharp&quot;&apos;</paragraph>"));
+		assert.ok(xml.includes('displayName="Diag &lt;x&gt; &amp; &quot;y&quot;&apos;"'));
+		assert.ok(xml.includes("<family>C&amp;D</family>"));
+		assert.ok(xml.includes("<name>Clinic &lt;Main&gt; &amp; Co</name>"));
+		assert.ok(xml.includes("<paragraph>Status &lt;O&gt; &amp; x</paragraph>"));
+		assert.ok(xml.includes("<paragraph>Comp &lt;c&gt; &amp; d</paragraph>"));
+		assert.ok(xml.includes("<paragraph>Comorb &lt;m&gt; &amp; n</paragraph>"));
+		assert.ok(xml.includes("<paragraph>Treat &lt;t&gt; &amp; u</paragraph>"));
 	});
 });
