@@ -446,6 +446,17 @@ async function runDiarySigningCeremony(
 			lockedAt,
 			lockedByUserId: userId,
 			coSignedByUserId: userId,
+			/*
+			 * DEFECT #35: authorId + doctorId при подписании.
+			 * БЫЛО: колонки visit_diaries.author_id / doctor_id в schema есть,
+			 * но ceremony писала только lockedByUserId/coSignedByUserId.
+			 * biAnalyticsWorker джойнит visitDiaries.doctorId → users —
+			 * метрики врача всегда пустые; toothHistory фолбэк на doctorId
+			 * тоже не срабатывал.
+			 * СТАЛО: подписант = author и treating doctor записи 043/у.
+			 */
+			authorId: userId,
+			doctorId: userId,
 			diaryHash: hash,
 			cryptoSignaturePkcs7: params.pkcs7Signature,
 			updatedAt: lockedAt,
@@ -936,6 +947,12 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 							complications: data.complications,
 							comorbidities: data.comorbidities,
 							draftAuthorId: userId,
+						/*
+						 * DEFECT #35: progressive fill author/doctor on first draft.
+						 * Lock ceremony overwrites with signing user (authoritative).
+						 */
+						authorId: userId,
+						doctorId: userId,
 							instrumentTrayBarcode:
 								typeof data.instrumentTrayBarcode === "string"
 									? data.instrumentTrayBarcode.trim() || null
