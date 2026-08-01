@@ -15,6 +15,7 @@ import {
 	inventoryTransactions,
 	procedureMaterialRules,
 	treatmentItems,
+	sterilizationLogs,
 	users,
 	visitDiaries,
 	visitDiaryRevisions,
@@ -122,6 +123,14 @@ const diaryReviseBodySchema = z.object({
 	 */
 	complications: z.unknown().optional(),
 	comorbidities: z.unknown().optional(),
+	/*
+	 * instrumentTrayBarcode — сегмент diary_hash и печать 043/у.
+	 * БЫЛО: revise схему/handler не принимали лоток; sterilization/link
+	 * при is_locked отвечал 409 «правку вносит администратор через
+	 * ревизию», но /revise лоток не менял — неверный штрихкод в
+	 * подписанной 043/у исправить было нечем.
+	 */
+	instrumentTrayBarcode: z.unknown().optional(),
 	revisionReason: z.unknown().optional(),
 });
 
@@ -1417,11 +1426,55 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				typeof parsedReviseBody.data.comorbidities === "string"
 					? parsedReviseBody.data.comorbidities
 					: undefined,
+			/*
+			 * Лоток: string в теле (в т.ч. "") → переписать; undefined → оставить.
+			 * Пустая строка снимает ошибочный barcode с 043/у.
+			 */
+			instrumentTrayBarcode:
+				typeof parsedReviseBody.data.instrumentTrayBarcode === "string"
+					? parsedReviseBody.data.instrumentTrayBarcode
+					: undefined,
 			revisionReason:
 				typeof parsedReviseBody.data.revisionReason === "string"
 					? parsedReviseBody.data.revisionReason
 					: undefined,
 		};
+
+		/*
+		 * Непустой новый barcode — только если журнал стерилизации клиники
+		 * подтвердил цикл (тот же критерий, что POST /api/sterilization/link).
+		 * Иначе админ мог бы вписать произвольный штрихкод в подписанную 043/у.
+		 */
+		const nextTrayBarcode =
+			body.instrumentTrayBarcode !== undefined
+				? body.instrumentTrayBarcode.trim()
+				: (existing.instrumentTrayBarcode ?? "");
+		if (
+			body.instrumentTrayBarcode !== undefined &&
+			nextTrayBarcode.length > 0
+		) {
+			const [trayLog] = await db
+				.select({
+					id: sterilizationLogs.id,
+					status: sterilizationLogs.status,
+				})
+				.from(sterilizationLogs)
+				.where(
+					and(
+						eq(sterilizationLogs.organizationId, orgId),
+						eq(sterilizationLogs.barcode, nextTrayBarcode),
+					),
+				)
+				.orderBy(desc(sterilizationLogs.timestamp))
+				.limit(1);
+			if (!trayLog || trayLog.status !== "passed") {
+				return reply.code(400).send({
+					error: "InvalidTrayBarcode",
+					message:
+						"Лоток не подтверждён журналом стерилизации этой клиники: такого штрихкода нет или последний цикл не пройден. Укажите штрихкод с прошедшей стерилизацией или очистите поле лотка.",
+				});
+			}
+		}
 
 		const newHash = computeDiaryHash(
 			existing.visitId,
@@ -1433,7 +1486,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			body.diagnosisTooth ?? existing.diagnosisTooth,
 			body.complications ?? existing.complications,
 			body.comorbidities ?? existing.comorbidities,
-			existing.instrumentTrayBarcode,
+			nextTrayBarcode,
 		);
 
 		// Одна транзакция на запись ревизии и правку дневника. БЫЛО: два отдельных
@@ -1462,6 +1515,11 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				 */
 				previousComplications: existing.complications,
 				previousComorbidities: existing.comorbidities,
+				/*
+				 * Forensic 043/у (миграция 0150): прежний штрихкод лотка.
+				 * Без снимка правка лотка в подписанной карте не оставляет следа.
+				 */
+				previousInstrumentTrayBarcode: existing.instrumentTrayBarcode,
 				revisionReason: body.revisionReason,
 				revisedByUserId: userId,
 			});
@@ -1487,7 +1545,11 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 						body.treatmentDescription ?? existing.treatmentDescription,
 					complications: body.complications ?? existing.complications,
 					comorbidities: body.comorbidities ?? existing.comorbidities,
-					diaryHash: newHash,
+					instrumentTrayBarcode:
+					body.instrumentTrayBarcode !== undefined
+						? nextTrayBarcode || null
+						: existing.instrumentTrayBarcode,
+				diaryHash: newHash,
 					cryptoSignaturePkcs7: null,
 					version: (existing.version ?? 1) + 1,
 					updatedAt: new Date(),

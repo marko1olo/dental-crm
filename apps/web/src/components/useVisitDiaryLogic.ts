@@ -163,6 +163,7 @@ export type DiaryRevisionRow = {
 	previousTreatmentDescription: string | null;
 	previousComplications: string | null;
 	previousComorbidities: string | null;
+	previousInstrumentTrayBarcode: string | null;
 	revisedByUserId: string | null;
 };
 
@@ -183,6 +184,7 @@ function asDiaryRevisionRow(raw: unknown): DiaryRevisionRow | null {
 		previousTreatmentDescription: strOrNull(o.previousTreatmentDescription),
 		previousComplications: strOrNull(o.previousComplications),
 		previousComorbidities: strOrNull(o.previousComorbidities),
+		previousInstrumentTrayBarcode: strOrNull(o.previousInstrumentTrayBarcode),
 		revisedByUserId: strOrNull(o.revisedByUserId),
 	};
 }
@@ -236,6 +238,12 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	 * с экрана тоже уходила с неотменённой правкой.
 	 */
 	const [reviseSnapshot, setReviseSnapshot] = useState<DiaryState | null>(null);
+	/**
+	 * Снимок лотка на входе в ревизию (отдельно от SOAP DiaryState).
+	 * БЫЛО: cancelRevise восстанавливал только diary — штрихкод лотка,
+	 * изменённый в режиме правки, оставался на экране/в печати 043/у.
+	 */
+	const [reviseTraySnapshot, setReviseTraySnapshot] = useState<string | null>(null);
 
 
 	/**
@@ -318,6 +326,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setRevisionReason("");
 		setIsRevisingBusy(false);
 		setReviseSnapshot(null);
+		setReviseTraySnapshot(null);
 		setLoadState({ phase: "loading" });
 		autosaveFailureReportedRef.current = false;
 
@@ -379,7 +388,11 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					complications: d.complications ?? "",
 					comorbidities: d.comorbidities ?? "",
 				});
-				if (d.instrumentTrayBarcode) setTrayBarcode(d.instrumentTrayBarcode);
+				setTrayBarcode(
+					typeof d.instrumentTrayBarcode === "string" && d.instrumentTrayBarcode
+						? d.instrumentTrayBarcode
+						: null,
+				);
 				setIsLocked(d.isLocked ?? false);
 				setDiaryId(d.id ?? null);
 				setLockedAt(d.lockedAt ?? null);
@@ -738,9 +751,10 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		 * Без снимка «Отмена» оставляла набранный текст на экране подписанной 043/у.
 		 */
 		setReviseSnapshot({ ...diary });
+		setReviseTraySnapshot(trayBarcode);
 		setIsRevising(true);
 		setRevisionReason("");
-	}, [diary, diaryId, isLocked]);
+	}, [diary, diaryId, isLocked, trayBarcode]);
 
 	const cancelRevise = useCallback(() => {
 		/*
@@ -751,10 +765,12 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		if (reviseSnapshot) {
 			setDiary(reviseSnapshot);
 		}
+		setTrayBarcode(reviseTraySnapshot);
 		setReviseSnapshot(null);
+		setReviseTraySnapshot(null);
 		setIsRevising(false);
 		setRevisionReason("");
-	}, [reviseSnapshot]);
+	}, [reviseSnapshot, reviseTraySnapshot]);
 
 	const doRevise = useCallback(async () => {
 		if (!diaryId) {
@@ -803,6 +819,13 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					 */
 					complications: diary.complications,
 					comorbidities: diary.comorbidities,
+					/*
+					 * Лоток в ревизии (DEFECT #31).
+					 * БЫЛО: doRevise не слал instrumentTrayBarcode; API ignore.
+					 * 409 sterilization/link обещал правку через ревизию — ложь.
+					 * Пустая строка = снять ошибочный barcode (сервер trim).
+					 */
+					instrumentTrayBarcode: trayBarcode ?? "",
 					revisionReason: reason,
 				}),
 			});
@@ -841,6 +864,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 						previousTreatmentDescription: reviseSnapshot.treatmentDescription,
 						previousComplications: reviseSnapshot.complications,
 						previousComorbidities: reviseSnapshot.comorbidities,
+						previousInstrumentTrayBarcode: reviseTraySnapshot,
 						revisedByUserId: null,
 					};
 					setDiaryRevisions((prev) => [localRow, ...prev]);
@@ -848,6 +872,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				setIsRevising(false);
 				setRevisionReason("");
 				setReviseSnapshot(null);
+				setReviseTraySnapshot(null);
 				setLastSavedAt(new Date());
 				// Дневник остаётся подписанным: API не снимает isLocked.
 				setIsLocked(true);
@@ -883,7 +908,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		} finally {
 			setIsRevisingBusy(false);
 		}
-	}, [diary, diaryId, isLocked, revisionReason]);
+	}, [diary, diaryId, isLocked, revisionReason, reviseSnapshot, reviseTraySnapshot, trayBarcode]);
 
 	// ── Lock (Sign & Seal)
 

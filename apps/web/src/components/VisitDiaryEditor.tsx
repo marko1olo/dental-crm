@@ -966,6 +966,39 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						</span>
 					</div>
 					<label className="vde-043__revise-label">
+						Инструментальный лоток (штрихкод)
+						<div
+							style={{
+								display: "flex",
+								gap: "0.5rem",
+								alignItems: "center",
+							}}
+						>
+							<input
+								data-testid="diary-revise-tray"
+								value={trayBarcode ?? ""}
+								onChange={(e) => {
+									const v = e.target.value.trim();
+									setTrayBarcode(v.length > 0 ? v : null);
+								}}
+								placeholder="Штрихкод лотка или пусто, чтобы снять"
+								className="vde-043__input"
+								style={{ flex: 1 }}
+								disabled={isRevisingBusy}
+							/>
+							<button
+								type="button"
+								data-testid="diary-revise-tray-scan"
+								onClick={() => setShowScanner(true)}
+								disabled={isRevisingBusy}
+								className="vde-043__btn"
+								title="Сканировать штрихкод лотка"
+							>
+								<Activity className="w-4 h-4" />
+							</button>
+						</div>
+					</label>
+					<label className="vde-043__revise-label">
 						Причина правки (обязательно)
 						<input
 							data-testid="diary-revise-reason"
@@ -1102,6 +1135,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 							pushPrev("P (лечение)", rev.previousTreatmentDescription);
 							pushPrev("Осложнения", rev.previousComplications);
 							pushPrev("Сопутствующие", rev.previousComorbidities);
+							pushPrev("Лоток (штрихкод)", rev.previousInstrumentTrayBarcode);
 							return (
 								<li
 									key={rev.id}
