@@ -266,6 +266,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					/* DEFECT #57: 043 tray barcode → CDA (printed + diary_hash) */
 					instrumentTrayBarcode: schema.visitDiaries.instrumentTrayBarcode,
 					doctorId: schema.visitDiaries.doctorId,
+					/* DEFECT #59: draft 043 must not become EGISZ CDA */
+					isLocked: schema.visitDiaries.isLocked,
 				})
 				.from(schema.visitDiaries)
 				.where(
@@ -275,6 +277,22 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					),
 				)
 				.limit(1);
+
+			/*
+			 * DEFECT #59: EGISZ CDA must not export unlocked 043 draft SOAP.
+			 * БЫЛО: /cda читал visit_diaries без isLocked — черновик с неполным
+			 * диагнозом/лечением уходил в XML как «протокол осмотра», хотя врач
+			 * ещё не подписал карту (lock). РЭМД/архив получали нефинальный текст.
+			 * СТАЛО: при наличии строки 043 требуем isLocked=true (подпись/замок).
+			 * Визиты без дневника по-прежнему могут собрать CDA из EMK visits.*.
+			 */
+			if (diaryRow && diaryRow.isLocked !== true) {
+				return reply.status(422).send({
+					error: "DiaryNotLocked",
+					message:
+						"Для выгрузки в ЕГИСЗ дневник 043/у должен быть подписан (заблокирован). Сохраните и подпишите карту, затем повторите выгрузку.",
+				});
+			}
 
 			const diaryDiagnosisParts: string[] = [];
 			const diaryIcd =
