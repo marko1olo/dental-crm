@@ -12,6 +12,8 @@ export interface EgiszCdaParams {
 	icd10Code: string;
 	diagnosisText: string;
 	anamnesis?: string;
+	/** Status localis / objective exam (043 O-block → visits.objectiveStatus). */
+	objectiveStatus?: string;
 	treatmentDescription?: string;
 	visitDate: Date;
 	documentId: string;
@@ -111,6 +113,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<title>Анамнез</title>
 					<text>
 						<paragraph>${params.anamnesis || "Без особенностей"}</paragraph>
+					</text>
+				</section>
+			</component>
+			<!-- Объективный статус / Status localis (043 O-block) -->
+			<component>
+				<section>
+					<code code="29545-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Physical findings"/>
+					<title>Объективный статус</title>
+					<text>
+						<paragraph>${params.objectiveStatus || "Без особенностей"}</paragraph>
 					</text>
 				</section>
 			</component>

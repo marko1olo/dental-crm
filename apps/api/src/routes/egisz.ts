@@ -345,6 +345,20 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					: "";
 			const treatmentPlan = diaryTreatment || visitTreatment;
 
+			/*
+			 * DEFECT #47: O-block was never exported to EGISZ CDA.
+			 * Prefer 043 statusLocalis over visits.objectiveStatus (same as S/P).
+			 */
+			const diaryObjective =
+				typeof diaryRow?.statusLocalis === "string"
+					? diaryRow.statusLocalis.trim()
+					: "";
+			const visitObjective =
+				typeof row.visit.objectiveStatus === "string"
+					? row.visit.objectiveStatus.trim()
+					: "";
+			const objectiveStatus = diaryObjective || visitObjective;
+
 			// Врач 043 (doctorId) приоритетнее appointment.doctorUserId — это кто вёл карту.
 			if (diaryRow?.doctorId) {
 				const [diaryDoctor] = await db
@@ -377,6 +391,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				documentId: row.visit.id,
 				...(clinicOid ? { clinicOid } : {}),
 				...(anamnesis ? { anamnesis } : {}),
+				...(objectiveStatus ? { objectiveStatus } : {}),
 				...(treatmentPlan ? { treatmentDescription: treatmentPlan } : {}),
 			};
 
