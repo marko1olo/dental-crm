@@ -337,6 +337,14 @@ export function VisiographAnalyzer() {
    */
   const [deletingScanId, setDeletingScanId] = useState<string | null>(null);
   const [deleteFailure, setDeleteFailure] = useState<string | null>(null);
+  /*
+   * Отказ ОТКРЫТИЯ полного снимка из архива. Отдельно от historyFailure
+   * (список не прочитан) и deleteFailure (не удалось убрать): врач кликнул
+   * строку, метаданные уже на экране, а картинка/полный отчёт не доехали.
+   * Без этого признака отказ выглядел как «снимок без изображения» — врач
+   * думал, что в карте нет файла.
+   */
+  const [openFailure, setOpenFailure] = useState<string | null>(null);
 
   // ── Voice init ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -360,6 +368,7 @@ export function VisiographAnalyzer() {
       setScanHistory([]);
       setHistoryFailure(null);
       setDeleteFailure(null);
+      setOpenFailure(null);
       setDeletingScanId(null);
       // Индикатор гасим и здесь: запрос по прежнему пациенту вернётся уже
       // «просроченным» и свой finally пропустит, иначе счётчик в сводке остался
@@ -395,6 +404,7 @@ export function VisiographAnalyzer() {
     setIsLoadingHistory(true);
     setHistoryFailure(null);
     setDeleteFailure(null);
+    setOpenFailure(null);
     setScanHistory([]);
     // null = до сервера не дошли; после ответа сюда попадает его код, поэтому
     // «непонятный ответ при 200» и «сервер не ответил» дают разные тексты.
@@ -496,6 +506,7 @@ export function VisiographAnalyzer() {
     setError(null);
     setSaveFailure(null);
     setFormulaFailure(null);
+    setOpenFailure(null);
     setAppliedToothCodes([]);
     setApplyNotice(null);
     setIsHistoryView(false);
@@ -765,15 +776,43 @@ export function VisiographAnalyzer() {
     setSaveFailure(null);
     setFormulaFailure(null);
     setDeleteFailure(null);
-    // Fetch full scan with image
+    setOpenFailure(null);
+    setError(null);
+    // БЫЛО: if (res.ok) без else + catch { silent }.
+    // Отказ GET /api/xray/scans/:id (403/404/сеть) оставлял на экране
+    // строку списка БЕЗ картинки и БЕЗ сообщения: врач видел «снимок
+    // открыт», думал что файла в карте нет. СТАЛО: openFailure вслух;
+    // метаданные списка остаются, чтобы было ясно какой снимок не открылся.
     try {
-      const res = await fetch(`/api/xray/scans/${scan.id}`, { headers: denteClinicalReadHeaders() });
-      if (res.ok) {
-        const full: XrayScan = await res.json();
-        setCurrentScan(full);
-        if (full.imageDataUri) setCurrentImageUrl(full.imageDataUri);
+      const res = await fetch(`/api/xray/scans/${encodeURIComponent(scan.id)}`, {
+        headers: denteClinicalReadHeaders(),
+      });
+      if (!res.ok) {
+        console.error(`[VisiographAnalyzer] полный снимок не открыт, ${res.status}`);
+        setOpenFailure(
+          res.status === 404
+            ? "Снимок не найден в карте (возможно, его уже удалили на другом рабочем месте). Обновите архив."
+            : res.status === 403
+              ? "Нет доступа к полному снимку. Проверьте смену и права, затем откройте строку ещё раз."
+              : `Полный снимок не загружен (ответ ${res.status}). Картинка на экране отсутствует — повторите открытие.`,
+        );
+        return;
       }
-    } catch { /* silent */ }
+      const full: XrayScan = await res.json();
+      setCurrentScan(full);
+      if (full.imageDataUri) setCurrentImageUrl(full.imageDataUri);
+      else {
+        // 200 без тела картинки — тоже отказ для врача, не «пустой успех».
+        setOpenFailure(
+          "Сервер отдал карточку снимка без изображения. Повторите открытие или загрузите снимок заново.",
+        );
+      }
+    } catch (err) {
+      console.error("[VisiographAnalyzer] запрос полного снимка не выполнен", err);
+      setOpenFailure(
+        "Нет связи с сервером — полный снимок не загружен. Проверьте сеть и откройте строку ещё раз.",
+      );
+    }
   };
 
 
@@ -890,6 +929,11 @@ export function VisiographAnalyzer() {
     setCurrentScan(null);
     setCurrentImageUrl(null);
     setError(null);
+    setOpenFailure(null);
+    setSaveFailure(null);
+    setFormulaFailure(null);
+    setApplyNotice(null);
+    setIsHistoryView(false);
     if (synthRef.current) synthRef.current.cancel();
     setIsSpeaking(false);
   };
@@ -1154,6 +1198,32 @@ export function VisiographAnalyzer() {
                 * объявлены во всех трёх темах), потому что разбор не потерян,
                 * он на экране; потеряна только запись.
                 */}
+              {openFailure && (
+                <div
+                  role="alert"
+                  data-testid="xray-scan-open-failure"
+                  style={{
+                    padding: '10px 14px', background: 'var(--warn-bg)', color: 'var(--warn-fg)',
+                    borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '10px',
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} aria-hidden="true" />
+                  <div>
+                    <strong>Снимок не открыт полностью</strong>
+                    <div style={{ marginTop: '4px' }}>{openFailure}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOpenFailure(null)}
+                    style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}
+                    aria-label="Скрыть сообщение"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+
               {!isSaving && saveFailure && (
                 <div
                   role="alert"
