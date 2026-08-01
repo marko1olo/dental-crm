@@ -23,6 +23,15 @@ export interface EgiszCdaParams {
 	documentId: string;
 }
 
+/** Escape free-text for CDA XML text/attribute nodes (DEFECT #49). */
+function escapeXml(value: string): string {
+	return value
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&apos;");
+}
 function formatDate(d: Date, format: "yyyyMMdd" | "yyyyMMddHHmmss"): string {
 	const pad = (n: number) => n.toString().padStart(2, "0");
 	const yyyy = d.getFullYear().toString();
@@ -49,22 +58,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 <ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
 	<templateId root="1.2.643.5.1.13.13.11.1527"/>
-	<id root="${params.clinicOid || "1.2.643.5.1.13.13.12.2"}" extension="${params.documentId}"/>
+	<id root="${params.clinicOid || "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(params.documentId)}"/>
 	<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Протокол стоматологического осмотра"/>
 	<title>Протокол стоматологического осмотра</title>
 	<effectiveTime value="${effectiveTime}"/>
 	<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25"/>
 	<languageCode code="ru-RU"/>
-	<setId root="${params.clinicOid || "1.2.643.5.1.13.13.12.2"}" extension="${params.documentId}"/>
+	<setId root="${params.clinicOid || "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(params.documentId)}"/>
 	<versionNumber value="1"/>
 	<recordTarget>
 		<patientRole>
-			<id root="1.2.643.100.3" extension="${params.patientSnils}"/>
+			<id root="1.2.643.100.3" extension="${escapeXml(params.patientSnils)}"/>
 			<patient>
 				<name>
-					<family>${params.patientName.last}</family>
-					<given>${params.patientName.first}</given>
-					${params.patientName.middle ? `<given>${params.patientName.middle}</given>` : ""}
+					<family>${escapeXml(params.patientName.last)}</family>
+					<given>${escapeXml(params.patientName.first)}</given>
+					${params.patientName.middle ? `<given>${escapeXml(params.patientName.middle)}</given>` : ""}
 				</name>
 				<administrativeGenderCode code="${genderCode}" codeSystem="1.2.643.5.1.13.13.11.1040"/>
 				<birthTime value="${birthTime}"/>
@@ -74,12 +83,12 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<author>
 		<time value="${effectiveTime}"/>
 		<assignedAuthor>
-			${params.doctorSnils ? `<id root="1.2.643.100.3" extension="${params.doctorSnils}"/>` : ""}
+			${params.doctorSnils ? `<id root="1.2.643.100.3" extension="${escapeXml(params.doctorSnils)}"/>` : ""}
 			<assignedPerson>
 				<name>
-					<family>${params.doctorName.last}</family>
-					<given>${params.doctorName.first}</given>
-					${params.doctorName.middle ? `<given>${params.doctorName.middle}</given>` : ""}
+					<family>${escapeXml(params.doctorName.last)}</family>
+					<given>${escapeXml(params.doctorName.first)}</given>
+					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 				</name>
 			</assignedPerson>
 		</assignedAuthor>
@@ -88,7 +97,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		<assignedCustodian>
 			<representedCustodianOrganization>
 				<id root="1.2.643.5.1.13.13.12.2" extension="${params.clinicOid || ""}"/>
-				<name>${params.clinicName}</name>
+				<name>${escapeXml(params.clinicName)}</name>
 			</representedCustodianOrganization>
 		</assignedCustodian>
 	</custodian>
@@ -100,12 +109,12 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<code code="29548-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Диагнозы"/>
 					<title>Диагноз</title>
 					<text>
-						<paragraph>${params.diagnosisText} (МКБ-10: ${params.icd10Code})</paragraph>
+						<paragraph>${escapeXml(params.diagnosisText)} (МКБ-10: ${escapeXml(params.icd10Code)})</paragraph>
 					</text>
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
 							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" displayName="Диагноз"/>
-							<value xsi:type="CD" code="${params.icd10Code}" codeSystem="1.2.643.5.1.13.13.11.1005" displayName="${params.diagnosisText}"/>
+							<value xsi:type="CD" code="${escapeXml(params.icd10Code)}" codeSystem="1.2.643.5.1.13.13.11.1005" displayName="${escapeXml(params.diagnosisText)}"/>
 						</observation>
 					</entry>
 				</section>
@@ -116,7 +125,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Анамнез"/>
 					<title>Анамнез</title>
 					<text>
-						<paragraph>${params.anamnesis || "Без особенностей"}</paragraph>
+						<paragraph>${escapeXml(params.anamnesis || "Без особенностей")}</paragraph>
 					</text>
 				</section>
 			</component>
@@ -126,7 +135,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<code code="29545-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Physical findings"/>
 					<title>Объективный статус</title>
 					<text>
-						<paragraph>${params.objectiveStatus || "Без особенностей"}</paragraph>
+						<paragraph>${escapeXml(params.objectiveStatus || "Без особенностей")}</paragraph>
 					</text>
 				</section>
 			</component>
@@ -136,7 +145,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<code code="47519-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Медицинские услуги"/>
 					<title>Проведенное лечение</title>
 					<text>
-						<paragraph>${params.treatmentDescription || "Осмотр и консультация"}</paragraph>
+						<paragraph>${escapeXml(params.treatmentDescription || "Осмотр и консультация")}</paragraph>
 					</text>
 				</section>
 			</component>
@@ -146,7 +155,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<code code="55109-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Complications"/>
 					<title>Осложнения</title>
 					<text>
-						<paragraph>${params.complications || "Не отмечены"}</paragraph>
+						<paragraph>${escapeXml(params.complications || "Не отмечены")}</paragraph>
 					</text>
 				</section>
 			</component>
@@ -156,7 +165,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<code code="11348-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Past illness"/>
 					<title>Сопутствующие заболевания</title>
 					<text>
-						<paragraph>${params.comorbidities || "Не отмечены"}</paragraph>
+						<paragraph>${escapeXml(params.comorbidities || "Не отмечены")}</paragraph>
 					</text>
 				</section>
 			</component>
