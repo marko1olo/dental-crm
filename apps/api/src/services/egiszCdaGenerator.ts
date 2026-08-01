@@ -60,7 +60,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	const effectiveTime = formatDate(now, "yyyyMMddHHmmss");
 	/* DEFECT #55: visitTime must appear in documentationOf/serviceEvent below.
 	 * БЫЛО: formatted and discarded — CDA had only generation effectiveTime. */
-	const visitTime = formatDate(params.visitDate, "yyyyMMdd");
+	/*
+	 * DEFECT #65: encounter must carry slot clock time, not date-only.
+	 * БЫЛО: formatDate(..., "yyyyMMdd") — documentationOf/serviceEvent lost
+	 * appointments.startsAt hours/minutes (always midnight-equivalent day stamp).
+	 * REMD/audit could not distinguish morning vs evening slot on the same day.
+	 * СТАЛО: yyyyMMddHHmmss from params.visitDate (already appointment.startsAt).
+	 */
+	const visitTime = formatDate(params.visitDate, "yyyyMMddHHmmss");
 	const birthTime = params.patientBirthDate
 		? formatDate(new Date(params.patientBirthDate), "yyyyMMdd")
 		: "19000101";
@@ -117,7 +124,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			</representedCustodianOrganization>
 		</assignedCustodian>
 	</custodian>
-	<!-- DEFECT #55: encounter date (params.visitDate) — was computed as visitTime but unused -->
+	<!-- DEFECT #55/#65: encounter datetime (params.visitDate / appointment.startsAt) -->
 	<documentationOf>
 		<serviceEvent classCode="PCPR">
 			<effectiveTime value="${visitTime}"/>

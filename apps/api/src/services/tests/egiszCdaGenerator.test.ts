@@ -32,6 +32,22 @@ describe("egiszCdaGenerator", () => {
 		const xml = generateDentalCdaXml(params);
 		assert.ok(xml.includes('displayName="Врач-стоматолог"'));
 		assert.ok(xml.includes('<versionNumber value="1"/>'));
+		/* DEFECT #65: serviceEvent must include clock time from visitDate (local TZ) */
+		{
+			const vd = params.visitDate;
+			const pad = (n: number) => n.toString().padStart(2, "0");
+			const expectedVisit =
+				`${vd.getFullYear()}${pad(vd.getMonth() + 1)}${pad(vd.getDate())}` +
+				`${pad(vd.getHours())}${pad(vd.getMinutes())}${pad(vd.getSeconds())}`;
+			assert.ok(
+				xml.includes(`<effectiveTime value="${expectedVisit}"/>`),
+				"documentationOf/serviceEvent must use yyyyMMddHHmmss from visitDate",
+			);
+			assert.ok(
+				expectedVisit.length === 14,
+				"encounter effectiveTime must be 14-digit datetime, not date-only",
+			);
+		}
 		t.assert.snapshot(xml);
 
 		// DEFECT #61: revised diary.version must appear in CDA versionNumber
