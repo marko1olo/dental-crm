@@ -1155,6 +1155,15 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			});
 
 			// Update the diary (unlock for new content, then re-lock immediately)
+			/*
+			 * БЫЛО: update менял diaryHash на newHash, но crypto_signature_pkcs7
+			 * оставлял прежний PKCS#7 от СТАРОГО содержимого. После админ-правки
+			 * 043/у в БД лежала подпись, которая НЕ соответствует текущему хешу —
+			 * проверка ЭЦП «подпись ↔ содержимое» молча врала, а печать показывала
+			 * новый SHA-256 рядом с устаревшим оттиском.
+			 * СТАЛО: PKCS#7 обнуляем. is_locked и locked_at сохраняем (дневник
+			 * остаётся юридически закрытым; повторная УКЭП — отдельный шаг).
+			 */
 			await tx
 				.update(visitDiaries)
 				.set({
@@ -1167,6 +1176,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					complications: body.complications ?? existing.complications,
 					comorbidities: body.comorbidities ?? existing.comorbidities,
 					diaryHash: newHash,
+					cryptoSignaturePkcs7: null,
 					version: (existing.version ?? 1) + 1,
 					updatedAt: new Date(),
 				})
