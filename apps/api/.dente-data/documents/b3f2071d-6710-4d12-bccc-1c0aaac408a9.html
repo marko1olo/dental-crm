@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Заявление на частичный возврат 1 из 4</title>
+  <style>
+    @page { margin: 18mm 16mm; }
+    body { color: #211f1c; font: 14px/1.5 Arial, sans-serif; margin: 40px; }
+    h1 { font-size: 22px; margin: 10px 0 18px; }
+    h2 { font-size: 16px; margin: 24px 0 8px; }
+    h3 { font-size: 14px; margin: 18px 0 6px; }
+    p { margin: 8px 0; }
+    table { border-collapse: collapse; margin: 16px 0; width: 100%; }
+    td, th { border: 1px solid #bfb7ad; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #f4f0ea; width: 34%; }
+    ul { margin: 8px 0 14px 22px; padding: 0; }
+    li { margin: 4px 0; }
+    .meta { color: #5f574f; margin-bottom: 18px; }
+    .document-status-banner { border: 2px solid #a34f32; color: #a34f32; display: inline-block; font-weight: 700; padding: 4px 8px; }
+    .status-issued { border-color: #2f7340; color: #2f7340; }
+    .status-voided { border-color: #5f574f; color: #5f574f; text-decoration: line-through; }
+    .notice { background: #fff8e6; border: 1px solid #e7c56f; border-radius: 6px; padding: 10px 12px; }
+    .check-list { list-style: none; margin-left: 0; }
+    .check-list li { align-items: baseline; display: flex; gap: 8px; }
+    .check-list span { color: #5f574f; font-weight: 700; }
+    .signatures { display: grid; gap: 32px; grid-template-columns: 1fr 1fr; margin-top: 48px; }
+    .small { color: #5f574f; font-size: 12px; }
+    @media print {
+      body { margin: 0; }
+      .document-status-banner { color: #000; border-color: #000; }
+    }
+  </style>
+</head>
+<body>
+  <div class="document-status-banner status-issued">ВЫДАНО. ПРОВЕРИТЬ ПОДПИСИ И ПРИЛОЖЕНИЯ ПЕРЕД ПЕРЕДАЧЕЙ</div>
+  <h1>Заявление на частичный возврат 1 из 4</h1>
+  <div class="meta">
+    <p>Клиника: Сторож шва возврат → касса</p>
+    <p>Пациент: Пациент частичного возврата</p>
+    <p>Дата рождения: 1988-02-03</p>
+    <p>Телефон: +79000000022</p>
+    
+    
+    
+    
+    
+    
+    <p>Статус документа: выдан; дата выдачи: 01.08.2026</p>
+  </div>
+  <section class="issue-attestation">
+    <h2>Отметка о подписании и выдаче</h2>
+    <table>
+      <tr><th>Способ</th><td>бумажный экземпляр подписан</td></tr>
+      <tr><th>Дата и время подписи/выдачи</th><td>2026-07-29</td></tr>
+      <tr><th>Получатель</th><td>Плательщик сторожа возврата, пациент</td></tr>
+      <tr><th>Сотрудник клиники</th><td>Владелец сторожа возврата, владелец клиники</td></tr>
+      <tr><th>Проверка</th><td>личность получателя проверена; HTML открыт и сверен; получатель и представитель клиники подписали экземпляр</td></tr>
+      
+    </table>
+  </section>
+  
+  <h2>Заявление на возврат или коррекцию оплаты</h2>
+      <p>Форма фиксирует конкретное бухгалтерское действие и основание. Сумма сверяется с фактической оплатой и фискальным чеком до выдачи.</p>
+      <table>
+        <tr><th>Дата оплаты</th><th>Способ</th><th>Сумма</th><th>Чек/платеж</th><th>Плательщик</th></tr>
+        <tr><td>29.07.2026, 04:00:00</td><td>наличные</td><td>400 руб.</td><td>ФН 8888000000000102</td><td>Пациент частичного возврата; ИНН 770000000199; дата рождения 1990-05-17; документ паспорт 12 34 567890; связь с пациентом: пациент</td></tr>
+      </table>
+      <table>
+        <tr><th>Запрошенное действие</th><td>полный возврат</td></tr>
+        <tr><th>Сумма</th><td>100,10 руб.</td></tr>
+        <tr><th>Основание</th><td>Сторож шва «возврат → касса»: возврат согласован бухгалтерией.</td></tr>
+        <tr><th>Способ возврата/коррекции</th><td>наличные</td></tr>
+        <tr><th>Получатель</th><td>Плательщик сторожа возврата</td></tr>
+        <tr><th>Документ получателя</th><td>паспорт 12 34 567890</td></tr>
+        
+        <tr><th>Исходный фискальный чек</th><td>ФН 8888000000000102</td></tr>
+        
+        <tr><th>Решение ответственного</th><td>Возврат согласован: сверка кассы за день подтверждена.</td></tr>
+      </table>
+      <ul class="check-list"><li><span>□</span>личность пациента или плательщика сверена</li><li><span>□</span>исходный фискальный чек, кассовая смена и платеж найдены в CRM</li><li><span>□</span>сумма не превышает фактическую оплату по выбранному визиту</li><li><span>□</span>решение ответственного сотрудника сохранено вместе с документом</li></ul>
+      <div class="signatures">
+    <p>Пациент/плательщик: ____________________</p>
+    <p>Администратор/бухгалтер: ____________________</p>
+  </div>
+</body>
+</html>
