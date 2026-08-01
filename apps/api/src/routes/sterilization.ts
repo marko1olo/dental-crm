@@ -109,9 +109,18 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			.orderBy(desc(sterilizationLogs.timestamp))
 			.limit(1);
 		if (!log || log.status !== "passed") {
-			return reply
-				.code(400)
-				.send({ error: "Invalid or failed sterilization barcode" });
+			/*
+			 * БЫЛО: только error латиницей без message. Клиент doLock читает
+			 * payload.message; без него строил общий fallback. 404 ниже тоже
+			 * был голым VisitDiaryNotFound — requestFailureCause(404) слал
+			 * врача «программа обновлена не полностью» вместо «сохраните
+			 * черновик дневника».
+			 */
+			return reply.code(400).send({
+				error: "Invalid or failed sterilization barcode",
+				message:
+					"Лоток не подтверждён журналом стерилизации: такого штрихкода нет в этой клинике или последний цикл не пройден. Проверьте штрихкод на упаковке или отсканируйте другой лоток.",
+			});
 		}
 
 		const [diary] = await db
@@ -124,7 +133,13 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 				),
 			)
 			.returning();
-		if (!diary) return reply.code(404).send({ error: "VisitDiaryNotFound" });
+		if (!diary) {
+			return reply.code(404).send({
+				error: "VisitDiaryNotFound",
+				message:
+					"Дневник этого приёма ещё не сохранён, привязать лоток не к чему. Нажмите «Сохранить черновик», дождитесь отметки времени и повторите подписание.",
+			});
+		}
 
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "VISIT_DIARY_UPDATED",
