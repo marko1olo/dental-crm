@@ -30,6 +30,7 @@ describe("egiszCdaGenerator", () => {
 		};
 
 		const xml = generateDentalCdaXml(params);
+		assert.ok(xml.includes('displayName="Врач-стоматолог"'));
 		t.assert.snapshot(xml);
 	});
 

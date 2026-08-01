@@ -8,6 +8,7 @@ export interface EgiszCdaParams {
 	clinicName: string;
 	doctorName: { first: string; last: string; middle?: string };
 	doctorSnils?: string;
+	/** DEFECT #58: specialty label → assignedAuthor/code@displayName */
 	doctorPosition?: string;
 	icd10Code: string;
 	diagnosisText: string;
@@ -91,6 +92,9 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		<time value="${effectiveTime}"/>
 		<assignedAuthor>
 			${params.doctorSnils ? `<id root="1.2.643.100.3" extension="${escapeXml(params.doctorSnils)}"/>` : ""}
+			${params.doctorPosition && params.doctorPosition.trim()
+				? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+				: ""}
 			<assignedPerson>
 				<name>
 					<family>${escapeXml(params.doctorName.last)}</family>

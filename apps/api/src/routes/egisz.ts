@@ -319,6 +319,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				first: "",
 				last: "Не указан",
 			};
+			/* DEFECT #58: specialty for CDA assignedAuthor — was never loaded */
+			let doctorPosition: string | undefined;
 			/*
 			 * DEFECT #56: CDA documentationOf/serviceEvent must use encounter time.
 			 * БЫЛО: visitDate: row.visit.createdAt — момент создания строки EMK
@@ -352,7 +354,10 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				}
 				if (appointment?.doctorUserId) {
 					const [doctor] = await db
-						.select({ fullName: schema.users.fullName })
+						.select({
+							fullName: schema.users.fullName,
+							specialties: schema.users.specialties,
+						})
 						.from(schema.users)
 						.where(
 							and(
@@ -361,7 +366,11 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 							),
 						)
 						.limit(1);
-					if (doctor) doctorName = splitFullName(doctor.fullName);
+					if (doctor) {
+						doctorName = splitFullName(doctor.fullName);
+						const pos = formatDoctorSpecialtyLabelForCda(doctor.specialties);
+						if (pos) doctorPosition = pos;
+					}
 				}
 			}
 
@@ -441,7 +450,10 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			// Врач 043 (doctorId) приоритетнее appointment.doctorUserId — это кто вёл карту.
 			if (diaryRow?.doctorId) {
 				const [diaryDoctor] = await db
-					.select({ fullName: schema.users.fullName })
+					.select({
+						fullName: schema.users.fullName,
+						specialties: schema.users.specialties,
+					})
 					.from(schema.users)
 					.where(
 						and(
@@ -452,6 +464,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					.limit(1);
 				if (diaryDoctor?.fullName) {
 					doctorName = splitFullName(diaryDoctor.fullName);
+					const pos = formatDoctorSpecialtyLabelForCda(diaryDoctor.specialties);
+					if (pos) doctorPosition = pos;
 				}
 			}
 
@@ -464,6 +478,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				patientGender: readGenderFromProfile(row.patient.administrativeProfile),
 				clinicName: row.organization.name,
 				doctorName,
+				...(doctorPosition ? { doctorPosition } : {}),
 				icd10Code: diaryIcd || extractIcd10(effectiveDiagnosis),
 				diagnosisText: effectiveDiagnosis,
 				visitDate: encounterDate,
@@ -490,6 +505,40 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				.send(xml);
 		},
 	);
+}
+
+
+/**
+ * DEFECT #58: RU specialty label for CDA assignedAuthor (mirrors diary #41).
+ * users.specialties jsonb string[]; prefer non-universal codes.
+ */
+const EGISZ_DENTAL_SPECIALTY_LABELS: Record<string, string> = {
+	therapist: "врач-стоматолог-терапевт",
+	orthopedist: "врач-стоматолог-ортопед",
+	surgeon: "врач-стоматолог-хирург",
+	orthodontist: "врач-стоматолог-ортодонт",
+	periodontist: "врач-стоматолог-пародонтолог",
+	hygienist: "гигиенист стоматологический",
+	pediatric: "детский стоматолог",
+	implantologist: "врач-стоматолог-хирург (имплантология)",
+	radiologist: "врач-рентгенолог",
+	universal: "врач-стоматолог",
+};
+
+function formatDoctorSpecialtyLabelForCda(raw: unknown): string | null {
+	const codes: string[] = Array.isArray(raw)
+		? raw
+				.map((x) => (typeof x === "string" ? x.trim() : ""))
+				.filter(Boolean)
+		: typeof raw === "string" && raw.trim()
+			? [raw.trim()]
+			: [];
+	if (codes.length === 0) return null;
+	const meaningful = codes.filter((c) => c !== "universal");
+	const list = meaningful.length > 0 ? meaningful : codes;
+	const labels = list.map((c) => EGISZ_DENTAL_SPECIALTY_LABELS[c] ?? c);
+	const joined = labels.join(", ").trim();
+	return joined.length > 0 ? joined : null;
 }
 
 /** «Иванов Иван Иванович» → { last, first, middle }. */
