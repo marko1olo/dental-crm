@@ -934,16 +934,6 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				message: "Дневник не подписан — просто редактируйте его.",
 			});
 
-		/*
-		 * ДОЛГ, НЕ ЗАКРЫТ ЗДЕСЬ: причина ревизии принимается, но сохранить её
-		 * некуда — в модели drizzle нет колонки. В САМОЙ БАЗЕ она есть:
-		 * миграция 0116_add_soap_template_fields.sql добавила
-		 * visit_diary_revisions.revision_reason TEXT и
-		 * visit_diary_revisions.previous_diagnosis_tooth VARCHAR(10) (проверено
-		 * чтением information_schema на 127.0.0.1:5432). Отстала только
-		 * apps/api/src/db/schema.ts:1421-1434, а её правка вне рамок этого
-		 * пакета. Пока строка ревизии не хранит ни причину, ни прежний номер зуба.
-		 */
 		const body = {
 			anamnesis:
 				typeof parsedReviseBody.data.anamnesis === "string"
@@ -991,13 +981,21 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		// запроса — упавшая правка оставляла в журнале ревизию об изменении,
 		// которого не произошло.
 		const revisionCount = await db.transaction(async (tx) => {
+			/*
+			 * БЫЛО: insert не писал previous_diagnosis_tooth и revision_reason,
+			 * хотя миграция 0116 уже добавила колонки, а клиент шлёт revisionReason.
+			 * История правок 043/у теряла номер зуба до правки и причину исправления —
+			 * юридический след ревизии подписанного дневника был неполным.
+			 */
 			await tx.insert(visitDiaryRevisions).values({
 				organizationId: orgId,
 				diaryId: existing.id,
 				previousAnamnesis: existing.anamnesis,
 				previousStatusLocalis: existing.statusLocalis,
 				previousDiagnosisIcd10: existing.diagnosisIcd10,
+				previousDiagnosisTooth: existing.diagnosisTooth,
 				previousTreatmentDescription: existing.treatmentDescription,
+				revisionReason: body.revisionReason,
 				revisedByUserId: userId,
 			});
 

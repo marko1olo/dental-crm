@@ -1686,11 +1686,20 @@ export const visitDiaryRevisions = pgTable("visit_diary_revisions", {
   previousStatusLocalis: text("previous_status_localis"),
   previousDiagnosisIcd10: text("previous_diagnosis_icd10"),
   previousTreatmentDescription: text("previous_treatment_description"),
+  /*
+   * Колонки из drizzle/0116_add_soap_template_fields.sql.
+   * БЫЛО: schema отставала от БД — POST …/revise принимал revisionReason и
+   * previousDiagnosisTooth в теле, но insert в visit_diary_revisions их не
+   * писал. Причина правки и прежний зуб пропадали из forensic-истории 043/у.
+   */
+  previousDiagnosisTooth: text("previous_diagnosis_tooth"),
+  revisionReason: text("revision_reason"),
   revisedByUserId: uuid("revised_by_user_id"),
   revisedBy: uuid("revised_by"),
   revisedAt: timestamp("revised_at", { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
 
 // visit examination photo links (links to uploaded exam photos)
 export const visitExaminationPhotoLinks = pgTable("visit_examination_photo_links", {
