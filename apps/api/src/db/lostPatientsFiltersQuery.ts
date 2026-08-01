@@ -115,6 +115,12 @@ export async function getLostPatientsFiltersFromDb(orgId: string) {
 			phone: row.phone || "Не указан",
 			daysSinceLastVisit: daysBetween(lastAt, now),
 			hasFutureAppointment: false,
+			/*
+			 * hasActiveCrmTask всегда false: живых CRM-задач по пациенту этот
+			 * отчёт не читает (нет join/select по задачам). Поле оставлено в
+			 * JSON для совместимости контракта; UI его не показывает. Нельзя
+			 * трактовать как «задач нет» — это «не считали».
+			 */
 			hasActiveCrmTask: false,
 			createdAt: row.createdAt ? row.createdAt.toISOString() : now.toISOString()
 		};
