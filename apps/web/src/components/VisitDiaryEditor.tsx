@@ -15,12 +15,14 @@ import { createPortal } from "react-dom";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { getIcdColor, ICD_GROUP_COLORS, ICD10_DICTIONARY } from "../lib/icd10";
 import { showToast } from "./GlobalToast";
+import { PanelLoadFailure } from "./PanelLoadFailure";
 import { SmartMicrophoneButton } from "./SmartMicrophoneButton";
 import { useVisitDiaryLogic } from "./useVisitDiaryLogic";
 import { VisitDiaryPhotoUpload } from "./VisitDiaryPhotoUpload";
 import { VisitDiaryTemplateSelector } from "./VisitDiaryTemplateSelector";
 import { CryptoProSigner } from "./visit/CryptoProSigner";
 import "../styles/visit-diary-043.css";
+
 
 interface VisitDiaryEditorProps {
 	visitId: string;
@@ -49,6 +51,10 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		diary,
 		setDiary,
 		diaryId,
+		loadState,
+		loadStateText,
+		diarySubject,
+		reloadDiary,
 		isLocked,
 		lockedAt,
 		diaryHash,
@@ -77,8 +83,16 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		icdRef,
 	} = useVisitDiaryLogic(visitId, patientId);
 
-	/** Поля открыты в черновике или в режиме правки подписанного (admin revise). */
-	const fieldsDisabled = isLocked && !isRevising;
+	/**
+	 * Поля закрыты, пока дневник не прочитан, и в подписанном виде (кроме revise).
+	 *
+	 * БЫЛО: disabled только при isLocked. Пока loadState=loading/failed форма
+	 * показывала EMPTY_DIARY как будто новый приём — врач набирал анамнез
+	 * поверх непрочитанной записи. Хук уже блокировал doSave/doLock; UI врал.
+	 */
+	const diaryUnread =
+		loadState.phase === "loading" || loadState.phase === "failed";
+	const fieldsDisabled = diaryUnread || (isLocked && !isRevising);
 
 	// Always under AppLogicProvider when mounted from VisitOdontogramTab — call unconditionally (Rules of Hooks).
 	const ctx = useAppLogicContext();
@@ -273,44 +287,58 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						</div>
 					)}
 
-					<div>
+					{/*
+					 * Не печатать пустые «—» пока дневник не прочитан: это выдало бы
+					 * непрочитанное за пустую карту. Кнопка печати уже disabled, но
+					 * showPreview мог остаться true со смены приёма.
+					 */}
+					{diaryUnread ? (
 						<div className="vde-043-soap-block page-break-avoid">
-							<h4>S — Жалобы и анамнез (Subjective)</h4>
-							<p>{diary.anamnesis || "—"}</p>
-						</div>
-						<div className="vde-043-soap-block page-break-avoid">
-							<h4>O — Объективный статус (Status Localis)</h4>
-							<p>{diary.statusLocalis || "—"}</p>
-						</div>
-						<div className="vde-043-soap-block page-break-avoid">
-							<h4>A — Диагноз (Assessment)</h4>
 							<p>
-								<strong>МКБ-10:</strong> {diary.diagnosisIcd10 || "—"}{" "}
-								{icdEntry ? `(${icdEntry.label})` : ""}
-								{diary.diagnosisTooth
-									? ` | Зуб по FDI: ${diary.diagnosisTooth}`
-									: ""}
+								{loadStateText?.title ?? "Записи приёма не загружены"}
+								{loadStateText?.hint ? ` ${loadStateText.hint}` : ""}
 							</p>
 						</div>
-						<div className="vde-043-soap-block page-break-avoid">
-							<h4>P — Лечение и план (Plan)</h4>
-							<p>{diary.treatmentDescription || "—"}</p>
-						</div>
-						{(diary.complications || diary.comorbidities) && (
+					) : (
+						<div>
 							<div className="vde-043-soap-block page-break-avoid">
-								<h4>Осложнения и сопутствующие</h4>
+								<h4>S — Жалобы и анамнез (Subjective)</h4>
+								<p>{diary.anamnesis || "—"}</p>
+							</div>
+							<div className="vde-043-soap-block page-break-avoid">
+								<h4>O — Объективный статус (Status Localis)</h4>
+								<p>{diary.statusLocalis || "—"}</p>
+							</div>
+							<div className="vde-043-soap-block page-break-avoid">
+								<h4>A — Диагноз (Assessment)</h4>
 								<p>
-									{diary.complications
-										? `Осложнения: ${diary.complications}`
-										: ""}
-									{diary.complications && diary.comorbidities ? "\n" : ""}
-									{diary.comorbidities
-										? `Сопутствующие: ${diary.comorbidities}`
+									<strong>МКБ-10:</strong> {diary.diagnosisIcd10 || "—"}{" "}
+									{icdEntry ? `(${icdEntry.label})` : ""}
+									{diary.diagnosisTooth
+										? ` | Зуб по FDI: ${diary.diagnosisTooth}`
 										: ""}
 								</p>
 							</div>
-						)}
-					</div>
+							<div className="vde-043-soap-block page-break-avoid">
+								<h4>P — Лечение и план (Plan)</h4>
+								<p>{diary.treatmentDescription || "—"}</p>
+							</div>
+							{(diary.complications || diary.comorbidities) && (
+								<div className="vde-043-soap-block page-break-avoid">
+									<h4>Осложнения и сопутствующие</h4>
+									<p>
+										{diary.complications
+											? `Осложнения: ${diary.complications}`
+											: ""}
+										{diary.complications && diary.comorbidities ? "\n" : ""}
+										{diary.comorbidities
+											? `Сопутствующие: ${diary.comorbidities}`
+											: ""}
+									</p>
+								</div>
+							)}
+						</div>
+					)}
 
 					<div className="vde-043-sign-row page-break-avoid">
 						<div>Подпись врача: ___________________</div>
@@ -385,7 +413,13 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 							id="diary-print-btn"
 							data-testid="diary-print-043"
 							onClick={() => setShowPreview(true)}
+							disabled={diaryUnread}
 							className="vde-043__btn vde-043__btn--print"
+							title={
+								diaryUnread
+									? "Печать недоступна, пока записи приёма не прочитаны"
+									: undefined
+							}
 						>
 							<Printer className="w-4 h-4" /> Печать 043/у
 						</button>
@@ -406,32 +440,84 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 							id="diary-print-btn"
 							data-testid="diary-print-043"
 							onClick={() => setShowPreview(true)}
+							disabled={diaryUnread}
 							className="vde-043__btn vde-043__btn--print"
+							title={
+								diaryUnread
+									? "Печать недоступна, пока записи приёма не прочитаны"
+									: undefined
+							}
 						>
 							<Printer className="w-4 h-4" /> Печать 043/у
 						</button>
-						<VisitDiaryTemplateSelector
-							isLocked={isLocked}
-							onSelectTemplate={(tmpl: any) => {
-								setDiary((prev) => ({
-									...prev,
-									anamnesis: tmpl.prefilledAnamnesis || prev.anamnesis,
-									statusLocalis: tmpl.prefilledObjective || prev.statusLocalis,
-									treatmentDescription:
-										tmpl.prefilledTreatment || prev.treatmentDescription,
-									diagnosisIcd10: tmpl.defaultIcd10 || prev.diagnosisIcd10,
-								}));
-								if (tmpl.defaultIcd10) {
-									setIcdSearch(tmpl.defaultIcd10);
-								}
-							}}
-						/>
+						{!diaryUnread && (
+							<VisitDiaryTemplateSelector
+								isLocked={isLocked}
+								onSelectTemplate={(tmpl: any) => {
+									setDiary((prev) => ({
+										...prev,
+										anamnesis: tmpl.prefilledAnamnesis || prev.anamnesis,
+										statusLocalis:
+											tmpl.prefilledObjective || prev.statusLocalis,
+										treatmentDescription:
+											tmpl.prefilledTreatment || prev.treatmentDescription,
+										diagnosisIcd10: tmpl.defaultIcd10 || prev.diagnosisIcd10,
+									}));
+									if (tmpl.defaultIcd10) {
+										setIcdSearch(tmpl.defaultIcd10);
+									}
+								}}
+							/>
+						)}
 					</div>
 				)}
 			</div>
 
+			{/*
+			 * Честные состояния чтения. БЫЛО: loadState/loadStateText экспортировались
+			 * из хука, но редактор их не брал — loading и failed рисовали пустой
+			 * анамнез как новый приём. Пустые поля SOAP при unread — ложь.
+			 */}
+			{loadState.phase === "loading" && loadStateText && (
+				<div
+					className="vde-043__load-banner"
+					data-testid="diary-load-loading"
+					role="status"
+					aria-live="polite"
+					style={{
+						margin: "0 0 0.75rem",
+						padding: "0.75rem 1rem",
+						borderRadius: "0.5rem",
+						border: "1px solid var(--border, #e2e8f0)",
+						background: "var(--surface-muted, #f8fafc)",
+						fontSize: "0.8125rem",
+						lineHeight: 1.45,
+						color: "var(--text-secondary, #475569)",
+					}}
+				>
+					<div style={{ fontWeight: 600 }}>{loadStateText.title}</div>
+					{loadStateText.hint ? (
+						<div style={{ marginTop: 2 }}>{loadStateText.hint}</div>
+					) : null}
+				</div>
+			)}
+			{loadState.phase === "failed" && (
+				<div
+					className="vde-043__load-banner"
+					data-testid="diary-load-failed"
+					style={{ margin: "0 0 0.75rem" }}
+				>
+					<PanelLoadFailure
+						subject={diarySubject}
+						status={loadState.status}
+						onRetry={reloadDiary}
+					/>
+				</div>
+			)}
+
 			{/* ── SOAP Fields grid ── */}
 			<div className="vde-043__grid">
+
 				{/* S — Subjective */}
 				<div className="vde-043__field">
 					<label className="vde-043__label" htmlFor="diary-anamnesis">
@@ -723,8 +809,13 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						type="button"
 						id="diary-save-btn"
 						onClick={() => doSave(false)}
-						disabled={isSaving}
+						disabled={isSaving || diaryUnread}
 						className="vde-043__btn"
+						title={
+							diaryUnread
+								? "Сохранение недоступно, пока записи приёма не прочитаны"
+								: undefined
+						}
 					>
 						{isSaving ? "Сохраняю..." : "Сохранить черновик"}
 					</button>
@@ -809,6 +900,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						id="diary-revise-btn"
 						data-testid="diary-revise-begin"
 						onClick={() => beginRevise()}
+						disabled={diaryUnread}
 						className="vde-043__btn vde-043__btn--amber"
 						style={{ marginLeft: "auto" }}
 						title="Исправить подписанный дневник (только администратор)"
@@ -818,11 +910,18 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 					<button
 						type="button"
 						onClick={() => setShowPreview(true)}
+						disabled={diaryUnread}
 						className="vde-043__btn vde-043__btn--ghost"
 						data-testid="diary-form-043-open"
+						title={
+							diaryUnread
+								? "Печать недоступна, пока записи приёма не прочитаны"
+								: undefined
+						}
 					>
 						<Printer className="w-3.5 h-3.5" /> Форма 043/у
 					</button>
+
 				</div>
 			)}
 

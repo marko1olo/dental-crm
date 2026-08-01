@@ -102,6 +102,11 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 	const [revisionCount, setRevisionCount] = useState(0);
 	const [loadState, setLoadState] = useState<DiaryLoadState>({ phase: "loading" });
+	/**
+	 * Счётчик принудительного перечитывания. PanelLoadFailure требует onRetry —
+	 * без отдельного токена повтор был бы только через смену visitId (её нет).
+	 */
+	const [reloadToken, setReloadToken] = useState(0);
 	/** Режим правки уже подписанного дневника (только admin на API). */
 	const [isRevising, setIsRevising] = useState(false);
 	const [revisionReason, setRevisionReason] = useState("");
@@ -290,7 +295,12 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			if (autosaveRef.current) clearInterval(autosaveRef.current);
 			useVisitStore.getState().setDraft(null);
 		};
-	}, [visitId]);
+	}, [visitId, reloadToken]);
+
+	/** Повторное чтение с сервера (кнопка в PanelLoadFailure). */
+	const reloadDiary = useCallback(() => {
+		setReloadToken((token) => token + 1);
+	}, []);
 
 	// ── Resize textareas
 	useEffect(() => {
@@ -737,6 +747,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 							: { phase: loadState.phase },
 					),
 		diarySubject: DIARY_SUBJECT,
+		reloadDiary,
 		isLocked,
 		lockedAt,
 		diaryHash,
