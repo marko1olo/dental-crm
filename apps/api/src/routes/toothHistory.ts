@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
@@ -52,16 +52,47 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 						eq(visitDiaries.organizationId, orgId),
 					),
 				);
+			// DEFECT #42: diary author was raw UUID (lockedBy/coSigned/doctor).
+			// state_change already joins users.fullName; diary did not — UI showed
+			// toothHistoryAuthorLabel → «Автор: имя в записи не сохранено».
+			// Batch-resolve fullName within org (same spirit as diary GET doctorFullName).
+			const diaryAuthorIds = Array.from(
+				new Set(
+					diaries
+						.map(
+							(d) =>
+								d.lockedByUserId || d.coSignedByUserId || d.doctorId || null,
+						)
+						.filter((id): id is string => typeof id === "string" && id.length > 0),
+				),
+			);
+			const diaryAuthorNameById = new Map<string, string>();
+			if (diaryAuthorIds.length > 0) {
+				const authorRows = await db
+					.select({ id: users.id, fullName: users.fullName })
+					.from(users)
+					.where(
+						and(inArray(users.id, diaryAuthorIds), eq(users.organizationId, orgId)),
+					);
+				for (const row of authorRows) {
+					const name =
+						typeof row.fullName === "string" ? row.fullName.trim() : "";
+					if (name) diaryAuthorNameById.set(row.id, name);
+				}
+			}
 			diaries.forEach((d) => {
+				const rawAuthorId =
+					d.lockedByUserId || d.coSignedByUserId || d.doctorId || null;
+				const authorLabel = rawAuthorId
+					? (diaryAuthorNameById.get(rawAuthorId) ?? rawAuthorId)
+					: "System";
 				events.push({
 					type: "diary",
 					date: d.createdAt,
 					description: d.treatmentDescription || d.anamnesis,
-					authorId:
-						d.lockedByUserId || d.coSignedByUserId || d.doctorId || "System",
+					authorId: authorLabel,
 				});
 			});
-
 			const planItems = await db
 				.select({
 					createdAt: treatmentPlans.createdAt,
@@ -77,6 +108,7 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 				.where(
 					and(
 						eq(treatmentPlans.patientId, patientId),
+						eq(treatmentPlans.organizationId, orgId),
 						eq(treatmentPlanItemsNew.toothNumber, toothNum),
 					),
 				);
