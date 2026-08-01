@@ -263,6 +263,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					/* DEFECT #48: 043 complications/comorbidities → CDA */
 					complications: schema.visitDiaries.complications,
 					comorbidities: schema.visitDiaries.comorbidities,
+					/* DEFECT #57: 043 tray barcode → CDA (printed + diary_hash) */
+					instrumentTrayBarcode: schema.visitDiaries.instrumentTrayBarcode,
 					doctorId: schema.visitDiaries.doctorId,
 				})
 				.from(schema.visitDiaries)
@@ -427,6 +429,14 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				typeof diaryRow?.comorbidities === "string"
 					? diaryRow.comorbidities.trim()
 					: "";
+			/*
+			 * DEFECT #57: instrument tray is on visit_diaries only (print 043 + hash).
+			 * Without export, signed sterilization link never reaches EGISZ CDA.
+			 */
+			const instrumentTrayBarcode =
+				typeof diaryRow?.instrumentTrayBarcode === "string"
+					? diaryRow.instrumentTrayBarcode.trim()
+					: "";
 
 			// Врач 043 (doctorId) приоритетнее appointment.doctorUserId — это кто вёл карту.
 			if (diaryRow?.doctorId) {
@@ -463,6 +473,9 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				...(objectiveStatus ? { objectiveStatus } : {}),
 				...(complications ? { complications } : {}),
 				...(comorbidities ? { comorbidities } : {}),
+				...(instrumentTrayBarcode
+					? { instrumentTrayBarcode }
+					: {}),
 				...(treatmentPlan ? { treatmentDescription: treatmentPlan } : {}),
 			};
 

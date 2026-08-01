@@ -23,6 +23,7 @@ describe("egiszCdaGenerator", () => {
 			icd10Code: "K02.1",
 			diagnosisText: "Кариес дентина",
 			anamnesis: "Жалобы на боли от сладкого",
+			instrumentTrayBarcode: "TRAY-043-001",
 			treatmentDescription: "Препарирование, пломба",
 			visitDate: new Date("2024-05-15T10:00:00.000Z"),
 			documentId: "doc-001",
@@ -101,6 +102,7 @@ describe("egiszCdaGenerator", () => {
 			objectiveStatus: "Status <O> & x",
 			complications: "Comp <c> & d",
 			comorbidities: "Comorb <m> & n",
+			instrumentTrayBarcode: "TRAY<1>&2",
 			treatmentDescription: "Treat <t> & u",
 			visitDate: new Date("2024-05-15T10:00:00.000Z"),
 			documentId: "doc<001>&'",
@@ -122,5 +124,7 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(xml.includes("<paragraph>Comp &lt;c&gt; &amp; d</paragraph>"));
 		assert.ok(xml.includes("<paragraph>Comorb &lt;m&gt; &amp; n</paragraph>"));
 		assert.ok(xml.includes("<paragraph>Treat &lt;t&gt; &amp; u</paragraph>"));
+		assert.ok(xml.includes("Штрихкод: TRAY&lt;1&gt;&amp;2"));
+		assert.ok(xml.includes('code="46264-8"'));
 	});
 });

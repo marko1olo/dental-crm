@@ -18,6 +18,11 @@ export interface EgiszCdaParams {
 	complications?: string;
 	/** 043 comorbidities / concomitant diseases. */
 	comorbidities?: string;
+	/**
+	 * DEFECT #57: 043 instrument tray barcode (sterilization link).
+	 * Printed on Form 043/у and part of diary_hash; was never exported to CDA.
+	 */
+	instrumentTrayBarcode?: string;
 	treatmentDescription?: string;
 	visitDate: Date;
 	documentId: string;
@@ -177,6 +182,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</text>
 				</section>
 			</component>
+			<!-- DEFECT #57: инструментальный лоток 043 (sterilization barcode) -->
+			${params.instrumentTrayBarcode && params.instrumentTrayBarcode.trim()
+				? `<component>
+				<section>
+					<code code="46264-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Medical device identifier"/>
+					<title>Инструментальный лоток</title>
+					<text>
+						<paragraph>Штрихкод: ${escapeXml(params.instrumentTrayBarcode.trim())}</paragraph>
+					</text>
+				</section>
+			</component>`
+				: ""}
 		</structuredBody>
 	</component>
 </ClinicalDocument>`;
