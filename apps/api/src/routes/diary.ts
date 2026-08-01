@@ -15,10 +15,12 @@ import {
 	inventoryTransactions,
 	procedureMaterialRules,
 	treatmentItems,
+	users,
 	visitDiaries,
 	visitDiaryRevisions,
 } from "../db/schema.js";
 import { clinicNotIdentifiedMessage } from "../utils/clinicSessionRefusal.js";
+import { verifyCredential } from "../utils/cryptoHelper.js";
 
 /**
  * ДНЕВНИК ПРИЁМА ОТКАЗЫВАЛ КОДОМ, А НЕ ПРИЧИНОЙ.
@@ -162,6 +164,127 @@ function computeDiaryHash(
 }
 
 /**
+ * Простая ЭП по PIN сотрудника → непрозрачная отметка, не цифры PIN.
+ *
+ * БЫЛО: клиент слал `PIN:<четыре цифры>`, /lock и церемония клали строку
+ * как есть в crypto_signature_pkcs7. PIN сотрудника лежал открытым текстом
+ * рядом с юридической записью 043/у; GET дневника отдавал его в браузер.
+ *
+ * СТАЛО: при префиксе PIN: сверяем цифры с users.pin_code_hash текущего
+ * подписанта (organizationId + userId). Успех → SIMPLE_PIN_EP|userId|iso|
+ * первые 12 hex diaryHash (или «nohash»). Отказ → null + код причины.
+ * PKCS#7 КриптоПро (без префикса PIN:) проходит без изменения.
+ */
+type SimplePinResolve =
+	| { ok: true; stored: string | null }
+	| {
+			ok: false;
+			code: "PinRequired" | "PinInvalid" | "PinNotSet" | "UserRequired";
+			message: string;
+	  };
+
+const SIMPLE_PIN_PREFIX = "PIN:";
+const SIMPLE_PIN_EP_MARK = "SIMPLE_PIN_EP";
+
+const DIARY_PIN_USER_REQUIRED_MESSAGE =
+	"Простую подпись по ПИН-коду может поставить только сотрудник, вошедший в смену. Войдите в смену заново и повторите подписание.";
+const DIARY_PIN_NOT_SET_MESSAGE =
+	"У вашей учётной записи не задан ПИН-код сотрудника, простую подпись поставить нельзя. Задайте ПИН в настройках персонала или подпишите дневник через КриптоПро.";
+const DIARY_PIN_INVALID_MESSAGE =
+	"ПИН-код не принят. Проверьте раскладку и введите ПИН-код сотрудника заново.";
+
+async function resolveSignatureForStorage(params: {
+	pkcs7Signature: string | null | undefined;
+	userId: string | null;
+	organizationId: string;
+	diaryHashForMark?: string | null;
+}): Promise<SimplePinResolve> {
+	const raw =
+		typeof params.pkcs7Signature === "string" ? params.pkcs7Signature : null;
+	if (raw == null || raw.length === 0) {
+		return { ok: true, stored: null };
+	}
+	if (!raw.startsWith(SIMPLE_PIN_PREFIX)) {
+		// УКЭП / PKCS#7 — без разбора; legacy SIMPLE_PIN_EP тоже проходит.
+		return { ok: true, stored: raw };
+	}
+	const pinDigits = raw.slice(SIMPLE_PIN_PREFIX.length);
+	if (!/^\d{4}$/.test(pinDigits)) {
+		return {
+			ok: false,
+			code: "PinInvalid",
+			message: DIARY_PIN_INVALID_MESSAGE,
+		};
+	}
+	if (!params.userId) {
+		return {
+			ok: false,
+			code: "UserRequired",
+			message: DIARY_PIN_USER_REQUIRED_MESSAGE,
+		};
+	}
+	const [user] = await db
+		.select({
+			id: users.id,
+			pinCodeHash: users.pinCodeHash,
+		})
+		.from(users)
+		.where(
+			and(
+				eq(users.id, params.userId),
+				eq(users.organizationId, params.organizationId),
+				eq(users.isActive, true),
+			),
+		)
+		.limit(1);
+	if (!user) {
+		return {
+			ok: false,
+			code: "UserRequired",
+			message: DIARY_PIN_USER_REQUIRED_MESSAGE,
+		};
+	}
+	if (!user.pinCodeHash) {
+		return {
+			ok: false,
+			code: "PinNotSet",
+			message: DIARY_PIN_NOT_SET_MESSAGE,
+		};
+	}
+	const matched = await verifyCredential(pinDigits, user.pinCodeHash);
+	if (!matched) {
+		return {
+			ok: false,
+			code: "PinInvalid",
+			message: DIARY_PIN_INVALID_MESSAGE,
+		};
+	}
+	const hashPart =
+		typeof params.diaryHashForMark === "string" &&
+		params.diaryHashForMark.length >= 12
+			? params.diaryHashForMark.slice(0, 12)
+			: "nohash";
+	const mark = [
+		SIMPLE_PIN_EP_MARK,
+		params.userId,
+		new Date().toISOString(),
+		hashPart,
+	].join("|");
+	return { ok: true, stored: mark };
+}
+
+/** Legacy PIN:… в ответе GET не отдаём — только факт, что оттиск был. */
+function redactLegacyPinSignature(
+	value: string | null | undefined,
+): string | null {
+	if (typeof value !== "string" || value.length === 0) return value ?? null;
+	if (value.startsWith(SIMPLE_PIN_PREFIX)) {
+		return `${SIMPLE_PIN_EP_MARK}|redacted-legacy`;
+	}
+	return value;
+}
+
+/**
  * Списывать со склада можно только конечное положительное количество.
  *
  * Проверяется КАЖДЫЙ множитель расхода отдельно, а не итоговое произведение:
@@ -191,7 +314,8 @@ type DiarySigningFailureCode =
 	| "NotFound"
 	| "NotSaved"
 	| "AlreadyLocked"
-	| "InsufficientStock";
+	| "InsufficientStock"
+	| "PinRejected";
 
 /**
  * Отказ церемонии подписания. Раньше оба состояния передавались через
@@ -565,7 +689,21 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				),
 			);
 
-		return reply.send({ diary: diary ?? null });
+		if (!diary) {
+			return reply.send({ diary: null });
+		}
+		/*
+		 * Не отдаём legacy PIN:<digits> в браузер: оттиск был, цифр PIN — нет.
+		 * SIMPLE_PIN_EP|… и PKCS#7 проходят как есть (цифр PIN в них нет).
+		 */
+		return reply.send({
+			diary: {
+				...diary,
+				cryptoSignaturePkcs7: redactLegacyPinSignature(
+					diary.cryptoSignaturePkcs7,
+				),
+			},
+		});
 	});
 
 	app.get("/api/diaries/:id/revisions", async (req, reply) => {
@@ -807,11 +945,35 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					};
 				}
 
+				/*
+				 * PIN:… нельзя класть в crypto_signature_pkcs7 как есть.
+				 * Резолв до ceremony; при отказе — throw DiarySigningError-подобный
+				 * через отдельный код (ниже catch → 403).
+				 */
+				const resolvedPost = await resolveSignatureForStorage({
+					pkcs7Signature: data.pkcs7Signature ?? null,
+					userId,
+					organizationId: orgId,
+					diaryHashForMark: null,
+				});
+				if (!resolvedPost.ok) {
+					throw new DiarySigningError(
+						// Pin* не в union DiarySigningFailureCode — используем NotSaved
+						// нельзя: это 500. Добавим PinInvalid в union ниже.
+						resolvedPost.code === "PinInvalid" ||
+							resolvedPost.code === "PinNotSet" ||
+							resolvedPost.code === "PinRequired" ||
+							resolvedPost.code === "UserRequired"
+							? "PinRejected"
+							: "NotFound",
+						resolvedPost.message,
+					);
+				}
 				const signing = await runDiarySigningCeremony(tx, {
 					diaryId,
 					organizationId: orgId,
 					userId,
-					pkcs7Signature: data.pkcs7Signature ?? null,
+					pkcs7Signature: resolvedPost.stored,
 				});
 				return {
 					diaryId,
@@ -837,6 +999,11 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					return reply
 						.code(400)
 						.send({ error: "TransactionFailed", message: err.message });
+				}
+				if (err.code === "PinRejected") {
+					return reply
+						.code(403)
+						.send({ error: "PinRejected", message: err.message });
 				}
 				/*
 				 * ЧТО БЫЛО СЛОМАНО. Здесь стояло `return reply.code(404).send({ error:
@@ -966,12 +1133,24 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					existing.complications,
 					existing.comorbidities,
 				);
+				const resolvedReattach = await resolveSignatureForStorage({
+					pkcs7Signature: incomingPkcs7,
+					userId,
+					organizationId: orgId,
+					diaryHashForMark: reattachHash,
+				});
+				if (!resolvedReattach.ok) {
+					return reply.code(403).send({
+						error: resolvedReattach.code,
+						message: resolvedReattach.message,
+					});
+				}
 				const now = new Date();
 				await db
 					.update(visitDiaries)
 					.set({
 						diaryHash: reattachHash,
-						cryptoSignaturePkcs7: incomingPkcs7,
+						cryptoSignaturePkcs7: resolvedReattach.stored,
 						coSignedByUserId: userId,
 						updatedAt: now,
 					})
@@ -985,7 +1164,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					success: true,
 					hash: reattachHash,
 					lockedAt: lockedAtIso,
-					cryptoSignatureAttached: true,
+					cryptoSignatureAttached: Boolean(resolvedReattach.stored),
 					reattached: true,
 				});
 			}
@@ -1007,13 +1186,26 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		}
 
 		// Церемония — общая с POST /api/diaries, см. runDiarySigningCeremony.
+		// PIN:… → verify + opaque mark ДО транзакции (pbkdf2 вне tx-критики).
 		try {
+			const resolvedLock = await resolveSignatureForStorage({
+				pkcs7Signature: pkcs7Signature ?? null,
+				userId,
+				organizationId: orgId,
+				diaryHashForMark: existing.diaryHash,
+			});
+			if (!resolvedLock.ok) {
+				return reply.code(403).send({
+					error: resolvedLock.code,
+					message: resolvedLock.message,
+				});
+			}
 			const signing = await db.transaction((tx) =>
 				runDiarySigningCeremony(tx, {
 					diaryId: id,
 					organizationId: orgId,
 					userId,
-					pkcs7Signature: pkcs7Signature ?? null,
+					pkcs7Signature: resolvedLock.stored,
 				}),
 			);
 			return reply.send({
@@ -1021,7 +1213,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				hash: signing.hash,
 				lockedAt: signing.lockedAt.toISOString(),
 				cryptoSignatureAttached: Boolean(
-					pkcs7Signature && String(pkcs7Signature).length > 0,
+					resolvedLock.stored && String(resolvedLock.stored).length > 0,
 				),
 			});
 		} catch (err) {
