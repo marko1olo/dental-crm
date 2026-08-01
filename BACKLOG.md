@@ -1,3 +1,11 @@
+## 2026-08-01 — Outbox enqueue compose (POST /api/communications/outbox)
+
+**Gap:** API `POST /api/communications/outbox` accepted one-off queue items (template or free body + recipient), but MessageDeliveryConsole only listed/cancelled/retried/dispatched. Staff could not queue a single SMS/email/WhatsApp/Telegram without a campaign or auto-reminders.
+
+**Ship:** Compose form «Поставить в очередь» in `MessageDeliveryConsole.tsx` — channel, intent, scope, recipient, optional template or free body, email subject; POST with `denteClinicalMutationHeaders`; server message + journal reload. data-testids: `outbox-enqueue-*`.
+
+**Verify:** `npx tsc -p apps/web --noEmit` exit 0; live POST enqueue 201.
+
 ## 2026-08-01 — Leads permanent DELETE (Kanban + store)
 
 - **Gap:** `DELETE /api/leads/:id` (leads.ts, requireResolvedStaffOrAdminOrganizationId, org-scoped, LEAD_DELETED WS) already removed a row from `crm_leads`, but **zero web callers**. Kanban could only drag to «Отказ» (status=trash) — card stayed in DB forever; spam/test/wrong inquiries could not be erased from the funnel without SQL/CLI. Store had GET/POST/PATCH/PUT + convert bare fetch; no `deleteLead`.
