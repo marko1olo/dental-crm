@@ -126,11 +126,20 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 	 * ревизии. Юридическая 043/у выглядела подписанной с текстом, которого
 	 * в БД нет (и PKCS#7 после revise обнуляется только на save).
 	 */
+	/*
+	 * DEFECT #66: Form 043/у must not print as legal card while unlocked draft.
+	 * БЫЛО: printBlocked only diaryUnread | isRevising — черновик (!isLocked)
+	 * печатался кнопкой «Печать 043/у» / «Напечатать» без подписи и diaryHash.
+	 * Бумажная 043/у уходила в карту пациента как будто финальная.
+	 * СТАЛО: block when !isLocked (после load); keep revise/unread gates.
+	 */
 	const printBlockedReason = diaryUnread
 		? "Печать недоступна, пока записи приёма не прочитаны"
 		: isRevising
 			? "Печать недоступна, пока идёт правка подписанного дневника. Сохраните правку или нажмите «Отмена»."
-			: undefined;
+			: !isLocked
+				? "Печать формы 043/у доступна после подписи дневника"
+				: undefined;
 	const printBlocked = Boolean(printBlockedReason);
 
 	// Always under AppLogicProvider when mounted from VisitOdontogramTab — call unconditionally (Rules of Hooks).
