@@ -47,6 +47,8 @@ function formatDate(d: Date, format: "yyyyMMdd" | "yyyyMMddHHmmss"): string {
 export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	const now = new Date();
 	const effectiveTime = formatDate(now, "yyyyMMddHHmmss");
+	/* DEFECT #55: visitTime must appear in documentationOf/serviceEvent below.
+	 * БЫЛО: formatted and discarded — CDA had only generation effectiveTime. */
 	const visitTime = formatDate(params.visitDate, "yyyyMMdd");
 	const birthTime = params.patientBirthDate
 		? formatDate(new Date(params.patientBirthDate), "yyyyMMdd")
@@ -101,6 +103,12 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			</representedCustodianOrganization>
 		</assignedCustodian>
 	</custodian>
+	<!-- DEFECT #55: encounter date (params.visitDate) — was computed as visitTime but unused -->
+	<documentationOf>
+		<serviceEvent classCode="PCPR">
+			<effectiveTime value="${visitTime}"/>
+		</serviceEvent>
+	</documentationOf>
 	<component>
 		<structuredBody>
 			<!-- Диагноз -->
