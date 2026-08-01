@@ -425,7 +425,15 @@ export function doctorProfitabilityRow(
 }
 
 async function computeDoctorProfitabilityAll() {
-	// Real join: payments -> visitDiaries -> users (doctor)
+	/*
+	 * DEFECT #37: tenant isolation on diary/doctor joins.
+	 * БЫЛО: leftJoin visitDiaries только по visitId; leftJoin users только по
+	 * doctorId — без organizationId. visit_diaries.visit_id без FK; UUID визита
+	 * теоретически мог совпасть у двух клиник, и выручка org A прилипала к
+	 * дневнику/ФИО врача org B. Пользователь чужой org с тем же id (нереально
+	 * при UUID, но правило изоляции — organizationId на каждом join).
+	 * СТАЛО: join дневника и врача только внутри organizationId платежа.
+	 */
 	const rows = await db
 		.select({
 			organizationId: payments.organizationId,
@@ -434,8 +442,20 @@ async function computeDoctorProfitabilityAll() {
 			totalRevenue: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
 		})
 		.from(payments)
-		.leftJoin(visitDiaries, eq(payments.visitId, visitDiaries.visitId))
-		.leftJoin(users, eq(visitDiaries.doctorId, users.id))
+		.leftJoin(
+			visitDiaries,
+			and(
+				eq(payments.visitId, visitDiaries.visitId),
+				eq(visitDiaries.organizationId, payments.organizationId),
+			),
+		)
+		.leftJoin(
+			users,
+			and(
+				eq(visitDiaries.doctorId, users.id),
+				eq(users.organizationId, payments.organizationId),
+			),
+		)
 		.where(PAID_PAYMENTS_ONLY)
 		.groupBy(payments.organizationId, visitDiaries.doctorId, users.fullName);
 
