@@ -287,10 +287,20 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			if (diaryTooth) diaryDiagnosisParts.push(`Зуб ${diaryTooth}`);
 			const diaryDiagnosisText = diaryDiagnosisParts.join(" | ");
 
-			const effectiveDiagnosis =
-				(typeof row.visit.diagnosis === "string" && row.visit.diagnosis.trim()
+			/*
+			 * DEFECT #51: diagnosis priority must match S/O/P — 043 diary first.
+			 * БЫЛО: visits.diagnosis || diaryDiagnosisText. EMK free-text (often
+			 * without МКБ or with stale wording) won over signed 043 A-block
+			 * (diagnosisIcd10 + tooth). CDA LOINC 29548-5 and CD@code then carried
+			 * the wrong diagnosis while the legal 043/у had the correct МКБ.
+			 * СТАЛО: diary structured diagnosis wins; visits.diagnosis is fallback
+			 * only when 043 has no A-block text (same pattern as anamnesis/O/P).
+			 */
+			const visitDiagnosis =
+				typeof row.visit.diagnosis === "string" && row.visit.diagnosis.trim()
 					? row.visit.diagnosis.trim()
-					: "") || diaryDiagnosisText;
+					: "";
+			const effectiveDiagnosis = diaryDiagnosisText || visitDiagnosis;
 
 			if (!effectiveDiagnosis) {
 				return reply.status(422).send({
