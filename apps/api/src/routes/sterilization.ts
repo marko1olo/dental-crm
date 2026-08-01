@@ -14,7 +14,6 @@ const scanSchema = z.object({
 	status: z.enum(["passed", "failed"]),
 });
 
-
 /**
  * Тот же 8-сегментный SHA-256, что computeDiaryHash в routes/diary.ts.
  * Лоток входит в отпечаток 043/у: смена barcode без пересчёта оставляет
@@ -46,6 +45,7 @@ function computeDiaryHashForTrayLink(row: {
 	].join("|");
 	return crypto.createHash("sha256").update(raw).digest("hex");
 }
+
 export async function registerSterilizationRoutes(app: FastifyInstance) {
 	app.get("/api/sterilization/logs", async (req, reply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -91,12 +91,12 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 				)
 				.limit(1);
 			if (!operator) {
-			return reply.code(400).send({
-				error: "OperatorNotFound",
-				message:
-					"Оператор стерилизации не найден в этой клинике. Выберите сотрудника из списка персонала клиники.",
-			});
-		}
+				return reply.code(400).send({
+					error: "OperatorNotFound",
+					message:
+						"Оператор стерилизации не найден в этой клинике. Выберите сотрудника из списка персонала клиники.",
+				});
+			}
 		}
 
 		const [log] = await db
@@ -186,14 +186,14 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			return reply.code(404).send({
 				error: "VisitDiaryNotFound",
 				message:
-					"Дневник этого приёма ещё не сохранён, привязать лоток не к чему. Нажмите «Сохранить черновик», дождиесь отметки времени и повторите подписание.",
+					"Дневник этого приёма ещё не сохранён, привязать лоток не к чему. Нажмите «Сохранить черновик», дождитесь отметки времени и повторите подписание.",
 			});
 		}
 		if (existingDiary.isLocked) {
 			return reply.code(409).send({
 				error: "DiaryLocked",
 				message:
-					"Дневник приёма уж подписан — сменить инструментальный лоток в 043/у нельзя. Если упаковка указана неверно, правку вносит администратор через ревизию дневника.",
+					"Дневник приёма уже подписан — сменить инструментальный лоток в 043/у нельзя. Если упаковка указана неверно, правку вносит администратор через ревизию дневника.",
 			});
 		}
 

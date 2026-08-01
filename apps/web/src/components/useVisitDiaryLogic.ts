@@ -920,7 +920,14 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			savedDiaryId = savedDraft?.id ?? null;
 		}
 
-		if (trayBarcode) {
+		/*
+		 * Лоток в журнал/043 — только до замка.
+		 * БЫЛО: link вызывался и при isLocked (повторная УКЭП после revise).
+		 * Сервер теперь отвечает 409 DiaryLocked на смену лотка у подписанного
+		 * дневника — re-attach PKCS#7 ломался из-за штрихкода в state.
+		 * СТАЛО: link только если дневник ещё не подписан.
+		 */
+		if (trayBarcode && !isLocked) {
 			try {
 				const linkRes = await fetch("/api/sterilization/link", {
 					method: "POST",
@@ -948,6 +955,12 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 						12000,
 					);
 					return;
+				}
+				// link пересчитал diary_hash с лотком — подтягиваем для /lock/печати.
+				const linkRaw = await linkRes.text();
+				const linkPayload = jsonObjectOrNull(linkRaw);
+				if (typeof linkPayload?.diaryHash === "string" && linkPayload.diaryHash) {
+					setDiaryHash(linkPayload.diaryHash);
 				}
 			} catch (e) {
 				console.error("[sterilization link] запрос не выполнен", e);
