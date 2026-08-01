@@ -288,19 +288,21 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			const diaryDiagnosisText = diaryDiagnosisParts.join(" | ");
 
 			/*
-			 * DEFECT #51: diagnosis priority must match S/O/P — 043 diary first.
-			 * БЫЛО: visits.diagnosis || diaryDiagnosisText. EMK free-text (often
-			 * without МКБ or with stale wording) won over signed 043 A-block
-			 * (diagnosisIcd10 + tooth). CDA LOINC 29548-5 and CD@code then carried
-			 * the wrong diagnosis while the legal 043/у had the correct МКБ.
-			 * СТАЛО: diary structured diagnosis wins; visits.diagnosis is fallback
-			 * only when 043 has no A-block text (same pattern as anamnesis/O/P).
+			 * DEFECT #51/#52: diagnosis priority — 043 diary when it has МКБ.
+			 * #51: visits.diagnosis must not override signed 043 diagnosisIcd10.
+			 * #52: tooth-only 043 (diagnosisTooth, empty diagnosisIcd10) must NOT
+			 * hide EMK text that still carries МКБ — otherwise CDA LOINC 29548-5
+			 * becomes «Зуб 36» with empty CD@code while visits.diagnosis had K02.1.
+			 * СТАЛО: diary wins only if diagnosisIcd10 present; else EMK, then
+			 * tooth-only diary as last resort.
 			 */
 			const visitDiagnosis =
 				typeof row.visit.diagnosis === "string" && row.visit.diagnosis.trim()
 					? row.visit.diagnosis.trim()
 					: "";
-			const effectiveDiagnosis = diaryDiagnosisText || visitDiagnosis;
+			const effectiveDiagnosis = diaryIcd
+				? diaryDiagnosisText
+				: visitDiagnosis || diaryDiagnosisText;
 
 			if (!effectiveDiagnosis) {
 				return reply.status(422).send({
@@ -427,7 +429,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				patientGender: readGenderFromProfile(row.patient.administrativeProfile),
 				clinicName: row.organization.name,
 				doctorName,
-				icd10Code: extractIcd10(effectiveDiagnosis) || diaryIcd,
+				icd10Code: diaryIcd || extractIcd10(effectiveDiagnosis),
 				diagnosisText: effectiveDiagnosis,
 				visitDate: row.visit.createdAt,
 				documentId: row.visit.id,
