@@ -248,7 +248,48 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					.send({ error: "VisitNotFound", message: "Приём не найден." });
 			}
 
-			if (!row.visit.diagnosis) {
+			/*
+			 * DEFECT #46: diagnosis may live only in visit_diaries (043 SOAP).
+			 * Load diary before the gate so empty visits.diagnosis is not a hard
+			 * stop when the signed 043 already has МКБ.
+			 */
+			const [diaryRow] = await db
+				.select({
+					anamnesis: schema.visitDiaries.anamnesis,
+					statusLocalis: schema.visitDiaries.statusLocalis,
+					diagnosisIcd10: schema.visitDiaries.diagnosisIcd10,
+					diagnosisTooth: schema.visitDiaries.diagnosisTooth,
+					treatmentDescription: schema.visitDiaries.treatmentDescription,
+					doctorId: schema.visitDiaries.doctorId,
+				})
+				.from(schema.visitDiaries)
+				.where(
+					and(
+						eq(schema.visitDiaries.visitId, visitId),
+						eq(schema.visitDiaries.organizationId, orgId),
+					),
+				)
+				.limit(1);
+
+			const diaryDiagnosisParts: string[] = [];
+			const diaryIcd =
+				typeof diaryRow?.diagnosisIcd10 === "string"
+					? diaryRow.diagnosisIcd10.trim()
+					: "";
+			const diaryTooth =
+				typeof diaryRow?.diagnosisTooth === "string"
+					? diaryRow.diagnosisTooth.trim()
+					: "";
+			if (diaryIcd) diaryDiagnosisParts.push(diaryIcd);
+			if (diaryTooth) diaryDiagnosisParts.push(`Зуб ${diaryTooth}`);
+			const diaryDiagnosisText = diaryDiagnosisParts.join(" | ");
+
+			const effectiveDiagnosis =
+				(typeof row.visit.diagnosis === "string" && row.visit.diagnosis.trim()
+					? row.visit.diagnosis.trim()
+					: "") || diaryDiagnosisText;
+
+			if (!effectiveDiagnosis) {
 				return reply.status(422).send({
 					error: "DiagnosisRequired",
 					message:
@@ -283,7 +324,43 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			}
 
 			const clinicOid = readGatewayConfig().clinicOid;
-			const { anamnesis, treatmentPlan } = row.visit;
+			/*
+			 * DEFECT #46: prefer 043 diary SOAP over visits EMK when diary has text.
+			 * Write-path sync fills visits.*, but already-signed diaries created
+			 * before the fix still need a correct CDA on export.
+			 */
+			const diaryAnamnesis =
+				typeof diaryRow?.anamnesis === "string" ? diaryRow.anamnesis.trim() : "";
+			const visitAnamnesis =
+				typeof row.visit.anamnesis === "string" ? row.visit.anamnesis.trim() : "";
+			const anamnesis = diaryAnamnesis || visitAnamnesis;
+
+			const diaryTreatment =
+				typeof diaryRow?.treatmentDescription === "string"
+					? diaryRow.treatmentDescription.trim()
+					: "";
+			const visitTreatment =
+				typeof row.visit.treatmentPlan === "string"
+					? row.visit.treatmentPlan.trim()
+					: "";
+			const treatmentPlan = diaryTreatment || visitTreatment;
+
+			// Врач 043 (doctorId) приоритетнее appointment.doctorUserId — это кто вёл карту.
+			if (diaryRow?.doctorId) {
+				const [diaryDoctor] = await db
+					.select({ fullName: schema.users.fullName })
+					.from(schema.users)
+					.where(
+						and(
+							eq(schema.users.id, diaryRow.doctorId),
+							eq(schema.users.organizationId, orgId),
+						),
+					)
+					.limit(1);
+				if (diaryDoctor?.fullName) {
+					doctorName = splitFullName(diaryDoctor.fullName);
+				}
+			}
 
 			const params: EgiszCdaParams = {
 				patientId: row.patient.id,
@@ -294,8 +371,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				patientGender: readGenderFromProfile(row.patient.administrativeProfile),
 				clinicName: row.organization.name,
 				doctorName,
-				icd10Code: extractIcd10(row.visit.diagnosis),
-				diagnosisText: row.visit.diagnosis,
+				icd10Code: extractIcd10(effectiveDiagnosis) || diaryIcd,
+				diagnosisText: effectiveDiagnosis,
 				visitDate: row.visit.createdAt,
 				documentId: row.visit.id,
 				...(clinicOid ? { clinicOid } : {}),

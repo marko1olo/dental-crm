@@ -703,6 +703,22 @@ async function runDiarySigningCeremony(
 		})
 		.returning({ id: clinicalAuditLogs.id });
 
+	/*
+	 * DEFECT #46: signed 043 must mirror into visits before EGISZ export.
+	 * Ceremony already holds the locked row; push non-empty SOAP → EMK.
+	 */
+	if (diary.visitId) {
+		await syncVisitEmkFromDiarySoap(tx, {
+			visitId: diary.visitId,
+			organizationId,
+			anamnesis: diary.anamnesis,
+			statusLocalis: diary.statusLocalis,
+			diagnosisIcd10: diary.diagnosisIcd10,
+			diagnosisTooth: diary.diagnosisTooth,
+			treatmentDescription: diary.treatmentDescription,
+		});
+	}
+
 	return {
 		diaryId,
 		hash,
@@ -726,6 +742,96 @@ async function runDiarySigningCeremony(
  */
 const DIARY_SIGNING_ROLE_MESSAGE =
 	"Дневник приёма подписывает только врач или администратор клиники: у вашей смены такого права нет, и повторный вход его не добавит. Позовите врача, который вёл приём, — подписать может он.";
+
+/**
+ * DEFECT #46: dual-storage drift — 043 SOAP never reached visits EMK.
+ *
+ * БЫЛО: POST /api/diaries и /revise писали только visit_diaries.*.
+ * EGISZ CDA (`egisz.ts`) и вкладка ЭМК читают visits.anamnesis /
+ * objectiveStatus / diagnosis / treatmentPlan. Врач заполнял 043/у —
+ * юридический СЭМД уходил пустым/устаревшим; ЭМК оставалась пустой.
+ *
+ * СТАЛО: после draft save, signing ceremony и admin-revise пушим
+ * непустые SOAP-поля в visits той же org. Пустой SOAP не затирает
+ * более полный текст ЭМК (врач мог вести поля только в ЭМК).
+ * Маппинг обратен soapPrefillFromVisitNote:
+ *   anamnesis → visits.anamnesis
+ *   statusLocalis → visits.objectiveStatus
+ *   diagnosisIcd10 + diagnosisTooth → visits.diagnosis
+ *   treatmentDescription → visits.treatmentPlan
+ * complaint не трогаем (отдельное поле ЭМК; в S-блоке 043 оно уже
+ * могло быть склеено клиентом при prefill).
+ */
+function buildEmkDiagnosisText(
+	diagnosisIcd10?: string | null,
+	diagnosisTooth?: string | null,
+): string | null {
+	const icd = (diagnosisIcd10 ?? "").trim();
+	const tooth = (diagnosisTooth ?? "").trim();
+	if (!icd && !tooth) return null;
+	if (icd && tooth) return `${icd} | Зуб ${tooth}`;
+	if (icd) return icd;
+	return `Зуб ${tooth}`;
+}
+
+async function syncVisitEmkFromDiarySoap(
+	executor: Pick<DiaryDbTransaction, "update">,
+	params: {
+		visitId: string;
+		organizationId: string;
+		anamnesis?: string | null;
+		statusLocalis?: string | null;
+		diagnosisIcd10?: string | null;
+		diagnosisTooth?: string | null;
+		treatmentDescription?: string | null;
+	},
+): Promise<void> {
+	const visitId =
+		typeof params.visitId === "string" ? params.visitId.trim() : "";
+	if (!visitId) return;
+
+	const patch: {
+		anamnesis?: string;
+		objectiveStatus?: string;
+		diagnosis?: string;
+		treatmentPlan?: string;
+		updatedAt: Date;
+	} = { updatedAt: new Date() };
+
+	const anamnesis = (params.anamnesis ?? "").trim();
+	if (anamnesis) patch.anamnesis = anamnesis;
+
+	const objective = (params.statusLocalis ?? "").trim();
+	if (objective) patch.objectiveStatus = objective;
+
+	const diagnosisText = buildEmkDiagnosisText(
+		params.diagnosisIcd10,
+		params.diagnosisTooth,
+	);
+	if (diagnosisText) patch.diagnosis = diagnosisText;
+
+	const treatment = (params.treatmentDescription ?? "").trim();
+	if (treatment) patch.treatmentPlan = treatment;
+
+	if (
+		patch.anamnesis === undefined &&
+		patch.objectiveStatus === undefined &&
+		patch.diagnosis === undefined &&
+		patch.treatmentPlan === undefined
+	) {
+		return;
+	}
+
+	await executor
+		.update(visits)
+		.set(patch)
+		.where(
+			and(
+				eq(visits.id, visitId),
+				eq(visits.organizationId, params.organizationId),
+			),
+		);
+}
 
 export default async function registerDiaryRoutes(app: FastifyInstance) {
 	app.get("/api/diaries/visit/:visitId", async (req, reply) => {
@@ -1153,6 +1259,20 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 								eq(visitDiaries.organizationId, orgId),
 							),
 						);
+					/*
+					 * DEFECT #46: push 043 SOAP → visits EMK on draft save.
+					 * Same transaction as diary_hash write so EGISZ/EMK never
+					 * see a saved 043 without mirrored clinical fields.
+					 */
+					await syncVisitEmkFromDiarySoap(tx, {
+						visitId: savedRow.visitId,
+						organizationId: orgId,
+						anamnesis: savedRow.anamnesis,
+						statusLocalis: savedRow.statusLocalis,
+						diagnosisIcd10: savedRow.diagnosisIcd10,
+						diagnosisTooth: savedRow.diagnosisTooth,
+						treatmentDescription: savedRow.treatmentDescription,
+					});
 					return {
 						diaryId,
 						signing: null as DiarySigningResult | null,
@@ -1723,6 +1843,21 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				.where(
 					and(eq(visitDiaries.id, id), eq(visitDiaries.organizationId, orgId)),
 				);
+
+			/*
+			 * DEFECT #46: admin revise of signed 043 must update EMK/EGISZ source.
+			 * Without this, forensic 043 shows new text but CDA still has old visits.*.
+			 */
+			await syncVisitEmkFromDiarySoap(tx, {
+				visitId: existing.visitId,
+				organizationId: orgId,
+				anamnesis: body.anamnesis ?? existing.anamnesis,
+				statusLocalis: body.statusLocalis ?? existing.statusLocalis,
+				diagnosisIcd10: body.diagnosisIcd10 ?? existing.diagnosisIcd10,
+				diagnosisTooth: body.diagnosisTooth ?? existing.diagnosisTooth,
+				treatmentDescription:
+					body.treatmentDescription ?? existing.treatmentDescription,
+			});
 
 			// БЫЛО: `revisionCount: 1` — константа вместо настоящего числа ревизий.
 			// Ответ утверждал «ревизия первая» и на десятой правке карты.
