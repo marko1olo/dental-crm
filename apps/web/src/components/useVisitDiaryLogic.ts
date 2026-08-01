@@ -32,6 +32,72 @@ export const EMPTY_DIARY: DiaryState = {
 };
 
 /**
+ * Код МКБ-10 из текста диагноза ЭМК.
+ * В visitNoteForm.diagnosis лежит свободный текст («Кариес 36»), а в дневнике
+ * 043/у поле A — код. Подставляем код только когда он явно есть в строке;
+ * произвольный текст в diagnosisIcd10 не кладём.
+ */
+function icd10CodeFromDiagnosisText(diagnosis: string): string {
+	const trimmed = diagnosis.trim();
+	if (!trimmed) return "";
+	const exact = trimmed.match(/^([A-TV-Z]\d{2}(?:\.\d{1,4})?)$/i);
+	const exactCode = exact?.[1];
+	if (exactCode) return exactCode.toUpperCase();
+	const leading = trimmed.match(/^([A-TV-Z]\d{2}(?:\.\d{1,4})?)\b/i);
+	const leadingCode = leading?.[1];
+	if (leadingCode) return leadingCode.toUpperCase();
+	const embedded = trimmed.match(/\b([A-TV-Z]\d{2}(?:\.\d{1,4})?)\b/i);
+	const embeddedCode = embedded?.[1];
+	return embeddedCode ? embeddedCode.toUpperCase() : "";
+}
+
+/** Зуб по FDI (постоянные 11–48) из текста диагноза ЭМК, если указан. */
+function fdiToothFromText(text: string): string {
+	const m = text.trim().match(/\b([1-4][1-8])\b/);
+	const tooth = m?.[1];
+	return tooth ?? "";
+}
+
+
+/**
+ * SOAP-поля дневника 043/у из формы ЭМК приёма (visits / visitNoteForm).
+ *
+ * Два хранилища: visits.complaint|anamnesis|… (ЭМК) и visit_diaries.* (SOAP).
+ * Когда дневника ещё нет, врач уже мог заполнить ЭМК — без prefill он
+ * перепечатывает то же самое в S/O/A/P. Возвращаем только непустые поля.
+ */
+export function soapPrefillFromVisitNote(form: {
+	complaint?: string | null;
+	anamnesis?: string | null;
+	objectiveStatus?: string | null;
+	diagnosis?: string | null;
+	treatmentPlan?: string | null;
+}): Partial<DiaryState> {
+	const complaint = (form.complaint ?? "").trim();
+	const anamnesis = (form.anamnesis ?? "").trim();
+	const sParts: string[] = [];
+	if (complaint) sParts.push(complaint);
+	if (anamnesis && anamnesis !== complaint) sParts.push(anamnesis);
+
+	const out: Partial<DiaryState> = {};
+	if (sParts.length > 0) out.anamnesis = sParts.join("\n");
+
+	const objective = (form.objectiveStatus ?? "").trim();
+	if (objective) out.statusLocalis = objective;
+
+	const plan = (form.treatmentPlan ?? "").trim();
+	if (plan) out.treatmentDescription = plan;
+
+	const diagnosis = (form.diagnosis ?? "").trim();
+	const icd = icd10CodeFromDiagnosisText(diagnosis);
+	if (icd) out.diagnosisIcd10 = icd;
+	const tooth = fdiToothFromText(diagnosis);
+	if (tooth) out.diagnosisTooth = tooth;
+
+	return out;
+}
+
+/**
  * Состояние чтения дневника. Ровно одно из четырёх, и «пусто» с «не прочитано»
  * не сливаются ни при каких условиях.
  *
@@ -302,7 +368,75 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setReloadToken((token) => token + 1);
 	}, []);
 
+	/*
+	 * Prefill SOAP из ЭМК, только когда дневника на сервере ещё нет.
+	 *
+	 * БЫЛО: load phase "empty" оставлял EMPTY_DIARY, хотя visits.complaint /
+	 * anamnesis / objectiveStatus / treatmentPlan (visitNoteForm) уже заполнены
+	 * в том же приёме. Врач перепечатывал анамнез в S, осмотр в O, план в P.
+	 *
+	 * Только empty — ready/loading/failed не трогаем. Только пустые поля
+	 * дневника — набранный текст не затираем. Источник: visitNoteForm в store
+	 * (тот же, что ЭМК); если форма ещё пуста — поля activeVisit со сводки.
+	 * Чужой приём (activeVisit.id !== visitId) не подмешиваем.
+	 */
+	const visitNoteForm = useVisitStore((s) => s.visitNoteForm);
+	const activeVisit = appLogic?.dashboard?.activeVisit ?? null;
+
+	useEffect(() => {
+		if (loadState.phase !== "empty") return;
+		const openVisitId =
+			activeVisit && typeof activeVisit === "object" && "id" in activeVisit
+				? (activeVisit as { id?: unknown }).id
+				: undefined;
+		if (typeof openVisitId === "string" && openVisitId && openVisitId !== visitId) {
+			return;
+		}
+
+		const formFromStore = visitNoteForm ?? {};
+		const visitRow =
+			activeVisit && typeof activeVisit === "object"
+				? (activeVisit as Record<string, unknown>)
+				: null;
+		const pick = (key: "complaint" | "anamnesis" | "objectiveStatus" | "diagnosis" | "treatmentPlan") => {
+			const fromForm = formFromStore[key];
+			if (typeof fromForm === "string" && fromForm.trim()) return fromForm;
+			const fromVisit = visitRow?.[key];
+			return typeof fromVisit === "string" ? fromVisit : "";
+		};
+		const prefill = soapPrefillFromVisitNote({
+			complaint: pick("complaint"),
+			anamnesis: pick("anamnesis"),
+			objectiveStatus: pick("objectiveStatus"),
+			diagnosis: pick("diagnosis"),
+			treatmentPlan: pick("treatmentPlan"),
+		});
+		if (Object.keys(prefill).length === 0) return;
+
+		setDiary((prev) => {
+			let changed = false;
+			const next: DiaryState = { ...prev };
+			(Object.keys(prefill) as Array<keyof DiaryState>).forEach((key) => {
+				const incoming = prefill[key];
+				if (typeof incoming !== "string" || !incoming) return;
+				if ((prev[key] ?? "").trim()) return;
+				next[key] = incoming;
+				changed = true;
+			});
+			return changed ? next : prev;
+		});
+		if (prefill.diagnosisIcd10) {
+			setIcdSearch((current) => (current.trim() ? current : prefill.diagnosisIcd10 ?? current));
+		}
+	}, [
+		loadState.phase,
+		visitId,
+		visitNoteForm,
+		activeVisit,
+	]);
+
 	// ── Resize textareas
+
 	useEffect(() => {
 		const autoResize = (el: HTMLTextAreaElement) => {
 			el.style.height = "auto";
