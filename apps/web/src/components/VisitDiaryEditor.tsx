@@ -78,6 +78,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		showPreview,
 		setShowPreview,
 		doSave,
+		ensureDraftSavedForSigning,
 		doLock,
 		isRevising,
 		revisionReason,
@@ -947,7 +948,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						diaryHash={diaryHash}
 						isLocked={isLocked}
 						lockedAt={lockedAt}
-						ensureDraftSaved={() => doSave(true)}
+						ensureDraftSaved={() => ensureDraftSavedForSigning()}
 						onLock={async (thumbprint, signature, alreadySavedId) => {
 							await doLock(thumbprint, signature, alreadySavedId);
 						}}

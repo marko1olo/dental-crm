@@ -910,6 +910,81 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		}
 	}, [diary, diaryId, isLocked, revisionReason, reviseSnapshot, reviseTraySnapshot, trayBarcode]);
 
+	/**
+	 * Привязка лотка + пересчёт diary_hash на сервере (sterilization/link).
+	 * Вызывается ДО PKCS#7 (ensureDraftSavedForSigning) и в PIN-path doLock.
+	 * @returns ok:false — подписывать нельзя (тост уже показан).
+	 */
+	const linkSterilizationTray = async (fallbackHash: string | null = null): Promise<
+		{ ok: true; hash: string | null } | { ok: false }
+	> => {
+		if (!trayBarcode || isLocked) {
+			return { ok: true, hash: fallbackHash ?? diaryHash };
+		}
+		try {
+			const linkRes = await fetch("/api/sterilization/link", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ visitId, barcode: trayBarcode }),
+			});
+			if (!linkRes.ok) {
+				const rawBody = await linkRes.text();
+				console.error(`[sterilization link] ${linkRes.status} ${rawBody.slice(0, 300)}`);
+				const payload = jsonObjectOrNull(rawBody);
+				const detail = operatorReadableErrorDetail(
+					typeof payload?.message === "string" ? payload.message : null,
+				);
+				showToast(
+					detail ??
+						(linkRes.status === 400
+							? `Лоток ${trayBarcode} не подтверждён журналом стерилизации: такого штрихкода нет или цикл не пройден. Проверьте штрихкод на упаковке или отсканируйте другой лоток.`
+							: `Штрихкод лотка не проверен: ${requestFailureCause(linkRes.status)}.`),
+					"error",
+					12000,
+				);
+				return { ok: false };
+			}
+			const linkRaw = await linkRes.text();
+			const linkPayload = jsonObjectOrNull(linkRaw);
+			const newHash =
+				typeof linkPayload?.diaryHash === "string" && linkPayload.diaryHash
+					? linkPayload.diaryHash
+					: null;
+			if (newHash) setDiaryHash(newHash);
+			return { ok: true, hash: newHash ?? fallbackHash ?? diaryHash };
+		} catch (e) {
+			console.error("[sterilization link] запрос не выполнен", e);
+			showToast(
+				`Штрихкод лотка не проверен: ${requestFailureCause(null)}. Дневник не подписан.`,
+				"error",
+				12000,
+			);
+			return { ok: false };
+		}
+	};
+
+	/**
+	 * Черновик + лоток ДО подписи КриптоПро.
+	 *
+	 * DEFECT #32. БЫЛО: CryptoProSigner → ensureDraftSaved=doSave → sign(hash) →
+	 * doLock(alreadySavedId) → sterilization/link МЕНЯЛ diary_hash → /lock клал
+	 * PKCS#7 от старого hash на строку с новым barcode. Подпись не соответствовала
+	 * запечатанному 043/у.
+	 *
+	 * СТАЛО: save draft → link tray (финальный hash) → CryptoPro подписывает
+	 * уже этот hash → doLock с alreadySavedId больше не вызывает link.
+	 */
+	const ensureDraftSavedForSigning = async (): Promise<{
+		id: string;
+		hash: string | null;
+	} | null> => {
+		const saved = await doSave(true);
+		if (!saved?.id) return null;
+		const linked = await linkSterilizationTray(saved.hash);
+		if (!linked.ok) return null;
+		return { id: saved.id, hash: linked.hash ?? saved.hash };
+	};
+
 	// ── Lock (Sign & Seal)
 
 	const doLock = async (
@@ -946,56 +1021,20 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		}
 
 		/*
-		 * Лоток в журнал/043 — только до замка.
-		 * БЫЛО: link вызывался и при isLocked (повторная УКЭП после revise).
-		 * Сервер теперь отвечает 409 DiaryLocked на смену лотка у подписанного
-		 * дневника — re-attach PKCS#7 ломался из-за штрихкода в state.
-		 * СТАЛО: link только если дневник ещё не подписан.
+		 * Лоток в журнал/043 — только до замка и только вне crypto-path.
+		 *
+		 * DEFECT #32. Crypto-path (alreadySavedId): лоток уже привязан в
+		 * ensureDraftSavedForSigning ДО signData — повторный link здесь сменил бы
+		 * diary_hash после PKCS#7 и сломал бы соответствие подписи содержимому.
+		 *
+		 * PIN-path (alreadySavedId нет): link после doSave, до /lock — PIN не
+		 * заверяет hash через PKCS#7, порядок безопасен.
+		 *
+		 * isLocked: re-attach УКЭП после revise — link даёт 409 DiaryLocked.
 		 */
-		if (trayBarcode && !isLocked) {
-			try {
-				const linkRes = await fetch("/api/sterilization/link", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ visitId, barcode: trayBarcode }),
-				});
-				if (!linkRes.ok) {
-					// БЫЛО: на экран печаталось поле `error` из ответа, а сервер отдаёт
-					// там машинный код по-английски («Invalid or failed sterilization
-					// barcode», routes/sterilization.ts). Врач у кресла читал латиницу
-					// вместо указания что делать. Русское `message`, если сервер его
-					// пришлёт, показываем как есть — но код не показываем никогда.
-					const rawBody = await linkRes.text();
-					console.error(`[sterilization link] ${linkRes.status} ${rawBody.slice(0, 300)}`);
-					const payload = jsonObjectOrNull(rawBody);
-					const detail = operatorReadableErrorDetail(
-						typeof payload?.message === "string" ? payload.message : null,
-					);
-					showToast(
-						detail ??
-							(linkRes.status === 400
-								? `Лоток ${trayBarcode} не подтверждён журналом стерилизации: такого штрихкода нет или цикл не пройден. Проверьте штрихкод на упаковке или отсканируйте другой лоток.`
-								: `Штрихкод лотка не проверен: ${requestFailureCause(linkRes.status)}.`),
-						"error",
-						12000,
-					);
-					return;
-				}
-				// link пересчитал diary_hash с лотком — подтягиваем для /lock/печати.
-				const linkRaw = await linkRes.text();
-				const linkPayload = jsonObjectOrNull(linkRaw);
-				if (typeof linkPayload?.diaryHash === "string" && linkPayload.diaryHash) {
-					setDiaryHash(linkPayload.diaryHash);
-				}
-			} catch (e) {
-				console.error("[sterilization link] запрос не выполнен", e);
-				showToast(
-					`Штрихкод лотка не проверен: ${requestFailureCause(null)}. Дневник не подписан.`,
-					"error",
-					12000,
-				);
-				return;
-			}
+		if (!alreadySavedId && trayBarcode && !isLocked) {
+			const linked = await linkSterilizationTray(null);
+			if (!linked.ok) return;
 		}
 
 		/*
@@ -1152,6 +1191,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		showPreview,
 		setShowPreview,
 		doSave,
+		ensureDraftSavedForSigning,
 		doLock,
 		isRevising,
 		revisionReason,
