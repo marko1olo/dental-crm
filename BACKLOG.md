@@ -1,3 +1,11 @@
+## 2026-08-01 — WhatsApp direct send on patient card (POST /api/whatsapp/send)
+
+**Gap:** `POST /api/whatsapp/send` already called Meta Cloud API (`sendWhatsappTextMessage`), wrote `communication_events` sent|failed, broadcast `INBOX_NEW_MESSAGE` — but **zero web callers**. Settings had only settings/status; outbox is queue/campaign. Admin on patient card could not send one-off WhatsApp without CLI.
+
+**Ship:** `PatientWhatsappSendPanel.tsx` — self-contained compose (message + submit); `denteAdminSecretRequestHeaders` (same path as WhatsApp settings; `requireNonDoctorAccess`); RU errors for 400/403/404/422/502 + server `message`. Mounted on `PatientsView` after consents when `selectedPatientId` set (phone/name hints from selected + draft). data-testid: `patient-whatsapp-send-panel`, `patient-whatsapp-send-message`, `patient-whatsapp-send-submit`, `patient-whatsapp-send-error`, `patient-whatsapp-send-ok`, `patient-whatsapp-send-mount`.
+
+**Verify:** `npx tsc -p apps/web --noEmit` exit 0; live POST without auth → 401/403 (route up); web grep `whatsapp/send` → panel only.
+
 ## 2026-08-01 — Outbox enqueue compose (POST /api/communications/outbox)
 
 **Gap:** API `POST /api/communications/outbox` accepted one-off queue items (template or free body + recipient), but MessageDeliveryConsole only listed/cancelled/retried/dispatched. Staff could not queue a single SMS/email/WhatsApp/Telegram without a campaign or auto-reminders.
