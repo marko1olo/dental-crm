@@ -960,6 +960,22 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 								data.instrumentTrayBarcode !== undefined
 									? data.instrumentTrayBarcode.trim() || null
 									: existing.instrumentTrayBarcode,
+							/*
+							 * DEFECT #40: progressive author/doctor + last draft editor.
+							 * БЫЛО: draft UPDATE не трогал authorId/doctorId/draftAuthorId.
+							 * Insert (#35) пишет их только при ПЕРВОМ create. Legacy-строки
+							 * с null doctorId и черновики, созданные до #35, оставались
+							 * без врача до /lock — GET doctorFullName null, печать 043/у
+							 * и BI на незакрытых приёмах пустые. draftAuthorId застывал
+							 * на создателе, хотя правки вносит другой сотрудник.
+							 * СТАЛО: authorId/doctorId заполняются только если null
+							 * (не переписываем лечащего после ассистента→врач до lock);
+							 * draftAuthorId = текущий userId (последний редактор черновика).
+							 * Lock ceremony по-прежнему authoritative для doctorId.
+							 */
+							authorId: existing.authorId ?? userId,
+							doctorId: existing.doctorId ?? userId,
+							draftAuthorId: userId,
 						})
 						.where(
 							and(
