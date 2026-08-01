@@ -452,13 +452,19 @@ export function SettingsPricesTab() {
 												<button
 													className="icon-button"
 													onClick={() => {
-														setEditServiceForm({
+													setEditServiceForm({
 															title: item.title,
 															code: item.code || "",
 															category: item.category,
 															specialty: item.specialty,
+															/* БЫЛО: basePriceRub || priceRub || 0 —
+															   бесплатная услуга (basePriceRub === 0) ложно
+															   «пуста» для || и подтягивала устаревший
+															   priceRub, расходясь с полем ввода ниже
+															   (там уже ??) и с money() в списке.
+															   СТАЛО: ?? — ноль остаётся нулём. */
 															basePriceRub:
-																item.basePriceRub || item.priceRub || 0,
+																item.basePriceRub ?? item.priceRub ?? 0,
 															durationMinutes: item.durationMinutes || 30,
 															taxDeductible: item.taxDeductible,
 															active: item.isActive,
