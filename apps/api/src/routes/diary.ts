@@ -738,7 +738,61 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				}
 
 				if (!isSigning) {
-					return { diaryId, signing: null as DiarySigningResult | null };
+					/*
+					 * Отпечаток содержимого черновика — до подписания.
+					 *
+					 * БЫЛО: diary_hash писался только в runDiarySigningCeremony (/lock).
+					 * POST draft возвращал hash: null. CryptoProSigner подписывает
+					 * diaryHash; у неподписанного дневника он всегда null → вкладка
+					 * «КриптоПро» навсегда CRYPTO_SIGNING_UNAVAILABLE_TEXT, hasEcp=false
+					 * в печати 043/у до lock, а к lock без хеша КриптоПро не доходит.
+					 *
+					 * СТАЛО: после upsert считаем computeDiaryHash по строке в БД,
+					 * пишем diary_hash (замок is_locked не трогаем) и отдаём hash
+					 * клиенту — doSave кладёт его в state, окно ЭЦП может подписать.
+					 */
+					const [savedRow] = await tx
+						.select()
+						.from(visitDiaries)
+						.where(
+							and(
+								eq(visitDiaries.id, diaryId),
+								eq(visitDiaries.organizationId, orgId),
+							),
+						)
+						.limit(1);
+					if (!savedRow) {
+						return {
+							diaryId,
+							signing: null as DiarySigningResult | null,
+							draftHash: null as string | null,
+						};
+					}
+					const draftHash = computeDiaryHash(
+						savedRow.visitId,
+						savedRow.patientId ?? "",
+						savedRow.anamnesis,
+						savedRow.statusLocalis,
+						savedRow.treatmentDescription,
+						savedRow.diagnosisIcd10,
+						savedRow.diagnosisTooth,
+						savedRow.complications,
+						savedRow.comorbidities,
+					);
+					await tx
+						.update(visitDiaries)
+						.set({ diaryHash: draftHash, updatedAt: new Date() })
+						.where(
+							and(
+								eq(visitDiaries.id, diaryId),
+								eq(visitDiaries.organizationId, orgId),
+							),
+						);
+					return {
+						diaryId,
+						signing: null as DiarySigningResult | null,
+						draftHash,
+					};
 				}
 
 				const signing = await runDiarySigningCeremony(tx, {
@@ -747,14 +801,19 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					userId,
 					pkcs7Signature: data.pkcs7Signature ?? null,
 				});
-				return { diaryId, signing };
+				return {
+					diaryId,
+					signing,
+					draftHash: null as string | null,
+				};
 			});
 
 			return reply.send({
 				success: true,
 				id: outcome.diaryId,
-				hash: outcome.signing?.hash ?? null,
+				hash: outcome.signing?.hash ?? outcome.draftHash ?? null,
 			});
+
 		} catch (err) {
 			if (err instanceof DiarySigningError) {
 				if (err.code === "AlreadyLocked") {

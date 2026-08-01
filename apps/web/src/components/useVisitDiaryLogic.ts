@@ -578,11 +578,21 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				const data = jsonObjectOrNull(rawBody);
 				const savedId = typeof data?.id === "string" ? data.id : undefined;
 				if (savedId) setDiaryId(savedId);
+				/*
+				 * Отпечаток черновика с сервера. БЫЛО: doSave игнорировал data.hash
+				 * (он всегда был null). CryptoProSigner требует diaryHash для УКЭП —
+				 * без него вкладка «КриптоПро» навсегда «недоступна». Сервер теперь
+				 * считает и отдаёт hash при draft; кладём в state до открытия окна.
+				 */
+				if (typeof data?.hash === "string" && data.hash) {
+					setDiaryHash(data.hash);
+				}
 				// После первого сохранения пустой приём перестаёт быть «empty»:
 				// подпись и повторное чтение опираются на ready + diaryId.
 				if (loadState.phase === "empty") {
 					setLoadState({ phase: "ready" });
 				}
+
 				autosaveFailureReportedRef.current = false;
 				setLastSavedAt(new Date());
 				if (!silent) showToast("Черновик сохранен", "success");
