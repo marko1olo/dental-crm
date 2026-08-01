@@ -5,6 +5,7 @@ import {
 	openSettingsTab,
 	settingsTabTitle,
 } from "./settingsDeepLink";
+import { PublicBookingLinkPanel } from "./PublicBookingLinkPanel";
 
 /**
  * Вкладка настроек «Отзывы и NPS».
@@ -90,6 +91,14 @@ export function SettingsMarketingTab() {
 				className="profile-form-grid"
 				style={{ display: "flex", flexDirection: "column", gap: "24px", marginTop: "24px" }}
 			>
+				{/*
+					Онлайн-запись LIVE (PublicBookingWidget + /api/public/booking),
+					но до панели ссылку владельцу было неоткуда скопировать.
+				*/}
+				<div data-testid="public-booking-link-mount">
+					<PublicBookingLinkPanel />
+				</div>
+
 				<section className="profile-section-card">
 					<div className="profile-section-header">
 						<div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">

@@ -1,3 +1,11 @@
+## 2026-08-01 — Public booking admin copy-link (Settings → Отзывы)
+
+**Gap:** `PublicBookingWidget` + `/api/public/booking` (doctors/slots/book) already LIVE; hash `#/portal/booking/<orgId>` parsed by `publicPortalRouteFromHash` — but **admin UI «скопировать ссылку» отсутствовал**. Owner could not hand a working booking URL from the cabinet without hand-building the path (old QrGatewayPanel printed broken `?clinicId=`). Lab-order already copies portal links; booking did not.
+
+**Ship:** `buildPublicBookingPortalUrl(organizationId, origin?)` in `publicPortalRoute.ts` — single builder matching `PUBLIC_BOOKING_PORTAL_PATH`. `PublicBookingLinkPanel.tsx` — reads `dashboard.clinicSettings.profile.organizationId`, readonly URL, clipboard copy + open tab, honest missing-org state. Mounted atop `SettingsMarketingTab` (`data-testid public-booking-link-mount`). data-testid: `public-booking-link-panel`, `public-booking-link-url`, `public-booking-link-copy`, `public-booking-link-open`, `public-booking-link-missing-org`.
+
+**Verify:** `npx tsc -p apps/web --noEmit` exit 0; web grep `buildPublicBookingPortalUrl` / `public-booking-link` → panel + Marketing mount + helper.
+
 ## 2026-08-01 — Patient card attachments (GET/POST /api/patients/:id/attachments)
 
 **Gap:** `POST /api/patients/:patientId/attachments` already wrote multipart to disk + `attachments.patient_id` + sha256 and `GET /api/attachments/:id/download` worked — but **zero web callers** on patient-level POST. Visit diary photos used `/api/files/visits/...` only. No GET list for patient-level files: upload-without-list was incomplete gameplay (passport/scan/contract had no card UI).

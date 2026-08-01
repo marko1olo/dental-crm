@@ -132,3 +132,21 @@ export function publicPortalRouteFromHash(hash: string): PublicPortalRoute | nul
 
 	return token ? { kind: "lab-order", token } : null;
 }
+
+/**
+ * Полный URL страницы онлайн-записи для клиники.
+ *
+ * Единый строитель: LabOrdersPanel копирует lab-order так же
+ * (`origin + # + path`). Без orgId — null (нельзя отдать битую ссылку).
+ * origin опционален для тестов без window.
+ */
+export function buildPublicBookingPortalUrl(
+	organizationId: string,
+	origin: string = typeof window !== "undefined" ? window.location.origin : "",
+): string | null {
+	const org = organizationId.trim();
+	const base = origin.trim().replace(/\/$/, "");
+	if (!org || !base) return null;
+	const path = `${PUBLIC_BOOKING_PORTAL_PATH.replace(/\/$/, "")}/${encodeURIComponent(org)}`;
+	return `${base}/#${path}`;
+}
