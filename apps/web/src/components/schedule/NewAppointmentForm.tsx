@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { ChangeEvent } from "react";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { Plus, Bot } from "lucide-react";
@@ -7,6 +7,7 @@ import { smartBookingParser } from "../../lib/smartBookingParser";
 import { DictationHints } from "../../DictationHints";
 import { SmartParsePreview } from "../../SmartParsePreview";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -74,7 +75,29 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
     patientPhone: string;
   } | null>(null);
 
-  const [blacklistStatus, setBlacklistStatus] = useState<{ isBlocked: boolean; reason?: string } | null>(null);
+  /*
+    ПРЕДПРОВЕРКА ЧЁРНОГО СПИСКА ПРИ СОЗДАНИИ ЗАПИСИ.
+
+    БЫЛО (два дефекта, оба делали проверку мёртвой в проде):
+    1. bare fetch без denteClinicalReadHeaders → 401/403; catch ставил null,
+       то есть «не заблокирован». Админ записывал человека из ЧС без предупреждения.
+    2. Ответ API — МАССИВ строк archive ({ isBookingBlocked, reasonName, notes }),
+       а код читал data.isBookingBlocked / data.isBlacklisted как у объекта.
+       Даже при 200 блок никогда не срабатывал.
+
+    СТАЛО: токен клиники в заголовках; разбор массива; при отказе чтения —
+    явный warn «статус не прочитан», а не тишина «можно записывать».
+  */
+  const [blacklistStatus, setBlacklistStatus] = useState<{
+    isBlocked: boolean;
+    reason?: string;
+    /** true = запрос упал/401 — нельзя утверждать, что пациент чист */
+    checkFailed?: boolean;
+  } | null>(null);
+
+  const { auth } = useAppLogicContext();
+  const authRef = useRef(auth);
+  authRef.current = auth;
 
   useEffect(() => {
     const patientId = newAppointmentDraft?.patientId;
@@ -82,17 +105,49 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
       setBlacklistStatus(null);
       return;
     }
-    fetch(`/api/patients/${patientId}/archive-status`)
-      .then((res) => (res.ok ? res.json() : null))
+    let cancelled = false;
+    const headers =
+      typeof authRef.current?.denteClinicalReadHeaders === "function"
+        ? authRef.current.denteClinicalReadHeaders()
+        : {};
+
+    fetch(`/api/patients/${patientId}/archive-status`, { headers })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(String(res.status));
+        return res.json();
+      })
       .then((data) => {
-        if (data && (data.isBookingBlocked || data.isBlacklisted)) {
-          setBlacklistStatus({ isBlocked: true, reason: data.reason || data.archiveReason || "Пациент в черном списке" });
+        if (cancelled) return;
+        // API отдаёт массив строк архива/ЧС по пациенту, не один объект.
+        const rows = Array.isArray(data) ? data : [];
+        const blocked = rows.find(
+          (r: { isBookingBlocked?: boolean }) => r?.isBookingBlocked === true
+        ) as { reasonName?: string; notes?: string } | undefined;
+        if (blocked) {
+          setBlacklistStatus({
+            isBlocked: true,
+            reason: blocked.reasonName || blocked.notes || "Пациент в черном списке",
+          });
         } else {
           setBlacklistStatus(null);
         }
       })
-      .catch(() => setBlacklistStatus(null));
+      .catch(() => {
+        // Не выдаём отказ чтения за «не заблокирован» — иначе админ запишет вслепую.
+        if (!cancelled) {
+          setBlacklistStatus({
+            isBlocked: false,
+            checkFailed: true,
+            reason: "Статус блокировки записи не прочитан. Не считайте пациента разрешённым к записи.",
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [newAppointmentDraft?.patientId]);
+
 
   /*
     Правило «чего не хватает записи» одно на всё приложение и лежит в
@@ -487,11 +542,16 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
                     ))}
                 </div>
               )}
-              {blacklistStatus?.isBlocked && (
+              {blacklistStatus?.isBlocked ? (
                 <div className="mt-2 p-2 bg-red-500/10 border border-red-500/40 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold flex items-center gap-1.5" role="alert">
                   <span>⛔ ЧЕРНЫЙ СПИСОК: {blacklistStatus.reason || "Пациент заблокирован для записи на приём"}</span>
                 </div>
-              )}
+              ) : blacklistStatus?.checkFailed ? (
+                <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/40 text-amber-700 dark:text-amber-400 rounded-lg text-xs font-semibold flex items-center gap-1.5" role="alert">
+                  <span>⚠ {blacklistStatus.reason || "Статус блокировки записи не прочитан"}</span>
+                </div>
+              ) : null}
+
             </div>
 
             <div>
