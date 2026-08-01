@@ -487,11 +487,30 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				}
 			}
 
+			/*
+			 * DEFECT #60: patient SNILS is mandatory for EGISZ/REMD CDA.
+			 * БЫЛО: readSnilsFromProfile could return "" and CDA still went out with
+			 * <id root="1.2.643.100.3" extension=""/> — РЭМД/ФРМР reject empty SNILS
+			 * after clinic already thought the protocol was exported.
+			 * СТАЛО: 422 PatientSnilsRequired when profile has no valid 11-digit SNILS
+			 * (checksum checked via isValidSnils when length is 11).
+			 */
+			const patientSnilsDigits = readSnilsFromProfile(
+				row.patient.administrativeProfile,
+			);
+			if (patientSnilsDigits.length !== 11 || !isValidSnils(patientSnilsDigits)) {
+				return reply.status(422).send({
+					error: "PatientSnilsRequired",
+					message:
+						"Для выгрузки в ЕГИСЗ у пациента должен быть указан корректный СНИЛС в административной карточке.",
+				});
+			}
+
 			const params: EgiszCdaParams = {
 				patientId: row.patient.id,
 				patientName: splitFullName(row.patient.fullName),
 				// СНИЛС пациента живёт в административном профиле (jsonb).
-				patientSnils: readSnilsFromProfile(row.patient.administrativeProfile),
+				patientSnils: patientSnilsDigits,
 				patientBirthDate: row.patient.birthDate,
 				patientGender: readGenderFromProfile(row.patient.administrativeProfile),
 				clinicName: row.organization.name,
