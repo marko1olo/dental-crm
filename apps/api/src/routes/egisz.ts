@@ -576,12 +576,30 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				});
 			}
 
+			/*
+			 * DEFECT #64: fake birthTime 19000101 must not reach EGISZ/REMD CDA.
+			 * БЫЛО: generateDentalCdaXml substituted "19000101" when patientBirthDate
+			 * was null — identity mismatch with ФРМР/РЭМД (SNILS + DOB) and silent
+			 * acceptance of incomplete patient cards as if DOB were known.
+			 * СТАЛО: 422 PatientBirthDateRequired when birthDate missing/invalid.
+			 */
+			const rawBirth = row.patient.birthDate;
+			const birthStr = typeof rawBirth === "string" ? rawBirth.trim() : "";
+			const birthParsed = birthStr ? new Date(birthStr) : null;
+			if (!birthStr || !birthParsed || Number.isNaN(birthParsed.getTime())) {
+				return reply.status(422).send({
+					error: "PatientBirthDateRequired",
+					message:
+						"Для выгрузки в ЕГИСЗ у пациента должна быть указана дата рождения.",
+				});
+			}
+
 			const params: EgiszCdaParams = {
 				patientId: row.patient.id,
 				patientName: splitFullName(row.patient.fullName),
 				// СНИЛС пациента живёт в административном профиле (jsonb).
 				patientSnils: patientSnilsDigits,
-				patientBirthDate: row.patient.birthDate,
+				patientBirthDate: birthStr,
 				patientGender: readGenderFromProfile(row.patient.administrativeProfile),
 				clinicName: row.organization.name,
 				doctorName,
