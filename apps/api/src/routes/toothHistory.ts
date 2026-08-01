@@ -173,12 +173,14 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 				});
 			} else {
 				// Запасной путь для данных, внесённых до включения истории.
+				// DEFECT #43: organizationId обязателен — колонка NOT NULL, historyRows уже фильтрует по org.
 				const states = await db
 					.select()
 					.from(toothStates)
 					.where(
 						and(
 							eq(toothStates.patientId, patientId),
+							eq(toothStates.organizationId, orgId),
 							eq(toothStates.toothNumber, toothNum),
 						),
 					)
