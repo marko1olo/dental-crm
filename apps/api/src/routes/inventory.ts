@@ -497,7 +497,19 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			.limit(1);
 		if (!existing) return reply.status(404).send({ error: "Item not found" });
 
-		await db.delete(inventoryItems).where(eq(inventoryItems.id, itemId));
+		// БЫЛО: DELETE по id после SELECT с org — без organizationId в WHERE и без
+		// RETURNING: 0 строк всё равно success:true.
+		// СТАЛО: and(id, organizationId) + RETURNING; пусто — 404.
+		const [deleted] = await db
+			.delete(inventoryItems)
+			.where(
+				and(
+					eq(inventoryItems.id, itemId),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			)
+			.returning({ id: inventoryItems.id });
+		if (!deleted) return reply.status(404).send({ error: "Item not found" });
 		return { success: true };
 	});
 
@@ -611,7 +623,10 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			.limit(1);
 		if (!item) return reply.status(404).send({ error: "Item not found" });
 
-		// Check if rule already exists for this service and item
+		// БЫЛО: SELECT/UPDATE правила по serviceId+itemId / id без organizationId;
+		// INSERT не писал organizationId (колонка nullable есть в схеме) — чужая
+		// клиника могла пересечься по UUID услуги/материала, а UPDATE шёл id-only.
+		// СТАЛО: фильтр по organizationId на SELECT/UPDATE; INSERT выставляет org.
 		const [existing] = await db
 			.select()
 			.from(procedureMaterialRules)
@@ -619,6 +634,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				and(
 					eq(procedureMaterialRules.serviceId, serviceId),
 					eq(procedureMaterialRules.inventoryItemId, inventoryItemId),
+					eq(procedureMaterialRules.organizationId, organizationId),
 				),
 			)
 			.limit(1);
@@ -629,20 +645,40 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				.set({
 					quantityToDeduct: String(Math.max(1, quantityToDeduct)),
 				})
-				.where(eq(procedureMaterialRules.id, existing.id))
+				.where(
+					and(
+						eq(procedureMaterialRules.id, existing.id),
+						eq(procedureMaterialRules.organizationId, organizationId),
+					),
+				)
 				.returning();
+			if (!updated) {
+				return reply.status(500).send({
+					error: "RuleNotSaved",
+					message:
+						"Правило списания не сохранено: сервер не записал изменение. Повторите; если снова не выйдет — сообщите администратору клиники.",
+				});
+			}
 			return updated;
 		}
 
 		const [newRule] = await db
 			.insert(procedureMaterialRules)
 			.values({
+				organizationId,
 				serviceId,
 				inventoryItemId,
 				quantityToDeduct: String(Math.max(1, quantityToDeduct)),
 			})
 			.returning();
 
+		if (!newRule) {
+			return reply.status(500).send({
+				error: "RuleNotSaved",
+				message:
+					"Правило списания не создано: сервер не сохранил запись. Повторите; если снова не выйдет — сообщите администратору клиники.",
+			});
+		}
 		return newRule;
 	});
 
@@ -680,9 +716,27 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			.limit(1);
 		if (!rule) return reply.status(404).send({ error: "Rule not found" });
 
-		await db
+		// БЫЛО: DELETE id-only после join-проверки org через service; 0 строк → success.
+		// СТАЛО: organizationId в WHERE (колонка есть) + RETURNING.
+		// Старые строки с organizationId NULL: join SELECT выше уже подтвердил
+		// владение через serviceCatalogItems — fallback DELETE по id только для них,
+		// с RETURNING (без фейкового success на 0 строк).
+		const [deleted] = await db
 			.delete(procedureMaterialRules)
-			.where(eq(procedureMaterialRules.id, ruleId));
+			.where(
+				and(
+					eq(procedureMaterialRules.id, ruleId),
+					eq(procedureMaterialRules.organizationId, organizationId),
+				),
+			)
+			.returning({ id: procedureMaterialRules.id });
+		if (!deleted) {
+			const [deletedLegacy] = await db
+				.delete(procedureMaterialRules)
+				.where(eq(procedureMaterialRules.id, ruleId))
+				.returning({ id: procedureMaterialRules.id });
+			if (!deletedLegacy) return reply.status(404).send({ error: "Rule not found" });
+		}
 		return { success: true };
 	});
 };

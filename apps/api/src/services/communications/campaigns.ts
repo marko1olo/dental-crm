@@ -391,7 +391,9 @@ export async function launchCampaign(input: {
     else queued += 1;
   }
 
-  await db
+  // БЫЛО: UPDATE статуса/снимка аудитории только по campaign.id после SELECT с org.
+  // СТАЛО: organizationId в WHERE + RETURNING; 0 строк — отказ, не ok:true с очередью.
+  const [launched] = await db
     .update(communicationCampaigns)
     .set({
       status: "running",
@@ -410,7 +412,20 @@ export async function launchCampaign(input: {
       }),
       updatedAt: now,
     })
-    .where(eq(communicationCampaigns.id, campaign.id));
+    .where(
+      and(
+        eq(communicationCampaigns.id, campaign.id),
+        eq(communicationCampaigns.organizationId, input.organizationId),
+      ),
+    )
+    .returning({ id: communicationCampaigns.id });
+
+  if (!launched) {
+    return {
+      ok: false,
+      reason: "Не удалось зафиксировать запуск рассылки. Повторите попытку.",
+    };
+  }
 
   return {
     ok: true,
@@ -467,10 +482,20 @@ export async function cancelCampaign(
     )
     .returning({ id: communicationOutbox.id });
 
-  await db
+  // БЫЛО: UPDATE cancelled только по id после SELECT с org.
+  // СТАЛО: and(id, organizationId) + RETURNING; 0 строк — ok:false.
+  const [cancelledCampaign] = await db
     .update(communicationCampaigns)
     .set({ status: "cancelled", completedAt: now, updatedAt: now })
-    .where(eq(communicationCampaigns.id, campaignId));
+    .where(
+      and(
+        eq(communicationCampaigns.id, campaignId),
+        eq(communicationCampaigns.organizationId, organizationId),
+      ),
+    )
+    .returning({ id: communicationCampaigns.id });
+
+  if (!cancelledCampaign) return { ok: false, cancelledMessages: cancelled.length };
 
   return { ok: true, cancelledMessages: cancelled.length };
 }
