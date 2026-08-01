@@ -31,7 +31,13 @@ describe("egiszCdaGenerator", () => {
 
 		const xml = generateDentalCdaXml(params);
 		assert.ok(xml.includes('displayName="Врач-стоматолог"'));
+		assert.ok(xml.includes('<versionNumber value="1"/>'));
 		t.assert.snapshot(xml);
+
+		// DEFECT #61: revised diary.version must appear in CDA versionNumber
+		const revised = generateDentalCdaXml({ ...params, documentVersion: 3 });
+		assert.ok(revised.includes('<versionNumber value="3"/>'));
+		assert.ok(!revised.includes('<versionNumber value="1"/>'));
 	});
 
 	test("generateDentalCdaXml with missing optional parameters", (t) => {

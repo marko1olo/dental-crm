@@ -27,6 +27,11 @@ export interface EgiszCdaParams {
 	treatmentDescription?: string;
 	visitDate: Date;
 	documentId: string;
+	/**
+	 * DEFECT #61: CDA versionNumber must track 043 diary.version after revise.
+	 * Default 1 when diary absent (EMK-only export).
+	 */
+	documentVersion?: number;
 }
 
 /** Escape free-text for CDA XML text/attribute nodes (DEFECT #49). */
@@ -73,7 +78,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25"/>
 	<languageCode code="ru-RU"/>
 	<setId root="${params.clinicOid || "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(params.documentId)}"/>
-	<versionNumber value="1"/>
+	<versionNumber value="${Math.max(1, Math.floor(Number(params.documentVersion) || 1))}"/>
 	<recordTarget>
 		<patientRole>
 			<id root="1.2.643.100.3" extension="${escapeXml(params.patientSnils)}"/>

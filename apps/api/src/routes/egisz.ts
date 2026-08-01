@@ -268,6 +268,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					doctorId: schema.visitDiaries.doctorId,
 					/* DEFECT #59: draft 043 must not become EGISZ CDA */
 					isLocked: schema.visitDiaries.isLocked,
+					/* DEFECT #61: CDA versionNumber after 043 revise */
+					version: schema.visitDiaries.version,
 				})
 				.from(schema.visitDiaries)
 				.where(
@@ -520,6 +522,12 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				diagnosisText: effectiveDiagnosis,
 				visitDate: encounterDate,
 				documentId: row.visit.id,
+				/* DEFECT #61: revised 043 must not re-export as version 1 */
+				...(typeof diaryRow?.version === "number" &&
+				Number.isFinite(diaryRow.version) &&
+				diaryRow.version >= 1
+					? { documentVersion: Math.floor(diaryRow.version) }
+					: {}),
 				...(clinicOid ? { clinicOid } : {}),
 				...(anamnesis ? { anamnesis } : {}),
 				...(objectiveStatus ? { objectiveStatus } : {}),
