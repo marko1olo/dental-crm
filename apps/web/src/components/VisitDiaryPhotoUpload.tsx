@@ -1,7 +1,8 @@
 import { Camera, Paperclip, Search } from "lucide-react";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AUTHED_API_FILE_FAILURE, fetchAuthedApiFileObjectUrl } from "../lib/authedApiFile";
+import { requestFailureCause } from "../lib/panelStateText";
 import { showToast } from "./GlobalToast";
 import { readDenteClinicToken } from "../lib/safeLocalStorage";
 
@@ -17,6 +18,22 @@ interface VisitDiaryPhotoUploadProps {
 	isLocked: boolean;
 }
 
+/**
+ * Список вложений дневника. Ровно одно из четырёх состояний чтения —
+ * «пусто» и «не прочитано» не сливаются.
+ *
+ * БЫЛО: при !r.ok или сети then(null)/catch только console.error, attachments
+ * оставался []. UI рисовал «Нажмите Прикрепить фото» / «Нет прикрепленных
+ * фото» — как будто снимков нет, хотя они могли быть на сервере. Врач
+ * считал, что фото не прикреплялись, и мог прикрепить повторно или не
+ * увидеть доказательство лечения в 043/у.
+ */
+type AttachmentsLoadState =
+	| { readonly phase: "loading" }
+	| { readonly phase: "empty" }
+	| { readonly phase: "ready" }
+	| { readonly phase: "failed"; readonly status: number | null };
+
 export function VisitDiaryPhotoUpload({
 	visitId,
 	diaryId,
@@ -24,6 +41,10 @@ export function VisitDiaryPhotoUpload({
 }: VisitDiaryPhotoUploadProps) {
 	const [attachments, setAttachments] = useState<Attachment[]>([]);
 	const [isUploading, setIsUploading] = useState(false);
+	const [loadState, setLoadState] = useState<AttachmentsLoadState>({
+		phase: "loading",
+	});
+	const [reloadToken, setReloadToken] = useState(0);
 	/* Объектные адреса снимков по идентификатору вложения.
 	   ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ: адрес сервера подставлялся прямо в <img src>,
 	   а такой запрос посылает браузер без единого заголовка — подмена fetch из
@@ -37,6 +58,11 @@ export function VisitDiaryPhotoUpload({
 	   revokeObjectURL рабочее место держало бы в памяти копию каждого снимка
 	   каждого открытого за смену приёма. */
 	const createdPhotoObjectUrls = useRef<Map<string, string>>(new Map());
+
+	const reloadAttachments = useCallback(() => {
+		setReloadToken((t) => t + 1);
+	}, []);
+
 	useEffect(() => {
 		/* Сброс идёт до всех проверок и до запроса. Иначе при переходе к
 		   другому приёму в списке остаются снимки предыдущего, и они
@@ -46,31 +72,62 @@ export function VisitDiaryPhotoUpload({
 		setAttachments([]);
 		setPhotoObjectUrls({});
 		setUnreadablePhotoIds([]);
-		if (!visitId) return;
+		setLoadState({ phase: "loading" });
+		if (!visitId) {
+			setLoadState({ phase: "empty" });
+			return;
+		}
 
 		const controller = new AbortController();
 		let cancelled = false;
 		const clinicToken = readDenteClinicToken() || null;
-		fetch(`/api/files/visits/${visitId}/attachments`, {
-			headers: {
-				"x-dente-clinic-token": clinicToken || "",
-			},
-			signal: controller.signal,
-		})
-			.then((r) => {
-				if (r.ok) return r.json();
-				return null;
-			})
-			.then((data) => {
-				if (cancelled) return;
-				if (data?.files) {
-					setAttachments(data.files);
+
+		void (async () => {
+			let status: number | null = null;
+			try {
+				const response = await fetch(`/api/files/visits/${visitId}/attachments`, {
+					headers: {
+						"x-dente-clinic-token": clinicToken || "",
+					},
+					signal: controller.signal,
+				});
+				status = response.status;
+				if (!response.ok) {
+					console.error(
+						`[diary attachments] ${status} ${visitId}`,
+					);
+					if (!cancelled) setLoadState({ phase: "failed", status });
+					return;
 				}
-			})
-			.catch((error) => {
+				const data: unknown = await response.json().catch(() => null);
 				if (cancelled) return;
-				console.error(error);
-			});
+				const files =
+					data &&
+					typeof data === "object" &&
+					!Array.isArray(data) &&
+					Array.isArray((data as { files?: unknown }).files)
+						? ((data as { files: Attachment[] }).files)
+						: null;
+				if (!files) {
+					// 200 без files — испорченный ответ, не «снимков нет».
+					console.error(`[diary attachments] ${status}: тело без files`);
+					setLoadState({ phase: "failed", status });
+					return;
+				}
+				setAttachments(files);
+				setLoadState(
+					files.length === 0 ? { phase: "empty" } : { phase: "ready" },
+				);
+			} catch (error) {
+				if (cancelled) return;
+				// abort при смене приёма — не failed
+				if (error instanceof DOMException && error.name === "AbortError") {
+					return;
+				}
+				console.error("[diary attachments] запрос не выполнен", error);
+				setLoadState({ phase: "failed", status });
+			}
+		})();
 
 		return () => {
 			cancelled = true;
@@ -83,7 +140,8 @@ export function VisitDiaryPhotoUpload({
 			}
 			createdPhotoObjectUrls.current = new Map();
 		};
-	}, [visitId]);
+	}, [visitId, reloadToken]);
+
 
 	/* Снимки забираются через fetch по тому же адресу, который отдал сервер в
 	   поле url (apps/api/src/routes/files.ts:137,185), и только потом попадают в
@@ -185,6 +243,7 @@ export function VisitDiaryPhotoUpload({
 			const data = await res.json();
 			if (data.file) {
 				setAttachments((prev) => [...prev, data.file]);
+				setLoadState({ phase: "ready" });
 				showToast("Фото сжато в WebP и загружено", "success");
 			}
 		} catch (err: any) {
@@ -253,6 +312,27 @@ export function VisitDiaryPhotoUpload({
 							</div>
 						);
 					})}
+				</div>
+			) : loadState.phase === "loading" ? (
+				<div className="w-full bg-zinc-900/60 border border-zinc-800 border-dashed rounded-xl p-4 text-sm text-zinc-500 text-center">
+					Загрузка снимков…
+				</div>
+			) : loadState.phase === "failed" ? (
+				<div className="w-full bg-zinc-900/60 border border-rose-900/50 border-dashed rounded-xl p-4 text-sm text-zinc-400 text-center space-y-2">
+					<p>
+						Список снимков не прочитан
+						{loadState.status != null
+							? ` (${requestFailureCause(loadState.status)})`
+							: ""}
+						. Не считайте, что снимков нет — они могли остаться на сервере.
+					</p>
+					<button
+						type="button"
+						onClick={reloadAttachments}
+						className="text-xs px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200"
+					>
+						Повторить
+					</button>
 				</div>
 			) : (
 				<div className="w-full bg-zinc-900/60 border border-zinc-800 border-dashed rounded-xl p-4 text-sm text-zinc-500 text-center">
