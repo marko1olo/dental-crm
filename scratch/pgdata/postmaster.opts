@@ -1,1 +1,0 @@
-C:/Clinic_MVP/dental-crm/node_modules/@embedded-postgres/windows-x64/native/bin/postgres.exe "-D" "./scratch/pgdata" "-p" "5432"

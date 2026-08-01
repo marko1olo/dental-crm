@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { showToast } from "../GlobalToast";
+import { multiplyKopecks, parseKopecks, sumKopecks } from "@dental/shared";
 
 export interface InventoryItem {
 	id: string;
@@ -767,10 +768,14 @@ export function useInventoryLogic(organizationId: string) {
 	}, [items]);
 
 	const totalValue = useMemo(() => {
-		return items.reduce((acc, item) => {
-			const cost = parseFloat(item.unitCostRub || "0") || 0;
-			return acc + item.stockQuantity * cost;
-		}, 0);
+		const totalKopecks = sumKopecks(
+			items.map((item) => {
+				const unitCostKopecks = parseKopecks(item.unitCostRub || "0");
+				const quantity = Math.max(0, Math.round(Number(item.stockQuantity) || 0));
+				return multiplyKopecks(unitCostKopecks, quantity);
+			}),
+		);
+		return totalKopecks / 100;
 	}, [items]);
 
 	return {

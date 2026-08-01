@@ -1,4 +1,4 @@
-import type { Dashboard } from "@dental/shared";
+import { type Dashboard, kopecksToNumericString, parseKopecks } from "@dental/shared";
 
 /*
  * СВЕРКА КАССЫ ЗА ДЕНЬ: СЧЁТ ОТДЕЛЬНО ОТ ПОКАЗА.
@@ -98,22 +98,12 @@ export interface CashDaySummary {
  * доезжает до экрана. Тот же приём (округление до копейки на каждом шаге)
  * применяют расчёт сводки в useAppLogic и сверка сметы на сервере.
  */
-function addRub(total: number, addition: number): number {
-	return Math.round((total + addition) * 100) / 100;
-}
-
-/**
- * Сумма платежа числом.
- *
- * Number() обязателен: колонка numeric без mode «number» отдаётся драйвером
- * СТРОКОЙ, и `total + "1500.50"` склеил бы строки вместо сложения. Данные
- * дашборда на клиенте схемой не проверяются, поэтому полагаться на объявленный
- * тип нельзя. Нечисловое значение считаем нулём и НЕ показываем как деньги:
- * NaN в сумме превратил бы весь итог дня в «не число».
- */
-function paymentRub(payment: Payment): number {
-	const amount = Number(payment.amountRub);
-	return Number.isFinite(amount) ? amount : 0;
+function paymentKopecks(payment: Payment): number {
+	try {
+		return parseKopecks(payment.amountRub);
+	} catch {
+		return 0;
+	}
 }
 
 /** Порядок способов на экране: сначала то, что чаще всего в кассе. */
@@ -146,22 +136,22 @@ export function summarizeCashDay(
 	payments: readonly Payment[] | null | undefined,
 	dayKey: string,
 ): CashDaySummary {
-	const totals = new Map<PaymentMethod, { amountRub: number; count: number }>();
-	let receivedRub = 0;
+	const totals = new Map<PaymentMethod, { kopecks: number; count: number }>();
+	let receivedKopecks = 0;
 	let receivedCount = 0;
-	let cashRub = 0;
-	let advanceRub = 0;
-	let familyWalletRub = 0;
-	let refundedRub = 0;
+	let cashKopecks = 0;
+	let advanceKopecks = 0;
+	let familyWalletKopecks = 0;
+	let refundedKopecks = 0;
 	let refundedCount = 0;
 
 	for (const payment of payments ?? []) {
 		if (localDayKey(payment.paidAt ?? payment.createdAt ?? "") !== dayKey) continue;
-		const amount = paymentRub(payment);
-		if (amount <= 0) continue;
+		const kopecks = paymentKopecks(payment);
+		if (kopecks <= 0) continue;
 
 		if (payment.status === "refunded") {
-			refundedRub = addRub(refundedRub, amount);
+			refundedKopecks += kopecks;
 			refundedCount += 1;
 			/*
 			 * ЯЩИКА ВОЗВРАТ НЕ КАСАЕТСЯ, И ВОТ ПОЧЕМУ.
@@ -197,35 +187,39 @@ export function summarizeCashDay(
 
 		if (payment.method === "family_wallet") {
 			// Списание с семейного счёта: выручка есть, новых денег нет.
-			familyWalletRub = addRub(familyWalletRub, amount);
+			familyWalletKopecks += kopecks;
 			continue;
 		}
 
-		receivedRub = addRub(receivedRub, amount);
+		receivedKopecks += kopecks;
 		receivedCount += 1;
-		if (payment.method === "cash") cashRub = addRub(cashRub, amount);
-		if (payment.status === "planned") advanceRub = addRub(advanceRub, amount);
+		if (payment.method === "cash") cashKopecks += kopecks;
+		if (payment.status === "planned") advanceKopecks += kopecks;
 
-		const row = totals.get(payment.method) ?? { amountRub: 0, count: 0 };
-		row.amountRub = addRub(row.amountRub, amount);
+		const row = totals.get(payment.method) ?? { kopecks: 0, count: 0 };
+		row.kopecks += kopecks;
 		row.count += 1;
 		totals.set(payment.method, row);
 	}
 
 	const byMethod: CashDayMethodRow[] = METHOD_ORDER.filter((method) => totals.has(method)).map(
 		(method) => {
-			const row = totals.get(method) as { amountRub: number; count: number };
-			return { method, amountRub: row.amountRub, count: row.count };
+			const row = totals.get(method) as { kopecks: number; count: number };
+			return {
+				method,
+				amountRub: Number(kopecksToNumericString(row.kopecks)),
+				count: row.count,
+			};
 		},
 	);
 
 	return {
-		receivedRub,
+		receivedRub: Number(kopecksToNumericString(receivedKopecks)),
 		receivedCount,
-		cashRub,
-		advanceRub,
-		familyWalletRub,
-		refundedRub,
+		cashRub: Number(kopecksToNumericString(cashKopecks)),
+		advanceRub: Number(kopecksToNumericString(advanceKopecks)),
+		familyWalletRub: Number(kopecksToNumericString(familyWalletKopecks)),
+		refundedRub: Number(kopecksToNumericString(refundedKopecks)),
 		refundedCount,
 		byMethod,
 	};

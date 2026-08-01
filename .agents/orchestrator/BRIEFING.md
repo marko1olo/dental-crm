@@ -1,23 +1,28 @@
-# BRIEFING — 2026-07-31T16:24:50Z
+# BRIEFING — 2026-08-01T02:34:45+04:00
 
 ## Mission
-Lead the team to complete all requirements in the sprint for Dental CRM (`C:\Clinic_MVP\dental-crm`): R1 (UI feature mounting: lost patients filter, no-show risk badges, zero dead-ends), R2 (clinical seed data expansion: 15+ full administrative profiles, EMK visits with tooth formula 11-48, acts, 54-FZ receipts, NDFL КНД 1151156 XML, EGISZ CDA XML), R3 (session token re-hydration fix, 4-state visual proof matrix via `ops-panels-shots.mjs`), and R4 (encoding gate, typecheck gate, per-file git commits).
+Lead the team to complete all requirements for DENTE Dental CRM (`C:\Clinic_MVP\dental-crm`):
+1. R1: Form 043/у & Odontogram Completeness & UTF-8 Encoding.
+2. R2: Kopeck-Exact Financial Accounting & Strict Tenant Isolation.
+3. R3: 4-State Visual Verification & Automated Playwright Proof (Visit, Schedule, Patients, Finance, Settings).
+4. R4: Database & Security Safety (PostgreSQL 18.4 clean migrations, zero secrets/CSRF/credentials).
 
 ## 🔒 My Identity
 - Archetype: Project Orchestrator
 - Roles: orchestrator, user_liaison, human_reporter, successor
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\orchestrator
 - Original parent: parent
-- Original parent conversation ID: 7bfa8898-a2c8-4e25-bcf7-c627d0aa809a
+- Original parent conversation ID: 50fc49ec-128e-4353-8536-effb82541f04
 
 ## 🔒 My Workflow
 - **Pattern**: Project Pattern (Orchestrator Procedure: Assess -> Decompose & Delegate -> Iteration Loop per Milestone)
 - **Scope document**: C:\Clinic_MVP\dental-crm\.agents\orchestrator\PROJECT.md
-1. **Decompose**: Split sprint into 4 milestones:
-   - Milestone 1: Reconnaissance & Codebase Audit (DONE)
-   - Milestone 2: R1 UI Feature Mounting & Route Integrity (IN_PROGRESS)
-   - Milestone 3: R2 Clinical Seed Data Expansion (IN_PROGRESS)
-   - Milestone 4: R3 & R4 Session Token Fix, 4-State Visual Proof, Encoding & Typecheck Gates, Per-file Commits (PLANNED)
+1. **Decompose**: Split sprint into 5 milestones:
+   - Milestone 1: Database & Security Safety Audit (DONE - 118 migrations, zero secrets, strict tenant isolation)
+   - Milestone 2: Form 043/у & Odontogram Completeness & UTF-8 Encoding Audit (DONE - 6,106 files clean, Form 043/у & Odontogram state-safe)
+   - Milestone 3: Kopeck-Exact Financial Accounting & Ledger Refactoring (DONE - 100% integer kopeck math across 5 refactored files)
+   - Milestone 4: 4-State Visual Proof Matrix & Quality Gates (IN_PROGRESS - Worker M4 executing Playwright screenshots, encoding & typecheck gates, per-file commits)
+   - Milestone 5: Forensic Audit & Sentinel Reporting (PLANNED)
 2. **Dispatch & Execute**:
    - For each milestone: Explorer -> Worker -> Reviewer -> Auditor.
 3. **On failure**: Retry -> Replace -> Skip -> Redistribute -> Redesign
@@ -25,6 +30,7 @@ Lead the team to complete all requirements in the sprint for Dental CRM (`C:\Cli
 
 ## 🔒 Key Constraints
 - NEVER write, modify, or create source code files directly as orchestrator. All source modifications must be dispatched to workers.
+- Read C:\Clinic_MVP\dental-crm\.agents\AGENTS.md completely.
 - Commit every modified file individually per Clinic MVP Constitution.
 - Start reports with real `HEAD: <hash>`.
 - "compiles" != "works" — prove with numbers and visual proof.
@@ -33,31 +39,31 @@ Lead the team to complete all requirements in the sprint for Dental CRM (`C:\Cli
 - `npm run typecheck` must pass with 0 errors across `@dental/shared`, `@dental/api`, `@dental/web`.
 
 ## Current Parent
-- Conversation ID: 7bfa8898-a2c8-4e25-bcf7-c627d0aa809a
+- Conversation ID: 50fc49ec-128e-4353-8536-effb82541f04
 - Recipient Name: parent
 
 ## Key Decisions Made
-- Dispatched Worker 1 (`f5f772cb-be7c-402f-a224-09455e935eb5`) for Milestone 2 (R1 UI Feature Mounting).
-- Dispatched Worker 2 (`b3ee4ede-7f33-48cd-9ae5-9ff1028acbed`) for Milestone 3 (R2 Clinical Seed Data Expansion).
+- Verified Milestone 3 completion from Worker M3.
+- Dispatched Worker M4 (`de3a119e-6e66-4f30-a8f2-7dbd99aa66da`) for Milestone 4 (4-state visual proof & repository quality gates).
 
 ## Team Roster
 | Agent | Type | Work Item | Status | Conv ID |
 |-------|------|-----------|--------|---------|
-| explorer_m1_r1 | teamwork_preview_explorer | R1 UI Feature Mounting Reconnaissance | completed | dde2e37f-9e32-44ed-b2c5-0757502bd846 |
-| explorer_m1_r2 | teamwork_preview_explorer | R2 Clinical Seed Data Reconnaissance | completed | e044937d-df2d-4f1a-9b9e-59a5d58152a3 |
-| explorer_m1_r3_r4 | teamwork_preview_explorer | R3/R4 Proof & Quality Gates Reconnaissance | completed | c8caa94b-cda4-404d-8ee6-1ad086687648 |
-| worker_m2 | teamwork_preview_worker | R1 UI Feature Mounting | in-progress | f5f772cb-be7c-402f-a224-09455e935eb5 |
-| worker_m3 | teamwork_preview_worker | R2 Clinical Seed Expansion | in-progress | b3ee4ede-7f33-48cd-9ae5-9ff1028acbed |
+| explorer_m1 | teamwork_preview_explorer | Milestone 1 Audit | completed | a0704f81-ac77-4b1c-b806-2885ed1ef8e4 |
+| explorer_m2 | teamwork_preview_explorer | Milestone 2 Audit | completed | aa1b1b63-8e25-40ef-93ea-d4a9d4e73af9 |
+| explorer_m3 | teamwork_preview_explorer | Milestone 3 Audit | completed | 7c792b6f-ce81-441b-b803-d092aefafd8b |
+| worker_m3 | teamwork_preview_worker | Milestone 3 Kopeck Math Refactoring | completed | 76537c4b-7980-4612-bd5e-499221d4dcb4 |
+| worker_m4 | teamwork_preview_worker | Milestone 4 Visual Proof & Gates | in-progress | de3a119e-6e66-4f30-a8f2-7dbd99aa66da |
 
 ## Succession Status
 - Succession required: no
 - Spawn count: 5 / 16
-- Pending subagents: f5f772cb-be7c-402f-a224-09455e935eb5, b3ee4ede-7f33-48cd-9ae5-9ff1028acbed
+- Pending subagents: de3a119e-6e66-4f30-a8f2-7dbd99aa66da
 - Predecessor: none
 - Successor: not yet spawned
 
 ## Active Timers
-- Heartbeat cron: task-5 (schedule task-5, CronExpression="*/10 * * * *")
+- Heartbeat cron: task-25 (schedule task-25, CronExpression="*/10 * * * *")
 - Safety timer: none
 
 ## Artifact Index

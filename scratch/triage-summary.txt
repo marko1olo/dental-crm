@@ -1,6 +1,0 @@
-TRIAGED: 3 of 84 failing smoke checks
-
-STALE_MARKER_PREEXISTING: 2
-DB_ENV: 1
-
---- REAL_DEFECT details ---

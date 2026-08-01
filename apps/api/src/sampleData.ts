@@ -10648,6 +10648,18 @@ export function updatePatient(
 	if (input.phone !== undefined) patient.phone = nullableTrimmed(input.phone);
 	if (input.email !== undefined) patient.email = nullableTrimmed(input.email);
 	if (input.notes !== undefined) patient.notes = nullableTrimmed(input.notes);
+	/*
+	 * Привязка к семейной группе (общий кошелёк).
+	 * БЫЛО: поле игнорировалось — UI слал familyGroupId, ответ 200, а в памяти
+	 * patients.familyGroupId не менялся. Семья создавалась пустой; оплата с
+	 * семейного счёта отказывала «пациент не в группе».
+	 * СТАЛО: null — отвязать; UUID — привязать (проверка существования группы
+	 * в org-режиме БД; в in-memory одна организация процесса).
+	 */
+	if (input.familyGroupId !== undefined) {
+		(patient as { familyGroupId?: string | null }).familyGroupId =
+			input.familyGroupId;
+	}
 	patient.updatedAt = new Date().toISOString();
 	recordAuditEvent({
 		entityType: "patient",
@@ -10658,6 +10670,7 @@ export function updatePatient(
 	});
 	return patient;
 }
+
 
 export function updatePatientAdministrativeProfile(
 	patientId: string,

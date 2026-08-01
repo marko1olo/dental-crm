@@ -1,31 +1,38 @@
-# Execution Plan — DENTE Dental CRM Clinical Mounting Sprint
+# Execution Plan — DENTE Dental CRM Clinical & Quality Sprint
 
-## Phase 1: Reconnaissance (Milestone 1)
-- Dispatch Explorer agent (`teamwork_preview_explorer`) to:
-  1. Inspect `lostPatientsFiltersQuery.ts`, `patientNoShowRiskQuery.ts`, and how they can be mounted in `AnalyticsDashboardView.tsx`, `PatientsView.tsx`, and `ScheduleView.tsx`.
-  2. Inspect `apps/api/.data/dental-crm-state.json` and `seedOpsScreenshotDemo.ts` structure for patients, EMK visits, tooth formula (11-48), acts, 54-FZ receipts, NDFL КНД 1151156 XML, EGISZ CDA XML.
-  3. Inspect `scripts/ops-panels-shots.mjs` and theme toggle/session token re-hydration mechanisms in `apps/web/src/`.
-  4. Verify encoding and typecheck baseline script commands.
+## Milestone 1: Database & Security Safety (PostgreSQL 18.4 & Secrets & Tenant Isolation)
+- Dispatch Explorer (`teamwork_preview_explorer`) to audit:
+  1. PostgreSQL 18.4 migrations status (`apps/api/src/db/drizzle/`).
+  2. Scan codebase for hardcoded secrets, CSRF tokens, plain-text credentials (`grep_search`).
+  3. Verify tenant isolation (`organization_id` filter) across all Fastify routes and database queries in `apps/api/src/`.
+- Dispatch Worker (`teamwork_preview_worker`) if fixes needed.
+- Dispatch Reviewer (`teamwork_preview_reviewer`) to verify M1 findings.
 
-## Phase 2: R1 UI Feature Mounting (Milestone 2)
-- Dispatch Worker agent (`teamwork_preview_worker`) to:
-  1. Mount Lost Patients Filter in `AnalyticsDashboardView.tsx` and `PatientsView.tsx`.
-  2. Mount No-Show Risk Indicator badges on appointment cards in `ScheduleView.tsx`.
-  3. Audit and fix any broken/unmounted routes or dead-end buttons.
-- Dispatch Reviewer (`teamwork_preview_reviewer`) to verify R1 implementation.
+## Milestone 2: Form 043/у & Odontogram Completeness & UTF-8 Encoding Audit
+- Dispatch Explorer (`teamwork_preview_explorer`) to inspect:
+  1. Clinical diary (Form 043/у) and Odontogram components in `apps/web/src/` for layout shifts, clipped text, missing data.
+  2. Run encoding check script (`npm run check:encoding`) and inspect Cyrillic strings in UI and API responses.
+- Dispatch Worker (`teamwork_preview_worker`) if layout fixes or encoding fixes needed.
+- Dispatch Reviewer (`teamwork_preview_reviewer`) to verify M2 fixes.
 
-## Phase 3: R2 Clinical Seed Expansion (Milestone 3)
-- Dispatch Worker agent (`teamwork_preview_worker`) to:
-  1. Update `apps/api/.data/dental-crm-state.json` and `seedOpsScreenshotDemo.ts`.
-  2. Ensure >=15 patients have complete Passport, SNILS, OMS/DMS profiles.
-  3. Ensure completed EMK visits with objective findings and full tooth formula 11-48 statuses.
-  4. Ensure works acts, 54-FZ receipts, NDFL certificates (КНД 1151156 XML), and EGISZ CDA XML snapshots are fully populated.
-- Dispatch Reviewer (`teamwork_preview_reviewer`) to verify seed data integrity and format.
+## Milestone 3: Kopeck-Exact Financial Accounting & Ledger Verification
+- Dispatch Explorer (`teamwork_preview_explorer`) to audit:
+  1. All price/balance calculation logic in backend (`apps/api/src/routes/finance/`, billing modules) and frontend stores/components.
+  2. Verify all monetary operations use integer arithmetic (kopecks, 1 RUB = 100 kopecks) with zero floating-point division/rounding.
+- Dispatch Worker (`teamwork_preview_worker`) if integer arithmetic refactoring or rounding fixes needed.
+- Dispatch Reviewer (`teamwork_preview_reviewer`) to verify M3 financial integrity.
 
-## Phase 4: R3 & R4 Verification, 4-State Proof & Quality Gates (Milestone 4)
-- Dispatch Worker agent (`teamwork_preview_worker`) to:
-  1. Fix session token re-hydration on theme changes in web app.
-  2. Run `scripts/ops-panels-shots.mjs` to capture 4-state visual proof matrix (PC Light, PC Dark, Mobile Light, Mobile Dark).
-  3. Run `npm run check:encoding` (0 errors) and `npm run typecheck` (0 errors across `@dental/shared`, `@dental/api`, `@dental/web`).
-  4. Perform per-file git commits for all modified files.
-- Dispatch Forensic Auditor (`teamwork_preview_auditor`) to verify zero integrity violations / zero cheating / zero hardcoding.
+## Milestone 4: 4-State Visual Verification & Automated Playwright Proof Matrix
+- Dispatch Worker (`teamwork_preview_worker`) to:
+  1. Execute automated Playwright 4-state visual proof generator across Visit, Schedule, Patients, Finance, Settings views (Mobile Light 390x844, Mobile Dark 390x844, PC Light 1440x900, PC Dark 1440x900).
+  2. Verify zero empty screens or shift lock screen fallbacks.
+  3. Run `npm run typecheck` (0 errors across monorepo) and `npm run check:encoding` (0 errors).
+  4. Perform individual per-file git commits per Clinic MVP Constitution.
+- Dispatch Reviewer (`teamwork_preview_reviewer`) to review visual proof artifacts and quality gates.
+
+## Milestone 5: Forensic Audit & Sentinel Reporting
+- Dispatch Forensic Auditor (`teamwork_preview_auditor`) to verify:
+  1. Zero integrity violations, zero mock/fake data, zero hardcoded test bypasses.
+  2. Strict tenant isolation & kopeck-exact math verification.
+  3. Verified passing build & test outputs.
+- Report task completion to Project Sentinel.

@@ -26,7 +26,31 @@ Verify UI quality and theme responsiveness using Playwright/CDP screenshot tools
 - Fix session token re-hydration during theme changes to prevent shift lock screen fallbacks.
 - Capture 4-state visual proof (PC Light, PC Dark, Mobile Light, Mobile Dark) without any `_ПУСТО.png` diagnostic screens.
 
-### R4. Compilation, Encoding & Code Quality Gates
-Enforce strict repository quality gates prior to commit:
-- `npm run check:encoding` must pass with 0 encoding/mojibake errors.
-- `npm run typecheck` must pass with 0 TypeScript compiler errors across all monorepo packages (`@dental/shared`, `@dental/api`, `@dental/web`).
+
+## 2026-08-01T02:20:36Z
+
+You are the PROJECT ORCHESTRATOR for DENTE Dental CRM located at C:\Clinic_MVP\dental-crm.
+
+Working Directory: C:\Clinic_MVP\dental-crm
+Orchestrator Directory: C:\Clinic_MVP\dental-crm\.agents\orchestrator
+Constitution & Mandates: Read C:\Clinic_MVP\dental-crm\.agents\AGENTS.md in full before starting any work.
+
+## Mission & Requirements
+Read C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md for full context. Your goal is to lead the team to accomplish all project requirements:
+
+1. R1: Form 043/у & Odontogram Completeness:
+   - Ensure the clinical diary (Form 043/у) and interactive tooth map (Odontogram) render correctly without layout shifts, clipped text, or missing patient data.
+   - Zero mojibake encoding corruption across all Russian Cyrillic strings in UI and API responses.
+
+2. R2: Kopeck-Exact Financial & Tenant Isolation:
+   - All transaction calculations, pricing, and patient balance ledgers must execute with kopeck-exact integer arithmetic (1 RUB = 100 kopecks).
+   - Enforce strict tenant isolation on all database queries (organization_id filter).
+   - Zero floating-point rounding errors.
+
+3. R3: 4-State Visual Verification & Automated Playwright Proof:
+   - Every primary UI route (Visit, Schedule, Patients, Finance, Settings) must pass automated 4-state visual testing: Mobile Light (390x844), Mobile Dark (390x844), PC Light (1440x900), and PC Dark (1440x900).
+
+4. Database & Security Safety:
+   - PostgreSQL 18.4 migrations execute cleanly (0 failed migrations).
+   - Zero hardcoded secrets, CSRF tokens, or plain-text credentials in source or committed files.
+

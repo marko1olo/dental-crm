@@ -7639,6 +7639,7 @@ export declare const patientSchema: z.ZodObject<{
         orthodonticProgress?: string | null | undefined;
     }>>>;
     balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
+    familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     createdAt: z.ZodString;
     updatedAt: z.ZodString;
 }, "strip", z.ZodTypeAny, {
@@ -7672,6 +7673,7 @@ export declare const patientSchema: z.ZodObject<{
         orthodonticProgress: string | null;
     } | null;
     balanceRub: number;
+    familyGroupId?: string | null | undefined;
 }, {
     status: "active" | "archived";
     email: string | null;
@@ -7703,6 +7705,7 @@ export declare const patientSchema: z.ZodObject<{
         orthodonticProgress?: string | null | undefined;
     } | null | undefined;
     balanceRub?: number | undefined;
+    familyGroupId?: string | null | undefined;
 }>;
 export type Patient = z.infer<typeof patientSchema>;
 export declare const patientInsightRiskSchema: z.ZodEnum<["low", "watch", "high"]>;
@@ -16494,6 +16497,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             orthodonticProgress?: string | null | undefined;
         }>>>;
         balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
+        familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         createdAt: z.ZodString;
         updatedAt: z.ZodString;
     }, "strip", z.ZodTypeAny, {
@@ -16527,6 +16531,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             orthodonticProgress: string | null;
         } | null;
         balanceRub: number;
+        familyGroupId?: string | null | undefined;
     }, {
         status: "active" | "archived";
         email: string | null;
@@ -16558,6 +16563,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             orthodonticProgress?: string | null | undefined;
         } | null | undefined;
         balanceRub?: number | undefined;
+        familyGroupId?: string | null | undefined;
     }>;
     clinicProfile: z.ZodObject<{
         organizationId: z.ZodString;
@@ -16837,6 +16843,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             orthodonticProgress: string | null;
         } | null;
         balanceRub: number;
+        familyGroupId?: string | null | undefined;
     };
     payments: {
         status: "planned" | "voided" | "paid" | "refunded";
@@ -16943,6 +16950,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             orthodonticProgress?: string | null | undefined;
         } | null | undefined;
         balanceRub?: number | undefined;
+        familyGroupId?: string | null | undefined;
     };
     payments: {
         status: "planned" | "voided" | "paid" | "refunded";
@@ -21867,6 +21875,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticProgress?: string | null | undefined;
             }>>>;
             balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
+            familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             createdAt: z.ZodString;
             updatedAt: z.ZodString;
         }, "strip", z.ZodTypeAny, {
@@ -21900,6 +21909,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticProgress: string | null;
             } | null;
             balanceRub: number;
+            familyGroupId?: string | null | undefined;
         }, {
             status: "active" | "archived";
             email: string | null;
@@ -21931,6 +21941,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticProgress?: string | null | undefined;
             } | null | undefined;
             balanceRub?: number | undefined;
+            familyGroupId?: string | null | undefined;
         }>;
         clinicProfile: z.ZodObject<{
             organizationId: z.ZodString;
@@ -22210,6 +22221,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticProgress: string | null;
             } | null;
             balanceRub: number;
+            familyGroupId?: string | null | undefined;
         };
         payments: {
             status: "planned" | "voided" | "paid" | "refunded";
@@ -22316,6 +22328,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticProgress?: string | null | undefined;
             } | null | undefined;
             balanceRub?: number | undefined;
+            familyGroupId?: string | null | undefined;
         };
         payments: {
             status: "planned" | "voided" | "paid" | "refunded";
@@ -23300,6 +23313,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticProgress: string | null;
             } | null;
             balanceRub: number;
+            familyGroupId?: string | null | undefined;
         };
         payments: {
             status: "planned" | "voided" | "paid" | "refunded";
@@ -24269,6 +24283,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticProgress?: string | null | undefined;
             } | null | undefined;
             balanceRub?: number | undefined;
+            familyGroupId?: string | null | undefined;
         };
         payments: {
             status: "planned" | "voided" | "paid" | "refunded";
@@ -29255,6 +29270,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticProgress?: string | null | undefined;
             }>>>;
             balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
+            familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             createdAt: z.ZodString;
             updatedAt: z.ZodString;
         }, "strip", z.ZodTypeAny, {
@@ -29288,6 +29304,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticProgress: string | null;
             } | null;
             balanceRub: number;
+            familyGroupId?: string | null | undefined;
         }, {
             status: "active" | "archived";
             email: string | null;
@@ -29319,6 +29336,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticProgress?: string | null | undefined;
             } | null | undefined;
             balanceRub?: number | undefined;
+            familyGroupId?: string | null | undefined;
         }>;
         clinicProfile: z.ZodObject<{
             organizationId: z.ZodString;
@@ -29598,6 +29616,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticProgress: string | null;
             } | null;
             balanceRub: number;
+            familyGroupId?: string | null | undefined;
         };
         payments: {
             status: "planned" | "voided" | "paid" | "refunded";
@@ -29704,6 +29723,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticProgress?: string | null | undefined;
             } | null | undefined;
             balanceRub?: number | undefined;
+            familyGroupId?: string | null | undefined;
         };
         payments: {
             status: "planned" | "voided" | "paid" | "refunded";
@@ -31545,6 +31565,7 @@ export declare const dashboardSchema: z.ZodObject<{
             orthodonticProgress?: string | null | undefined;
         }>>>;
         balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
+        familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         createdAt: z.ZodString;
         updatedAt: z.ZodString;
     }, "strip", z.ZodTypeAny, {
@@ -31578,6 +31599,7 @@ export declare const dashboardSchema: z.ZodObject<{
             orthodonticProgress: string | null;
         } | null;
         balanceRub: number;
+        familyGroupId?: string | null | undefined;
     }, {
         status: "active" | "archived";
         email: string | null;
@@ -31609,6 +31631,7 @@ export declare const dashboardSchema: z.ZodObject<{
             orthodonticProgress?: string | null | undefined;
         } | null | undefined;
         balanceRub?: number | undefined;
+        familyGroupId?: string | null | undefined;
     }>, "many">;
     patientInsights: z.ZodArray<z.ZodObject<{
         patientId: z.ZodString;
@@ -36748,6 +36771,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticProgress?: string | null | undefined;
                 }>>>;
                 balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
+                familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 createdAt: z.ZodString;
                 updatedAt: z.ZodString;
             }, "strip", z.ZodTypeAny, {
@@ -36781,6 +36805,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticProgress: string | null;
                 } | null;
                 balanceRub: number;
+                familyGroupId?: string | null | undefined;
             }, {
                 status: "active" | "archived";
                 email: string | null;
@@ -36812,6 +36837,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticProgress?: string | null | undefined;
                 } | null | undefined;
                 balanceRub?: number | undefined;
+                familyGroupId?: string | null | undefined;
             }>;
             clinicProfile: z.ZodObject<{
                 organizationId: z.ZodString;
@@ -37091,6 +37117,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticProgress: string | null;
                 } | null;
                 balanceRub: number;
+                familyGroupId?: string | null | undefined;
             };
             payments: {
                 status: "planned" | "voided" | "paid" | "refunded";
@@ -37197,6 +37224,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticProgress?: string | null | undefined;
                 } | null | undefined;
                 balanceRub?: number | undefined;
+                familyGroupId?: string | null | undefined;
             };
             payments: {
                 status: "planned" | "voided" | "paid" | "refunded";
@@ -38420,6 +38448,7 @@ export declare const dashboardSchema: z.ZodObject<{
             orthodonticProgress: string | null;
         } | null;
         balanceRub: number;
+        familyGroupId?: string | null | undefined;
     }[];
     appointments: {
         status: "completed" | "planned" | "confirmed" | "arrived" | "in_treatment" | "cancelled" | "no_show";
@@ -39083,6 +39112,7 @@ export declare const dashboardSchema: z.ZodObject<{
             orthodonticProgress?: string | null | undefined;
         } | null | undefined;
         balanceRub?: number | undefined;
+        familyGroupId?: string | null | undefined;
     }[];
     appointments: {
         status: "completed" | "planned" | "confirmed" | "arrived" | "in_treatment" | "cancelled" | "no_show";
@@ -39790,18 +39820,21 @@ export declare const updatePatientSchema: z.ZodObject<{
     phone: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
     email: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     notes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    familyGroupId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     email?: string | null | undefined;
     phone?: string | null | undefined;
     fullName?: string | undefined;
     notes?: string | null | undefined;
     birthDate?: string | null | undefined;
+    familyGroupId?: string | null | undefined;
 }, {
     email?: string | null | undefined;
     phone?: string | null | undefined;
     fullName?: string | undefined;
     notes?: string | null | undefined;
     birthDate?: string | null | undefined;
+    familyGroupId?: string | null | undefined;
 }>;
 export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;
 export declare const updatePatientAdministrativeProfileSchema: z.ZodEffects<z.ZodObject<{

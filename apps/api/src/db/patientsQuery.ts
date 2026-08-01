@@ -209,6 +209,14 @@ export function rowToPatient(p: typeof schema.patients.$inferSelect, balanceRub:
 		email: p.email,
 		notes: p.notes,
 		administrativeProfile: p.administrativeProfile ?? null,
+		/*
+		 * Привязка к семейной группе (общий кошелёк).
+		 * БЫЛО: поле не отдавалось в DTO, даже если family_group_id был в строке
+		 * таблицы. GET/PUT-ответ без familyGroupId заставлял UI считать, что
+		 * пациент ни в какой семье, и предлагать создать вторую.
+		 * СТАЛО: nullable UUID группы; null — пациент не состоит в семье.
+		 */
+		familyGroupId: p.familyGroupId ?? null,
 		...(balanceRub === null ? {} : { balanceRub }),
 		createdAt: rowTimestampToIso(p.createdAt, "created_at", p.id),
 		updatedAt: rowTimestampToIso(p.updatedAt, "updated_at", p.id),
@@ -321,15 +329,54 @@ export async function updatePatientInDb(organizationId: string, patientId: strin
 		return updatePatientInMemory(patientId, input);
 	}
 	try {
+		/*
+		 * БЫЛО: .set() принимал только fullName/birthDate/phone/email/notes.
+		 * UI PatientFamilyCard шлёт PUT с { familyGroupId }, Zod после фикса
+		 * контракта поле пропускает, а сюда оно не доходило — patients.family_group_id
+		 * никогда не менялся. Создание семьи оставляло пустые группы; оплата с
+		 * семейного кошелька падала с 400 «Patient is not a member of this family group».
+		 * СТАЛО: если familyGroupId передан — пишем его (null = отвязать). Перед
+		 * привязкой проверяем, что группа существует в ЭТОЙ организации: иначе
+		 * можно было бы привязать пациента к чужой клинике по угаданному UUID.
+		 */
+		const updateData: {
+			fullName?: string;
+			birthDate?: string | null;
+			phone?: string | null;
+			email?: string | null;
+			notes?: string | null;
+			familyGroupId?: string | null;
+			updatedAt: Date;
+		} = {
+			updatedAt: new Date(),
+		};
+		if (input.fullName !== undefined) updateData.fullName = input.fullName;
+		if (input.birthDate !== undefined) updateData.birthDate = input.birthDate;
+		if (input.phone !== undefined) updateData.phone = input.phone;
+		if (input.email !== undefined) updateData.email = input.email;
+		if (input.notes !== undefined) updateData.notes = input.notes;
+
+		if (input.familyGroupId !== undefined) {
+			if (input.familyGroupId !== null) {
+				const [family] = await db
+					.select({ id: schema.familyGroups.id })
+					.from(schema.familyGroups)
+					.where(
+						and(
+							eq(schema.familyGroups.id, input.familyGroupId),
+							eq(schema.familyGroups.organizationId, organizationId),
+						),
+					)
+					.limit(1);
+				if (!family) {
+					throw new Error("Указанная семейная группа не найдена в вашей организации");
+				}
+			}
+			updateData.familyGroupId = input.familyGroupId;
+		}
+
 		const [updated] = await db.update(schema.patients)
-			.set({
-				fullName: input.fullName,
-				birthDate: input.birthDate,
-				phone: input.phone,
-				email: input.email,
-				notes: input.notes,
-				updatedAt: new Date(),
-			})
+			.set(updateData)
 			/* organizationId обязателен в условии. Без него запись шла только
 			   по идентификатору пациента, и клиника переписывала карточку
 			   чужой клиники: проверено на живой базе — PUT /api/patients/<uuid

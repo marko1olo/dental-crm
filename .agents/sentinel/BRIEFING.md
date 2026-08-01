@@ -1,37 +1,33 @@
-# BRIEFING — 2026-07-31T16:21:35+04:00
+# BRIEFING — 2026-07-31T22:19:51Z
 
 ## Mission
-Full clinical and UI mounting sprint for Dental CRM (`C:\Clinic_MVP\dental-crm`) to bridge backend API capabilities with React web UI views, seed realistic clinical data, and verify visual quality across 4 layout/theme states.
+Audit database integrity, complete Form 043/у visual styling, enforce kopeck-exact financial accounting, and verify 4-state UI responsiveness for DENTE Dental CRM.
 
 ## 🔒 My Identity
 - Archetype: sentinel
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\sentinel
-- Orchestrator: 9db7ef48-5e2d-4b62-99d0-247445d16b3c
+- Orchestrator: 9e98b25a-7fce-4d40-8776-af87050b2206
 - Victory Auditor: to be spawned on victory claim
 
 ## 🔒 Key Constraints
 - No technical decisions — relay only
 - Victory Audit is MANDATORY before reporting completion
-- Must adhere to Clinic MVP Constitution in C:\Clinic_MVP\dental-crm\AGENTS.md
+- Audit database integrity, Form 043/у & odontogram completeness, kopeck-exact finances, 4-state UI responsiveness
+- No mojibake encoding corruption across Cyrillic strings
+- Zero hardcoded secrets, CSRF tokens, or plain-text credentials
 
 ## User Context
-- **Last user request**: Full clinical and UI mounting sprint for Dental CRM (mount lost patients filter, no-show risk badges, expand clinical seed to 15+ patients, completed EMK visits, 54-FZ receipts, NDFL XML, EGISZ CDA XML, fix session token re-hydration in theme changes, 4-state visual proof matrix, zero encoding/mojibake errors, zero typecheck errors).
+- **Last user request**: Audit database integrity, Form 043/у visual styling, kopeck-exact financial accounting, and verify 4-state UI responsiveness (Mobile Light, Mobile Dark, PC Light, PC Dark).
 - **Pending clarifications**: none
-- **Delivered results**: none
+- **Delivered results**: Milestone 1 (DB & Tenant Isolation) Verified, Milestone 2 (Form 043/у & Odontogram & Encoding) Verified
 
 ## Project Status
-- **Phase**: starting orchestrator
+- **Phase**: in progress (Milestones 1 & 2 VERIFIED, Milestone 3 IN_PROGRESS)
 
 ## Victory Audit Status
 - **Triggered**: no
 - **Verdict**: pending
 - **Retry count**: 0
 
-## Active Crons
-- Cron 1 (Progress Reporting): task-27 (*/8 * * * *)
-- Cron 2 (Liveness Check): task-29 (*/10 * * * *)
-
 ## Artifact Index
-- C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md — Verbatim user request log (Root)
-- C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md — Verbatim user request log (.agents)
-
+- C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md — Verbatim user requests record

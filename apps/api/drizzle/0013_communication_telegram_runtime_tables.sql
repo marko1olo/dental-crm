@@ -1,17 +1,20 @@
 -- 0013_communication_telegram_runtime_tables.sql
-CREATE TYPE "public"."communication_channel" AS ENUM('sms', 'whatsapp', 'telegram', 'vk', 'max');
-CREATE TYPE "public"."communication_intent" AS ENUM('transactional', 'reminder', 'marketing', 'service');
-CREATE TYPE "public"."communication_status" AS ENUM('pending', 'sent', 'delivered', 'failed');
-CREATE TYPE "public"."communication_priority" AS ENUM('low', 'normal', 'high', 'urgent');
-CREATE TYPE "public"."communication_direction" AS ENUM('inbound', 'outbound');
-CREATE TYPE "public"."dente_telegram_bot_mode" AS ENUM('disabled', 'test', 'live');
-CREATE TYPE "public"."dente_telegram_privacy_mode" AS ENUM('strict', 'normal');
-CREATE TYPE "public"."dente_telegram_subject_type" AS ENUM('patient', 'staff', 'admin');
-CREATE TYPE "public"."dente_telegram_link_code_status" AS ENUM('active', 'used', 'expired');
-CREATE TYPE "public"."dente_telegram_chat_link_status" AS ENUM('active', 'paused', 'blocked');
-CREATE TYPE "public"."dente_telegram_update_kind" AS ENUM('message', 'callback', 'command');
-CREATE TYPE "public"."dente_telegram_webhook_status" AS ENUM('processed', 'ignored', 'failed');
-CREATE TYPE "public"."dente_telegram_outbox_send_status" AS ENUM('pending', 'sent', 'failed');
+-- Idempotent: communication_channel already exists from 0000 (+ vk from 0010).
+DO $$ BEGIN CREATE TYPE "public"."communication_channel" AS ENUM('sms', 'whatsapp', 'telegram', 'vk', 'max'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "public"."communication_intent" AS ENUM('transactional', 'reminder', 'marketing', 'service'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "public"."communication_status" AS ENUM('pending', 'sent', 'delivered', 'failed'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "public"."communication_priority" AS ENUM('low', 'normal', 'high', 'urgent'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "public"."communication_direction" AS ENUM('inbound', 'outbound'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "public"."dente_telegram_bot_mode" AS ENUM('disabled', 'test', 'live'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "public"."dente_telegram_privacy_mode" AS ENUM('strict', 'normal'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "public"."dente_telegram_subject_type" AS ENUM('patient', 'staff', 'admin'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "public"."dente_telegram_link_code_status" AS ENUM('active', 'used', 'expired'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "public"."dente_telegram_chat_link_status" AS ENUM('active', 'paused', 'blocked'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "public"."dente_telegram_update_kind" AS ENUM('message', 'callback', 'command'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "public"."dente_telegram_webhook_status" AS ENUM('processed', 'ignored', 'failed'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "public"."dente_telegram_outbox_send_status" AS ENUM('pending', 'sent', 'failed'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER TYPE "public"."communication_channel" ADD VALUE IF NOT EXISTS 'max'; EXCEPTION WHEN others THEN NULL; END $$;
+
 
 CREATE TABLE IF NOT EXISTS "communication_templates" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),

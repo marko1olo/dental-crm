@@ -19,6 +19,7 @@ import {
 	taxDeductionCertificateMinYear,
 	type Visit,
 	kopecksToNumericString,
+	multiplyKopecks,
 	parseKopecks,
 	sumKopecks,
 } from "@dental/shared";
@@ -837,14 +838,20 @@ type FinancialServicePayloadLine = {
 	totalRub: number;
 };
 
-function expectedFinancialLineTotal(line: FinancialServicePayloadLine): number {
-	return Math.max(0, Math.round((line.quantity * line.unitPriceRub - line.discountRub) * 100) / 100);
+function expectedFinancialLineTotalKopecks(
+	line: FinancialServicePayloadLine,
+): number {
+	const unitKopecks = parseKopecks(line.unitPriceRub);
+	const quantity = Math.max(0, Math.round(line.quantity));
+	const lineSubtotalKopecks = multiplyKopecks(unitKopecks, quantity);
+	const discountKopecks = parseKopecks(line.discountRub);
+	return Math.max(0, lineSubtotalKopecks - discountKopecks);
 }
 
-function financialLinesTotal(
+function financialLinesTotalKopecks(
 	lines: readonly FinancialServicePayloadLine[],
 ): number {
-	return Math.round(lines.reduce((total, line) => total + line.totalRub, 0) * 100) / 100;
+	return sumKopecks(lines.map((line) => parseKopecks(line.totalRub)));
 }
 
 function financialServiceLinesMismatchReason(
@@ -852,9 +859,10 @@ function financialServiceLinesMismatchReason(
 	documentLabel: string,
 ): string | null {
 	for (const [index, line] of lines.entries()) {
-		const expectedTotalRub = expectedFinancialLineTotal(line);
-		if (Math.abs(line.totalRub - expectedTotalRub) > 0.01) {
-			return `${documentLabel}: строка ${index + 1} должна иметь сумму ${moneyRubText(expectedTotalRub)} руб. по количеству, цене и скидке; передано ${moneyRubText(line.totalRub)} руб.`;
+		const expectedTotalKopecks = expectedFinancialLineTotalKopecks(line);
+		const lineTotalKopecks = parseKopecks(line.totalRub);
+		if (lineTotalKopecks !== expectedTotalKopecks) {
+			return `${documentLabel}: строка ${index + 1} должна иметь сумму ${moneyRubText(kopecksToNumericString(expectedTotalKopecks))} руб. по количеству, цене и скидке; передано ${moneyRubText(line.totalRub)} руб.`;
 		}
 	}
 	return null;
@@ -865,10 +873,10 @@ function financialServiceLinesGrandTotalMismatchReason(
 	totalAmountRub: number,
 	documentLabel: string,
 ): string | null {
-	const linesTotalRub = financialLinesTotal(lines);
-	const targetRub = Math.round(totalAmountRub * 100) / 100;
-	if (Math.abs(linesTotalRub - targetRub) > 0.01) {
-		return `${documentLabel}: общий итог ${moneyRubText(totalAmountRub)} руб. не совпадает с суммой строк ${moneyRubText(linesTotalRub)} руб.`;
+	const linesTotalKopecks = financialLinesTotalKopecks(lines);
+	const targetKopecks = parseKopecks(totalAmountRub);
+	if (linesTotalKopecks !== targetKopecks) {
+		return `${documentLabel}: общий итог ${moneyRubText(totalAmountRub)} руб. не совпадает с суммой строк ${moneyRubText(kopecksToNumericString(linesTotalKopecks))} руб.`;
 	}
 	return null;
 }

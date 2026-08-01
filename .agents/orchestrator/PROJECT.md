@@ -1,28 +1,29 @@
-# Project: DENTE Dental CRM Clinical Mounting & 4-State Verification Sprint
+# Project: DENTE Dental CRM Quality, Security & Visual Proof Sprint
 
 ## Architecture
 - **Frontend**: React monorepo client (`apps/web/src`) styled with CSS modules / variables / theme tokens (Light, Dark, Night).
-- **Backend API**: Fastify API (`apps/api`) with file-backed JSON store (`apps/api/.data/dental-crm-state.json`) and seed scripts (`seedOpsScreenshotDemo.ts`).
-- **Shared Package**: `@dental/shared` containing queries, types, XML generators (NDFL КНД 1151156, EGISZ CDA).
-- **Visual Testing Matrix**: `scripts/ops-panels-shots.mjs` generating 4-state matrix (PC Light, PC Dark, Mobile Light, Mobile Dark).
+- **Backend API**: Fastify API (`apps/api`) with Drizzle ORM over native PostgreSQL 18 at `127.0.0.1:5432` (`pg.Pool`).
+- **Shared Package**: `@dental/shared` containing queries, types, financial logic (`money.ts`), XML generators.
+- **Visual Testing Matrix**: Playwright/CDP screenshot tools (`scripts/dente-redesign-shots.mjs` / `scripts/ops-panels-shots.mjs`) generating 4-state matrix (PC Light, PC Dark, Mobile Light, Mobile Dark).
 
 ## Code Layout
-- `apps/web/src/views/` — `AnalyticsDashboardView.tsx`, `PatientsView.tsx`, `ScheduleView.tsx`, `AppointmentCard.tsx`.
-- `apps/api/.data/` — `dental-crm-state.json` (state database).
-- `apps/api/src/scripts/seedOpsScreenshotDemo.ts` — Demo state seeder.
-- `scripts/ops-panels-shots.mjs` — Playwright/CDP screenshot verification script.
+- `apps/api/src/db/` — Drizzle ORM schema (`schema.ts`), migrations (`drizzle/`), db connection.
+- `apps/api/src/routes/` — Fastify API endpoints (finance, patients, visits, documents, etc.).
+- `apps/web/src/views/` — `VisitView.tsx` (Form 043/у & Odontogram), `ScheduleView.tsx`, `PatientsView.tsx`, `FinanceView.tsx`, `SettingsView.tsx`.
+- `apps/web/src/components/` — `OdontogramModule.tsx`, `VisitDiaryEditor.tsx`, financial ledgers, settings tabs.
+- `scripts/dente-redesign-shots.mjs` — Automated 4-state visual testing runner.
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| 1 | Reconnaissance & Architecture Audit | Audit R1 queries, R2 seed format, R3 session token flow in theme changes, and R4 build tools. | None | DONE |
-| 2 | R1 UI Feature Mounting | Mount lost patients filter in Analytics & Patients views, mount no-show risk badges on ScheduleView, ensure zero broken routes. | M1 | IN_PROGRESS |
-| 3 | R2 Clinical Seed Data Expansion | Expand `dental-crm-state.json` & `seedOpsScreenshotDemo.ts` to >=15 full patient profiles (Passport, SNILS, OMS/DMS), completed EMK visits, tooth formula 11-48, acts, 54-FZ receipts, NDFL КНД 1151156 XML, EGISZ CDA XML. | M1 | PLANNED |
-| 4 | R3 & R4 Visual Proof & Quality Gates | Fix session token re-hydration on theme toggle, run `ops-panels-shots.mjs` for 4-state proof, pass `npm run check:encoding` and `npm run typecheck`, perform per-file git commits. | M2, M3 | PLANNED |
+| 1 | Database & Security Safety Audit | Verify PostgreSQL 18.4 clean migrations, zero secrets/CSRF tokens/plain-text credentials, strict tenant isolation (`organization_id` filter). | None | DONE |
+| 2 | Form 043/у & Odontogram Completeness | Fix clinical diary layout shifts, clipped text, missing data, verify zero Cyrillic mojibake. | None | DONE |
+| 3 | Kopeck-Exact Financial Accounting | Ensure integer arithmetic (1 RUB = 100 kopecks) across all pricing, ledgers, and transaction endpoints; zero float ops. | None | DONE |
+| 4 | 4-State Visual Proof Matrix | Run Playwright 4-state visual proof across Visit, Schedule, Patients, Finance, Settings routes; pass `typecheck` and `check:encoding`. | M1, M2, M3 | IN_PROGRESS |
+| 5 | Forensic Audit & Sentinel Report | Run independent forensic audit (`teamwork_preview_auditor`) for integrity, commit per-file, report to Sentinel. | M4 | PLANNED |
 
 ## Interface Contracts
-- `PatientsView.tsx`: Toolbar button toggling `showLostPatientsOnly` filtering `displayPatients`.
-- `AnalyticsDashboardView.tsx`: Lost Patients summary card querying `/api/analytics/lost-patients-filters` and navigating to PatientsView with lost patients filter.
-- `ScheduleView.tsx` / `AppointmentCard.tsx`: Risk chip (`high` -> red, `medium` -> amber, `low` -> green) mounted on appointment cards.
-- `apps/api/.data/dental-crm-state.json` & `seedOpsScreenshotDemo.ts`: 15+ patients with full administrative profiles (Passport, SNILS, OMS/DMS), completed EMK visits with objective findings and tooth formula 11-48 statuses, completed works acts, 54-FZ receipts, NDFL КНД 1151156 XML certificates, EGISZ CDA XML snapshots.
-- `App.tsx` & `scripts/ops-panels-shots.mjs`: Session token re-hydration on theme toggles preventing shift lock screen fallbacks and `_ПУСТО.png` diagnostic screens.
+- `apps/api/src/db/schema.ts`: `organization_id` column enforced on all tenant-specific tables with non-null foreign keys / filters.
+- Financial arithmetic: All money fields stored and processed in kopecks (`packages/shared/src/utils/money.ts`). Zero `float` or JS float division for currency.
+- `Form 043/у` & `Odontogram`: Complete patient anamnesis, objective data, tooth formula 11–48 rendered with proper Tailwind/CSS flex-grid responsive styling without text truncation or layout shifts.
+- 4-State Matrix: Visual screenshots output for 5 primary routes x 4 states (Mobile Light, Mobile Dark, PC Light, PC Dark) in workspace artifacts directory.

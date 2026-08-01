@@ -1,35 +1,11 @@
-## 2026-07-27T02:35:02Z
-<USER_REQUEST>
-You are Explorer M2 for DENTE Dental CRM redesign project.
+## 2026-08-01T02:21:51Z
+You are an Explorer subagent assigned to Milestone 2: Form 043/у & Odontogram Completeness & UTF-8 Encoding Audit for DENTE Dental CRM located at C:\Clinic_MVP\dental-crm.
+Working directory for your metadata: C:\Clinic_MVP\dental-crm\.agents\explorer_m2
 
-Your Working Directory for metadata: C:\Clinic_MVP\dental-crm\.agents\explorer_m2
+Your tasks:
+1. Inspect Form 043/у clinical diary rendering and interactive Odontogram in `apps/web/src/views/VisitView.tsx`, `apps/web/src/components/Odontogram.tsx`, and related components. Audit for layout shifts, clipped text, overflowing elements, or missing patient anamnesis/treatment data.
+2. Run `npm run check:encoding` to verify UTF-8 encoding across all codebase files.
+3. Search for any Cyrillic mojibake corruption patterns or unlocalized/hardcoded strings in UI views and API responses.
+4. Write a comprehensive report to `C:\Clinic_MVP\dental-crm\.agents\explorer_m2\analysis.md` and `handoff.md`.
 
-Read authority docs:
-- C:\Clinic_MVP\dental-crm\AGENTS.md
-- C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md
-- C:\Clinic_MVP\dental-crm\.agents\orchestrator\plan.md
-- C:\Clinic_MVP\dental-crm\.agents\worker_m1\handoff.md
-
-Objectives for Milestone 2 Reconnaissance:
-1. Thoroughly inspect the 11 application module files:
-   1. ShiftView: `apps/web/src/ShiftView.tsx`
-   2. ScheduleView: `apps/web/src/ScheduleView.tsx`
-   3. PatientsView: `apps/web/src/PatientsView.tsx`
-   4. ImagingView: `apps/web/src/ImagingView.tsx`
-   5. VisitView: `apps/web/src/VisitView.tsx`
-   6. DocumentsView: `apps/web/src/DocumentsView.tsx`
-   7. FinanceView: `apps/web/src/FinanceView.tsx`
-   8. AnalyticsView: `apps/web/src/pages/AnalyticsDashboardView.tsx` (or related analytics components)
-   9. CommunicationsView: `apps/web/src/CommunicationsView.tsx`
-   10. SettingsView: `apps/web/src/SettingsView.tsx`
-   11. MarketingView: `apps/web/src/MarketingView.tsx`
-2. Inspect shared layout components, patient avatar/silhouette components (e.g. `PatientAvatar`, `UserAvatar`, or SVG icons), typography hierarchy, and theme tokens (Light, Dark, Night).
-3. Pinpoint specific UI alignment issues in each of the 11 views:
-   - Cramped margins/paddings or overflow clipping.
-   - Contrast defects across Light, Dark, and Night modes.
-   - Avatar/silhouette rendering issues in empty states and populated states.
-   - Font sizes, font weights, and spacing inconsistencies.
-4. Draft concrete refactoring instructions for each of the 11 views.
-5. Write handoff report to `C:\Clinic_MVP\dental-crm\.agents\explorer_m2\handoff.md`.
-6. Send a message to orchestrator (ID: ee206e75-90c5-4b32-a864-fce96e1e95ec).
-</USER_REQUEST>
+Rules: You are read-only. Do not modify source code files. Run check commands to gather proof and include exact file paths, line numbers, and stdout logs in your report.

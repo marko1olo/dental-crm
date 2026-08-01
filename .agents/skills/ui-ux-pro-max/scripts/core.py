@@ -175,10 +175,15 @@ class BM25:
 
 
 # ============ SEARCH FUNCTIONS ============
+_CSV_CACHE = {}
+
 def _load_csv(filepath):
     """Load CSV and return list of dicts"""
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return list(csv.DictReader(f))
+    key = str(filepath)
+    if key not in _CSV_CACHE:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            _CSV_CACHE[key] = list(csv.DictReader(f))
+    return _CSV_CACHE[key]
 
 
 def _search_csv(filepath, search_cols, output_cols, query, max_results):

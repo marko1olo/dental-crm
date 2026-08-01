@@ -134,7 +134,10 @@ import {
 	type VoidDocumentInput,
 	type XrayCbctReferralPregnancyStatus,
 	type XrayCbctReferralPriority,
-	type XrayCbctReferralStudyType,
+	multiplyKopecks,
+	parseKopecks,
+	percentageOfKopecks,
+	sumKopecks,
 } from "@dental/shared";
 import {
 	AlertTriangle,
@@ -5086,36 +5089,36 @@ export function useAppLogic(): any {
 		 * БРОСАЕТ на неожидаемом значении, а данные дашборда на клиенте схемой не
 		 * проверяются: исключение внутри useMemo погасило бы экран целиком.
 		 */
-		const roundToKopecks = (value: number) =>
-			Number.isFinite(value) ? Math.round(value * 100) / 100 : 0;
-		const treatmentLineTotal = (item: (typeof activePlanItems)[number]) =>
-			Math.max(
-				0,
-				roundToKopecks(item.unitPriceRub * item.quantity - item.discountRub),
-			);
-		const totalPlannedRub = roundToKopecks(
-			activePlanItems.reduce((total, item) => total + treatmentLineTotal(item), 0),
+		const treatmentLineTotalKopecks = (item: (typeof activePlanItems)[number]) => {
+			const unitKopecks = parseKopecks(item.unitPriceRub);
+			const quantity = Math.max(0, Math.round(item.quantity));
+			const subtotalKopecks = multiplyKopecks(unitKopecks, quantity);
+			const discountKopecks = parseKopecks(item.discountRub);
+			return Math.max(0, subtotalKopecks - discountKopecks);
+		};
+		const totalPlannedKopecks = sumKopecks(
+			activePlanItems.map((item) => treatmentLineTotalKopecks(item)),
 		);
-		const totalDiscountRub = roundToKopecks(
-			activePlanItems.reduce((total, item) => total + item.discountRub, 0),
+		const totalDiscountKopecks = sumKopecks(
+			activePlanItems.map((item) => parseKopecks(item.discountRub)),
 		);
-		const totalPaidRub = roundToKopecks(
+		const totalPaidKopecks = sumKopecks(
 			activePayments
 				.filter((payment) => payment.status === "paid")
-				.reduce((total, payment) => total + payment.amountRub, 0),
+				.map((payment) => parseKopecks(payment.amountRub)),
 		);
-		const taxDeductionEligibleRub = roundToKopecks(
-			activePlanItems.reduce((total, item) => {
+		const taxDeductionEligibleKopecks = sumKopecks(
+			activePlanItems.map((item) => {
 				const service = dashboard.serviceCatalog?.find(
 					(candidate) => candidate.id === item.serviceId,
 				);
-				return total + (service?.taxDeductible ? treatmentLineTotal(item) : 0);
-			}, 0),
+				return service?.taxDeductible ? treatmentLineTotalKopecks(item) : 0;
+			}),
 		);
-		const draftDocumentAmountRub = roundToKopecks(
+		const draftDocumentAmountKopecks = sumKopecks(
 			activeUsableDocuments
 				.filter((document) => document.status === "draft")
-				.reduce((total, document) => total + (document.totalAmountRub ?? 0), 0),
+				.map((document) => parseKopecks(document.totalAmountRub ?? 0)),
 		);
 		const unpaidDocuments = activeUsableDocuments.filter(
 			(document) =>
@@ -5126,7 +5129,7 @@ export function useAppLogic(): any {
 						payment.status === "paid" && payment.documentId === document.id,
 				),
 		).length;
-		let insuranceCoverageRub = 0;
+		let insuranceCoverageKopecks = 0;
 		if (
 			documentPatient?.insuranceContractId ||
 			documentPatient?.administrativeProfile?.insuranceContractId
@@ -5138,6 +5141,7 @@ export function useAppLogic(): any {
 				(c: any) => c.id === contractId,
 			);
 			if (contract && contract.isActive) {
+				let accumulatedKopecks = 0;
 				for (const item of activePlanItems) {
 					const service = dashboard.serviceCatalog?.find(
 						(s: any) => s.id === item.serviceId,
@@ -5157,52 +5161,36 @@ export function useAppLogic(): any {
 					else if (category === "hygiene")
 						pct = contract.coverageHygienePct || 0;
 
-					// БЫЛО: накапливалась сырая дробь. 8 999 ₽ при покрытии 70% дают
-					// 6299.299999999999, из-за чего долг превращался в
-					// 2699.7000000000007.
-					// Округляем каждую строку отдельно, как это делает страховая, но до
-					// КОПЕЙКИ: Math.round до целого рубля отбрасывал у клиники до 50
-					// копеек с каждой строки покрытия, а на плане из двадцати позиций
-					// это уже десять рублей, взявшихся из округления.
-					insuranceCoverageRub += roundToKopecks(
-						(treatmentLineTotal(item) * pct) / 100,
-					);
+					const lineKopecks = treatmentLineTotalKopecks(item);
+					const basisPoints = Math.round(pct * 100);
+					accumulatedKopecks += percentageOfKopecks(lineKopecks, basisPoints);
 				}
 
-				// БЫЛО: annualLimitRub сохранялся в договоре, но нигде не читался.
-				// План на 500 000 ₽ при покрытии 70% и лимите 100 000 ₽ показывал
-				// покрытие 350 000 ₽ — клиника недосчитывалась 250 000 ₽ и узнавала
-				// об этом только при отказе страховой.
-				const annualLimitRub = roundToKopecks(
-						Number(contract.annualLimitRub ?? 0),
-					);
-				if (annualLimitRub > 0) {
-					insuranceCoverageRub = Math.min(insuranceCoverageRub, annualLimitRub);
-				}
+				const annualLimitKopecks = parseKopecks(contract.annualLimitRub ?? 0);
+				insuranceCoverageKopecks =
+					annualLimitKopecks > 0
+						? Math.min(accumulatedKopecks, annualLimitKopecks)
+						: accumulatedKopecks;
 			}
 		}
+
+		const totalPlannedRub = totalPlannedKopecks / 100;
+		const totalDiscountRub = totalDiscountKopecks / 100;
+		const totalPaidRub = totalPaidKopecks / 100;
+		const insuranceCoverageRub = insuranceCoverageKopecks / 100;
+		const taxDeductionEligibleRub = taxDeductionEligibleKopecks / 100;
+		const draftDocumentAmountRub = draftDocumentAmountKopecks / 100;
+		const totalDueKopecks = Math.max(
+			0,
+			totalPlannedKopecks - insuranceCoverageKopecks - totalPaidKopecks,
+		);
+		const totalDueRub = totalDueKopecks / 100;
 
 		return {
 			totalPlannedRub,
 			totalDiscountRub,
 			totalPaidRub,
-			/*
-			 * Долг — с копейками.
-			 *
-			 * БЫЛО: Math.round до целого рубля с объяснением «ровно так его
-			 * принимает поле оплаты и колонка payments.amount_rub (integer)».
-			 * Обе половины этого утверждения к моменту правки уже были неверны:
-			 * колонка payments.amount_rub — numeric(12, 2), createPaymentSchema
-			 * .amountRub — positiveMoneyRubSchema, а поле ввода суммы разбирает
-			 * копейки (apps/web/src/rubAmountInput.ts). Округление осталось и
-			 * врало: при долге 1500,50 кнопка «оплатить долг» подставляла 1501, и
-			 * пациент переплачивал полтинник, либо — при 1500,49 — недоплачивал и
-			 * оставался в должниках на копейки без объяснимой причины.
-			 */
-			totalDueRub: Math.max(
-				0,
-				roundToKopecks(totalPlannedRub - insuranceCoverageRub - totalPaidRub),
-			),
+			totalDueRub,
 			taxDeductionEligibleRub,
 			draftDocumentAmountRub,
 			openTreatmentItems: activePlanItems.filter(

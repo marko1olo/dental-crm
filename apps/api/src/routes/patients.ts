@@ -472,6 +472,17 @@ export async function registerPatientRoutes(app: FastifyInstance) {
       // ошибку разбора ответа patientSchema.parse ПОСЛЕ успешной записи в базу.
       // Оператор видел «пациент не найден», считал, что данные не сохранились,
       // и заводил карточку заново — появлялись дубли уже сохранённых пациентов.
+      //
+      // familyGroupId: привязка к несуществующей/чужой группе — бизнес-ошибка
+      // 400, не 500. Иначе UI показывает «не удалось сохранить» при опечатке
+      // UUID семьи, хотя валидация отклонила запрос до записи.
+      const msg = e instanceof Error ? e.message : "";
+      if (msg.includes("семейная группа не найдена")) {
+        return reply.code(400).send({
+          error: "PatientValidationError",
+          message: msg,
+        });
+      }
       request.log.error({ err: e }, "[Patients] Ошибка обновления пациента");
       return reply.code(500).send({
         error: "PatientUpdateFailed",
@@ -479,6 +490,7 @@ export async function registerPatientRoutes(app: FastifyInstance) {
       });
     }
   });
+
 
   app.put("/api/patients/:patientId/administrative-profile", async (request, reply) => {
     const orgId = requireClinicOrganizationId(request, reply);

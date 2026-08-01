@@ -2638,9 +2638,20 @@ export const patientSchema = z.object({
    * пациента до 50 копеек.
    */
   balanceRub: moneyRubSchema.default(0),
+  /*
+   * Привязка пациента к семейной группе (общий кошелёк).
+   *
+   * БЫЛО: поля не было в patientSchema. Даже после записи family_group_id
+   * в БД GET/PUT-ответ не отдавал familyGroupId клиенту — UI считал, что
+   * пациент «без семьи», и семейный кошелёк/оплата ломались.
+   *
+   * СТАЛО: nullable UUID группы; null — пациент не состоит в семье.
+   */
+  familyGroupId: z.string().uuid().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string()
 });
+
 export type Patient = z.infer<typeof patientSchema>;
 
 export const patientInsightRiskSchema = z.enum(["low", "watch", "high"]);
@@ -4467,9 +4478,20 @@ export const updatePatientSchema = z.object({
   birthDate: birthDateInputSchema,
   phone: patientPhoneInputSchema,
   email: z.string().trim().email().nullable().optional(),
-  notes: z.string().trim().max(1000).nullable().optional()
+  notes: z.string().trim().max(1000).nullable().optional(),
+  /*
+   * Привязка к семейной группе (общий кошелёк). null — отвязать.
+   *
+   * БЫЛО: поля не было. PatientFamilyCard слал PUT /api/patients/:id с
+   * familyGroupId, Zod вырезал незнакомый ключ, маршрут отвечал 200, а
+   * patients.family_group_id не менялся. Создание семьи оставляло пустые
+   * orphan-группы, привязка никогда не сохранялась, оплата с семейного
+   * счёта за «привязанного» шла в никуда.
+   */
+  familyGroupId: z.string().uuid().nullable().optional()
 });
 export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;
+
 
 export const updatePatientAdministrativeProfileSchema = patientAdministrativeProfileBaseSchema.partial().superRefine((value, context) => {
   if ((value.preferredAppointmentStart && !value.preferredAppointmentEnd) || (!value.preferredAppointmentStart && value.preferredAppointmentEnd)) {
