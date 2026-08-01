@@ -997,8 +997,26 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									filteredItems.map((item) => {
 										const isLowStock =
 											item.stockQuantity <= item.criticalThreshold;
-										const unitCost = Number(item.unitCostRub) || 0;
-										const lineValue = item.stockQuantity * unitCost;
+										/*
+										 * БЫЛО: `Number(item.unitCostRub) || 0`.
+										 * Нечитаемая/пустая/битая цена становилась нулём:
+										 * строка склада показывала материал бесплатным,
+										 * «итого» по позиции считалось от нуля, а шапка
+										 * totalValue (parseKopecks) могла показывать другое.
+										 * money() уже умеет «не определено» для NaN — но
+										 * до неё ноль подставляли здесь.
+										 * СТАЛО: конечное число оставляем; иначе null и
+										 * честный money(null)/без ложного «итого».
+										 */
+										const unitCostRaw = Number(item.unitCostRub);
+										const unitCost = Number.isFinite(unitCostRaw)
+											? unitCostRaw
+											: null;
+										const lineValue =
+											unitCost !== null &&
+											Number.isFinite(item.stockQuantity)
+												? item.stockQuantity * unitCost
+												: null;
 										return (
 											<tr
 												key={item.id}
@@ -1058,7 +1076,15 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 													{item.criticalThreshold} шт.
 												</td>
 												<td style={{ padding: "14px 20px", fontSize: 14 }}>
-													{unitCost > 0 ? (
+													{/*
+													 * БЫЛО: unitCost > 0 / lineValue > 0 после Number||0.
+													 * Неизвестная цена уже null; сравнение с 0 схлопывало
+													 * «не определено» и честный ноль в одно «—».
+													 * СТАЛО: null → money(null) («не определено»);
+													 * конечное число (в т.ч. 0) → money; итого только
+													 * когда lineValue известен.
+													 */}
+													{unitCost !== null ? (
 														<div>
 															<div
 																style={{ color: "var(--ink)", fontWeight: 500 }}
@@ -1072,9 +1098,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 															  На деньгах это читается так, будто пятьдесят копеек
 															  превратились в пять.
 															*/}
-															{money(unitCost)}
+																{money(unitCost)}
 															</div>
-															{lineValue > 0 && (
+															{lineValue !== null && (
 																<div
 																	style={{
 																		color: "var(--muted)",
@@ -1092,7 +1118,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																fontStyle: "italic",
 															}}
 														>
-															—
+															{money(null)}
 														</span>
 													)}
 												</td>

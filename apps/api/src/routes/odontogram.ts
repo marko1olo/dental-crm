@@ -690,9 +690,23 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 						)
 						.map((row) => row.id);
 					if (rewritableIds.length > 0) {
+						/*
+						 * БЫЛО: DELETE только по inArray(id). Ids отобраны SELECT'ом
+						 * с organizationId, но сам DELETE шёл без tenant-ключа:
+						 * defense-in-depth того же класса, что family wallet /
+						 * appointments UPDATE — чужая строка с совпавшим UUID
+						 * (копия базы, сид) могла уйти. Смета пациента — деньги
+						 * и план лечения.
+						 * СТАЛО: organizationId + id в WHERE удаления.
+						 */
 						await tx
 							.delete(treatmentItems)
-							.where(inArray(treatmentItems.id, rewritableIds));
+							.where(
+								and(
+									eq(treatmentItems.organizationId, organizationId),
+									inArray(treatmentItems.id, rewritableIds),
+								),
+							);
 					}
 					const keptSlots = new Set(
 						ownedRows
