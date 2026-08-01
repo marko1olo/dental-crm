@@ -15,7 +15,7 @@ export interface LostPatientRow {
   phone: string;
   daysSinceLastVisit: number;
   hasFutureAppointment: boolean;
-  hasActiveCrmTask: boolean;
+  /* hasActiveCrmTask убран: API всегда шлёт false, UI поле не рисовал. */
   createdAt: string;
 }
 
@@ -91,8 +91,19 @@ export const LostPatientsPanel: React.FC = () => {
           <span>{error}</span>
         </div>
       ) : patients.length === 0 ? (
+        /*
+         * БЫЛО: «Все пациенты клиники имеют назначенные приёмы или активные задачи!»
+         * API GET /api/analytics/lost-patients-filters выбирает только пациентов
+         * без будущих приёмов (LEFT JOIN appointments … IS NULL). CRM-задачи
+         * не читаются: hasActiveCrmTask на сервере всегда false и в разметке
+         * не показывается. Пустой список значит «у всех есть будущая запись»,
+         * а не «есть запись ИЛИ активная задача» — руководитель видел ложный
+         * успех по CRM-работе, которой раздел не считает.
+         *
+         * СТАЛО: формулировка совпадает с семантикой запроса.
+         */
         <div className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">
-          Все пациенты клиники имеют назначенные приёмы или активные задачи!
+          У всех пациентов клиники есть будущие записи — список пуст.
         </div>
       ) : (
         <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
