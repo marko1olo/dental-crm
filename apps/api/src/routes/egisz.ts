@@ -628,9 +628,28 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				});
 			}
 
+			/*
+			 * DEFECT #70: empty patient name must not reach EGISZ/REMD CDA.
+			 * БЫЛО: patientName: splitFullName(row.patient.fullName) without gate.
+			 * fullName is NOT NULL but can be "" / whitespace — split → last:"",
+			 * first:"" → <family/><given/>. РЭМД/identity match with SNILS rejects
+			 * empty name after clinic already downloaded the protocol.
+			 * СТАЛО: 422 PatientNameRequired when trimmed fullName empty or last empty.
+			 */
+			const patientFullNameRaw =
+				typeof row.patient.fullName === "string" ? row.patient.fullName : "";
+			const patientNameParts = splitFullName(patientFullNameRaw);
+			if (!patientFullNameRaw.trim() || !patientNameParts.last.trim()) {
+				return reply.status(422).send({
+					error: "PatientNameRequired",
+					message:
+						"Для выгрузки в ЕГИСЗ у пациента должно быть указано ФИО в карточке.",
+				});
+			}
+
 			const params: EgiszCdaParams = {
 				patientId: row.patient.id,
-				patientName: splitFullName(row.patient.fullName),
+				patientName: patientNameParts,
 				// СНИЛС пациента живёт в административном профиле (jsonb).
 				patientSnils: patientSnilsDigits,
 				patientBirthDate: birthStr,
