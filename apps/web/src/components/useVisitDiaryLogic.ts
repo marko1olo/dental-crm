@@ -177,6 +177,14 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	const [isRevising, setIsRevising] = useState(false);
 	const [revisionReason, setRevisionReason] = useState("");
 	const [isRevisingBusy, setIsRevisingBusy] = useState(false);
+	/**
+	 * Снимок полей на входе в режим правки.
+	 * БЫЛО: cancelRevise только снимал isRevising — правки в textarea оставались
+	 * на экране. После «Отмена» UI показывал изменённый текст как будто это
+	 * подписанное содержимое 043/у, хотя в БД прежняя версия. Печать 043/у
+	 * с экрана тоже уходила с неотменённой правкой.
+	 */
+	const [reviseSnapshot, setReviseSnapshot] = useState<DiaryState | null>(null);
 
 
 	/**
@@ -256,6 +264,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setIsRevising(false);
 		setRevisionReason("");
 		setIsRevisingBusy(false);
+		setReviseSnapshot(null);
 		setLoadState({ phase: "loading" });
 		autosaveFailureReportedRef.current = false;
 
@@ -661,14 +670,28 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			);
 			return;
 		}
+		/*
+		 * Снимок до правок: cancelRevise восстановит ровно эти поля.
+		 * Без снимка «Отмена» оставляла набранный текст на экране подписанной 043/у.
+		 */
+		setReviseSnapshot({ ...diary });
 		setIsRevising(true);
 		setRevisionReason("");
-	}, [diaryId, isLocked]);
+	}, [diary, diaryId, isLocked]);
 
 	const cancelRevise = useCallback(() => {
+		/*
+		 * БЫЛО: только isRevising=false. Поля diary уже изменены в textarea —
+		 * после отмены UI и печать 043/у показывали неотменённую правку как
+		 * подписанный текст, хотя сервер не принимал revise.
+		 */
+		if (reviseSnapshot) {
+			setDiary(reviseSnapshot);
+		}
+		setReviseSnapshot(null);
 		setIsRevising(false);
 		setRevisionReason("");
-	}, []);
+	}, [reviseSnapshot]);
 
 	const doRevise = useCallback(async () => {
 		if (!diaryId) {
@@ -731,6 +754,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				}
 				setIsRevising(false);
 				setRevisionReason("");
+				setReviseSnapshot(null);
 				setLastSavedAt(new Date());
 				// Дневник остаётся подписанным: API не снимает isLocked.
 				setIsLocked(true);
