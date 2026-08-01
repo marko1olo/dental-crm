@@ -109,9 +109,22 @@ export const LostPatientsPanel: React.FC = () => {
                   <span className="flex items-center gap-1">
                     <Phone className="w-3 h-3" />
                     {formatPhoneNumber(patient.phone)}
+                    {/* daysSinceLastVisit теперь с сервера: max прошлых starts_at, не константа 90. */}
                   </span>
                   <span>·</span>
-                  <span>Без визита ~{patient.daysSinceLastVisit} дней</span>
+                  <span>
+                    {patient.daysSinceLastVisit <= 0
+                      ? "Ещё не был на приёме или визит сегодня"
+                      : `Без визита ${patient.daysSinceLastVisit} ${
+                          patient.daysSinceLastVisit % 10 === 1 && patient.daysSinceLastVisit % 100 !== 11
+                            ? "день"
+                            : patient.daysSinceLastVisit % 10 >= 2 &&
+                                patient.daysSinceLastVisit % 10 <= 4 &&
+                                (patient.daysSinceLastVisit % 100 < 10 || patient.daysSinceLastVisit % 100 >= 20)
+                              ? "дня"
+                              : "дней"
+                        }`}
+                  </span>
                 </div>
               </div>
 
