@@ -508,6 +508,24 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				});
 			}
 
+			/*
+			 * DEFECT #62: empty МКБ-10 must not reach EGISZ/REMD CDA.
+			 * БЫЛО: DiagnosisRequired only checked free-text presence; icd10Code =
+			 * diaryIcd || extractIcd10(effectiveDiagnosis) could stay "" when EMK/043
+			 * diagnosis is prose without a code (or tooth-only). CDA still emitted
+			 * <value xsi:type="CD" code="" .../> — РЭМД rejects empty codeSystem value
+			 * after the clinic already downloaded the protocol.
+			 * СТАЛО: 422 Icd10Required when no extractable/signed ICD-10 code.
+			 */
+			const resolvedIcd10 = diaryIcd || extractIcd10(effectiveDiagnosis);
+			if (!resolvedIcd10) {
+				return reply.status(422).send({
+					error: "Icd10Required",
+					message:
+						"Для выгрузки в ЕГИСЗ у диагноза должен быть указан код МКБ-10 (в дневнике 043/у или в тексте диагноза EMK).",
+				});
+			}
+
 			const params: EgiszCdaParams = {
 				patientId: row.patient.id,
 				patientName: splitFullName(row.patient.fullName),
@@ -518,7 +536,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				clinicName: row.organization.name,
 				doctorName,
 				...(doctorPosition ? { doctorPosition } : {}),
-				icd10Code: diaryIcd || extractIcd10(effectiveDiagnosis),
+				icd10Code: resolvedIcd10,
 				diagnosisText: effectiveDiagnosis,
 				visitDate: encounterDate,
 				documentId: row.visit.id,
