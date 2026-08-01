@@ -534,7 +534,21 @@ export async function registerPatientRoutes(app: FastifyInstance) {
         });
       }
 
-      const patient = await updatePatientAdministrativeProfileInDb(orgId, params.patientId, input);
+      /*
+       * БЫЛО: mergedProfile считали только для hasIncompleteRepresentativeIdentity,
+       * а в updatePatientAdministrativeProfileInDb уходил partial input.
+       * DB-путь пишет administrative_profile JSONB целиком (= input), без merge
+       * (patientsQuery.ts). Частичный PUT (loyaltyTier / snils) затирал
+       * остальные ключи: orthodonticProgress, адреса, представителя.
+       * In-memory путь мержит сам; Postgres — нет. После F5 tier и каппы
+       * пропадали при HTTP 200.
+       * СТАЛО: на диск уходит полный merge existing ∪ input.
+       */
+      const patient = await updatePatientAdministrativeProfileInDb(
+        orgId,
+        params.patientId,
+        mergedProfile as typeof input,
+      );
       if (!patient) return sendPatientNotFound(reply);
       return patientSchema.parse(patient);
     } catch (e) {

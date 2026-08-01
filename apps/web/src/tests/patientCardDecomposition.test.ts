@@ -62,6 +62,7 @@ const draft = {
 	preferredAppointmentNote: "метка-комментарий-к-записи",
 	dataProcessingBasisNote: "метка-основание-пдн",
 	orthodonticProgress: "",
+	loyaltyTier: "standard",
 	preferredAppointmentWeekdays: [1, 3],
 };
 

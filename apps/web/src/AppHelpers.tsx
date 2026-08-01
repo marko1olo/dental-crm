@@ -4917,7 +4917,16 @@ export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeP
     preferredAppointmentEnd: "",
     preferredAppointmentNote: "",
     dataProcessingBasisNote: "",
-    orthodonticProgress: ""
+    orthodonticProgress: "",
+    /*
+     * БЫЛО: loyaltyTier добавили в PatientAdministrativeProfile (shared Zod),
+     * draft-тип вывел его через keyof, а empty/fromPatient/payload — нет.
+     * tsc падал; UI PatientLoyaltyHeader слал tier мимо формы, а сохранение
+     * админ-формы (buildPatientAdministrativeProfilePayload) не включало tier
+     * и могло затереть его partial PUT'ом (см. patients route merge).
+     * СТАЛО: draft/payload несут loyaltyTier; пустое = standard (базовый).
+     */
+    loyaltyTier: "standard"
   };
 }
 
@@ -4940,7 +4949,14 @@ export function patientAdministrativeProfileDraftFromPatient(patient: Patient | 
     preferredAppointmentEnd: profile?.preferredAppointmentEnd ?? "",
     preferredAppointmentNote: profile?.preferredAppointmentNote ?? "",
     dataProcessingBasisNote: profile?.dataProcessingBasisNote ?? "",
-    orthodonticProgress: profile?.orthodonticProgress ?? ""
+    orthodonticProgress: profile?.orthodonticProgress ?? "",
+    loyaltyTier:
+      profile?.loyaltyTier === "silver" ||
+      profile?.loyaltyTier === "gold" ||
+      profile?.loyaltyTier === "platinum" ||
+      profile?.loyaltyTier === "standard"
+        ? profile.loyaltyTier
+        : "standard"
   };
 }
 
@@ -4982,7 +4998,15 @@ export function buildPatientAdministrativeProfilePayload(
     preferredAppointmentStart: nullablePatientDraftValue(draft.preferredAppointmentStart),
     preferredAppointmentEnd: nullablePatientDraftValue(draft.preferredAppointmentEnd),
     preferredAppointmentNote: nullablePatientDraftValue(draft.preferredAppointmentNote),
-    dataProcessingBasisNote: nullablePatientDraftValue(draft.dataProcessingBasisNote)
+    dataProcessingBasisNote: nullablePatientDraftValue(draft.dataProcessingBasisNote),
+    orthodonticProgress: nullablePatientDraftValue(draft.orthodonticProgress),
+    loyaltyTier:
+      draft.loyaltyTier === "silver" ||
+      draft.loyaltyTier === "gold" ||
+      draft.loyaltyTier === "platinum" ||
+      draft.loyaltyTier === "standard"
+        ? draft.loyaltyTier
+        : "standard"
   };
 }
 

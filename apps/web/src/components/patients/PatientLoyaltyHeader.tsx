@@ -4,13 +4,13 @@ import React, { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 
-type LoyaltyTier = "none" | "silver" | "gold" | "platinum";
+type LoyaltyTier = "standard" | "silver" | "gold" | "platinum";
 
 const LOYALTY_CONFIG: Record<
 	LoyaltyTier,
 	{ label: string; discountPct: number; color: string }
 > = {
-	none: { label: "Базовый", discountPct: 0, color: "#64748b" },
+	standard: { label: "Базовый", discountPct: 0, color: "#64748b" },
 	silver: { label: "Серебро", discountPct: 5, color: "#94a3b8" },
 	gold: { label: "Золото", discountPct: 10, color: "#f59e0b" },
 	platinum: { label: "Платинум", discountPct: 15, color: "#6366f1" },
@@ -25,7 +25,13 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 	if (!patient) return null;
 
 	const adminProfile = patient.administrativeProfile || {};
-	const currentTier: LoyaltyTier = adminProfile.loyaltyTier || "none";
+	const currentTier: LoyaltyTier =
+		adminProfile.loyaltyTier === "silver" ||
+		adminProfile.loyaltyTier === "gold" ||
+		adminProfile.loyaltyTier === "platinum" ||
+		adminProfile.loyaltyTier === "standard"
+			? adminProfile.loyaltyTier
+			: "standard";
 	const currentLoyalty = LOYALTY_CONFIG[currentTier];
 
 	const handleSetTier = async (tier: LoyaltyTier) => {
@@ -54,12 +60,9 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 			 * БЫЛО: ответ сервера не читался вовсе — сразу зелёное «Статус
 			 * лояльности обновлен».
 			 *
-			 * А статус не сохраняется никогда. Поля loyaltyTier нет в
-			 * patientAdministrativeProfileBaseSchema
-			 * (packages/shared/src/index.ts), и zod вырезает незнакомые ключи в обе
-			 * стороны: на записи маршрут PUT /api/patients/:id/administrative-profile
-			 * отбрасывает его из тела, на чтении patientSchema отбрасывает его из
-			 * ответа. Маршрут при этом отвечает 200 — «принял».
+			 * БЫЛО: UI слал loyaltyTier: "none", а Zod enum — standard|silver|gold|platinum.
+			 * safeParse отклонял тело → 400, либо (раньше) ключ вырезался.
+			 * СТАЛО: базовый уровень = "standard", ответ сверяем с сохранённым tier.
 			 *
 			 * Что видел администратор: выбрал «Золото», получил подтверждение, а
 			 * значок после перечитывания карточки снова показывает «Базовый». Жал
