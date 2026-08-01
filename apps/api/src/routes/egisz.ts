@@ -271,10 +271,12 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					/* DEFECT #63: signer fallback when doctorId empty (pre-#35 locks) */
 					lockedByUserId: schema.visitDiaries.lockedByUserId,
 					authorId: schema.visitDiaries.authorId,
-					/* DEFECT #59: draft 043 must not become EGISZ CDA */
+				/* DEFECT #59: draft 043 must not become EGISZ CDA */
 					isLocked: schema.visitDiaries.isLocked,
 					/* DEFECT #61: CDA versionNumber after 043 revise */
 					version: schema.visitDiaries.version,
+					/* DEFECT #72: ClinicalDocument effectiveTime = diary sign time */
+					lockedAt: schema.visitDiaries.lockedAt,
 				})
 				.from(schema.visitDiaries)
 				.where(
@@ -680,12 +682,32 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				diagnosisText: effectiveDiagnosis,
 				visitDate: encounterDate,
 				documentId: row.visit.id,
-				/* DEFECT #61: revised 043 must not re-export as version 1 */
+			/* DEFECT #61: revised 043 must not re-export as version 1 */
 				...(typeof diaryRow?.version === "number" &&
 				Number.isFinite(diaryRow.version) &&
 				diaryRow.version >= 1
 					? { documentVersion: Math.floor(diaryRow.version) }
 					: {}),
+				/*
+				 * DEFECT #72: ClinicalDocument + author effectiveTime = diary sign.
+				 * БЫЛО: generator always used wall-clock "now" on each CDA download —
+				 * re-export weeks after sign rewrote effectiveTime away from
+				 * visit_diaries.locked_at and Form 043/у stamp.
+				 * СТАЛО: pass lockedAt as documentTime when present/valid.
+				 */
+				...((): { documentTime?: Date } => {
+					const raw = diaryRow?.lockedAt as Date | string | null | undefined;
+					if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+						return { documentTime: raw };
+					}
+					if (typeof raw === "string" && raw.trim()) {
+						const parsed = new Date(raw);
+						if (!Number.isNaN(parsed.getTime())) {
+							return { documentTime: parsed };
+						}
+					}
+					return {};
+				})(),
 				clinicOid,
 				...(anamnesis ? { anamnesis } : {}),
 				...(objectiveStatus ? { objectiveStatus } : {}),

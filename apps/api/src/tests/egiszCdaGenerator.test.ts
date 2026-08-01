@@ -99,4 +99,38 @@ describe("generateDentalCdaXml", () => {
 		xml = generateDentalCdaXml({ ...baseParams, patientGender: null });
 		assert.ok(xml.includes(`code="0"`));
 	});
+
+	test("DEFECT #72: documentTime (lockedAt) sets ClinicalDocument and author effectiveTime", () => {
+		const lockedAt = new Date("2023-09-01T14:22:33.000Z");
+		const pad = (n: number) => n.toString().padStart(2, "0");
+		const expected =
+			`${lockedAt.getFullYear()}${pad(lockedAt.getMonth() + 1)}${pad(lockedAt.getDate())}` +
+			`${pad(lockedAt.getHours())}${pad(lockedAt.getMinutes())}${pad(lockedAt.getSeconds())}`;
+
+		const xml = generateDentalCdaXml({
+			...baseParams,
+			documentTime: lockedAt,
+			visitDate: new Date("2023-09-01T10:00:00.000Z"),
+		});
+
+		assert.ok(
+			xml.includes(`<effectiveTime value="${expected}"/>`),
+			"ClinicalDocument effectiveTime must match documentTime/lockedAt",
+		);
+		assert.ok(
+			xml.includes(`<time value="${expected}"/>`),
+			"author/time must match documentTime/lockedAt",
+		);
+		// visitDate still independent in documentationOf
+		const vd = new Date("2023-09-01T10:00:00.000Z");
+		const visitExpected =
+			`${vd.getFullYear()}${pad(vd.getMonth() + 1)}${pad(vd.getDate())}` +
+			`${pad(vd.getHours())}${pad(vd.getMinutes())}${pad(vd.getSeconds())}`;
+		assert.ok(
+			xml.includes(`<effectiveTime value="${visitExpected}"/>`),
+			"serviceEvent effectiveTime must remain visitDate",
+		);
+		assert.notStrictEqual(expected, visitExpected);
+	});
 });
+

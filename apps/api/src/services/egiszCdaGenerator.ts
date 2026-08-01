@@ -32,6 +32,11 @@ export interface EgiszCdaParams {
 	 * Default 1 when diary absent (EMK-only export).
 	 */
 	documentVersion?: number;
+	/**
+	 * DEFECT #72: ClinicalDocument + author effectiveTime.
+	 * Prefer diary lockedAt (sign time). Falls back to generation now.
+	 */
+	documentTime?: Date;
 }
 
 /** Escape free-text for CDA XML text/attribute nodes (DEFECT #49). */
@@ -57,7 +62,19 @@ function formatDate(d: Date, format: "yyyyMMdd" | "yyyyMMddHHmmss"): string {
 
 export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	const now = new Date();
-	const effectiveTime = formatDate(now, "yyyyMMddHHmmss");
+	/*
+	 * DEFECT #72: document/author time must not silently become "download moment".
+	 * БЫЛО: always formatDate(now) — re-export weeks after sign rewrote CDA
+	 * effectiveTime and author/time to wall clock of the export request.
+	 * Forensic/REMD audit then disagreed with visit_diaries.locked_at and
+	 * Form 043/у stamp. СТАЛО: prefer params.documentTime (route: lockedAt).
+	 */
+	const documentClock =
+		params.documentTime instanceof Date &&
+		!Number.isNaN(params.documentTime.getTime())
+			? params.documentTime
+			: now;
+	const effectiveTime = formatDate(documentClock, "yyyyMMddHHmmss");
 	/* DEFECT #55: visitTime must appear in documentationOf/serviceEvent below.
 	 * БЫЛО: formatted and discarded — CDA had only generation effectiveTime. */
 	/*

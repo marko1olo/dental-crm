@@ -109,7 +109,95 @@ describe("egiszCdaGenerator", () => {
         t.assert.snapshot(xmlOther);
 	});
 
+	test("DEFECT #72: documentTime drives ClinicalDocument + author effectiveTime", (t) => {
+		t.mock.timers.enable({ apis: ["Date"] });
+		// Generation "now" deliberately different from diary sign time
+		const generationNow = new Date("2024-06-01T18:00:00.000Z");
+		t.mock.timers.setTime(generationNow.getTime());
+
+		const lockedAt = new Date("2024-05-10T09:30:45.000Z");
+		const visitDate = new Date("2024-05-10T08:00:00.000Z");
+		const pad = (n: number) => n.toString().padStart(2, "0");
+		const fmt = (d: Date) =>
+			`${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}` +
+			`${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+		const expectedDocTime = fmt(lockedAt);
+		const expectedNow = fmt(generationNow);
+		const expectedVisit = fmt(visitDate);
+
+		const base: EgiszCdaParams = {
+			patientId: "pat-72",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicName: "Клиника",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес дентина",
+			visitDate,
+			documentId: "doc-72",
+		};
+
+		const withSign = generateDentalCdaXml({ ...base, documentTime: lockedAt });
+		// Root ClinicalDocument effectiveTime
+		assert.ok(
+			withSign.includes(`<effectiveTime value="${expectedDocTime}"/>`),
+			"ClinicalDocument effectiveTime must equal diary lockedAt (documentTime)",
+		);
+		// author/time uses same document clock
+		assert.ok(
+			withSign.includes(`<time value="${expectedDocTime}"/>`),
+			"author/time must equal diary lockedAt (documentTime)",
+		);
+		// Must NOT silently use download/generation wall clock
+		assert.ok(
+			!withSign.includes(`<effectiveTime value="${expectedNow}"/>`),
+			"document/author effectiveTime must not be generation now when documentTime set",
+		);
+		assert.ok(
+			!withSign.includes(`<time value="${expectedNow}"/>`),
+			"author/time must not be generation now when documentTime set",
+		);
+		// visit encounter time stays independent (DEFECT #55/#65)
+		assert.ok(
+			withSign.includes(`<effectiveTime value="${expectedVisit}"/>`),
+			"documentationOf/serviceEvent must still use visitDate, not documentTime",
+		);
+		assert.notStrictEqual(
+			expectedDocTime,
+			expectedNow,
+			"test setup: lockedAt and generation now must differ",
+		);
+		assert.notStrictEqual(
+			expectedDocTime,
+			expectedVisit,
+			"test setup: documentTime and visitDate must differ",
+		);
+
+		// Without documentTime: falls back to generation now
+		const withoutSign = generateDentalCdaXml(base);
+		assert.ok(
+			withoutSign.includes(`<effectiveTime value="${expectedNow}"/>`),
+			"without documentTime, ClinicalDocument effectiveTime falls back to now",
+		);
+		assert.ok(
+			withoutSign.includes(`<time value="${expectedNow}"/>`),
+			"without documentTime, author/time falls back to now",
+		);
+		// Invalid Date must not stick — fall back to now
+		const invalid = generateDentalCdaXml({
+			...base,
+			documentTime: new Date("not-a-date"),
+		});
+		assert.ok(
+			invalid.includes(`<effectiveTime value="${expectedNow}"/>`),
+			"invalid documentTime must fall back to generation now",
+		);
+	});
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 		const params: EgiszCdaParams = {
 			patientId: "pat-esc",
 			patientName: { first: "A<B", last: "C&D", middle: 'E"F' },
