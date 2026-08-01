@@ -286,6 +286,39 @@ async function resolveSignatureForStorage(params: {
 	return { ok: true, stored: mark };
 }
 
+const DENTAL_SPECIALTY_LABELS: Record<string, string> = {
+	therapist: "терапия",
+	orthopedist: "ортопедия",
+	surgeon: "хирургия",
+	orthodontist: "ортодонтия",
+	periodontist: "пародонтология",
+	hygienist: "гигиена",
+	pediatric: "детская",
+	implantologist: "имплантация",
+	radiologist: "рентген",
+	universal: "универсально",
+};
+
+/**
+ * DEFECT #41: RU-метка специальности врача для печати 043/у.
+ * users.specialties — jsonb string[]; prefer non-universal codes.
+ */
+function formatDoctorSpecialtyLabel(raw: unknown): string | null {
+	const codes: string[] = Array.isArray(raw)
+		? raw
+				.map((x) => (typeof x === "string" ? x.trim() : ""))
+				.filter(Boolean)
+		: typeof raw === "string" && raw.trim()
+			? [raw.trim()]
+			: [];
+	if (codes.length === 0) return null;
+	const meaningful = codes.filter((c) => c !== "universal");
+	const list = meaningful.length > 0 ? meaningful : codes;
+	const labels = list.map((c) => DENTAL_SPECIALTY_LABELS[c] ?? c);
+	const joined = labels.join(", ").trim();
+	return joined.length > 0 ? joined : null;
+}
+
 /** Legacy PIN:… в ответе GET не отдаём — только факт, что оттиск был. */
 function redactLegacyPinSignature(
 	value: string | null | undefined,
@@ -754,6 +787,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			const [docUser] = await db
 				.select({
 					fullName: users.fullName,
+					specialties: users.specialties,
 				})
 				.from(users)
 				.where(
@@ -768,7 +802,12 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					typeof docUser.fullName === "string" && docUser.fullName.trim()
 						? docUser.fullName.trim()
 						: null;
-				doctorSpecialty = null;
+				/*
+				 * DEFECT #41: specialty from users.specialties jsonb.
+				 * БЫЛО: doctorSpecialty = null всегда — печать 043/у «Врач: ФИО»
+				 * без «(терапия)» после F5 / чужой смены.
+				 */
+				doctorSpecialty = formatDoctorSpecialtyLabel(docUser.specialties);
 			}
 		}
 		/*

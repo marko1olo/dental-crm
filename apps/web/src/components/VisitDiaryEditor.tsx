@@ -24,6 +24,7 @@ import {
 } from "./VisitDiaryPhotoUpload";
 import { VisitDiaryTemplateSelector } from "./VisitDiaryTemplateSelector";
 import { CryptoProSigner } from "./visit/CryptoProSigner";
+import { specialtyLabels } from "../workspaceUiLabels";
 import "../styles/visit-diary-043.css";
 
 
@@ -172,12 +173,26 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 	 * пока дневник ещё не сохранён / врач в строке не проставлен.
 	 */
 	const sessionDoctorName = formatPersonName(activeDoctor);
-	const sessionDoctorSpecialty =
-		typeof activeDoctor?.specialty === "string"
-			? activeDoctor.specialty
-			: typeof activeDoctor?.specialization === "string"
-				? activeDoctor.specialization
-				: "";
+	/*
+	 * DEFECT #41: session fallback — StaffMember.specialties[], не .specialty.
+	 * БЫЛО: activeDoctor.specialty / specialization — полей нет у staff,
+	 * sessionDoctorSpecialty всегда "", печать без «(терапия)» до GET.
+	 */
+	const sessionDoctorSpecialty = (() => {
+		const raw = Array.isArray(activeDoctor?.specialties)
+			? activeDoctor.specialties
+			: [];
+		const codes = raw
+			.map((x: unknown) => (typeof x === "string" ? x.trim() : ""))
+			.filter(Boolean);
+		const meaningful = codes.filter((c: string) => c !== "universal");
+		const list = meaningful.length > 0 ? meaningful : codes;
+		return list
+			.map((c: string) =>
+				specialtyLabels[c as keyof typeof specialtyLabels] ?? c,
+			)
+			.join(", ");
+	})();
 	const doctorName =
 		diaryDoctorFullName && diaryDoctorFullName.trim()
 			? diaryDoctorFullName.trim()

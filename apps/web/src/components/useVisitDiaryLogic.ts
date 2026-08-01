@@ -1023,6 +1023,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		/** Crypto-path: draft already saved+signed - skip second doSave. */
 		alreadySavedId?: string | null,
 	) => {
+		void certThumbprint; // PKCS7 only sent to /lock; thumbprint is client-local
 		if (!activeDoctor) {
 			showToast("Сначала выберите врача для приема!", "error");
 			return;
@@ -1160,14 +1161,34 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 						.join(" ");
 					const name = fromFull || fromParts;
 					if (name) setDiaryDoctorFullName(name);
-					const spec =
-						typeof activeDoctor.specialty === "string" &&
-						activeDoctor.specialty.trim()
-							? activeDoctor.specialty.trim()
-							: typeof activeDoctor.specialization === "string" &&
-								  activeDoctor.specialization.trim()
-								? activeDoctor.specialization.trim()
-								: null;
+										/*
+					 * DEFECT #41: StaffMember.specialties[], not .specialty/.specialization.
+					 * БЫЛО: activeDoctor.specialty / specialization — полей нет → specialty null после lock.
+					 */
+					const rawSpecs = Array.isArray(activeDoctor.specialties)
+						? activeDoctor.specialties
+						: [];
+					const codes = rawSpecs
+						.map((x: unknown) => (typeof x === "string" ? x.trim() : ""))
+						.filter(Boolean);
+					const meaningful = codes.filter((c: string) => c !== "universal");
+					const list = meaningful.length > 0 ? meaningful : codes;
+					const labelMap: Record<string, string> = {
+						therapist: "терапия",
+						orthopedist: "ортопедия",
+						surgeon: "хирургия",
+						orthodontist: "ортодонтия",
+						periodontist: "пародонтология",
+						hygienist: "гигиена",
+						pediatric: "детская",
+						implantologist: "имплантация",
+						radiologist: "рентген",
+						universal: "универсально",
+					};
+					const spec = list
+						.map((c: string) => labelMap[c] ?? c)
+						.join(", ")
+						.trim();
 					if (spec) setDiaryDoctorSpecialty(spec);
 				}
 				showToast(
