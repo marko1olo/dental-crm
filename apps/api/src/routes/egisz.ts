@@ -332,11 +332,26 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			 * Write-path sync fills visits.*, but already-signed diaries created
 			 * before the fix still need a correct CDA on export.
 			 */
+			/*
+			 * DEFECT #50: visits.complaint is the EMK "жалобы" field and is merged
+			 * into diary S-block on the web (soapPrefillFromVisitNote), but CDA only
+			 * read diary.anamnesis || visit.anamnesis — so a visit with complaint and
+			 * empty diary anamnesis exported blank LOINC 10164-2. Mirror UI merge:
+			 * complaint + anamnesis (deduped), diary text still wins when present.
+			 */
 			const diaryAnamnesis =
 				typeof diaryRow?.anamnesis === "string" ? diaryRow.anamnesis.trim() : "";
 			const visitAnamnesis =
 				typeof row.visit.anamnesis === "string" ? row.visit.anamnesis.trim() : "";
-			const anamnesis = diaryAnamnesis || visitAnamnesis;
+			const visitComplaint =
+				typeof row.visit.complaint === "string" ? row.visit.complaint.trim() : "";
+			const visitSParts: string[] = [];
+			if (visitComplaint) visitSParts.push(visitComplaint);
+			if (visitAnamnesis && visitAnamnesis !== visitComplaint) {
+				visitSParts.push(visitAnamnesis);
+			}
+			const visitSBlock = visitSParts.join("\n");
+			const anamnesis = diaryAnamnesis || visitSBlock;
 
 			const diaryTreatment =
 				typeof diaryRow?.treatmentDescription === "string"
