@@ -951,10 +951,39 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				// Те же две ветки, что и в POST выше, теряли здесь готовую русскую
 				// причину из err.message — при том, что третья, соседняя, её отдавала.
 				if (err.code === "AlreadyLocked") {
-					return reply
-						.code(409)
-						.send({ error: "AlreadyLocked", message: err.message });
+					/*
+					 * Race TOCTOU: внешний SELECT ещё не locked, церемония FOR UPDATE
+					 * увидела is_locked. БЫЛО: 409 только {error, message} — без hash
+					 * и lockedAt. Клиент doLock на 409 ставил isLocked=true, но
+					 * diaryHash/lockedAt оставались null → печать 043/у без ЭЦП-штампа
+					 * и без даты подписи, хотя в БД оба поля уже есть.
+					 */
+					const [lockedRow] = await db
+						.select({
+							diaryHash: visitDiaries.diaryHash,
+							lockedAt: visitDiaries.lockedAt,
+						})
+						.from(visitDiaries)
+						.where(
+							and(
+								eq(visitDiaries.id, id),
+								eq(visitDiaries.organizationId, orgId),
+							),
+						)
+						.limit(1);
+					return reply.code(409).send({
+						error: "AlreadyLocked",
+						hash: lockedRow?.diaryHash ?? null,
+						lockedAt:
+							lockedRow?.lockedAt instanceof Date
+								? lockedRow.lockedAt.toISOString()
+								: typeof lockedRow?.lockedAt === "string"
+									? lockedRow.lockedAt
+									: null,
+						message: err.message,
+					});
 				}
+
 				if (err.code === "NotFound") {
 					return reply
 						.code(404)
