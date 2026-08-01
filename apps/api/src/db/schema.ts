@@ -1701,6 +1701,13 @@ export const visitDiaryRevisions = pgTable("visit_diary_revisions", {
    */
   previousComplications: text("previous_complications"),
   previousComorbidities: text("previous_comorbidities"),
+  /*
+   * Forensic 043/у (миграция 0150).
+   * БЫЛО: revise не принимал instrumentTrayBarcode; previous_* лотка
+   * не было. sterilization/link 409 обещал правку через ревизию,
+   * а forensic-история 043/у не фиксировала прежний штрихкод лотка.
+   */
+  previousInstrumentTrayBarcode: text("previous_instrument_tray_barcode"),
   revisionReason: text("revision_reason"),
   revisedByUserId: uuid("revised_by_user_id"),
   revisedBy: uuid("revised_by"),
