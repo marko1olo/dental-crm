@@ -107,6 +107,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				config.guid === null ? "EGISZ_N3_GUID" : null,
 				config.lpuId === null ? "EGISZ_N3_LPU_ID" : null,
 				config.frmoId === null ? "EGISZ_FRMO_ID" : null,
+				/* DEFECT #67: CDA needs MO OID; surface in status */
+				config.clinicOid === null ? "EGISZ_CLINIC_OID" : null,
 			].filter((value): value is string => value !== null);
 
 			return reply.status(200).send({
@@ -399,6 +401,20 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 
 			const clinicOid = readGatewayConfig().clinicOid;
 			/*
+			 * DEFECT #67: EGISZ/REMD CDA must carry real MO OID (EGISZ_CLINIC_OID).
+			 * БЫЛО: clinicOid optional — generator fell back to generic
+			 * 1.2.643.5.1.13.13.12.2 and custodian extension="" when env unset.
+			 * XML looked valid but was not attributable to the clinic in РЭМД.
+			 * СТАЛО: 422 ClinicOidRequired until EGISZ_CLINIC_OID is configured.
+			 */
+			if (!clinicOid) {
+				return reply.status(422).send({
+					error: "ClinicOidRequired",
+					message:
+						"Для выгрузки в ЕГИСЗ задайте OID медицинской организации (переменная EGISZ_CLINIC_OID).",
+				});
+			}
+			/*
 			 * DEFECT #46: prefer 043 diary SOAP over visits EMK when diary has text.
 			 * Write-path sync fills visits.*, but already-signed diaries created
 			 * before the fix still need a correct CDA on export.
@@ -614,7 +630,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				diaryRow.version >= 1
 					? { documentVersion: Math.floor(diaryRow.version) }
 					: {}),
-				...(clinicOid ? { clinicOid } : {}),
+				clinicOid,
 				...(anamnesis ? { anamnesis } : {}),
 				...(objectiveStatus ? { objectiveStatus } : {}),
 				...(complications ? { complications } : {}),
