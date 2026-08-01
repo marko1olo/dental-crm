@@ -365,6 +365,19 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 									) : null}
 								</div>
 							)}
+							{/*
+							 * Лоток стерилизации в печати 043/у.
+							 * БЫЛО: trayBarcode только в no-print UI («Сканировать Лоток»).
+							 * В юридической распечатке карты не было связи приём↔лоток,
+							 * хотя barcode пишется в visit_diaries.instrument_tray_barcode
+							 * и линкуется через /api/sterilization/link.
+							 */}
+							{trayBarcode ? (
+								<div className="vde-043-soap-block page-break-avoid">
+									<h4>Инструментальный лоток</h4>
+									<p>Штрихкод: {trayBarcode}</p>
+								</div>
+							) : null}
 						</div>
 					)}
 
