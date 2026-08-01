@@ -1,3 +1,11 @@
+## 2026-08-01 — Patient card attachments (GET/POST /api/patients/:id/attachments)
+
+**Gap:** `POST /api/patients/:patientId/attachments` already wrote multipart to disk + `attachments.patient_id` + sha256 and `GET /api/attachments/:id/download` worked — but **zero web callers** on patient-level POST. Visit diary photos used `/api/files/visits/...` only. No GET list for patient-level files: upload-without-list was incomplete gameplay (passport/scan/contract had no card UI).
+
+**Ship:** API `files.ts` — `GET /api/patients/:patientId/attachments` (org+patient scoped, `{files:[{id,url,name,type}]}` mirror of visit list); POST 201 also returns `file` shape alongside legacy `attachment`. Web `PatientAttachmentsPanel.tsx` — list + multipart upload field `file` + download via `fetchAuthedApiFileObjectUrl` (token headers; bare `<a href>` is 401). Headers: `denteAdminSecretRequestHeaders`. Mounted on `PatientsView` after WhatsApp when `selectedPatientId` set. data-testid: `patient-attachments-panel`, `patient-attachments-input`, `patient-attachments-list`, `patient-attachments-empty`, `patient-attachments-error`, `patient-attachment-row-*`, `patient-attachment-download-*`, `patient-attachments-mount`.
+
+**Verify:** `npx tsc -p apps/web --noEmit` exit 0; live GET/POST without auth → 401/403 (route up); web grep patient attachments → panel + PatientsView mount.
+
 ## 2026-08-01 — WhatsApp direct send on patient card (POST /api/whatsapp/send)
 
 **Gap:** `POST /api/whatsapp/send` already called Meta Cloud API (`sendWhatsappTextMessage`), wrote `communication_events` sent|failed, broadcast `INBOX_NEW_MESSAGE` — but **zero web callers**. Settings had only settings/status; outbox is queue/campaign. Admin on patient card could not send one-off WhatsApp without CLI.

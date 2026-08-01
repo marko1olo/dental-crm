@@ -21,6 +21,55 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 	// Ensure uploads directory exists
 	await fs.mkdir(UPLOADS_DIR, { recursive: true });
 
+	/*
+	 * Список вложений карточки пациента (не приёма).
+	 *
+	 * POST ниже писал на диск и в attachments с patient_id, но списка не было —
+	 * оператор загружал «в никуда»: скачать и проверить нельзя. Зеркало
+	 * GET /api/files/visits/:visitId/attachments, фильтр по patient_id + org.
+	 * visit_id не трогаем: фото дневника живут на приёме; здесь — паспорт,
+	 * направление, скан договора и прочие файлы именно карточки.
+	 */
+	app.get("/api/patients/:patientId/attachments", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+		const { patientId } = request.params as { patientId: string };
+
+		const [patient] = await db
+			.select({ id: patients.id })
+			.from(patients)
+			.where(
+				and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
+			)
+			.limit(1);
+
+		if (!patient) {
+			return reply.code(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в этой клинике.",
+			});
+		}
+
+		const rows = await db
+			.select()
+			.from(attachments)
+			.where(
+				and(
+					eq(attachments.patientId, patientId),
+					eq(attachments.organizationId, orgId),
+				),
+			);
+
+		return reply.send({
+			files: rows.map((a) => ({
+				id: a.id,
+				url: `/api/attachments/${a.id}/download`,
+				name: a.fileName,
+				type: a.mimeType,
+			})),
+		});
+	});
+
 	app.post("/api/patients/:patientId/attachments", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
@@ -84,8 +133,22 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			});
 		}
 
-		return reply.code(201).send({ success: true, attachment });
+		/*
+		 * Ответ в том же виде, что visit-upload: web-панель ждёт file.id/url/name/type
+		 * и не разбирает сырой attachment из БД (storagePath/sha256).
+		 */
+		return reply.code(201).send({
+			success: true,
+			attachment,
+			file: {
+				id: attachment.id,
+				url: `/api/attachments/${attachment.id}/download`,
+				name: attachment.fileName,
+				type: attachment.mimeType,
+			},
+		});
 	});
+
 
 	app.get("/api/attachments/:attachmentId/download", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);

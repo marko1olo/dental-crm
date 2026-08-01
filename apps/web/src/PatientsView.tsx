@@ -20,6 +20,7 @@ import { PatientArchiveReasonsAndBlacklistsWidget } from "./components/crm/Patie
 import { PatientCommunicationTimelinesWidget } from "./components/crm/PatientCommunicationTimelinesWidget";
 import { PatientCommunicationConsentsPanel } from "./components/patients/PatientCommunicationConsentsPanel";
 import { PatientWhatsappSendPanel } from "./components/patients/PatientWhatsappSendPanel";
+import { PatientAttachmentsPanel } from "./components/patients/PatientAttachmentsPanel";
 import { PatientDuplicateMergeQueuesWidget } from "./components/crm/PatientDuplicateMergeQueuesWidget";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 
@@ -878,6 +879,14 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
               <PatientWhatsappSendPanel
                 patientId={selectedPatientId}
                 patientPhone={selectedPatient?.phone ?? patientCoreDraft.phone ?? null}
+                patientName={selectedPatient?.fullName ?? patientCoreDraft.fullName ?? null}
+              />
+            </div>
+          ) : null}
+          {selectedPatientId ? (
+            <div className="mt-4" data-testid="patient-attachments-mount">
+              <PatientAttachmentsPanel
+                patientId={selectedPatientId}
                 patientName={selectedPatient?.fullName ?? patientCoreDraft.fullName ?? null}
               />
             </div>
