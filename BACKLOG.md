@@ -1,3 +1,11 @@
+## 2026-08-01 — AI recognition jobs history (GET /api/ai/recognition-jobs)
+
+**Gap:** `POST /api/ai/recognition-jobs` already created jobs from Settings → ИИ «Лаборатория нейросетей» and showed only the last `recognitionJob` in memory. `GET /api/ai/recognition-jobs` (`listAiRecognitionJobsFromDb`, requireClinicalReadAccess + org) had **zero web callers**. After reload or preset change staff could not see queue/history or reopen a prior draft.
+
+**Ship:** `AiRecognitionJobsPanel.tsx` — self-contained GET with `auth.denteClinicalReadHeaders`; table (when/kind/target/status/confidence/source/preview); row expand for resultText + warnings; «В лабораторию» via `setRecognitionJob` so «Передать в карту» works; refresh + auto-reload when workbench posts a new job id. Mounted under workbench in `SettingsAiTab` (`data-testid ai-recognition-jobs-mount`). data-testid: `ai-recognition-jobs-panel`, `ai-recognition-jobs-refresh`, `ai-recognition-jobs-list`, `ai-recognition-jobs-empty`, `ai-recognition-jobs-error`, `ai-recognition-jobs-loading`, `ai-recognition-job-row-*`, `ai-recognition-job-open-*`, `ai-recognition-job-detail-*`, `ai-recognition-job-status-*`.
+
+**Verify:** `npx tsc -p apps/web --noEmit` exit 0; live GET without auth → 401/403 (route up); web grep `recognition-jobs` → panel GET + useAppLogic POST.
+
 ## 2026-08-01 — Public booking admin copy-link (Settings → Отзывы)
 
 **Gap:** `PublicBookingWidget` + `/api/public/booking` (doctors/slots/book) already LIVE; hash `#/portal/booking/<orgId>` parsed by `publicPortalRouteFromHash` — but **admin UI «скопировать ссылку» отсутствовал**. Owner could not hand a working booking URL from the cabinet without hand-building the path (old QrGatewayPanel printed broken `?clinicId=`). Lab-order already copies portal links; booking did not.

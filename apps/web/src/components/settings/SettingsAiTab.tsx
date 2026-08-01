@@ -24,6 +24,7 @@ import type { ChangeEvent } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import type { RecognitionPreset } from "../../settingsStaticData";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
+import { AiRecognitionJobsPanel } from "./AiRecognitionJobsPanel";
 /* Форматтер предупреждений — константа модуля, а не пропс. */
 import { aiRecognitionWarningText } from "./SettingsViewHelpers";
 
@@ -420,6 +421,15 @@ export function SettingsAiTab() {
 					</div>
 				)}
 			</section>
+
+			{/*
+			 * История GET /api/ai/recognition-jobs — POST workbench создаёт job,
+			 * но без списка прошлые черновики пропадали после смены пресета /
+			 * reload. Панель самодостаточна (свой fetch + headers).
+			 */}
+			<div data-testid="ai-recognition-jobs-mount">
+				<AiRecognitionJobsPanel />
+			</div>
 		</div>
 	);
 }
