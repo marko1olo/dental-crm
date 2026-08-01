@@ -530,6 +530,12 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				planId = await db.transaction(async (tx) => {
 					let savedPlanId = input.id ?? null;
 					if (savedPlanId) {
+						/*
+						 * БЫЛО: SELECT/UPDATE плана по id+patientId без organizationId;
+						 * DELETE позиций сметы — только по planId. Смета — денежный документ
+						 * (totalPrice → книга лечения). СТАЛО: organizationId в WHERE на
+						 * SELECT, UPDATE и DELETE позиций (колонка есть, INSERT её пишет).
+						 */
 						const [existing] = await tx
 							.select({
 								id: treatmentPlans.id,
@@ -540,6 +546,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 								and(
 									eq(treatmentPlans.id, savedPlanId),
 									eq(treatmentPlans.patientId, patientId),
+									eq(treatmentPlans.organizationId, organizationId),
 								),
 							)
 							.for("update")
@@ -554,7 +561,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 							throw err;
 						}
 
-						await tx
+						const [planUpdated] = await tx
 							.update(treatmentPlans)
 							.set({
 								name: input.name,
@@ -570,11 +577,20 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 								and(
 									eq(treatmentPlans.id, savedPlanId),
 									eq(treatmentPlans.patientId, patientId),
+									eq(treatmentPlans.organizationId, organizationId),
 								),
-							);
+							)
+							.returning({ id: treatmentPlans.id });
+						if (!planUpdated) return null;
+
 						await tx
 							.delete(treatmentPlanItemsNew)
-							.where(eq(treatmentPlanItemsNew.planId, savedPlanId));
+							.where(
+								and(
+									eq(treatmentPlanItemsNew.planId, savedPlanId),
+									eq(treatmentPlanItemsNew.organizationId, organizationId),
+								),
+							);
 					} else {
 						const [created] = await tx
 							.insert(treatmentPlans)

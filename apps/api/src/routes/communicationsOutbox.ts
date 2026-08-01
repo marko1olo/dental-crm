@@ -300,6 +300,8 @@ export async function registerCommunicationOutboxRoutes(app: FastifyInstance) {
 		const fit = checkChannelFit(nextChannel, nextBody);
 		if (!fit.ok) return validationError(reply, fit.problems);
 
+		// БЫЛО: SELECT с organizationId, UPDATE только по id; пустой RETURNING
+		// уходил в ответ как template: undefined. СТАЛО: and(id, org) + 404.
 		const [updated] = await db
 			.update(communicationTemplates)
 			.set({
@@ -312,8 +314,17 @@ export async function registerCommunicationOutboxRoutes(app: FastifyInstance) {
 				isActive: parsed.data.isActive ?? existing.isActive,
 				clinicId: parsed.data.clinicId === undefined ? existing.clinicId : parsed.data.clinicId
 			})
-			.where(eq(communicationTemplates.id, templateId))
+			.where(
+				and(
+					eq(communicationTemplates.id, templateId),
+					eq(communicationTemplates.organizationId, context.organizationId)
+				)
+			)
 			.returning();
+
+		if (!updated) {
+			return reply.code(404).send({ error: "TemplateNotFound", message: "Шаблон не найден в этой клинике." });
+		}
 
 		return { template: updated, sms: fit.sms };
 	});

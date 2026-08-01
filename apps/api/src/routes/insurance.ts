@@ -276,6 +276,12 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 
 		const clamp = (v: number) => Math.min(100, Math.max(0, v));
 
+		/*
+		 * БЫЛО: SELECT выше отфильтрован по organizationId, а UPDATE — только по id.
+		 * Между SELECT и UPDATE строка могла сменить владельца (редко) или id
+		 * мог быть угадан из другой клиники при гонке: UPDATE без org в WHERE —
+		 * дыра defense-in-depth. СТАЛО: and(id, organizationId) + RETURNING уже был.
+		 */
 		const [updated] = await db
 			.update(insuranceContracts)
 			.set({
@@ -298,7 +304,12 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 				...(annualLimitRub !== undefined && { annualLimitRub }),
 				...(isActive !== undefined && { isActive }),
 			})
-			.where(eq(insuranceContracts.id, contractId))
+			.where(
+				and(
+					eq(insuranceContracts.id, contractId),
+					eq(insuranceContracts.organizationId, orgId),
+				),
+			)
 			.returning();
 
 		if (!updated)
@@ -339,11 +350,26 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 					message: INSURANCE_CONTRACT_NOT_FOUND,
 				});
 
-			// Soft-delete: mark as inactive rather than destroying data
-			await db
+			// Soft-delete: mark as inactive rather than destroying data.
+			// БЫЛО: UPDATE только по id после org-SELECT; без RETURNING всегда
+			// { success: true }, даже если 0 строк. СТАЛО: and(id, org) + RETURNING.
+			const [deactivated] = await db
 				.update(insuranceContracts)
 				.set({ isActive: false })
-				.where(eq(insuranceContracts.id, contractId));
+				.where(
+					and(
+						eq(insuranceContracts.id, contractId),
+						eq(insuranceContracts.organizationId, orgId),
+					),
+				)
+				.returning({ id: insuranceContracts.id });
+
+			if (!deactivated) {
+				return reply.code(404).send({
+					error: "ContractNotFound",
+					message: INSURANCE_CONTRACT_NOT_FOUND,
+				});
+			}
 
 			return { success: true };
 		},

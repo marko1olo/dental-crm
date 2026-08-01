@@ -254,10 +254,18 @@ export async function mergePatients(
         ? `${primary.notes.trim()}\n${mergedNote}`
         : mergedNote;
 
+      // БЫЛО: пациенты загружены с organizationId, а UPDATE — только по id.
+      // Слияние — самая опасная операция картотеки (PHI + оплаты + снимки).
+      // СТАЛО: and(id, organizationId) на обеих карточках.
       await tx
         .update(patients)
         .set({ ...fill, notes: nextNotes, updatedAt: new Date() })
-        .where(eq(patients.id, input.primaryPatientId));
+        .where(
+          and(
+            eq(patients.id, input.primaryPatientId),
+            eq(patients.organizationId, input.organizationId),
+          ),
+        );
 
       // Карточка не удаляется: она становится архивной ссылкой.
       await tx
@@ -268,7 +276,12 @@ export async function mergePatients(
           notes: `Карточка объединена с «${primary.fullName}». Все записи, оплаты и снимки перенесены туда.`,
           updatedAt: new Date(),
         })
-        .where(eq(patients.id, input.duplicatePatientId));
+        .where(
+          and(
+            eq(patients.id, input.duplicatePatientId),
+            eq(patients.organizationId, input.organizationId),
+          ),
+        );
 
       const [left, right] =
         input.primaryPatientId < input.duplicatePatientId
