@@ -357,6 +357,37 @@ export async function updatePatientInDb(organizationId: string, patientId: strin
 		if (input.notes !== undefined) updateData.notes = input.notes;
 
 		if (input.familyGroupId !== undefined) {
+			/*
+			 * Нельзя «перепрыгнуть» из семьи A в семью B одним PUT.
+			 * БЫЛО: updatePatientInDb просто писал новый family_group_id —
+			 * пациент исчезал из members A без аудита и без проверки, что
+			 * оператор осознанно отвязал. UI «Присоединить к семье» мог
+			 * утащить главу чужой семьи в новую группу одним кликом.
+			 * СТАЛО: смена на ДРУГОЙ UUID при уже ненулевом familyGroupId →
+			 * ошибка; сначала familyGroupId: null, потом привязка к новой.
+			 * null и тот же UUID (идемпотентный re-link после create) — ок.
+			 */
+			const [current] = await db
+				.select({ familyGroupId: schema.patients.familyGroupId })
+				.from(schema.patients)
+				.where(
+					and(
+						eq(schema.patients.id, patientId),
+						eq(schema.patients.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+
+			if (
+				current?.familyGroupId &&
+				input.familyGroupId !== null &&
+				input.familyGroupId !== current.familyGroupId
+			) {
+				throw new Error(
+					"Пациент уже состоит в другой семейной группе. Сначала отвяжите его (familyGroupId: null), затем привяжите к новой.",
+				);
+			}
+
 			if (input.familyGroupId !== null) {
 				const [family] = await db
 					.select({ id: schema.familyGroups.id })
@@ -374,6 +405,7 @@ export async function updatePatientInDb(organizationId: string, patientId: strin
 			}
 			updateData.familyGroupId = input.familyGroupId;
 		}
+
 
 		const [updated] = await db.update(schema.patients)
 			.set(updateData)

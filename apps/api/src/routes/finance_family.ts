@@ -157,36 +157,13 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		return families;
 	});
 
-	// GET /api/finance/family/:familyGroupId — fetch family group and members
-	app.get("/api/finance/family/:familyGroupId", async (req, reply) => {
-		const organizationId = await requireResolvedOrganizationId(
-			req,
-			reply,
-			"family finance read",
-		);
-		if (!organizationId) return;
-
-		const { familyGroupId } = req.params as { familyGroupId: string };
-		const family = await familyGroupForOrganization(
-			familyGroupId,
-			organizationId,
-		);
-		if (!family)
-			return reply.code(404).send({ error: "Family group not found" });
-
-		const members = await familyMembersForOrganization(
-			familyGroupId,
-			organizationId,
-		);
-		if (members.length === 0)
-			return reply.code(404).send({ error: "Family group not found" });
-
-		return {
-			...family,
-			members,
-		};
-	});
-
+	/*
+	 * ВАЖНО: литеральный сегмент `/patient/` регистрируем ДО
+	 * параметрического `/:familyGroupId`. Иначе find-my-way может
+	 * захватить path `/family/patient/<uuid>` как familyGroupId="patient"
+	 * на урезанных путях, а в смежных роутерах (pay/topup) тот же паттерн
+	 * уже ломал live-проверки. Статика раньше параметров — правило Fastify.
+	 */
 	// GET /api/finance/family/patient/:patientId — fetch family by patient ID
 	app.get("/api/finance/family/patient/:patientId", async (req, reply) => {
 		const organizationId = await requireResolvedOrganizationId(
@@ -229,6 +206,49 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		};
 	});
 
+	// GET /api/finance/family/:familyGroupId — fetch family group and members
+	app.get("/api/finance/family/:familyGroupId", async (req, reply) => {
+		const organizationId = await requireResolvedOrganizationId(
+			req,
+			reply,
+			"family finance read",
+		);
+		if (!organizationId) return;
+
+		const { familyGroupId } = req.params as { familyGroupId: string };
+		/*
+		 * Защита от случайного захвата литерала "patient" как UUID группы
+		 * (если клиент дернул /family/patient без id).
+		 */
+		if (familyGroupId === "patient" || familyGroupId === "pay" || familyGroupId === "topup") {
+			return reply.code(404).send({ error: "Family group not found" });
+		}
+
+		const family = await familyGroupForOrganization(
+			familyGroupId,
+			organizationId,
+		);
+		if (!family)
+			return reply.code(404).send({ error: "Family group not found" });
+
+		const members = await familyMembersForOrganization(
+			familyGroupId,
+			organizationId,
+		);
+		/*
+		 * БЫЛО: members.length === 0 → 404 «Family group not found».
+		 * После create без head (или при сбое привязки) группа в БД есть,
+		 * а GET врал, что её нет: UI показывал «создать семью» поверх
+		 * уже существующей, плодились пустые family_groups.
+		 * СТАЛО: группа найдена по id+org — отдаём её, members может быть [].
+		 */
+		return {
+			...family,
+			members,
+		};
+	});
+
+
 	// POST /api/finance/family — create a family group
 	app.post("/api/finance/family", async (req, reply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -256,9 +276,21 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		}
 		const data = createParsed.data;
 
+		/*
+		 * БЫЛО: INSERT family_groups с head_patient_id, но patients.family_group_id
+		 * не трогали. UI (PatientFamilyCard) делал второй PUT /patients/:id —
+		 * до фикса контракта/updatePatientInDb поле вырезалось Zod'ом, пациент
+		 * оставался без привязки. Даже после фикса PUT это два запроса: при
+		 * сбое второго семья создана, глава — нет. Оплата с семейного кошелька:
+		 * 400 «Patient is not a member…». GET /family/:id при 0 members → 404.
+		 *
+		 * СТАЛО: одна транзакция — создать группу и сразу привязать главу.
+		 * Пациент из этой org; если уже в другой семье — 409.
+		 * Второй PUT из UI остаётся идемпотентным (тот же familyGroupId).
+		 */
 		if (data.headPatientId) {
 			const [headPatient] = await db
-				.select({ id: patients.id })
+				.select({ id: patients.id, familyGroupId: patients.familyGroupId })
 				.from(patients)
 				.where(
 					and(
@@ -273,19 +305,43 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 					message: "Указанный пациент не найден в вашей клинике",
 				});
 			}
+			if (headPatient.familyGroupId) {
+				return reply.code(409).send({
+					error: "PatientAlreadyInFamily",
+					message: "Пациент уже состоит в другой семейной группе",
+				});
+			}
 		}
 
-		const result = (await db
-			.insert(familyGroups)
-			.values({
-				organizationId,
-				name: data.name,
-				headPatientId: data.headPatientId || null,
-				// numeric(12, 2) принимает строку — так значение не проходит через double.
-				balance: kopecksToNumericString(0),
-			})
-			.returning()) as any;
-		const family = result[0];
+		const family = await db.transaction(async (tx) => {
+			const [created] = await tx
+				.insert(familyGroups)
+				.values({
+					organizationId,
+					name: data.name,
+					headPatientId: data.headPatientId || null,
+					// numeric(12, 2) принимает строку — так значение не проходит через double.
+					balance: kopecksToNumericString(0),
+				})
+				.returning();
+
+			if (data.headPatientId && created) {
+				await tx
+					.update(patients)
+					.set({
+						familyGroupId: created.id,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(patients.id, data.headPatientId),
+							eq(patients.organizationId, organizationId),
+						),
+					);
+			}
+
+			return created;
+		});
 
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "FAMILY_GROUP_CREATED",
@@ -293,6 +349,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		});
 		return family;
 	});
+
 
 	// PUT /api/finance/family/:id — update a family group
 	app.put("/api/finance/family/:id", async (req, reply) => {
@@ -322,9 +379,16 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		}
 		const data = updateParsed.data;
 
+		/*
+		 * Смена главы семьи. БЫЛО: обновляли только family_groups.head_patient_id,
+		 * patients.family_group_id нового главы не трогали — тот же баг, что и
+		 * при create: GET members пустой / оплата 400. СТАЛО: в транзакции
+		 * пишем head и привязываем пациента к этой группе (если он ещё не в ней
+		 * и не в чужой).
+		 */
 		if (data.headPatientId) {
 			const [headPatient] = await db
-				.select({ id: patients.id })
+				.select({ id: patients.id, familyGroupId: patients.familyGroupId })
 				.from(patients)
 				.where(
 					and(
@@ -339,18 +403,48 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 					message: "Указанный пациент не найден в вашей клинике",
 				});
 			}
+			if (
+				headPatient.familyGroupId &&
+				headPatient.familyGroupId !== id
+			) {
+				return reply.code(409).send({
+					error: "PatientAlreadyInFamily",
+					message: "Пациент уже состоит в другой семейной группе",
+				});
+			}
 		}
 
-		const [family] = await db
-			.update(familyGroups)
-			.set(data)
-			.where(
-				and(
-					eq(familyGroups.id, id),
-					eq(familyGroups.organizationId, organizationId),
-				),
-			)
-			.returning();
+		const family = await db.transaction(async (tx) => {
+			const [updated] = await tx
+				.update(familyGroups)
+				.set(data)
+				.where(
+					and(
+						eq(familyGroups.id, id),
+						eq(familyGroups.organizationId, organizationId),
+					),
+				)
+				.returning();
+
+			if (!updated) return null;
+
+			if (data.headPatientId) {
+				await tx
+					.update(patients)
+					.set({
+						familyGroupId: id,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(patients.id, data.headPatientId),
+							eq(patients.organizationId, organizationId),
+						),
+					);
+			}
+
+			return updated;
+		});
 
 		if (!family)
 			return reply.code(404).send({ error: "Family group not found" });
@@ -360,6 +454,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		});
 		return family;
 	});
+
 
 	// DELETE /api/finance/family/:id — delete a family group
 	app.delete("/api/finance/family/:id", async (req, reply) => {

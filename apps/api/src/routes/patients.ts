@@ -477,12 +477,16 @@ export async function registerPatientRoutes(app: FastifyInstance) {
       // 400, не 500. Иначе UI показывает «не удалось сохранить» при опечатке
       // UUID семьи, хотя валидация отклонила запрос до записи.
       const msg = e instanceof Error ? e.message : "";
-      if (msg.includes("семейная группа не найдена")) {
+      if (
+        msg.includes("семейная группа не найдена") ||
+        msg.includes("уже состоит в другой семейной группе")
+      ) {
         return reply.code(400).send({
           error: "PatientValidationError",
           message: msg,
         });
       }
+
       request.log.error({ err: e }, "[Patients] Ошибка обновления пациента");
       return reply.code(500).send({
         error: "PatientUpdateFailed",

@@ -1,4 +1,12 @@
-import { Link as LinkIcon, Plus, Search, UserPlus, Users } from "lucide-react";
+import {
+	Link as LinkIcon,
+	Plus,
+	Search,
+	Unlink,
+	UserPlus,
+	Users,
+} from "lucide-react";
+
 import type React from "react";
 import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
@@ -133,19 +141,16 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 	if (!patientId) return null;
 
 	/*
-	 * К какой семье пациент привязан ПО МНЕНИЮ СЕРВЕРА. Нужна, потому что ответ
-	 * 200 на привязку здесь ничего не подтверждает.
+	 * К какой семье пациент привязан ПО МНЕНИЮ СЕРВЕРА.
 	 *
-	 * Привязка идёт запросом PUT /api/patients/:id с полем familyGroupId, а в
-	 * updatePatientSchema (packages/shared/src/index.ts) этого поля нет — там
-	 * только fullName, birthDate, phone, email, notes. Zod вырезает незнакомые
-	 * ключи, маршрут отвечает 200 «принял», и пациент остаётся ни в какой семье.
-	 * Ни один маршрут в apps/api/src/routes вообще не записывает
-	 * patients.familyGroupId, а именно по этому полю GET
-	 * /api/finance/family/patient/:patientId решает, состоит пациент в семье или
-	 * нет. Поэтому единственная честная проверка — перечитать семью пациента и
-	 * сравнить с той, куда его только что «привязали». 404 означает «ни в какой».
+	 * Раньше PUT /patients/:id с familyGroupId молча игнорировал поле (Zod
+	 * вырезал ключ; updatePatientInDb колонку не писал) — ответ 200 врал.
+	 * Сейчас контракт и DB-слой пишут family_group_id, а POST /finance/family
+	 * с headPatientId привязывает главу атомарно. Проверка familyIdOfPatient
+	 * оставлена как страховка: если привязка всё же не сохранилась, UI не
+	 * покажет ложный «успех» и не подтолкнёт создать вторую пустую семью.
 	 */
+
 	const familyIdOfPatient = async (
 		checkedPatientId: string,
 	): Promise<string | null> => {
@@ -169,6 +174,11 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 		}
 		setLoading(true);
 		try {
+			/*
+			 * POST /api/finance/family атомарно создаёт группу и привязывает
+			 * headPatientId → patients.family_group_id. Второй PUT — страховка
+			 * для старого API и идемпотентное подтверждение привязки.
+			 */
 			const res = await fetch("/api/finance/family", {
 				method: "POST",
 				headers: {
@@ -180,7 +190,16 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 					headPatientId: patientId,
 				}),
 			});
-			if (!res.ok) throw new Error("Ошибка при создании семьи");
+			if (!res.ok) {
+				const body = await res.json().catch(() => ({} as { message?: string }));
+				if (res.status === 409) {
+					throw new Error(
+						body.message ||
+							"Пациент уже состоит в другой семейной группе. Не создавайте вторую — сначала откройте существующую.",
+					);
+				}
+				throw new Error(body.message || "Ошибка при создании семьи");
+			}
 
 			const family = await res.json();
 
@@ -195,6 +214,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 				}),
 			});
 			if (!linkRes.ok) throw new Error("Семья создана, но пациент не привязан");
+
 
 			/*
 			 * БЫЛО: здесь сразу шло зелёное «Семья успешно создана». Ответ 200 на
@@ -239,7 +259,15 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 					familyGroupId: familyId,
 				}),
 			});
-			if (!linkRes.ok) throw new Error("Ошибка при привязке пациента к семье");
+			if (!linkRes.ok) {
+				const body = await linkRes
+					.json()
+					.catch(() => ({} as { message?: string }));
+				throw new Error(
+					body.message || "Ошибка при привязке пациента к семье",
+				);
+			}
+
 
 			/*
 			 * БЫЛО: «Успешно привязан к семье» по одному коду 200. Привязка не
@@ -269,6 +297,56 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			setLoading(false);
 		}
 	};
+
+	/*
+	 * Отвязка от семьи. БЫЛО: UI умел только создать/привязать — выйти из
+	 * группы было нельзя. Пациент, ошибочно попавший в чужую семью, оставался
+	 * в members навсегда; «перепрыгнуть» в правильную группу updatePatientInDb
+	 * теперь запрещает (409/400). Без unlink-кнопки ошибка неисправима из UI.
+	 * СТАЛО: PUT familyGroupId: null + проверка familyIdOfPatient === null.
+	 */
+	const handleUnlinkFamily = async () => {
+		if (
+			!window.confirm(
+				"Отвязать пациента от семейной группы? Общий счёт семьи останется, но этот пациент больше не сможет оплачивать с него лечение.",
+			)
+		) {
+			return;
+		}
+		setLoading(true);
+		try {
+			const res = await fetch(`/api/patients/${patientId}`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({ familyGroupId: null }),
+			});
+			if (!res.ok) {
+				const body = await res
+					.json()
+					.catch(() => ({} as { message?: string }));
+				throw new Error(body.message || "Не удалось отвязать от семьи");
+			}
+			const stillIn = await familyIdOfPatient(patientId);
+			if (stillIn) {
+				showToast(
+					"Отвязка не сохранилась: пациент всё ещё в семье. Обновите карточку и повторите.",
+					"error",
+				);
+				onFamilyDataChanged();
+				return;
+			}
+			showToast("Пациент отвязан от семейной группы", "success");
+			onFamilyDataChanged();
+		} catch (e: any) {
+			showToast(e.message || "Ошибка отвязки", "error");
+		} finally {
+			setLoading(false);
+		}
+	};
+
 
 	/*
 	 * БЫЛО: `{parseFloat(familyData.balance).toLocaleString("ru-RU")} ₽`. Три
@@ -347,7 +425,23 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							</div>
 						))}
 					</div>
+					{/*
+					 * Отвязка текущего пациента. Без неё ошибочная привязка
+					 * неисправима из UI (updatePatientInDb запрещает «перепрыгнуть»
+					 * в другую семью без null-шага).
+					 */}
+					<button
+						type="button"
+						className="mt-4 w-full flex items-center justify-center gap-1.5 p-2 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-700 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 rounded-lg font-semibold cursor-pointer border border-slate-300 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-800"
+						onClick={handleUnlinkFamily}
+						disabled={loading}
+						data-testid="patient-family-unlink"
+					>
+						<Unlink size={14} />
+						{loading ? "Отвязка..." : "Отвязать от семьи"}
+					</button>
 				</>
+
 			) : loadFailure ? (
 				/*
 				 * Отказ чтения ВМЕСТО пустоты и без кнопок «Создать семью» и
