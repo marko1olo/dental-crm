@@ -1134,6 +1134,42 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				} else if (json?.cryptoSignatureAttached === false) {
 					setHasCryptoSignature(false);
 				}
+				/*
+				 * DEFECT #38: ФИО подписанта в state сразу после /lock.
+				 * БЫЛО: diaryDoctorFullName гидратился только из GET. После
+				 * успешного lock ceremony пишет doctorId, но клиент не обновлял
+				 * diaryDoctorFullName — печать 043/у до F5/reload брала fallback
+				 * session activeDoctor (часто совпадает) ИЛИ «—», если смену
+				 * уже сменили / activeDoctor null на другом месте UI.
+				 * СТАЛО: при первом lock (не reattach) фиксируем ФИО из
+				 * activeDoctor, который только что прошёл gate doLock.
+				 * Re-attach после revise врача записи не меняет.
+				 */
+				if (!json?.reattached && activeDoctor) {
+					const fromFull =
+						typeof activeDoctor.fullName === "string"
+							? activeDoctor.fullName.trim()
+							: "";
+					const fromParts = [
+						activeDoctor.lastName,
+						activeDoctor.firstName,
+						activeDoctor.middleName,
+					]
+						.map((x) => (typeof x === "string" ? x.trim() : ""))
+						.filter(Boolean)
+						.join(" ");
+					const name = fromFull || fromParts;
+					if (name) setDiaryDoctorFullName(name);
+					const spec =
+						typeof activeDoctor.specialty === "string" &&
+						activeDoctor.specialty.trim()
+							? activeDoctor.specialty.trim()
+							: typeof activeDoctor.specialization === "string" &&
+								  activeDoctor.specialization.trim()
+								? activeDoctor.specialization.trim()
+								: null;
+					if (spec) setDiaryDoctorSpecialty(spec);
+				}
 				showToast(
 					json?.reattached
 						? "Оттиск УКЭП прикреплён к отредактированному дневнику."
