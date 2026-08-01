@@ -203,7 +203,13 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	 * «ЭЦП (SHA-256)» как будто подпись на месте. hasCryptoSignature=false
 	 * до повторного /lock с телом pkcs7.
 	 */
-	const [hasCryptoSignature, setHasCryptoSignature] = useState(false);
+	const [hasCryptoSignature, setHasCryptoSignature] = useState(false);
+	/*
+	 * DEFECT #36: ФИО врача из строки дневника (GET doctorFullName).
+	 * Печать 043/у не должна подставлять activeDoctor смены.
+	 */
+	const [diaryDoctorFullName, setDiaryDoctorFullName] = useState<string | null>(null);
+	const [diaryDoctorSpecialty, setDiaryDoctorSpecialty] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
 	const [showScanner, setShowScanner] = useState(false);
 	const [trayBarcode, setTrayBarcode] = useState<string | null>(null);
@@ -328,6 +334,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setReviseSnapshot(null);
 		setReviseTraySnapshot(null);
 		setLoadState({ phase: "loading" });
+			setDiaryDoctorFullName(null);
+			setDiaryDoctorSpecialty(null);
 		autosaveFailureReportedRef.current = false;
 
 
@@ -375,6 +383,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				// Сервер отвечает { diary: null }, когда дневника у приёма ещё нет
 				// (routes/diary.ts). Это единственная честная пустота.
 				if (!diaryRow || typeof diaryRow !== "object") {
+					setDiaryDoctorFullName(null);
+					setDiaryDoctorSpecialty(null);
 					setLoadState({ phase: "empty" });
 					return;
 				}
@@ -400,6 +410,19 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				setHasCryptoSignature(
 					typeof d.cryptoSignaturePkcs7 === "string" &&
 						d.cryptoSignaturePkcs7.length > 0,
+				);
+				/*
+				 * DEFECT #36: врач записи 043/у с сервера, не из сессии.
+				 */
+				setDiaryDoctorFullName(
+					typeof d.doctorFullName === "string" && d.doctorFullName.trim()
+						? d.doctorFullName.trim()
+						: null,
+				);
+				setDiaryDoctorSpecialty(
+					typeof d.doctorSpecialty === "string" && d.doctorSpecialty.trim()
+						? d.doctorSpecialty.trim()
+						: null,
 				);
 				if (d.diagnosisIcd10) setIcdSearch(d.diagnosisIcd10);
 				setLoadState({ phase: "ready" });
@@ -1410,6 +1433,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		lockedAt,
 		diaryHash,
 		hasCryptoSignature,
+		diaryDoctorFullName,
+		diaryDoctorSpecialty,
 		lastSavedAt,
 		revisionCount,
 		diaryRevisions,

@@ -735,6 +735,43 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			return reply.send({ diary: null });
 		}
 		/*
+		 * DEFECT #36: ФИО врача для печати 043/у.
+		 * БЫЛО: GET отдавал только UUID doctorId/lockedByUserId; клиент печати
+		 * брал ctx.activeDoctor (кто СЕЙЧАС в смене). Админ/другой врач
+		 * печатал чужой подписанный дневник — в «Врач:» попадало чужое ФИО.
+		 * СТАЛО: резолвим ФИО по doctorId → lockedByUserId → authorId →
+		 * draftAuthorId внутри org и отдаём doctorFullName / doctorSpecialty.
+		 */
+		const signingUserId =
+			diary.doctorId ??
+			diary.lockedByUserId ??
+			diary.authorId ??
+			diary.draftAuthorId ??
+			null;
+		let doctorFullName: string | null = null;
+		let doctorSpecialty: string | null = null;
+		if (typeof signingUserId === "string" && signingUserId.length > 0) {
+			const [docUser] = await db
+				.select({
+					fullName: users.fullName,
+				})
+				.from(users)
+				.where(
+					and(
+						eq(users.id, signingUserId),
+						eq(users.organizationId, orgId),
+					),
+				)
+				.limit(1);
+			if (docUser) {
+				doctorFullName =
+					typeof docUser.fullName === "string" && docUser.fullName.trim()
+						? docUser.fullName.trim()
+						: null;
+				doctorSpecialty = null;
+			}
+		}
+		/*
 		 * Не отдаём legacy PIN:<digits> в браузер: оттиск был, цифр PIN — нет.
 		 * SIMPLE_PIN_EP|… и PKCS#7 проходят как есть (цифр PIN в них нет).
 		 */
@@ -744,6 +781,8 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				cryptoSignaturePkcs7: redactLegacyPinSignature(
 					diary.cryptoSignaturePkcs7,
 				),
+				doctorFullName,
+				doctorSpecialty,
 			},
 		});
 	});

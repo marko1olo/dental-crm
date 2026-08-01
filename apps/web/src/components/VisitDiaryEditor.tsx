@@ -62,6 +62,8 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		lockedAt,
 		diaryHash,
 		hasCryptoSignature,
+		diaryDoctorFullName,
+		diaryDoctorSpecialty,
 		lastSavedAt,
 		revisionCount,
 		diaryRevisions,
@@ -162,13 +164,28 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		typeof clinicSettings?.address === "string" ? clinicSettings.address : "";
 	const clinicInn =
 		typeof clinicSettings?.inn === "string" ? clinicSettings.inn : "";
-	const doctorName = formatPersonName(activeDoctor);
-	const doctorSpecialty =
+	/*
+	 * DEFECT #36: в печати 043/у — врач из строки дневника.
+	 * БЫЛО: formatPersonName(activeDoctor) — кто сейчас в смене.
+	 * Подписанный дневник другого врача печатался с чужим ФИО.
+	 * СТАЛО: diaryDoctorFullName с GET; fallback на activeDoctor только
+	 * пока дневник ещё не сохранён / врач в строке не проставлен.
+	 */
+	const sessionDoctorName = formatPersonName(activeDoctor);
+	const sessionDoctorSpecialty =
 		typeof activeDoctor?.specialty === "string"
 			? activeDoctor.specialty
 			: typeof activeDoctor?.specialization === "string"
 				? activeDoctor.specialization
 				: "";
+	const doctorName =
+		diaryDoctorFullName && diaryDoctorFullName.trim()
+			? diaryDoctorFullName.trim()
+			: sessionDoctorName;
+	const doctorSpecialty =
+		diaryDoctorSpecialty && diaryDoctorSpecialty.trim()
+			? diaryDoctorSpecialty.trim()
+			: sessionDoctorSpecialty;
 
 	// ── ICD-10 select
 	const handleIcdSelect = (code: string) => {
