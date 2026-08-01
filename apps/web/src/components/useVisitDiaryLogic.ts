@@ -1262,6 +1262,129 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		}
 	}, [activeDoctor, diary, isLocked, loadState.phase, patientId, visitId]);
 
+	/**
+	 * Записать штрихкод лотка в черновик сразу после скана.
+	 *
+	 * DEFECT #34. БЫЛО: сканер только setTrayBarcode + toast «Лоток привязан»
+	 * без POST. clearTrayBarcode уже писал на сервер сразу, а scan — нет:
+	 * F5 / смена вкладки до autosave (30с) теряли barcode; toast врал.
+	 * Нельзя setState→doSave: замыкание со старым trayBarcode. Шлём code явно.
+	 * В режиме isRevising только state — persist через doRevise.
+	 */
+	const assignTrayBarcode = useCallback(async (rawCode: string) => {
+		const code = rawCode.trim();
+		if (!code) {
+			showToast("Введите или отсканируйте штрихкод лотка.", "info", 6000);
+			return;
+		}
+		/* Ревизия подписанного: barcode уйдёт с doRevise, не draft POST. */
+		if (isRevising) {
+			setTrayBarcode(code);
+			setShowScanner(false);
+			showToast(
+				"Лоток указан на экране. Нажмите «Сохранить правку», чтобы записать в историю.",
+				"info",
+				10000,
+			);
+			return;
+		}
+		if (isLocked) {
+			showToast(
+				"Подписанный дневник: лоток меняется только через «Исправить».",
+				"info",
+				10000,
+			);
+			return;
+		}
+		if (loadState.phase === "loading" || loadState.phase === "failed") {
+			showToast(
+				"Сначала дождитесь загрузки записей приёма — привязать лоток нельзя, пока дневник не прочитан.",
+				"error",
+				10000,
+			);
+			return;
+		}
+		setTrayBarcode(code);
+		setShowScanner(false);
+		if (!activeDoctor) {
+			showToast(
+				"Лоток указан на экране. Выберите врача и сохраните черновик, чтобы записать привязку.",
+				"info",
+				10000,
+			);
+			return;
+		}
+		setIsSaving(true);
+		try {
+			const headerSource = authRef.current;
+			const res = await fetch("/api/diaries", {
+				method: "POST",
+				headers:
+					headerSource && typeof headerSource.denteClinicalMutationHeaders === "function"
+						? headerSource.denteClinicalMutationHeaders({
+								"Content-Type": "application/json",
+							})
+						: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					visitId,
+					patientId,
+					status: "draft",
+					instrumentTrayBarcode: code,
+					anamnesis: diary.anamnesis,
+					statusLocalis: diary.statusLocalis,
+					diagnosisIcd10: diary.diagnosisIcd10,
+					diagnosisTooth: diary.diagnosisTooth,
+					treatmentDescription: diary.treatmentDescription,
+					complications: diary.complications,
+					comorbidities: diary.comorbidities,
+				}),
+			});
+			const rawBody = await res.text();
+			if (!res.ok) {
+				console.error(`[diary tray assign] ${res.status} ${rawBody.slice(0, 300)}`);
+				const payload = jsonObjectOrNull(rawBody);
+				const serverDetail = operatorReadableErrorDetail(
+					typeof payload?.message === "string"
+						? payload.message
+						: typeof payload?.error === "string"
+							? payload.error
+							: null,
+				);
+				showToast(
+					(
+						serverDetail ??
+						actionFailureToast("Лоток не записан в черновик", res.status)
+					) + " На экране лоток уже указан — сохраните черновик вручную.",
+					"error",
+					12000,
+				);
+				return;
+			}
+			const data = jsonObjectOrNull(rawBody);
+			const savedId = typeof data?.id === "string" ? data.id : undefined;
+			if (savedId) setDiaryId(savedId);
+			if (typeof data?.hash === "string" && data.hash) {
+				setDiaryHash(data.hash);
+			}
+			if (loadState.phase === "empty") {
+				setLoadState({ phase: "ready" });
+			}
+			autosaveFailureReportedRef.current = false;
+			setLastSavedAt(new Date());
+			showToast("Лоток записан в черновик", "success", 6000);
+		} catch (err) {
+			console.error("[diary tray assign] запрос не выполнен", err);
+			showToast(
+				actionFailureToast("Лоток не записан в черновик", null) +
+					" На экране лоток уже указан — сохраните черновик вручную.",
+				"error",
+				12000,
+			);
+		} finally {
+			setIsSaving(false);
+		}
+	}, [activeDoctor, diary, isLocked, isRevising, loadState.phase, patientId, visitId]);
+
 	return {
 		diary,
 		setDiary,
@@ -1296,6 +1419,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		trayBarcode,
 		setTrayBarcode,
 		clearTrayBarcode,
+		assignTrayBarcode,
 		showIcdDropdown,
 		setShowIcdDropdown,
 		icdSearch,

@@ -15,7 +15,6 @@ import { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { getIcdColor, ICD_GROUP_COLORS, ICD10_DICTIONARY } from "../lib/icd10";
-import { showToast } from "./GlobalToast";
 import { PanelLoadFailure } from "./PanelLoadFailure";
 import { SmartMicrophoneButton } from "./SmartMicrophoneButton";
 import { useVisitDiaryLogic } from "./useVisitDiaryLogic";
@@ -72,6 +71,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		trayBarcode,
 		setTrayBarcode,
 		clearTrayBarcode,
+		assignTrayBarcode,
 		showIcdDropdown,
 		setShowIcdDropdown,
 		icdSearch,
@@ -1235,9 +1235,8 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 									if (e.key === "Enter") {
 										const val = e.currentTarget.value.trim();
 										if (val) {
-											setTrayBarcode(val);
-											showToast("Лоток привязан", "success");
-											setShowScanner(false);
+											/* DEFECT #34: persist immediately (assignTrayBarcode POSTs draft). */
+											void assignTrayBarcode(val);
 										}
 									}
 								}}
