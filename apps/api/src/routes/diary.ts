@@ -1130,6 +1130,14 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				previousDiagnosisIcd10: existing.diagnosisIcd10,
 				previousDiagnosisTooth: existing.diagnosisTooth,
 				previousTreatmentDescription: existing.treatmentDescription,
+				/*
+				 * Forensic 043/у (миграция 0149).
+				 * БЫЛО: update visit_diaries писал complications/comorbidities,
+				 * а snapshot ревизии — нет. Прежний текст осложнений и сопутствующих
+				 * пропадал из истории правки подписанного дневника.
+				 */
+				previousComplications: existing.complications,
+				previousComorbidities: existing.comorbidities,
 				revisionReason: body.revisionReason,
 				revisedByUserId: userId,
 			});

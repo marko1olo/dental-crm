@@ -1693,6 +1693,14 @@ export const visitDiaryRevisions = pgTable("visit_diary_revisions", {
    * писал. Причина правки и прежний зуб пропадали из forensic-истории 043/у.
    */
   previousDiagnosisTooth: text("previous_diagnosis_tooth"),
+  /*
+   * Forensic 043/у (миграция 0149).
+   * БЫЛО: revise принимал complications/comorbidities и писал их в visit_diaries,
+   * но previous_* в visit_diary_revisions не сохранялись — при админ-правке
+   * подписанного дневника терялся прежний текст осложнений и сопутствующих.
+   */
+  previousComplications: text("previous_complications"),
+  previousComorbidities: text("previous_comorbidities"),
   revisionReason: text("revision_reason"),
   revisedByUserId: uuid("revised_by_user_id"),
   revisedBy: uuid("revised_by"),
