@@ -900,9 +900,15 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 							comorbidities:
 								data.comorbidities !== undefined ? data.comorbidities : existing.comorbidities,
 							updatedAt: new Date(),
+							/*
+							 * Лоток в draft (DEFECT #33).
+							 * БЫЛО: пустая строка писалась как ""; клиент опускал
+							 * поле при clear → existing barcode оставался.
+							 * СТАЛО: поле есть → trim; пусто → null.
+							 */
 							instrumentTrayBarcode:
 								data.instrumentTrayBarcode !== undefined
-									? data.instrumentTrayBarcode
+									? data.instrumentTrayBarcode.trim() || null
 									: existing.instrumentTrayBarcode,
 						})
 						.where(
@@ -930,7 +936,10 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 							complications: data.complications,
 							comorbidities: data.comorbidities,
 							draftAuthorId: userId,
-							instrumentTrayBarcode: data.instrumentTrayBarcode,
+							instrumentTrayBarcode:
+								typeof data.instrumentTrayBarcode === "string"
+									? data.instrumentTrayBarcode.trim() || null
+									: data.instrumentTrayBarcode ?? null,
 						})
 						.returning({ id: visitDiaries.id });
 					const insertedId = inserted[0]?.id;

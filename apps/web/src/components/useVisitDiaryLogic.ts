@@ -625,7 +625,14 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 						visitId,
 						patientId,
 						status: "draft",
-						instrumentTrayBarcode: trayBarcode || undefined,
+						/*
+						 * Лоток в черновике (DEFECT #33).
+						 * БЫЛО: trayBarcode || undefined — при null поле ОПУСКАЛОСЬ.
+						 * Сервер (undefined → existing) оставлял старый barcode:
+						 * ошибочно отсканированный лоток нельзя было снять до lock.
+						 * СТАЛО: всегда шлём строку; "" = очистить (сервер → null).
+						 */
+						instrumentTrayBarcode: trayBarcode ?? "",
 						anamnesis: diary.anamnesis,
 						statusLocalis: diary.statusLocalis,
 						diagnosisIcd10: diary.diagnosisIcd10,
@@ -1151,6 +1158,110 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		}
 	};
 
+	/**
+	 * Снять лоток с черновика и сразу записать null на сервер.
+	 *
+	 * DEFECT #33. БЫЛО: UI только сканировал; doSave опускал null;
+	 * setTrayBarcode(null) без save оставлял barcode в БД до lock.
+	 * Нельзя вызывать doSave сразу после setState — замыкание ещё
+	 * со старым trayBarcode. Поэтому шлём "" явно, state синхронизируем.
+	 */
+	const clearTrayBarcode = useCallback(async () => {
+		if (isLocked) {
+			showToast(
+				"Подписанный дневник: лоток снимается только через «Исправить».",
+				"info",
+				10000,
+			);
+			return;
+		}
+		if (loadState.phase === "loading" || loadState.phase === "failed") {
+			showToast(
+				"Сначала дождитесь загрузки записей приёма — снять лоток нельзя, пока дневник не прочитан.",
+				"error",
+				10000,
+			);
+			return;
+		}
+		setTrayBarcode(null);
+		if (!activeDoctor) {
+			showToast(
+				"Лоток снят на экране. Выберите врача и сохраните черновик, чтобы записать снятие.",
+				"info",
+				10000,
+			);
+			return;
+		}
+		setIsSaving(true);
+		try {
+			const headerSource = authRef.current;
+			const res = await fetch("/api/diaries", {
+				method: "POST",
+				headers:
+					headerSource && typeof headerSource.denteClinicalMutationHeaders === "function"
+						? headerSource.denteClinicalMutationHeaders({
+								"Content-Type": "application/json",
+							})
+						: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					visitId,
+					patientId,
+					status: "draft",
+					instrumentTrayBarcode: "",
+					anamnesis: diary.anamnesis,
+					statusLocalis: diary.statusLocalis,
+					diagnosisIcd10: diary.diagnosisIcd10,
+					diagnosisTooth: diary.diagnosisTooth,
+					treatmentDescription: diary.treatmentDescription,
+					complications: diary.complications,
+					comorbidities: diary.comorbidities,
+				}),
+			});
+			const rawBody = await res.text();
+			if (!res.ok) {
+				console.error(`[diary tray clear] ${res.status} ${rawBody.slice(0, 300)}`);
+				const payload = jsonObjectOrNull(rawBody);
+				const serverDetail = operatorReadableErrorDetail(
+					typeof payload?.message === "string"
+						? payload.message
+						: typeof payload?.error === "string"
+							? payload.error
+							: null,
+				);
+				showToast(
+					`${
+						serverDetail ??
+						actionFailureToast("Лоток не снят с черновика", res.status)
+					} На экране лоток уже снят — сохраните черновик вручную.`,
+					"error",
+					12000,
+				);
+				return;
+			}
+			const data = jsonObjectOrNull(rawBody);
+			const savedId = typeof data?.id === "string" ? data.id : undefined;
+			if (savedId) setDiaryId(savedId);
+			if (typeof data?.hash === "string" && data.hash) {
+				setDiaryHash(data.hash);
+			}
+			if (loadState.phase === "empty") {
+				setLoadState({ phase: "ready" });
+			}
+			autosaveFailureReportedRef.current = false;
+			setLastSavedAt(new Date());
+			showToast("Лоток снят с черновика", "success", 6000);
+		} catch (err) {
+			console.error("[diary tray clear] запрос не выполнен", err);
+			showToast(
+				`${actionFailureToast("Лоток не снят с черновика", null)} На экране лоток уже снят — сохраните черновик вручную.`,
+				"error",
+				12000,
+			);
+		} finally {
+			setIsSaving(false);
+		}
+	}, [activeDoctor, diary, isLocked, loadState.phase, patientId, visitId]);
+
 	return {
 		diary,
 		setDiary,
@@ -1184,6 +1295,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setShowScanner,
 		trayBarcode,
 		setTrayBarcode,
+		clearTrayBarcode,
 		showIcdDropdown,
 		setShowIcdDropdown,
 		icdSearch,

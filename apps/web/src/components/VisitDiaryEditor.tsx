@@ -71,6 +71,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		setShowScanner,
 		trayBarcode,
 		setTrayBarcode,
+		clearTrayBarcode,
 		showIcdDropdown,
 		setShowIcdDropdown,
 		icdSearch,
@@ -923,13 +924,35 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 					</span>
 					<button
 						type="button"
+						data-testid="diary-tray-scan"
 						onClick={() => setShowScanner(true)}
 						className="vde-043__btn"
 						style={{ color: "var(--brand-600, #0284c7)" }}
+						disabled={diaryUnread}
 					>
 						<Activity className="w-4 h-4" />
 						{trayBarcode ? `Лоток: ${trayBarcode}` : "Сканировать Лоток"}
 					</button>
+					{/*
+					 * Снять лоток в черновике (DEFECT #33).
+					 * БЫЛО: только сканер — ошибочный barcode нельзя убрать
+					 * до lock; doSave опускал null → БД хранила старый.
+					 */}
+					{trayBarcode ? (
+						<button
+							type="button"
+							data-testid="diary-tray-clear"
+							onClick={() => {
+								void clearTrayBarcode();
+							}}
+							disabled={isSaving || diaryUnread}
+							className="vde-043__btn vde-043__btn--ghost vde-043__btn--icon"
+							title="Снять лоток с черновика"
+							aria-label="Снять лоток с черновика"
+						>
+							<X className="w-4 h-4" />
+						</button>
+					) : null}
 					<button
 						type="button"
 						id="diary-save-btn"
