@@ -102,8 +102,8 @@ export function VisitDiaryPhotoUpload({
 			try {
 				const response = await fetch(`/api/files/visits/${visitId}/attachments`, {
 					headers: {
-						"x-dente-clinic-token": clinicToken || "",
-					},
+					...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+				},
 					signal: controller.signal,
 				});
 				status = response.status;
@@ -330,7 +330,7 @@ export function VisitDiaryPhotoUpload({
 			const res = await fetch(`/api/files/visits/${visitId}/attachments`, {
 				method: "POST",
 				headers: {
-					"x-dente-clinic-token": clinicToken || "",
+					...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
 				},
 				body: formData,
 			});

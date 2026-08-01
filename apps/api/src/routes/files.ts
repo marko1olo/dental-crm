@@ -7,7 +7,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
-import { attachments, patients, visits } from "../db/schema.js";
+import { attachments, patients, visitDiaries, visits } from "../db/schema.js";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 
@@ -257,6 +257,35 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 				error: "Forbidden",
 				message:
 					"Приём не найден в этой клинике или относится к другой организации.",
+			});
+		}
+
+		/*
+		 * DEFECT #45: refuse photo attach to locked 043/у.
+		 * БЫЛО: client VisitDiaryPhotoUpload блокировал UI при isLocked,
+		 * но POST /api/files/visits/:visitId/attachments принимал файл
+		 * без проверки visit_diaries.is_locked. curl/Postman с токеном
+		 * кабинета мог прикрепить снимок к уже подписанной 043/у —
+		 * юридическая карта менялась после ЭЦП без ревизии.
+		 * СТАЛО: если у приёма есть locked diary в этой org → 409.
+		 * Приёмы без дневника (ещё не создан) — upload разрешён.
+		 */
+		const [lockedDiary] = await db
+			.select({ id: visitDiaries.id })
+			.from(visitDiaries)
+			.where(
+				and(
+					eq(visitDiaries.visitId, visitId),
+					eq(visitDiaries.organizationId, orgId),
+					eq(visitDiaries.isLocked, true),
+				),
+			)
+			.limit(1);
+		if (lockedDiary) {
+			return reply.code(409).send({
+				error: "DiaryLocked",
+				message:
+					"Дневник приёма уже подписан — новые фото к закрытой 043/у не прикрепляются. Правку вносит администратор через ревизию; снимки к подписанной карте не добавляются.",
 			});
 		}
 
