@@ -93,6 +93,19 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 	const diaryUnread =
 		loadState.phase === "loading" || loadState.phase === "failed";
 	const fieldsDisabled = diaryUnread || (isLocked && !isRevising);
+	/*
+	 * Печать 043/у во время незавершённой правки.
+	 * БЫЛО: кнопка «Печать» и preview работали при isRevising=true — в лист
+	 * уходили textarea-правки + штамп ЭЦП/SHA-256 от ЕЩЁ НЕ сохранённой
+	 * ревизии. Юридическая 043/у выглядела подписанной с текстом, которого
+	 * в БД нет (и PKCS#7 после revise обнуляется только на save).
+	 */
+	const printBlockedReason = diaryUnread
+		? "Печать недоступна, пока записи приёма не прочитаны"
+		: isRevising
+			? "Печать недоступна, пока идёт правка подписанного дневника. Сохраните правку или нажмите «Отмена»."
+			: undefined;
+	const printBlocked = Boolean(printBlockedReason);
 
 	// Always under AppLogicProvider when mounted from VisitOdontogramTab — call unconditionally (Rules of Hooks).
 	const ctx = useAppLogicContext();
@@ -265,7 +278,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						</div>
 					)}
 
-					{isLocked && diaryHash && (
+					{isLocked && diaryHash && !isRevising && (
 						<div
 							className="vde-043-ecp page-break-avoid"
 							data-testid="form-043-ecp"
@@ -284,6 +297,18 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 									⚠ Ревизий: {revisionCount}
 								</span>
 							)}
+						</div>
+					)}
+					{isRevising && (
+						<div
+							className="vde-043-soap-block page-break-avoid"
+							data-testid="form-043-revise-warn"
+						>
+							<p>
+								Идёт правка подписанного дневника. Текст на экране ещё не
+								сохранён в истории ревизий — печать юридической 043/у
+								недоступна, пока правка не сохранена или не отменена.
+							</p>
 						</div>
 					)}
 
@@ -373,6 +398,8 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 					<button
 						type="button"
 						onClick={() => window.print()}
+						disabled={printBlocked}
+						title={printBlockedReason}
 						className="vde-043__btn vde-043__btn--primary"
 						data-testid="form-043-print"
 					>
@@ -429,13 +456,9 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 							id="diary-print-btn"
 							data-testid="diary-print-043"
 							onClick={() => setShowPreview(true)}
-							disabled={diaryUnread}
+							disabled={printBlocked}
 							className="vde-043__btn vde-043__btn--print"
-							title={
-								diaryUnread
-									? "Печать недоступна, пока записи приёма не прочитаны"
-									: undefined
-							}
+							title={printBlockedReason}
 						>
 							<Printer className="w-4 h-4" /> Печать 043/у
 						</button>
@@ -456,13 +479,9 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 							id="diary-print-btn"
 							data-testid="diary-print-043"
 							onClick={() => setShowPreview(true)}
-							disabled={diaryUnread}
+							disabled={printBlocked}
 							className="vde-043__btn vde-043__btn--print"
-							title={
-								diaryUnread
-									? "Печать недоступна, пока записи приёма не прочитаны"
-									: undefined
-							}
+							title={printBlockedReason}
 						>
 							<Printer className="w-4 h-4" /> Печать 043/у
 						</button>
