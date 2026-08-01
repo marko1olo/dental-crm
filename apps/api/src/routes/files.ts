@@ -7,7 +7,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
-import { attachments, patients } from "../db/schema.js";
+import { attachments, patients, visits } from "../db/schema.js";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 
@@ -200,6 +200,23 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 		const { visitId } = request.params as { visitId: string };
 
+		/*
+		 * БЫЛО: только filter attachments.visitId + org — чужой/несуществующий
+		 * visitId давал files:[] как «снимков нет». Врач не отличал пустой
+		 * приём от чужого UUID / опечатки. Пациентский GET уже 404.
+		 */
+		const [visitRow] = await db
+			.select({ id: visits.id })
+			.from(visits)
+			.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
+			.limit(1);
+		if (!visitRow) {
+			return reply.code(404).send({
+				error: "VisitNotFound",
+				message: "Приём не найден в этой клинике.",
+			});
+		}
+
 		const visitAttachments = await db
 			.select()
 			.from(attachments)
@@ -222,6 +239,26 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 		const { visitId } = request.params as { visitId: string };
+
+		/*
+		 * БЫЛО: insert attachments с organizationId=org вызывающего и visitId
+		 * из URL без проверки. FK visits.id глобальный — UUID приёма другой
+		 * клиники принимался; строка жила в org атакующего, а visit_id
+		 * указывал на чужой приём. Несуществующий UUID → 500 FK, не 404.
+		 * СТАЛО: как у patient attachments — 403/404 до записи на диск.
+		 */
+		const [visitRow] = await db
+			.select({ id: visits.id, patientId: visits.patientId })
+			.from(visits)
+			.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
+			.limit(1);
+		if (!visitRow) {
+			return reply.code(403).send({
+				error: "Forbidden",
+				message:
+					"Приём не найден в этой клинике или относится к другой организации.",
+			});
+		}
 
 		const data = await (request as unknown as { file: () => Promise<MultipartFilePayload | undefined> }).file();
 		if (!data) {
@@ -249,6 +286,7 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			.values({
 				organizationId: orgId,
 				visitId,
+				patientId: visitRow.patientId,
 				fileName: data.filename,
 				mimeType: data.mimetype,
 				storagePath: filename,
