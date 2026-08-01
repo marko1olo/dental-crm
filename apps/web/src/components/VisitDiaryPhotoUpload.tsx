@@ -186,18 +186,52 @@ export function VisitDiaryPhotoUpload({
 
 	const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
-		if (!file || !diaryId) return;
+		if (!file) return;
+		/*
+		 * БЫЛО: if (!diaryId) return — молча. Врач выбирал файл, ничего не
+		 * происходило (кнопка видна только при diaryId, но race/state мог
+		 * обойти). СТАЛО: явный toast.
+		 */
+		if (!diaryId) {
+			showToast(
+				"Сначала сохраните черновик дневника — без id записи снимок прикрепить нельзя.",
+				"info",
+				10000,
+			);
+			e.target.value = "";
+			return;
+		}
+		if (isLocked) {
+			showToast(
+				"Дневник уже подписан — новые фото к закрытой 043/у не прикрепляются.",
+				"info",
+				10000,
+			);
+			e.target.value = "";
+			return;
+		}
 
 		setIsUploading(true);
+		let localObjectUrl: string | null = null;
 		try {
 			const img = new Image();
-			const objectUrl = URL.createObjectURL(file);
+			localObjectUrl = URL.createObjectURL(file);
 
-			await new Promise((resolve, reject) => {
-				img.onload = resolve;
-				img.onerror = reject;
-				img.src = objectUrl;
-			});
+			try {
+				await new Promise<void>((resolve, reject) => {
+					img.onload = () => resolve();
+					img.onerror = () =>
+						reject(new Error("FILE_NOT_IMAGE"));
+					img.src = localObjectUrl!;
+				});
+			} catch {
+				showToast(
+					"Файл не открылся как изображение. Выберите снимок JPG, PNG или WEBP.",
+					"error",
+					12000,
+				);
+				return;
+			}
 
 			const canvas = document.createElement("canvas");
 			let width = img.width;
@@ -215,14 +249,32 @@ export function VisitDiaryPhotoUpload({
 			canvas.width = width;
 			canvas.height = height;
 			const ctx = canvas.getContext("2d");
-			ctx?.drawImage(img, 0, 0, width, height);
+			if (!ctx) {
+				showToast(
+					"Не удалось подготовить снимок на этом рабочем месте (нет canvas). Попробуйте другой браузер или ПК.",
+					"error",
+					12000,
+				);
+				return;
+			}
+			ctx.drawImage(img, 0, 0, width, height);
 
 			const compressedBlob = await new Promise<Blob | null>((resolve) =>
 				canvas.toBlob(resolve, "image/webp", 0.8),
 			);
-			URL.revokeObjectURL(objectUrl);
 
-			if (!compressedBlob) throw new Error("Compression failed");
+			if (!compressedBlob) {
+				/*
+				 * БЫЛО: throw new Error("Compression failed") → toast
+				 * «Ошибка загрузки: Compression failed» латиницей у кресла.
+				 */
+				showToast(
+					"Не удалось сжать снимок перед отправкой. Выберите другой файл или уменьшите размер.",
+					"error",
+					12000,
+				);
+				return;
+			}
 
 			const formData = new FormData();
 			formData.append("file", compressedBlob, "photo.webp");
@@ -238,17 +290,76 @@ export function VisitDiaryPhotoUpload({
 				},
 				body: formData,
 			});
-			if (!res.ok) throw new Error("Upload failed");
+			const rawBody = await res.text();
+			if (!res.ok) {
+				/*
+				 * БЫЛО: throw new Error("Upload failed") → «Ошибка загрузки:
+				 * Upload failed». Серверный message (RU) отбрасывался.
+				 */
+				console.error(`[diary photo upload] ${res.status} ${rawBody.slice(0, 300)}`);
+				let serverMessage: string | null = null;
+				try {
+					const parsed: unknown = rawBody.trim() ? JSON.parse(rawBody) : null;
+					if (
+						parsed &&
+						typeof parsed === "object" &&
+						!Array.isArray(parsed) &&
+						typeof (parsed as { message?: unknown }).message === "string"
+					) {
+						const m = (parsed as { message: string }).message.trim();
+						// Не показываем машинные коды латиницей (AttachmentNotSaved без message уже закрыт на API).
+						if (m && !/^[A-Za-z][A-Za-z0-9_]+$/.test(m)) serverMessage = m;
+					}
+				} catch {
+					/* тело не JSON — ниже status fallback */
+				}
+				showToast(
+					serverMessage ??
+						`Снимок не загружен: ${requestFailureCause(res.status)}. Повторите загрузку; файл на экране не пропал из выбора — выберите его снова.`,
+					"error",
+					14000,
+				);
+				return;
+			}
 
-			const data = await res.json();
-			if (data.file) {
-				setAttachments((prev) => [...prev, data.file]);
+			let data: { file?: Attachment } | null = null;
+			try {
+				const parsed: unknown = rawBody.trim() ? JSON.parse(rawBody) : null;
+				if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+					data = parsed as { file?: Attachment };
+				}
+			} catch {
+				data = null;
+			}
+			const uploaded = data?.file;
+			if (
+				uploaded &&
+				typeof uploaded === "object" &&
+				typeof uploaded.id === "string" &&
+				uploaded.id
+			) {
+				setAttachments((prev) => [...prev, uploaded]);
 				setLoadState({ phase: "ready" });
 				showToast("Фото сжато в WebP и загружено", "success");
+			} else {
+				console.error("[diary photo upload] 2xx без file", rawBody.slice(0, 200));
+				showToast(
+					"Сервер принял снимок, но не вернул карточку вложения. Нажмите «Повторить» в списке снимков — файл мог уже сохраниться.",
+					"info",
+					14000,
+				);
+				reloadAttachments();
 			}
-		} catch (err: any) {
-			showToast(`Ошибка загрузки: ${err.message}`, "error");
+		} catch (err) {
+			// Сеть / выключенный API — без err.message латиницей.
+			console.error("[diary photo upload] запрос не выполнен", err);
+			showToast(
+				`Снимок не загружен: ${requestFailureCause(null)}. Проверьте сеть и повторите.`,
+				"error",
+				14000,
+			);
 		} finally {
+			if (localObjectUrl) URL.revokeObjectURL(localObjectUrl);
 			setIsUploading(false);
 			e.target.value = "";
 		}

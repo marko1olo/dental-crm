@@ -87,13 +87,17 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			return reply.code(403).send({
 				error: "Forbidden",
 				message:
-					"Patient does not belong to this organization or does not exist.",
+					"Пациент не найден в этой клинике или относится к другой организации.",
 			});
 		}
 
 		const data = await (request as unknown as { file: () => Promise<MultipartFilePayload | undefined> }).file();
 		if (!data) {
-			return reply.code(400).send({ error: "Missing file payload" });
+			return reply.code(400).send({
+	error: "MissingFilePayload",
+	message:
+		"Файл не получен: выберите снимок и повторите загрузку.",
+});
 		}
 
 		const uniqueSuffix = crypto.randomUUID();
@@ -167,7 +171,10 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			.limit(1);
 
 		if (!attachment) {
-			return reply.code(404).send({ error: "AttachmentNotFound" });
+			return reply.code(404).send({
+	error: "AttachmentNotFound",
+	message: "Вложение не найдено в этой клинике.",
+});
 		}
 
 		const filePath = path.join(UPLOADS_DIR, attachment.storagePath);
@@ -180,7 +187,11 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			reply.type(attachment.mimeType);
 			return reply.send(createReadStream(filePath));
 		} catch (e) {
-			return reply.code(404).send({ error: "FileNotFoundOnDisk" });
+			return reply.code(404).send({
+	error: "FileNotFoundOnDisk",
+	message:
+		"Файл вложения отсутствует на диске сервера. Сообщите администратору клиники.",
+});
 		}
 	});
 
@@ -214,7 +225,11 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 
 		const data = await (request as unknown as { file: () => Promise<MultipartFilePayload | undefined> }).file();
 		if (!data) {
-			return reply.code(400).send({ error: "Missing file payload" });
+			return reply.code(400).send({
+	error: "MissingFilePayload",
+	message:
+		"Файл не получен: выберите снимок и повторите загрузку.",
+});
 		}
 
 		const uniqueSuffix = crypto.randomUUID();
