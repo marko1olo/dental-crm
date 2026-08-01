@@ -688,6 +688,14 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					diagnosisIcd10: diary.diagnosisIcd10,
 					diagnosisTooth: diary.diagnosisTooth,
 					treatmentDescription: diary.treatmentDescription,
+					/*
+					 * complications/comorbidities — поля visit_diaries и UI 043/у.
+					 * БЫЛО: doRevise их не слал; API revise тоже игнорировал.
+					 * Админ правил «Осложнения»/«Сопутствующие» в режиме Исправить —
+					 * после сохранения оставался старый текст в подписанной 043/у.
+					 */
+					complications: diary.complications,
+					comorbidities: diary.comorbidities,
 					revisionReason: reason,
 				}),
 			});

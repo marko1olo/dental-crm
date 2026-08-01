@@ -111,6 +111,14 @@ const diaryReviseBodySchema = z.object({
 	diagnosisIcd10: z.unknown().optional(),
 	diagnosisTooth: z.unknown().optional(),
 	treatmentDescription: z.unknown().optional(),
+	/*
+	 * complications / comorbidities — поля visit_diaries и UI 043/у.
+	 * БЫЛО: схема revise их не принимала, handler не писал. Админ правил
+	 * «Осложнения» в режиме Исправить — после сохранения оставался старый
+	 * текст; в подписанной 043/у ошибка не исправлялась.
+	 */
+	complications: z.unknown().optional(),
+	comorbidities: z.unknown().optional(),
 	revisionReason: z.unknown().optional(),
 });
 
@@ -957,6 +965,14 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				typeof parsedReviseBody.data.treatmentDescription === "string"
 					? parsedReviseBody.data.treatmentDescription
 					: undefined,
+			complications:
+				typeof parsedReviseBody.data.complications === "string"
+					? parsedReviseBody.data.complications
+					: undefined,
+			comorbidities:
+				typeof parsedReviseBody.data.comorbidities === "string"
+					? parsedReviseBody.data.comorbidities
+					: undefined,
 			revisionReason:
 				typeof parsedReviseBody.data.revisionReason === "string"
 					? parsedReviseBody.data.revisionReason
@@ -995,6 +1011,8 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					diagnosisTooth: body.diagnosisTooth ?? existing.diagnosisTooth,
 					treatmentDescription:
 						body.treatmentDescription ?? existing.treatmentDescription,
+					complications: body.complications ?? existing.complications,
+					comorbidities: body.comorbidities ?? existing.comorbidities,
 					diaryHash: newHash,
 					version: (existing.version ?? 1) + 1,
 					updatedAt: new Date(),
