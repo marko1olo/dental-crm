@@ -266,6 +266,9 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					/* DEFECT #57: 043 tray barcode → CDA (printed + diary_hash) */
 					instrumentTrayBarcode: schema.visitDiaries.instrumentTrayBarcode,
 					doctorId: schema.visitDiaries.doctorId,
+					/* DEFECT #63: signer fallback when doctorId empty (pre-#35 locks) */
+					lockedByUserId: schema.visitDiaries.lockedByUserId,
+					authorId: schema.visitDiaries.authorId,
 					/* DEFECT #59: draft 043 must not become EGISZ CDA */
 					isLocked: schema.visitDiaries.isLocked,
 					/* DEFECT #61: CDA versionNumber after 043 revise */
@@ -487,6 +490,53 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					const pos = formatDoctorSpecialtyLabelForCda(diaryDoctor.specialties);
 					if (pos) doctorPosition = pos;
 				}
+			}
+
+			/*
+			 * DEFECT #63: CDA assignedAuthor must not be «Не указан».
+			 * БЫЛО: author = appointment.doctorUserId, then diary.doctorId only.
+			 * Diaries locked before #35 (or without appointment link) could have
+			 * lockedByUserId/authorId set but doctorId null → CDA exported with
+			 * <family>Не указан</family> and empty given — РЭМД rejects / wrong
+			 * legal author on the protocol.
+			 * СТАЛО: fallback lockedByUserId → authorId; 422 DoctorRequired if
+			 * still unresolved.
+			 */
+			const doctorStillUnset =
+				!doctorName.last || doctorName.last === "Не указан";
+			if (doctorStillUnset && diaryRow) {
+				const fallbackIds = [diaryRow.lockedByUserId, diaryRow.authorId].filter(
+					(id): id is string => typeof id === "string" && id.trim().length > 0,
+				);
+				for (const uid of fallbackIds) {
+					const [u] = await db
+						.select({
+							fullName: schema.users.fullName,
+							specialties: schema.users.specialties,
+						})
+						.from(schema.users)
+						.where(
+							and(
+								eq(schema.users.id, uid),
+								eq(schema.users.organizationId, orgId),
+							),
+						)
+						.limit(1);
+					if (u?.fullName && u.fullName.trim()) {
+						doctorName = splitFullName(u.fullName);
+						const pos = formatDoctorSpecialtyLabelForCda(u.specialties);
+						if (pos) doctorPosition = pos;
+						break;
+					}
+				}
+			}
+
+			if (!doctorName.last || doctorName.last === "Не указан") {
+				return reply.status(422).send({
+					error: "DoctorRequired",
+					message:
+						"Для выгрузки в ЕГИСЗ должен быть указан врач приёма (в расписании или в подписанном дневнике 043/у).",
+				});
 			}
 
 			/*
