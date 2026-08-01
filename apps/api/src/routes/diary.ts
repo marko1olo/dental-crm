@@ -18,6 +18,7 @@ import {
 	users,
 	visitDiaries,
 	visitDiaryRevisions,
+	visits,
 } from "../db/schema.js";
 import { clinicNotIdentifiedMessage } from "../utils/clinicSessionRefusal.js";
 import { verifyCredential } from "../utils/cryptoHelper.js";
@@ -683,6 +684,23 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				.code(403)
 				.send({ error: "OrgRequired", message: DIARY_CLINIC_UNKNOWN_READ_MESSAGE });
 
+		/*
+		 * БЫЛО: нет строки visit_diaries → { diary: null } и для чужого UUID,
+		 * и для реального приёма без дневника. Клиент рисовал «пустой SOAP»
+		 * как новый приём. СТАЛО: visit ∉ org → 404; пустой дневник — null.
+		 */
+		const [visitRow] = await db
+			.select({ id: visits.id })
+			.from(visits)
+			.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
+			.limit(1);
+		if (!visitRow) {
+			return reply.code(404).send({
+				error: "VisitNotFound",
+				message: "Приём не найден в этой клинике, дневник 043/у открыть нельзя.",
+			});
+		}
+
 		const [diary] = await db
 			.select()
 			.from(visitDiaries)
@@ -776,6 +794,35 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				.code(403)
 				.send({ error: "OrgRequired", message: DIARY_CLINIC_UNKNOWN_SAVE_MESSAGE });
 		data.organizationId = orgId;
+
+		/*
+		 * Привязка 043/у к реальному приёму клиники.
+		 * БЫЛО: insert/update visit_diaries с visitId/patientId из тела без
+		 * проверки visits. У visit_diaries.visit_id НЕТ FK — любой UUID
+		 * принимался. Можно было завести дневник на чужой/несуществующий
+		 * приём или подменить patientId (хеш 043/у и печать — на «левом»
+		 * пациенте). СТАЛО: visit ∈ org, patientId совпадает с карточкой
+		 * приёма — до транзакции и до записи на диск/в БД.
+		 */
+		const [visitForDiary] = await db
+			.select({ id: visits.id, patientId: visits.patientId })
+			.from(visits)
+			.where(and(eq(visits.id, data.visitId), eq(visits.organizationId, orgId)))
+			.limit(1);
+		if (!visitForDiary) {
+			return reply.code(403).send({
+				error: "VisitNotInClinic",
+				message:
+					"Приём не найден в этой клинике — дневник 043/у к нему не привязать. Откройте приём заново из расписания.",
+			});
+		}
+		if (visitForDiary.patientId !== data.patientId) {
+			return reply.code(400).send({
+				error: "PatientVisitMismatch",
+				message:
+					"Пациент в запросе не совпадает с карточкой этого приёма. Обновите страницу приёма и сохраните дневник снова.",
+			});
+		}
 
 		const isSigning = data.status === "signed";
 
