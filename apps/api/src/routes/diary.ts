@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { and, count, desc, eq, isNull, or } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -868,7 +868,41 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			)
 			.orderBy(desc(visitDiaryRevisions.revisedAt));
 
-		return reply.send({ revisions });
+		/*
+		 * DEFECT #44: кто правил 043/у — ФИО, не UUID.
+		 * БЫЛО: GET …/revisions отдавал revisedByUserId сырым UUID;
+		 * клиент Forensic UI показывал только when + reason + previous_*.
+		 * Суд/проверка качества не видели, КТО внёс правку после подписи.
+		 * СТАЛО: batch-resolve fullName внутри org → revisedByFullName.
+		 */
+		const reviserIds = Array.from(
+			new Set(
+				revisions
+					.map((r) => r.revisedByUserId)
+					.filter((uid): uid is string => typeof uid === "string" && uid.length > 0),
+			),
+		);
+		const reviserNameById = new Map<string, string>();
+		if (reviserIds.length > 0) {
+			const reviserRows = await db
+				.select({ id: users.id, fullName: users.fullName })
+				.from(users)
+				.where(and(inArray(users.id, reviserIds), eq(users.organizationId, orgId)));
+			for (const row of reviserRows) {
+				const name = typeof row.fullName === "string" ? row.fullName.trim() : "";
+				if (name) reviserNameById.set(row.id, name);
+			}
+		}
+		const revisionsWithAuthor = revisions.map((r) => {
+			const uid =
+				typeof r.revisedByUserId === "string" && r.revisedByUserId.length > 0
+					? r.revisedByUserId
+					: null;
+			const revisedByFullName = uid ? (reviserNameById.get(uid) ?? null) : null;
+			return { ...r, revisedByFullName };
+		});
+
+		return reply.send({ revisions: revisionsWithAuthor });
 	});
 
 	app.post("/api/diaries", async (req, reply) => {

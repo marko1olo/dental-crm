@@ -1200,6 +1200,20 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 								>
 									<div className="vde-043__revision-meta">
 										<span className="vde-043__revision-when">{when}</span>
+										{/*
+										  DEFECT #44: кто правил — revisedByFullName с API.
+										  БЫЛО: только when + reason; revisedByUserId UUID
+										  в UI не выводился — forensic «кто» отсутствовал.
+										*/}
+										{rev.revisedByFullName ? (
+											<span className="vde-043__revision-who">
+												Кто: {rev.revisedByFullName}
+											</span>
+										) : rev.revisedByUserId ? (
+											<span className="vde-043__revision-who vde-043__revision-who--unknown">
+												Кто: ФИО в записи не сохранено
+											</span>
+										) : null}
 										{rev.revisionReason ? (
 											<span className="vde-043__revision-reason">
 												Причина: {rev.revisionReason}

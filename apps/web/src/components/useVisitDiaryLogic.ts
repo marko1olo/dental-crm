@@ -165,6 +165,8 @@ export type DiaryRevisionRow = {
 	previousComorbidities: string | null;
 	previousInstrumentTrayBarcode: string | null;
 	revisedByUserId: string | null;
+	/** ФИО из GET …/revisions (DEFECT #44); null если неизвестно. */
+	revisedByFullName: string | null;
 };
 
 function asDiaryRevisionRow(raw: unknown): DiaryRevisionRow | null {
@@ -186,6 +188,7 @@ function asDiaryRevisionRow(raw: unknown): DiaryRevisionRow | null {
 		previousComorbidities: strOrNull(o.previousComorbidities),
 		previousInstrumentTrayBarcode: strOrNull(o.previousInstrumentTrayBarcode),
 		revisedByUserId: strOrNull(o.revisedByUserId),
+		revisedByFullName: strOrNull(o.revisedByFullName),
 	};
 }
 
@@ -896,6 +899,22 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 						previousComorbidities: reviseSnapshot.comorbidities,
 						previousInstrumentTrayBarcode: reviseTraySnapshot,
 						revisedByUserId: null,
+						/*
+						 * DEFECT #44: optimistic row — ФИО из смены, пока GET не обновит.
+						 * UUID на клиенте после revise нет (ответ /revise без userId).
+						 */
+						revisedByFullName: (() => {
+							const ad = activeDoctor;
+							if (!ad) return null;
+							const fromFull =
+								typeof ad.fullName === "string" ? ad.fullName.trim() : "";
+							if (fromFull) return fromFull;
+							const parts = [ad.lastName, ad.firstName, ad.middleName]
+								.map((x) => (typeof x === "string" ? x.trim() : ""))
+								.filter(Boolean)
+								.join(" ");
+							return parts || null;
+						})(),
 					};
 					setDiaryRevisions((prev) => [localRow, ...prev]);
 				}
@@ -938,7 +957,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		} finally {
 			setIsRevisingBusy(false);
 		}
-	}, [diary, diaryId, isLocked, revisionReason, reviseSnapshot, reviseTraySnapshot, trayBarcode]);
+	}, [activeDoctor, diary, diaryId, isLocked, revisionReason, reviseSnapshot, reviseTraySnapshot, trayBarcode]);
 
 	/**
 	 * Привязка лотка + пересчёт diary_hash на сервере (sterilization/link).
