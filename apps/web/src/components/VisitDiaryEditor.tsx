@@ -342,7 +342,20 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 
 					<div className="vde-043-sign-row page-break-avoid">
 						<div>Подпись врача: ___________________</div>
-						<div>Дата: {new Date().toLocaleDateString("ru-RU")}</div>
+						{/*
+						 * Дата документа — дата подписи дневника, не момент печати.
+						 * БЫЛО: new Date() = «сегодня». Перепечатка через неделю
+						 * ставила в 043/у чужую дату приёма; юридически подписанная
+						 * карта расходилась с lockedAt/ЭЦП.
+						 */}
+						<div>
+							Дата:{" "}
+							{lockedAt
+								? new Date(lockedAt).toLocaleDateString("ru-RU")
+								: lastSavedAt
+									? lastSavedAt.toLocaleDateString("ru-RU")
+									: "—"}
+						</div>
 					</div>
 				</div>
 

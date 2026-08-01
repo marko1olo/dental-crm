@@ -243,6 +243,16 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setDiaryHash(null);
 		setLastSavedAt(null);
 		setRevisionCount(0);
+		/*
+		 * Лоток обязан сбрасываться при смене приёма.
+		 *
+		 * БЫЛО: trayBarcode жил в state между visitId. Загрузка нового дневника
+		 * ставила barcode только если instrumentTrayBarcode truthy — иначе
+		 * оставался штрихкод ПРОШЛОГО приёма. Автосохранение/подпись писали
+		 * чужой лоток в visit_diaries и /api/sterilization/link: в 043/у и
+		 * журнале стерилизации оказывалась чужая упаковка.
+		 */
+		setTrayBarcode(null);
 		setIsRevising(false);
 		setRevisionReason("");
 		setIsRevisingBusy(false);
