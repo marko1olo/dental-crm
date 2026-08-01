@@ -442,9 +442,45 @@ export async function updatePatientAdministrativeProfileInDb(organizationId: str
 		return updatePatientAdministrativeProfileInMemory(patientId, input);
 	}
 	try {
+		/*
+		 * БЫЛО: .set({ administrativeProfile: input }) — целиком перезаписывал
+		 * JSONB partial-пейлоадом. Маршрут patients.ts уже мержит existing+input
+		 * перед вызовом, но любой другой вызывающий (и будущий) мог снова
+		 * стереть ИНН/представителя/loyaltyTier одним PUT с одним полем.
+		 * sampleData.updatePatientAdministrativeProfile мержит сам; DB-ветка
+		 * этого не делала — расхождение путей.
+		 * СТАЛО: читаем текущий профиль в той же организации, мержим, пишем
+		 * merged. Partial wipe невозможен даже без merge на маршруте.
+		 */
+		const [current] = await db
+			.select({
+				administrativeProfile: schema.patients.administrativeProfile,
+			})
+			.from(schema.patients)
+			.where(
+				and(
+					eq(schema.patients.organizationId, organizationId),
+					eq(schema.patients.id, patientId),
+				),
+			)
+			.limit(1);
+
+		if (!current) return null;
+
+		const existingProfile =
+			current.administrativeProfile &&
+			typeof current.administrativeProfile === "object" &&
+			!Array.isArray(current.administrativeProfile)
+				? (current.administrativeProfile as Record<string, unknown>)
+				: {};
+		const mergedProfile = {
+			...existingProfile,
+			...(input as Record<string, unknown>),
+		};
+
 		const [updated] = await db.update(schema.patients)
 			.set({
-				administrativeProfile: input as typeof schema.patients.$inferSelect["administrativeProfile"],
+				administrativeProfile: mergedProfile as typeof schema.patients.$inferSelect["administrativeProfile"],
 				updatedAt: new Date(),
 			})
 			/* Тот же пропуск, что и в updatePatientInDb. Здесь маршрут сейчас

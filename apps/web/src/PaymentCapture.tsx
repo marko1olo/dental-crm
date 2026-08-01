@@ -2,6 +2,7 @@ import { CreditCard, UserRound, Mic, Bot } from "lucide-react";
 import { type PaymentMethod, parseKopecks, percentageOfKopecks, splitKopecks } from "@dental/shared";
 import { money } from "./AppHelpers";
 import { validateRubAmountInput, rubAmountInputMissingStep, normalizeRubAmountInput } from "./rubAmountInput";
+import { rubAmountForInput } from "./components/payments/cashDeskAmounts";
 import { textToNumbers } from "./lib/stringUtils";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { SmartParsePreview } from "./SmartParsePreview";
@@ -652,16 +653,16 @@ export function PaymentCapture({
               <button
                 type="button"
                 className="quick-chip"
-                /* БЫЛО: подставлялось сырое число с плавающей точкой, например
-                   2699.7000000000007 (после расчёта страхового покрытия).
-                   Поле принимает только целые рубли, поэтому кнопка «оплатить
-                   долг одним нажатием» просто не работала. Округляем. */
-                onClick={() => onAmountChange(String(Math.round(remainingDebt)))}
+                /*
+                 * БЫЛО: String(Math.round(...)) округлял долг до целых рублей.
+                 * 1500,24 ₽ → 1500 (копейки зависали); 1500,70 ₽ → 1501 (лишние 30 коп.).
+                 * Поле суммы уже принимает копейки (normalizeRubAmountInput).
+                 * СТАЛО: rubAmountForInput — копейки целыми, формат поля верный.
+                 */
+                onClick={() => onAmountChange(rubAmountForInput(remainingDebt))}
               >
-                {/* Подпись — общим money(). Показываем ровно то целое число,
-                    которое кнопка подставит в поле, иначе кассир видел бы одну
-                    сумму, а в поле получал другую. */}
-                Долг: {money(Math.round(remainingDebt))}
+                {/* Подпись money(remainingDebt) совпадает с тем, что уходит в поле. */}
+                Долг: {money(remainingDebt)}
               </button>
             )}
             {[1000, 2000, 3000, 5000].map((val) => (
