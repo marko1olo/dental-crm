@@ -18,6 +18,50 @@ const getTodayString = (): string => {
 	return parts[0] || "";
 };
 
+/*
+ * БЫЛО: виджет слал orthodonticProgress объектом { currentAligner, totalAligners,
+ * startDate }, а shared Zod — z.string().max(500). PUT всегда 400; toast честно
+ * говорил «не сохранён», но трекер капп в карточке не работал никогда.
+ * Схему на structured object не трогаем (partial admin form шлёт ту же строку).
+ * СТАЛО: на проводе — JSON-строка; при чтении принимаем string | legacy object.
+ */
+function serializeOrthoProgress(data: OrthoData): string {
+	return JSON.stringify({
+		currentAligner: data.currentAligner,
+		totalAligners: data.totalAligners,
+		startDate: data.startDate,
+	});
+}
+
+function parseOrthoProgress(raw: unknown): OrthoData | null {
+	if (raw == null || raw === "") return null;
+	let obj: unknown = raw;
+	if (typeof raw === "string") {
+		try {
+			obj = JSON.parse(raw);
+		} catch {
+			return null;
+		}
+	}
+	if (!obj || typeof obj !== "object") return null;
+	const rec = obj as Record<string, unknown>;
+	const currentAligner = Number(rec.currentAligner ?? rec.current);
+	const totalAligners = Number(rec.totalAligners ?? rec.total);
+	const startDate =
+		typeof rec.startDate === "string"
+			? rec.startDate
+			: typeof rec.start === "string"
+				? rec.start
+				: "";
+	if (!Number.isFinite(currentAligner) || currentAligner < 1) return null;
+	if (!Number.isFinite(totalAligners) || totalAligners < 1) return null;
+	return {
+		currentAligner: Math.floor(currentAligner),
+		totalAligners: Math.floor(totalAligners),
+		startDate: startDate || getTodayString(),
+	};
+}
+
 function parseLegacyOrthoNotes(notesText: string | null | undefined): {
 	cleanNotes: string;
 	legacyOrtho: OrthoData | null;
@@ -58,7 +102,9 @@ export function OrthodonticProgressWidget({
 
 	// Если новое структурированное поле не заполнено, читаем старую запись,
 	// которую раньше складывали в конец заметок.
-	const orthoFromProfile = patient?.administrativeProfile?.orthodonticProgress;
+	const orthoFromProfile = parseOrthoProgress(
+		patient?.administrativeProfile?.orthodonticProgress,
+	);
 	const { cleanNotes, legacyOrtho } = parseLegacyOrthoNotes(patient?.notes);
 
 	const ortho: OrthoData | null = orthoFromProfile || legacyOrtho || null;
@@ -140,24 +186,15 @@ export function OrthodonticProgressWidget({
 					}),
 					body: JSON.stringify({
 						...adminProfile,
-						orthodonticProgress: updatedOrtho,
+						/*
+						 * БЫЛО: orthodonticProgress: updatedOrtho (object) → Zod string → 400.
+						 * СТАЛО: JSON-строка ≤500 символов, парсится обратно parseOrthoProgress.
+						 */
+						orthodonticProgress: serializeOrthoProgress(updatedOrtho),
 					}),
 				},
 			);
 
-			/*
-			 * БЫЛО: `throw new Error("Failed to save patient administrative profile")`
-			 * и один общий текст «Не удалось сохранить изменения». Он не говорил ни
-			 * почему, ни что делать, и врач жал «Сохранить» снова и снова.
-			 *
-			 * А повторять здесь бесполезно: сервер отвечает 400. В схеме
-			 * административного профиля orthodonticProgress объявлен строкой
-			 * (packages/shared/src/index.ts, z.string().max(500)), а виджет отправляет
-			 * объект с номерами капп — разбор не проходит. Причина отказа берётся из
-			 * общей формулировки по коду ответа: для 400 она прямо говорит, что
-			 * повторение не поможет и нужен администратор. Схему правит ведущий, это
-			 * не наш файл; экран обязан хотя бы не врать и не гонять по кругу.
-			 */
 			if (!resAdmin.ok) {
 				showToast(
 					`${actionFailureToast("Отсчёт капп не сохранён", resAdmin.status)} Пока запишите этап лечения в заметку к пациенту.`,
