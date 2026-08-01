@@ -188,7 +188,27 @@ export async function registerPublicAppointmentActionRoutes(app: FastifyInstance
 				);
 			}
 
-			await db.update(appointments).set({ status: "confirmed" }).where(eq(appointments.id, appointment.id));
+			/*
+			 * БЫЛО: UPDATE appointments SET status='confirmed' WHERE id=...
+			 * без organizationId. SELECT выше уже фильтровал по org, но
+			 * подтверждение по публичной ссылке — мутация статуса записи;
+			 * id-only UPDATE ломает multi-tenant defense-in-depth (тот же
+			 * класс, что visits/appointments staff path).
+			 * СТАЛО: organizationId + id; 0 строк → не помечаем код использованным.
+			 */
+			const [confirmed] = await db
+				.update(appointments)
+				.set({ status: "confirmed" })
+				.where(
+					and(
+						eq(appointments.id, appointment.id),
+						eq(appointments.organizationId, payload.organizationId),
+					),
+				)
+				.returning({ id: appointments.id });
+			if (!confirmed) {
+				return sendPage(reply, 404, title, "Запись не найдена. Возможно, её уже отменили. Позвоните в клинику.", "error");
+			}
 			await markActionCodeUsed(resolved.code);
 			wsBroker.broadcastToOrganization(payload.organizationId, {
 				type: "APPOINTMENT_UPDATED",
@@ -204,7 +224,24 @@ export async function registerPublicAppointmentActionRoutes(app: FastifyInstance
 			return sendPage(reply, 409, title, `Приём ${moment} уже нельзя отменить по ссылке. Позвоните в клинику.`, "warn");
 		}
 
-		await db.update(appointments).set({ status: "cancelled" }).where(eq(appointments.id, appointment.id));
+		/*
+		 * БЫЛО: UPDATE status='cancelled' WHERE id only (см. confirm выше).
+		 * СТАЛО: organizationId + id + RETURNING; иначе код ссылки сжигался бы
+		 * без реальной отмены.
+		 */
+		const [cancelled] = await db
+			.update(appointments)
+			.set({ status: "cancelled" })
+			.where(
+				and(
+					eq(appointments.id, appointment.id),
+					eq(appointments.organizationId, payload.organizationId),
+				),
+			)
+			.returning({ id: appointments.id });
+		if (!cancelled) {
+			return sendPage(reply, 404, title, "Запись не найдена. Возможно, её уже отменили. Позвоните в клинику.", "error");
+		}
 		await markActionCodeUsed(resolved.code);
 
 		// Напоминания об отменённом приёме снимаются сразу: иначе пациент,

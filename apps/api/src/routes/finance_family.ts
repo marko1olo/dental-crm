@@ -590,10 +590,29 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 
 				// 2. Deduct Balance
 				const newBalance = kopecksToNumericString(currentKopecks - amountKopecks);
-				await tx
+				/*
+				 * БЫЛО: UPDATE family_groups SET balance=... WHERE id=family.id
+				 * (organizationId только в SELECT FOR UPDATE выше). После
+				 * SELECT-then-UPDATE по одному id чужая клиника с тем же UUID
+				 * (копия базы, ошибка сида, ручной SQL) могла получить чужое
+				 * списание. organizationId в SET при этом не защищал строку —
+				 * он лишь перезаписывал то же значение.
+				 * СТАЛО: organizationId + id в WHERE; SET только balance;
+				 * пустой RETURNING → ошибка (не «успешная» оплата без списания).
+				 */
+				const [debited] = await tx
 					.update(familyGroups)
-					.set({ balance: newBalance, organizationId })
-					.where(eq(familyGroups.id, family.id));
+					.set({ balance: newBalance })
+					.where(
+						and(
+							eq(familyGroups.id, family.id),
+							eq(familyGroups.organizationId, organizationId),
+						),
+					)
+					.returning({ id: familyGroups.id });
+				if (!debited) {
+					throw new FamilyFinanceError("Семейная группа не найдена", 404);
+				}
 
 				// 3. Create Payment Record
 				const [payment] = await tx
@@ -721,10 +740,23 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				const newBalance = kopecksToNumericString(
 					parseKopecks(family.balance) + rublesToKopecks(payload.amountRub),
 				);
-				await tx
+				/*
+				 * БЫЛО: UPDATE по id без organizationId в WHERE (см. pay выше).
+				 * СТАЛО: organizationId + id; RETURNING обязателен.
+				 */
+				const [credited] = await tx
 					.update(familyGroups)
-					.set({ balance: newBalance, organizationId, updatedAt: new Date() })
-					.where(eq(familyGroups.id, family.id));
+					.set({ balance: newBalance, updatedAt: new Date() })
+					.where(
+						and(
+							eq(familyGroups.id, family.id),
+							eq(familyGroups.organizationId, organizationId),
+						),
+					)
+					.returning({ id: familyGroups.id });
+				if (!credited) {
+					throw new FamilyFinanceError("Семейная группа не найдена", 404);
+				}
 
 				// Пополнение фиксируется в журнале платежей со статусом "planned":
 				// это ещё не выручка клиники, а аванс семьи. Иначе пополнение
