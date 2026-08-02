@@ -2140,7 +2140,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: independentInd nullFlavor NI until chart field exists.
 							-->
 							<independentInd nullFlavor="NI"/>
+							<!--
+								DEFECT #206: instrument-tray supply/expectedUseTime.
+								WAS: supply had id/code/text/statusCode/effectiveTime/priorityCode/
+								quantity/repeatNumber/independentInd only — no expectedUseTime.
+								HL7 CDA R2 Supply has expectedUseTime 0..1 (when the supplied
+								item is expected to be used). SEMD validators often flag
+								missing expectedUseTime under sterilization tray supply.
+								Form 043/u tray barcode has no separate expected-use clock —
+								do not invent a fake IVL_TS high/low pair.
+								NOW: expectedUseTime nullFlavor NI until chart field exists.
+							-->
+							<expectedUseTime nullFlavor="NI"/>
 						</supply>
+
 
 
 
