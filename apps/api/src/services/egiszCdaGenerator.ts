@@ -2088,7 +2088,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: approachSiteCode nullFlavor NI until chart field exists.
 							-->
 							<approachSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #222: treatment act/targetSiteCode.
+								WAS: treatment ACT had approachSiteCode NI (#221) but no
+								targetSiteCode. Diagnosis OBS already carries targetSiteCode
+								when diagnosisTooth is set (#74). HL7 CDA R2 Act has
+								targetSiteCode 0..* (anatomical site the act is directed at —
+								distinct from approachSiteCode). SEMD validators often flag
+								missing target site under treatment ACT so REMD cannot join
+								the procedure to the treated tooth.
+								NOW: when diagnosisTooth present emit ISO 3950 tooth CE
+								(same NSI 1.2.643.5.1.13.13.11.1466 as diagnosis #74);
+								else targetSiteCode nullFlavor NI — do not invent a tooth.
+							-->
+							${params.diagnosisTooth && String(params.diagnosisTooth).trim()
+								? `<targetSiteCode code="${escapeXml(String(params.diagnosisTooth).trim())}" codeSystem="1.2.643.5.1.13.13.11.1466" codeSystemName="Зубы" displayName="Зуб ${escapeXml(String(params.diagnosisTooth).trim())}"/>`
+								: `<targetSiteCode nullFlavor="NI"/>`}
 						</act>
+
 
 
 
