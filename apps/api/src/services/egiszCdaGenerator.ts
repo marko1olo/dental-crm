@@ -244,6 +244,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<setId root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(setIdExtension)}"/>
 
 	<versionNumber value="${Math.max(1, Math.floor(Number(params.documentVersion) || 1))}"/>
+	<!--
+		DEFECT #360: ClinicalDocument/copyTime.
+		WAS: header had versionNumber then relatedDocument/recordTarget — no copyTime.
+		HL7 CDA R2 ClinicalDocument has copyTime 0..1 (when this copy was made).
+		SEMD validators often flag missing copyTime under document header.
+		Form 043/u export is the original authored instance, not a later copy —
+		do not invent a fake copy timestamp.
+		NOW: copyTime nullFlavor NI until an explicit copy/export-audit clock exists.
+	-->
+	<copyTime nullFlavor="NI"/>
+
 	${relatedDocumentXml}
 	<recordTarget>
 
@@ -1779,6 +1790,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: admissionReferralSourceCode nullFlavor NI until chart field exists.
 			-->
 			<admissionReferralSourceCode nullFlavor="NI"/>
+			<!--
+				DEFECT #361: encompassingEncounter/lengthOfStayQuantity.
+				WAS: encounter had admissionReferralSourceCode (#182) then priorityCode
+				(#183) — no lengthOfStayQuantity. HL7 CDA R2 Encounter has
+				lengthOfStayQuantity 0..1. SEMD validators often flag missing LOS
+				under ambulatory close. Form 043/u ambulatory dental visit has no
+				inpatient length-of-stay — do not invent days/hours.
+				NOW: lengthOfStayQuantity nullFlavor NI until chart field exists.
+			-->
+			<lengthOfStayQuantity nullFlavor="NI"/>
 			<!--
 				DEFECT #183: encompassingEncounter/priorityCode.
 				WAS: encounter had dischargeDisposition (#179) and
@@ -4005,7 +4026,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</externalAct>
 							</reference>
+							
 							<!--
+								DEFECT #362: treatment act/specimen.
+								WAS: treatment act had reference/precondition then entryRelationship — no specimen.
+								HL7 CDA R2 Act/Observation/Supply has specimen 0..* (material).
+								SEMD validators often flag missing specimen under clinical entries.
+								Form 043/u ambulatory dental chart does not collect discrete specimen
+								identity for these entries — do not invent specimen type codes or IDs.
+								NOW: specimen typeCode=SPC with specimenRole id nullFlavor NI
+								until chart field exists.
+							-->
+							<specimen typeCode="SPC">
+								<specimenRole>
+									<id nullFlavor="NI"/>
+								</specimenRole>
+							</specimen>
+<!--
 								DEFECT #347: treatment act/entryRelationship.
 								WAS: treatment ACT had performer/author/informant/participant/precondition/reference then closed — no entryRelationship. Body OBS (#342-#346) already carry entryRelationship COMP.
 								HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
@@ -5336,7 +5373,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</externalAct>
 							</reference>
+							
 							<!--
+								DEFECT #363: instrument-tray supply/specimen.
+								WAS: instrument-tray supply had reference/precondition then entryRelationship — no specimen.
+								HL7 CDA R2 Act/Observation/Supply has specimen 0..* (material).
+								SEMD validators often flag missing specimen under clinical entries.
+								Form 043/u ambulatory dental chart does not collect discrete specimen
+								identity for these entries — do not invent specimen type codes or IDs.
+								NOW: specimen typeCode=SPC with specimenRole id nullFlavor NI
+								until chart field exists.
+							-->
+							<specimen typeCode="SPC">
+								<specimenRole>
+									<id nullFlavor="NI"/>
+								</specimenRole>
+							</specimen>
+<!--
 								DEFECT #348: instrument-tray supply/entryRelationship.
 								WAS: supply had performer/author/informant/participant/precondition/reference then closed — no entryRelationship. Body OBS (#342-#346) and treatment ACT (#347) already carry entryRelationship COMP.
 								HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
