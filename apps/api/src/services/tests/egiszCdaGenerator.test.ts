@@ -1370,7 +1370,79 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(noEnc.includes("<serviceProviderOrganization>"));
 	});
 
+	test("DEFECT #93: documentationOf/serviceEvent/performer (treating physician)", () => {
+		const visitDate = new Date("2024-11-01T09:30:00.000Z");
+		const params: EgiszCdaParams = {
+			patientId: "pat-93",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.333",
+			clinicName: "ООО Клиника Performer",
+			doctorName: { first: "Петр", last: "Петров", middle: "Иванович" },
+			doctorSnils: "555-666-777 88",
+			doctorPosition: "Врач-стоматолог-терапевт",
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate,
+			documentId: "doc-93",
+			encounterId: "visit-93",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		const docOfStart = xml.indexOf("<documentationOf>");
+		const docOfEnd = xml.indexOf("</documentationOf>");
+		assert.ok(docOfStart > 0 && docOfEnd > docOfStart);
+		const docOf = xml.slice(docOfStart, docOfEnd);
+
+		assert.ok(
+			docOf.includes('<serviceEvent classCode="PCPR">'),
+			"documentationOf must wrap serviceEvent PCPR",
+		);
+		assert.ok(
+			docOf.includes('<performer typeCode="PRF">'),
+			"serviceEvent must include performer typeCode=PRF",
+		);
+		assert.ok(docOf.includes("<assignedEntity>"));
+		assert.ok(
+			docOf.includes('root="1.2.643.100.3" extension="555-666-777 88"'),
+			"performer assignedEntity id must carry doctor SNILS",
+		);
+		assert.ok(
+			docOf.includes("<family>Петров</family>"),
+			"performer must include treating physician family name",
+		);
+		assert.ok(docOf.includes("<given>Петр</given>"));
+		assert.ok(docOf.includes("<given>Иванович</given>"));
+		assert.ok(
+			docOf.includes('displayName="Врач-стоматолог-терапевт"'),
+			"performer should surface doctorPosition when provided",
+		);
+		assert.ok(
+			docOf.includes("<name>ООО Клиника Performer</name>"),
+			"performer representedOrganization uses clinicName",
+		);
+
+		/* without doctorSnils → id nullFlavor NI */
+		const noSnils = generateDentalCdaXml({
+			...params,
+			doctorSnils: undefined,
+			doctorPosition: undefined,
+			doctorName: { first: "Анна", last: "Сидорова" },
+		});
+		const nsDoc = noSnils.slice(
+			noSnils.indexOf("<documentationOf>"),
+			noSnils.indexOf("</documentationOf>"),
+		);
+		assert.ok(nsDoc.includes('<performer typeCode="PRF">'));
+		assert.ok(nsDoc.includes('<id nullFlavor="NI"/>'));
+		assert.ok(nsDoc.includes("<family>Сидорова</family>"));
+		assert.ok(nsDoc.includes("<given>Анна</given>"));
+	});
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 
 
 

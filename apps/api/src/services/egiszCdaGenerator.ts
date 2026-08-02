@@ -350,11 +350,42 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		</assignedEntity>
 	</legalAuthenticator>
 	<!-- DEFECT #55/#65: encounter datetime (params.visitDate / appointment.startsAt) -->
+	<!--
+		DEFECT #93: documentationOf/serviceEvent/performer (treating physician).
+		БЫЛО: serviceEvent carried only effectiveTime — no performer. HL7 CDA R2
+		and EGISZ SEMD expect the clinician who performed the care event under
+		documentationOf (distinct from author/legalAuthenticator document roles
+		and from encompassingEncounter/responsibleParty). Without performer,
+		validators treat the care event as unattributed.
+		СТАЛО: performer typeCode="PRF" with assignedEntity (doctor SNILS/name
+		+ clinic), same identity scheme as assignedAuthor / responsibleParty.
+	-->
 	<documentationOf>
 		<serviceEvent classCode="PCPR">
 			<effectiveTime value="${visitTime}"/>
+			<performer typeCode="PRF">
+				<assignedEntity>
+					${params.doctorSnils && String(params.doctorSnils).trim()
+						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+						: `<id nullFlavor="NI"/>`}
+					${params.doctorPosition && params.doctorPosition.trim()
+						? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+						: ""}
+					<assignedPerson>
+						<name>
+							<family>${escapeXml(params.doctorName.last)}</family>
+							<given>${escapeXml(params.doctorName.first)}</given>
+							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+						</name>
+					</assignedPerson>
+					<representedOrganization>
+						<name>${escapeXml(params.clinicName)}</name>
+					</representedOrganization>
+				</assignedEntity>
+			</performer>
 		</serviceEvent>
 	</documentationOf>
+
 	<!--
 		DEFECT #86: componentOf/encompassingEncounter (CDA R2 header).
 		БЫЛО: only documentationOf/serviceEvent carried visitDate. HL7 CDA R2
