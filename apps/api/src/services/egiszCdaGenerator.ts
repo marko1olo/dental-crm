@@ -238,19 +238,35 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			 * extension (XML-escaped); second id = SNILS when present (else
 			 * no second SNILS id — MRN alone is sufficient, no empty NI when
 			 * we already have a real local id).
+			 *
+			 * DEFECT #122: empty patientId must not invent extension="unknown".
+			 * БЫЛО (#94): mrnExt fell back to literal "unknown" when patientId
+			 * blank — same class of fake II.extension as healthCareFacility
+			 * #120. REMD join treats "unknown" as a real chart key.
+			 * СТАЛО: real patientId extension when non-empty; else
+			 * <id nullFlavor="NI"/> for the MRN slot. SNILS id still emitted
+			 * when present (may be the only real id). If both empty, single
+			 * nullFlavor NI satisfies CDA R2 patientRole/id 1..*.
 			 */
 			(() => {
 				const mrnRoot =
 					params.clinicOid && String(params.clinicOid).trim()
 						? escapeXml(String(params.clinicOid).trim())
 						: "1.2.643.5.1.13.13.12.2";
-				const mrnExt = escapeXml(String(params.patientId ?? "").trim() || "unknown");
-				const mrnId = `<id root="${mrnRoot}" extension="${mrnExt}"/>`;
+				const mrnRaw = String(params.patientId ?? "").trim();
+				const mrnId = mrnRaw
+					? `<id root="${mrnRoot}" extension="${escapeXml(mrnRaw)}"/>`
+					: `<id nullFlavor="NI"/>`;
 				const snils =
 					params.patientSnils && String(params.patientSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.patientSnils).trim())}"/>`
 						: "";
-				return snils ? `${mrnId}\n\t\t\t${snils}` : mrnId;
+				// If MRN is nullFlavor and SNILS present, prefer SNILS alone
+				// (no redundant NI+SNILS pair). If MRN real, keep MRN then SNILS.
+				if (mrnRaw) {
+					return snils ? `${mrnId}\n\t\t\t${snils}` : mrnId;
+				}
+				return snils || mrnId;
 			})()}
 			<!--
 				DEFECT #98: patientRole addr + telecom (HL7 CDA R2 / EGISZ SEMD).
