@@ -1926,7 +1926,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: approachSiteCode nullFlavor NI until chart field exists.
 							-->
 							<approachSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #229: anamnesis observation/targetSiteCode.
+								WAS: anamnesis OBS had approachSiteCode NI (#225) but no
+								targetSiteCode. Diagnosis OBS always emits targetSiteCode
+								(tooth CE or NI) (#223). HL7 CDA R2 Observation has
+								targetSiteCode 0..* (anatomical site the finding is about).
+								SEMD validators often flag missing target site under history
+								OBS. Form 043/u anamnesis is whole-history free text — no
+								single tooth; do not invent ISO 3950.
+								NOW: targetSiteCode nullFlavor NI until chart field exists.
+							-->
+							<targetSiteCode nullFlavor="NI"/>
 						</observation>
+
 
 					</entry>
 				</section>
