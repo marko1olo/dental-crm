@@ -1636,6 +1636,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 				-->
 				<interpretationCode nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #724: precondition/criterion/priorityCode.
+						WAS: criterion had lang/interp — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under precondition criterion when body acts emit it. Form 043/u has no criterion priority field — do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #725: precondition/criterion/methodCode.
+						WAS: criterion had no methodCode. HL7 CDA R2 Act has methodCode 0..*. SEMD often flags missing method under precondition. Form 043/u has no criterion method — do not invent NSI method OID.
+						NOW: methodCode nullFlavor NI until chart field exists.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #726: precondition/criterion/targetSiteCode.
+						WAS: criterion had no targetSiteCode. HL7 CDA R2 Act has targetSiteCode 0..*. SEMD often flags missing target site under precondition when body OBS emit it. Form 043/u has no criterion anatomic site — do not invent.
+						NOW: targetSiteCode nullFlavor NI until chart field exists.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #727: precondition/criterion/uncertaintyCode.
+						WAS: criterion had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. SEMD often flags missing uncertainty under precondition. Do not invent U/N.
+						NOW: uncertaintyCode nullFlavor NI until chart field exists.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #728: precondition/criterion/confidentialityCode.
+						WAS: criterion had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument declares N; SEMD often flags missing confidentiality under precondition criterion.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 				</criterion>
 			</precondition>
 			<!--
@@ -1665,6 +1696,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: text nullFlavor NI; do not invent external narrative.
 					-->
 					<text nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #769: reference/externalAct/statusCode.
+						WAS: externalAct had id/code/text only — no statusCode. HL7 CDA R2 ExternalAct (Act) commonly carries statusCode. SEMD often flags bare externalAct under reference REFR. Sibling body acts use completed.
+						NOW: statusCode completed.
+					-->
+					<statusCode code="completed"/>
+					<!--
+						DEFECT #770: reference/externalAct/effectiveTime.
+						WAS: externalAct had no effectiveTime. SEMD often flags missing effectiveTime under reference externalAct when body acts emit it. Form 043/u has no external act clock — do not invent.
+						NOW: effectiveTime nullFlavor NI until chart field exists.
+					-->
+					<effectiveTime nullFlavor="NI"/>
 				</externalAct>
 			</reference>
 									<!--
@@ -1928,7 +1972,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
 				-->
 				<targetSiteCode nullFlavor="NI"/>
-				</act>
+				
+					<!--
+						DEFECT #795: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had method/targetSite — no uncertaintyCode. Parent body OBS/ACT emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested entryRelationship acts.
+						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+</act>
 			</entryRelationship>
 
 
@@ -2007,7 +2058,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				
 			-->
 			<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
-		</order>
+		
+			<!--
+				DEFECT #792: inFulfillmentOf/order/methodCode.
+				WAS: order had id/code/status/priority/effectiveTime/text/lang/conf — no methodCode. HL7 CDA R2 Order (Act) has methodCode 0..*. SEMD often flags missing method under inFulfillmentOf when body acts emit methodCode. Form 043/u has no order method field — do not invent NSI method OID.
+				NOW: methodCode nullFlavor NI until chart field exists.
+			-->
+			<methodCode nullFlavor="NI"/>
+			<!--
+				DEFECT #793: inFulfillmentOf/order/targetSiteCode.
+				WAS: order had no targetSiteCode. HL7 CDA R2 Act has targetSiteCode 0..*. SEMD often flags missing target under inFulfillmentOf. Form 043/u order has no anatomic site — do not invent.
+				NOW: targetSiteCode nullFlavor NI until chart field exists.
+			-->
+			<targetSiteCode nullFlavor="NI"/>
+			<!--
+				DEFECT #794: inFulfillmentOf/order/uncertaintyCode.
+				WAS: order had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. SEMD often flags missing uncertainty under inFulfillmentOf. Do not invent U/N.
+				NOW: uncertaintyCode nullFlavor NI until chart field exists.
+			-->
+			<uncertaintyCode nullFlavor="NI"/>
+</order>
 	</inFulfillmentOf>
 	<!--
 		DEFECT #130: ClinicalDocument/participant typeCode="REF" (referrer).
@@ -2159,6 +2229,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 		-->
 
+		
+		<!--
+			DEFECT #787: authorization/consent/methodCode.
+			WAS: consent had id/code/status/effectiveTime/text/priority/lang/conf/performer — no methodCode. HL7 CDA R2 Consent Act has methodCode 0..*. SEMD often flags missing method under authorization consent. Form 043/u has no consent method field — do not invent.
+			NOW: methodCode nullFlavor NI until chart field exists.
+		-->
+		<methodCode nullFlavor="NI"/>
+		<!--
+			DEFECT #788: authorization/consent/targetSiteCode.
+			WAS: consent had no targetSiteCode. HL7 CDA R2 Act has targetSiteCode 0..*. SEMD often flags missing target under consent when body acts emit it. Do not invent anatomic site.
+			NOW: targetSiteCode nullFlavor NI until chart field exists.
+		-->
+		<targetSiteCode nullFlavor="NI"/>
+		<!--
+			DEFECT #789: authorization/consent/uncertaintyCode.
+			WAS: consent had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. SEMD often flags missing uncertainty under authorization. Do not invent U/N.
+			NOW: uncertaintyCode nullFlavor NI until chart field exists.
+		-->
+		<uncertaintyCode nullFlavor="NI"/>
 		<performer typeCode="PRF">
 
 			<assignedEntity>
@@ -2189,7 +2278,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 		</performer>
 
-		</consent>
+		
+		<!--
+			DEFECT #790: authorization/consent/author.
+			WAS: consent had performer PRF but no author. HL7 CDA R2 Consent Act has author 0..*. SEMD validators often flag missing consent author when legalAuthenticator is present but consent has no authoring device/person.
+			NOW: author typeCode=AUT with assignedAuthor id/addr/telecom/assignedPerson name NI; do not invent.
+		-->
+		<author typeCode="AUT">
+			<time nullFlavor="NI"/>
+			<assignedAuthor>
+
+				<!--
+					DEFECT #791: consent/author/assignedAuthor demographics.
+					WAS: author shell needs assignedAuthor children.
+					NOW: id/addr/telecom NI + assignedPerson/name NI; do not invent.
+				-->
+				<id nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<assignedPerson>
+					<name nullFlavor="NI"/>
+				</assignedPerson>
+			</assignedAuthor>
+		</author>
+</consent>
 	</authorization>
 
 
@@ -2786,6 +2898,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 				-->
 				<interpretationCode nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #729: precondition/criterion/priorityCode.
+						WAS: criterion had lang/interp — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under precondition criterion when body acts emit it. Form 043/u has no criterion priority field — do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #730: precondition/criterion/methodCode.
+						WAS: criterion had no methodCode. HL7 CDA R2 Act has methodCode 0..*. SEMD often flags missing method under precondition. Form 043/u has no criterion method — do not invent NSI method OID.
+						NOW: methodCode nullFlavor NI until chart field exists.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #731: precondition/criterion/targetSiteCode.
+						WAS: criterion had no targetSiteCode. HL7 CDA R2 Act has targetSiteCode 0..*. SEMD often flags missing target site under precondition when body OBS emit it. Form 043/u has no criterion anatomic site — do not invent.
+						NOW: targetSiteCode nullFlavor NI until chart field exists.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #732: precondition/criterion/uncertaintyCode.
+						WAS: criterion had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. SEMD often flags missing uncertainty under precondition. Do not invent U/N.
+						NOW: uncertaintyCode nullFlavor NI until chart field exists.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #733: precondition/criterion/confidentialityCode.
+						WAS: criterion had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument declares N; SEMD often flags missing confidentiality under precondition criterion.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 				</criterion>
 			</precondition>
 			<!--
@@ -2815,6 +2958,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: text nullFlavor NI; do not invent external narrative.
 					-->
 					<text nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #771: reference/externalAct/statusCode.
+						WAS: externalAct had id/code/text only — no statusCode. HL7 CDA R2 ExternalAct (Act) commonly carries statusCode. SEMD often flags bare externalAct under reference REFR. Sibling body acts use completed.
+						NOW: statusCode completed.
+					-->
+					<statusCode code="completed"/>
+					<!--
+						DEFECT #772: reference/externalAct/effectiveTime.
+						WAS: externalAct had no effectiveTime. SEMD often flags missing effectiveTime under reference externalAct when body acts emit it. Form 043/u has no external act clock — do not invent.
+						NOW: effectiveTime nullFlavor NI until chart field exists.
+					-->
+					<effectiveTime nullFlavor="NI"/>
 				</externalAct>
 			</reference>
 									<!--
@@ -3053,7 +3209,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
 				-->
 				<targetSiteCode nullFlavor="NI"/>
-				</act>
+				
+					<!--
+						DEFECT #796: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had method/targetSite — no uncertaintyCode. Parent body OBS/ACT emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested entryRelationship acts.
+						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+</act>
 			</entryRelationship>
 
 
@@ -3541,7 +3704,38 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 								-->
 								<interpretationCode nullFlavor="NI"/>
-								</criterion>
+								
+					<!--
+						DEFECT #734: precondition/criterion/priorityCode.
+						WAS: criterion had lang/interp — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under precondition criterion when body acts emit it. Form 043/u has no criterion priority field — do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #735: precondition/criterion/methodCode.
+						WAS: criterion had no methodCode. HL7 CDA R2 Act has methodCode 0..*. SEMD often flags missing method under precondition. Form 043/u has no criterion method — do not invent NSI method OID.
+						NOW: methodCode nullFlavor NI until chart field exists.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #736: precondition/criterion/targetSiteCode.
+						WAS: criterion had no targetSiteCode. HL7 CDA R2 Act has targetSiteCode 0..*. SEMD often flags missing target site under precondition when body OBS emit it. Form 043/u has no criterion anatomic site — do not invent.
+						NOW: targetSiteCode nullFlavor NI until chart field exists.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #737: precondition/criterion/uncertaintyCode.
+						WAS: criterion had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. SEMD often flags missing uncertainty under precondition. Do not invent U/N.
+						NOW: uncertaintyCode nullFlavor NI until chart field exists.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #738: precondition/criterion/confidentialityCode.
+						WAS: criterion had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument declares N; SEMD often flags missing confidentiality under precondition criterion.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+				</criterion>
 							</precondition>
 							<!--
 								DEFECT #328: diagnosis observation/reference.
@@ -3570,7 +3764,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: text nullFlavor NI; do not invent external narrative.
 									-->
 									<text nullFlavor="NI"/>
-								</externalAct>
+								
+					<!--
+						DEFECT #773: reference/externalAct/statusCode.
+						WAS: externalAct had id/code/text only — no statusCode. HL7 CDA R2 ExternalAct (Act) commonly carries statusCode. SEMD often flags bare externalAct under reference REFR. Sibling body acts use completed.
+						NOW: statusCode completed.
+					-->
+					<statusCode code="completed"/>
+					<!--
+						DEFECT #774: reference/externalAct/effectiveTime.
+						WAS: externalAct had no effectiveTime. SEMD often flags missing effectiveTime under reference externalAct when body acts emit it. Form 043/u has no external act clock — do not invent.
+						NOW: effectiveTime nullFlavor NI until chart field exists.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+				</externalAct>
 							</reference>
 							<!--
 								DEFECT #337: diagnosis observation/specimen.
@@ -3845,7 +4052,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
 								-->
 								<targetSiteCode nullFlavor="NI"/>
-								</act>
+								
+					<!--
+						DEFECT #797: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had method/targetSite — no uncertaintyCode. Parent body OBS/ACT emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested entryRelationship acts.
+						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+</act>
 							</entryRelationship>
 
 
@@ -4288,7 +4502,38 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 								-->
 								<interpretationCode nullFlavor="NI"/>
-								</criterion>
+								
+					<!--
+						DEFECT #739: precondition/criterion/priorityCode.
+						WAS: criterion had lang/interp — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under precondition criterion when body acts emit it. Form 043/u has no criterion priority field — do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #740: precondition/criterion/methodCode.
+						WAS: criterion had no methodCode. HL7 CDA R2 Act has methodCode 0..*. SEMD often flags missing method under precondition. Form 043/u has no criterion method — do not invent NSI method OID.
+						NOW: methodCode nullFlavor NI until chart field exists.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #741: precondition/criterion/targetSiteCode.
+						WAS: criterion had no targetSiteCode. HL7 CDA R2 Act has targetSiteCode 0..*. SEMD often flags missing target site under precondition when body OBS emit it. Form 043/u has no criterion anatomic site — do not invent.
+						NOW: targetSiteCode nullFlavor NI until chart field exists.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #742: precondition/criterion/uncertaintyCode.
+						WAS: criterion had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. SEMD often flags missing uncertainty under precondition. Do not invent U/N.
+						NOW: uncertaintyCode nullFlavor NI until chart field exists.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #743: precondition/criterion/confidentialityCode.
+						WAS: criterion had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument declares N; SEMD often flags missing confidentiality under precondition criterion.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+				</criterion>
 							</precondition>
 							<!--
 								DEFECT #329: anamnesis observation/reference.
@@ -4317,7 +4562,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: text nullFlavor NI; do not invent external narrative.
 									-->
 									<text nullFlavor="NI"/>
-								</externalAct>
+								
+					<!--
+						DEFECT #775: reference/externalAct/statusCode.
+						WAS: externalAct had id/code/text only — no statusCode. HL7 CDA R2 ExternalAct (Act) commonly carries statusCode. SEMD often flags bare externalAct under reference REFR. Sibling body acts use completed.
+						NOW: statusCode completed.
+					-->
+					<statusCode code="completed"/>
+					<!--
+						DEFECT #776: reference/externalAct/effectiveTime.
+						WAS: externalAct had no effectiveTime. SEMD often flags missing effectiveTime under reference externalAct when body acts emit it. Form 043/u has no external act clock — do not invent.
+						NOW: effectiveTime nullFlavor NI until chart field exists.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+				</externalAct>
 							</reference>
 							<!--
 								DEFECT #338: anamnesis observation/specimen.
@@ -4592,7 +4850,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
 								-->
 								<targetSiteCode nullFlavor="NI"/>
-								</act>
+								
+					<!--
+						DEFECT #798: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had method/targetSite — no uncertaintyCode. Parent body OBS/ACT emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested entryRelationship acts.
+						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+</act>
 							</entryRelationship>
 
 
@@ -5049,7 +5314,38 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 								-->
 								<interpretationCode nullFlavor="NI"/>
-								</criterion>
+								
+					<!--
+						DEFECT #744: precondition/criterion/priorityCode.
+						WAS: criterion had lang/interp — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under precondition criterion when body acts emit it. Form 043/u has no criterion priority field — do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #745: precondition/criterion/methodCode.
+						WAS: criterion had no methodCode. HL7 CDA R2 Act has methodCode 0..*. SEMD often flags missing method under precondition. Form 043/u has no criterion method — do not invent NSI method OID.
+						NOW: methodCode nullFlavor NI until chart field exists.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #746: precondition/criterion/targetSiteCode.
+						WAS: criterion had no targetSiteCode. HL7 CDA R2 Act has targetSiteCode 0..*. SEMD often flags missing target site under precondition when body OBS emit it. Form 043/u has no criterion anatomic site — do not invent.
+						NOW: targetSiteCode nullFlavor NI until chart field exists.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #747: precondition/criterion/uncertaintyCode.
+						WAS: criterion had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. SEMD often flags missing uncertainty under precondition. Do not invent U/N.
+						NOW: uncertaintyCode nullFlavor NI until chart field exists.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #748: precondition/criterion/confidentialityCode.
+						WAS: criterion had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument declares N; SEMD often flags missing confidentiality under precondition criterion.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+				</criterion>
 							</precondition>
 							<!--
 								DEFECT #330: objective-status observation/reference.
@@ -5078,7 +5374,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: text nullFlavor NI; do not invent external narrative.
 									-->
 									<text nullFlavor="NI"/>
-								</externalAct>
+								
+					<!--
+						DEFECT #777: reference/externalAct/statusCode.
+						WAS: externalAct had id/code/text only — no statusCode. HL7 CDA R2 ExternalAct (Act) commonly carries statusCode. SEMD often flags bare externalAct under reference REFR. Sibling body acts use completed.
+						NOW: statusCode completed.
+					-->
+					<statusCode code="completed"/>
+					<!--
+						DEFECT #778: reference/externalAct/effectiveTime.
+						WAS: externalAct had no effectiveTime. SEMD often flags missing effectiveTime under reference externalAct when body acts emit it. Form 043/u has no external act clock — do not invent.
+						NOW: effectiveTime nullFlavor NI until chart field exists.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+				</externalAct>
 							</reference>
 							<!--
 								DEFECT #339: objective-status observation/specimen.
@@ -5353,7 +5662,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
 								-->
 								<targetSiteCode nullFlavor="NI"/>
-								</act>
+								
+					<!--
+						DEFECT #799: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had method/targetSite — no uncertaintyCode. Parent body OBS/ACT emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested entryRelationship acts.
+						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+</act>
 							</entryRelationship>
 
 
@@ -5804,7 +6120,38 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 								-->
 								<interpretationCode nullFlavor="NI"/>
-								</criterion>
+								
+					<!--
+						DEFECT #749: precondition/criterion/priorityCode.
+						WAS: criterion had lang/interp — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under precondition criterion when body acts emit it. Form 043/u has no criterion priority field — do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #750: precondition/criterion/methodCode.
+						WAS: criterion had no methodCode. HL7 CDA R2 Act has methodCode 0..*. SEMD often flags missing method under precondition. Form 043/u has no criterion method — do not invent NSI method OID.
+						NOW: methodCode nullFlavor NI until chart field exists.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #751: precondition/criterion/targetSiteCode.
+						WAS: criterion had no targetSiteCode. HL7 CDA R2 Act has targetSiteCode 0..*. SEMD often flags missing target site under precondition when body OBS emit it. Form 043/u has no criterion anatomic site — do not invent.
+						NOW: targetSiteCode nullFlavor NI until chart field exists.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #752: precondition/criterion/uncertaintyCode.
+						WAS: criterion had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. SEMD often flags missing uncertainty under precondition. Do not invent U/N.
+						NOW: uncertaintyCode nullFlavor NI until chart field exists.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #753: precondition/criterion/confidentialityCode.
+						WAS: criterion had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument declares N; SEMD often flags missing confidentiality under precondition criterion.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+				</criterion>
 							</precondition>
 							<!--
 								DEFECT #333: treatment act/reference.
@@ -5833,7 +6180,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: text nullFlavor NI; do not invent external narrative.
 									-->
 									<text nullFlavor="NI"/>
-								</externalAct>
+								
+					<!--
+						DEFECT #779: reference/externalAct/statusCode.
+						WAS: externalAct had id/code/text only — no statusCode. HL7 CDA R2 ExternalAct (Act) commonly carries statusCode. SEMD often flags bare externalAct under reference REFR. Sibling body acts use completed.
+						NOW: statusCode completed.
+					-->
+					<statusCode code="completed"/>
+					<!--
+						DEFECT #780: reference/externalAct/effectiveTime.
+						WAS: externalAct had no effectiveTime. SEMD often flags missing effectiveTime under reference externalAct when body acts emit it. Form 043/u has no external act clock — do not invent.
+						NOW: effectiveTime nullFlavor NI until chart field exists.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+				</externalAct>
 							</reference>
 							
 							
@@ -6073,7 +6433,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
 								-->
 								<targetSiteCode nullFlavor="NI"/>
-								</act>
+								
+					<!--
+						DEFECT #800: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had method/targetSite — no uncertaintyCode. Parent body OBS/ACT emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested entryRelationship acts.
+						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+</act>
 							</entryRelationship>
 
 
@@ -6522,7 +6889,38 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 								-->
 								<interpretationCode nullFlavor="NI"/>
-								</criterion>
+								
+					<!--
+						DEFECT #754: precondition/criterion/priorityCode.
+						WAS: criterion had lang/interp — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under precondition criterion when body acts emit it. Form 043/u has no criterion priority field — do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #755: precondition/criterion/methodCode.
+						WAS: criterion had no methodCode. HL7 CDA R2 Act has methodCode 0..*. SEMD often flags missing method under precondition. Form 043/u has no criterion method — do not invent NSI method OID.
+						NOW: methodCode nullFlavor NI until chart field exists.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #756: precondition/criterion/targetSiteCode.
+						WAS: criterion had no targetSiteCode. HL7 CDA R2 Act has targetSiteCode 0..*. SEMD often flags missing target site under precondition when body OBS emit it. Form 043/u has no criterion anatomic site — do not invent.
+						NOW: targetSiteCode nullFlavor NI until chart field exists.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #757: precondition/criterion/uncertaintyCode.
+						WAS: criterion had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. SEMD often flags missing uncertainty under precondition. Do not invent U/N.
+						NOW: uncertaintyCode nullFlavor NI until chart field exists.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #758: precondition/criterion/confidentialityCode.
+						WAS: criterion had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument declares N; SEMD often flags missing confidentiality under precondition criterion.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+				</criterion>
 							</precondition>
 							<!--
 								DEFECT #331: complications observation/reference.
@@ -6551,7 +6949,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: text nullFlavor NI; do not invent external narrative.
 									-->
 									<text nullFlavor="NI"/>
-								</externalAct>
+								
+					<!--
+						DEFECT #781: reference/externalAct/statusCode.
+						WAS: externalAct had id/code/text only — no statusCode. HL7 CDA R2 ExternalAct (Act) commonly carries statusCode. SEMD often flags bare externalAct under reference REFR. Sibling body acts use completed.
+						NOW: statusCode completed.
+					-->
+					<statusCode code="completed"/>
+					<!--
+						DEFECT #782: reference/externalAct/effectiveTime.
+						WAS: externalAct had no effectiveTime. SEMD often flags missing effectiveTime under reference externalAct when body acts emit it. Form 043/u has no external act clock — do not invent.
+						NOW: effectiveTime nullFlavor NI until chart field exists.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+				</externalAct>
 							</reference>
 							<!--
 								DEFECT #340: complications observation/specimen.
@@ -6826,7 +7237,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
 								-->
 								<targetSiteCode nullFlavor="NI"/>
-								</act>
+								
+					<!--
+						DEFECT #801: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had method/targetSite — no uncertaintyCode. Parent body OBS/ACT emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested entryRelationship acts.
+						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+</act>
 							</entryRelationship>
 
 
@@ -7282,7 +7700,38 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 								-->
 								<interpretationCode nullFlavor="NI"/>
-								</criterion>
+								
+					<!--
+						DEFECT #759: precondition/criterion/priorityCode.
+						WAS: criterion had lang/interp — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under precondition criterion when body acts emit it. Form 043/u has no criterion priority field — do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #760: precondition/criterion/methodCode.
+						WAS: criterion had no methodCode. HL7 CDA R2 Act has methodCode 0..*. SEMD often flags missing method under precondition. Form 043/u has no criterion method — do not invent NSI method OID.
+						NOW: methodCode nullFlavor NI until chart field exists.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #761: precondition/criterion/targetSiteCode.
+						WAS: criterion had no targetSiteCode. HL7 CDA R2 Act has targetSiteCode 0..*. SEMD often flags missing target site under precondition when body OBS emit it. Form 043/u has no criterion anatomic site — do not invent.
+						NOW: targetSiteCode nullFlavor NI until chart field exists.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #762: precondition/criterion/uncertaintyCode.
+						WAS: criterion had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. SEMD often flags missing uncertainty under precondition. Do not invent U/N.
+						NOW: uncertaintyCode nullFlavor NI until chart field exists.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #763: precondition/criterion/confidentialityCode.
+						WAS: criterion had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument declares N; SEMD often flags missing confidentiality under precondition criterion.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+				</criterion>
 							</precondition>
 							<!--
 								DEFECT #332: comorbidities observation/reference.
@@ -7311,7 +7760,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: text nullFlavor NI; do not invent external narrative.
 									-->
 									<text nullFlavor="NI"/>
-								</externalAct>
+								
+					<!--
+						DEFECT #783: reference/externalAct/statusCode.
+						WAS: externalAct had id/code/text only — no statusCode. HL7 CDA R2 ExternalAct (Act) commonly carries statusCode. SEMD often flags bare externalAct under reference REFR. Sibling body acts use completed.
+						NOW: statusCode completed.
+					-->
+					<statusCode code="completed"/>
+					<!--
+						DEFECT #784: reference/externalAct/effectiveTime.
+						WAS: externalAct had no effectiveTime. SEMD often flags missing effectiveTime under reference externalAct when body acts emit it. Form 043/u has no external act clock — do not invent.
+						NOW: effectiveTime nullFlavor NI until chart field exists.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+				</externalAct>
 							</reference>
 							<!--
 								DEFECT #341: comorbidities observation/specimen.
@@ -7586,7 +8048,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
 								-->
 								<targetSiteCode nullFlavor="NI"/>
-								</act>
+								
+					<!--
+						DEFECT #802: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had method/targetSite — no uncertaintyCode. Parent body OBS/ACT emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested entryRelationship acts.
+						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+</act>
 							</entryRelationship>
 
 
@@ -8119,7 +8588,38 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 								-->
 								<interpretationCode nullFlavor="NI"/>
-								</criterion>
+								
+					<!--
+						DEFECT #764: precondition/criterion/priorityCode.
+						WAS: criterion had lang/interp — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under precondition criterion when body acts emit it. Form 043/u has no criterion priority field — do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #765: precondition/criterion/methodCode.
+						WAS: criterion had no methodCode. HL7 CDA R2 Act has methodCode 0..*. SEMD often flags missing method under precondition. Form 043/u has no criterion method — do not invent NSI method OID.
+						NOW: methodCode nullFlavor NI until chart field exists.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #766: precondition/criterion/targetSiteCode.
+						WAS: criterion had no targetSiteCode. HL7 CDA R2 Act has targetSiteCode 0..*. SEMD often flags missing target site under precondition when body OBS emit it. Form 043/u has no criterion anatomic site — do not invent.
+						NOW: targetSiteCode nullFlavor NI until chart field exists.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #767: precondition/criterion/uncertaintyCode.
+						WAS: criterion had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. SEMD often flags missing uncertainty under precondition. Do not invent U/N.
+						NOW: uncertaintyCode nullFlavor NI until chart field exists.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #768: precondition/criterion/confidentialityCode.
+						WAS: criterion had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument declares N; SEMD often flags missing confidentiality under precondition criterion.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+				</criterion>
 							</precondition>
 							<!--
 								DEFECT #334: instrument-tray supply/reference.
@@ -8148,7 +8648,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: text nullFlavor NI; do not invent external narrative.
 									-->
 									<text nullFlavor="NI"/>
-								</externalAct>
+								
+					<!--
+						DEFECT #785: reference/externalAct/statusCode.
+						WAS: externalAct had id/code/text only — no statusCode. HL7 CDA R2 ExternalAct (Act) commonly carries statusCode. SEMD often flags bare externalAct under reference REFR. Sibling body acts use completed.
+						NOW: statusCode completed.
+					-->
+					<statusCode code="completed"/>
+					<!--
+						DEFECT #786: reference/externalAct/effectiveTime.
+						WAS: externalAct had no effectiveTime. SEMD often flags missing effectiveTime under reference externalAct when body acts emit it. Form 043/u has no external act clock — do not invent.
+						NOW: effectiveTime nullFlavor NI until chart field exists.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+				</externalAct>
 							</reference>
 							
 							
@@ -8389,7 +8902,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
 								-->
 								<targetSiteCode nullFlavor="NI"/>
-								</act>
+								
+					<!--
+						DEFECT #803: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had method/targetSite — no uncertaintyCode. Parent body OBS/ACT emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested entryRelationship acts.
+						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+</act>
 							</entryRelationship>
 
 
