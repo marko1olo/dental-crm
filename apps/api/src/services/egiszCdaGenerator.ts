@@ -1795,10 +1795,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
 							<value xsi:type="ST">${escapeXml(params.objectiveStatus || "Без особенностей")}</value>
+							<!--
+								DEFECT #190: objective-status observation/methodCode.
+								WAS: objective OBS had id/code/statusCode/effectiveTime/value
+								only — no methodCode. Diagnosis (#186) and anamnesis (#189)
+								already carry methodCode NI. HL7 CDA R2 Observation has
+								methodCode 0..*. SEMD validators often flag missing method
+								under status-localis OBS. Form 043/u objective status is
+								free-text exam note — do not invent a fake NSI method OID.
+								NOW: methodCode nullFlavor NI until chart field exists.
+							-->
+							<methodCode nullFlavor="NI"/>
 						</observation>
 					</entry></section>
 			</component>
 			<!-- Оказанные услуги / Лечение -->
+
 			<component>
 				<section>
 					<!--
