@@ -1605,7 +1605,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<criterion>
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
+					<!--
+						DEFECT #632: precondition/criterion/text.
+						WAS: criterion had id/code/value only — no text. HL7 CDA R2 Criterion (Act) has text 0..1. SEMD often flags bare criterion under precondition.
+						NOW: text nullFlavor NI; do not invent precondition prose.
+					-->
+					<text nullFlavor="NI"/>
+					<!--
+						DEFECT #633: precondition/criterion/statusCode.
+						WAS: criterion had no statusCode. HL7 CDA R2 Act has statusCode 1..1 in many profiles; sibling nested acts use completed.
+						NOW: statusCode completed.
+					-->
+					<statusCode code="completed"/>
 					<value xsi:type="CD" nullFlavor="NI"/>
+					<!--
+						DEFECT #634: precondition/criterion/effectiveTime.
+						WAS: criterion had no effectiveTime. SEMD often flags missing effectiveTime under precondition criterion when body acts emit it.
+						NOW: effectiveTime nullFlavor NI; do not invent criterion window.
+					-->
+					<effectiveTime nullFlavor="NI"/>
 				</criterion>
 			</precondition>
 			<!--
@@ -1623,6 +1641,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<reference typeCode="REFR">
 				<externalAct classCode="ACT" moodCode="EVN">
 					<id nullFlavor="NI"/>
+					<!--
+						DEFECT #659: reference/externalAct/code.
+						WAS: externalAct had id NI only — no code. HL7 CDA R2 ExternalAct has code 0..1. SEMD often flags bare externalAct under reference REFR.
+						NOW: code nullFlavor NI; do not invent external act type.
+					-->
+					<code nullFlavor="NI"/>
+					<!--
+						DEFECT #660: reference/externalAct/text.
+						WAS: externalAct had no text. HL7 CDA R2 ExternalAct has text 0..1.
+						NOW: text nullFlavor NI; do not invent external narrative.
+					-->
+					<text nullFlavor="NI"/>
 				</externalAct>
 			</reference>
 									<!--
@@ -1682,6 +1712,12 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<consumable typeCode="CSM">
 				<manufacturedProduct classCode="MANU">
+					<!--
+						DEFECT #677: manufacturedProduct/id.
+						WAS: manufacturedProduct opened then manufacturedMaterial — no id. Tray product carries barcode id; consumable shells had no product id. HL7 CDA R2 ManufacturedProduct has id 0..*. SEMD often flags bare product under consumable without id slot.
+						NOW: id nullFlavor NI; do not invent extension=unknown.
+					-->
+					<id nullFlavor="NI"/>
 					<manufacturedMaterial>
 						<code nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
@@ -1837,7 +1873,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<act classCode="ACT" moodCode="EVN">
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
+					<!--
+						DEFECT #587: entryRelationship/act/text.
+						WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
+						NOW: text nullFlavor NI.
+					-->
+					<text nullFlavor="NI"/>
 					<statusCode code="completed"/>
+					<!--
+						DEFECT #588: entryRelationship/act/priorityCode.
+						WAS: nested COMP act had no priorityCode. Parent body acts emit priorityCode NI. SEMD often flags missing priority under nested COMP acts.
+						NOW: priorityCode nullFlavor NI; do not invent ActPriority.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #589: entryRelationship/act/effectiveTime.
+						WAS: nested COMP act had no effectiveTime. Parent body acts stamp documentClock. Nested COMP has no separate chart timestamp; do not invent times.
+						NOW: effectiveTime nullFlavor NI.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #590: entryRelationship/act/languageCode.
+						WAS: nested COMP act had no languageCode. ClinicalDocument/sections declare ru-RU.
+						NOW: languageCode code=ru-RU.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #591: entryRelationship/act/confidentialityCode.
+						WAS: nested COMP act had no confidentialityCode. ClinicalDocument sets N.
+						NOW: confidentialityCode N matching ClinicalDocument.
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 				</act>
 			</entryRelationship>
 
@@ -2625,7 +2691,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<criterion>
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
+					<!--
+						DEFECT #635: precondition/criterion/text.
+						WAS: criterion had id/code/value only — no text. HL7 CDA R2 Criterion (Act) has text 0..1. SEMD often flags bare criterion under precondition.
+						NOW: text nullFlavor NI; do not invent precondition prose.
+					-->
+					<text nullFlavor="NI"/>
+					<!--
+						DEFECT #636: precondition/criterion/statusCode.
+						WAS: criterion had no statusCode. HL7 CDA R2 Act has statusCode 1..1 in many profiles; sibling nested acts use completed.
+						NOW: statusCode completed.
+					-->
+					<statusCode code="completed"/>
 					<value xsi:type="CD" nullFlavor="NI"/>
+					<!--
+						DEFECT #637: precondition/criterion/effectiveTime.
+						WAS: criterion had no effectiveTime. SEMD often flags missing effectiveTime under precondition criterion when body acts emit it.
+						NOW: effectiveTime nullFlavor NI; do not invent criterion window.
+					-->
+					<effectiveTime nullFlavor="NI"/>
 				</criterion>
 			</precondition>
 			<!--
@@ -2643,6 +2727,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<reference typeCode="REFR">
 				<externalAct classCode="ACT" moodCode="EVN">
 					<id nullFlavor="NI"/>
+					<!--
+						DEFECT #661: reference/externalAct/code.
+						WAS: externalAct had id NI only — no code. HL7 CDA R2 ExternalAct has code 0..1. SEMD often flags bare externalAct under reference REFR.
+						NOW: code nullFlavor NI; do not invent external act type.
+					-->
+					<code nullFlavor="NI"/>
+					<!--
+						DEFECT #662: reference/externalAct/text.
+						WAS: externalAct had no text. HL7 CDA R2 ExternalAct has text 0..1.
+						NOW: text nullFlavor NI; do not invent external narrative.
+					-->
+					<text nullFlavor="NI"/>
 				</externalAct>
 			</reference>
 									<!--
@@ -2702,6 +2798,12 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<consumable typeCode="CSM">
 				<manufacturedProduct classCode="MANU">
+					<!--
+						DEFECT #678: manufacturedProduct/id.
+						WAS: manufacturedProduct opened then manufacturedMaterial — no id. Tray product carries barcode id; consumable shells had no product id. HL7 CDA R2 ManufacturedProduct has id 0..*. SEMD often flags bare product under consumable without id slot.
+						NOW: id nullFlavor NI; do not invent extension=unknown.
+					-->
+					<id nullFlavor="NI"/>
 					<manufacturedMaterial>
 						<code nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
@@ -2832,7 +2934,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<act classCode="ACT" moodCode="EVN">
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
+					<!--
+						DEFECT #592: entryRelationship/act/text.
+						WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
+						NOW: text nullFlavor NI.
+					-->
+					<text nullFlavor="NI"/>
 					<statusCode code="completed"/>
+					<!--
+						DEFECT #593: entryRelationship/act/priorityCode.
+						WAS: nested COMP act had no priorityCode. Parent body acts emit priorityCode NI. SEMD often flags missing priority under nested COMP acts.
+						NOW: priorityCode nullFlavor NI; do not invent ActPriority.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #594: entryRelationship/act/effectiveTime.
+						WAS: nested COMP act had no effectiveTime. Parent body acts stamp documentClock. Nested COMP has no separate chart timestamp; do not invent times.
+						NOW: effectiveTime nullFlavor NI.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #595: entryRelationship/act/languageCode.
+						WAS: nested COMP act had no languageCode. ClinicalDocument/sections declare ru-RU.
+						NOW: languageCode code=ru-RU.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #596: entryRelationship/act/confidentialityCode.
+						WAS: nested COMP act had no confidentialityCode. ClinicalDocument sets N.
+						NOW: confidentialityCode N matching ClinicalDocument.
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 				</act>
 			</entryRelationship>
 
@@ -3290,7 +3422,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<criterion>
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #638: precondition/criterion/text.
+										WAS: criterion had id/code/value only — no text. HL7 CDA R2 Criterion (Act) has text 0..1. SEMD often flags bare criterion under precondition.
+										NOW: text nullFlavor NI; do not invent precondition prose.
+									-->
+									<text nullFlavor="NI"/>
+									<!--
+										DEFECT #639: precondition/criterion/statusCode.
+										WAS: criterion had no statusCode. HL7 CDA R2 Act has statusCode 1..1 in many profiles; sibling nested acts use completed.
+										NOW: statusCode completed.
+									-->
+									<statusCode code="completed"/>
 									<value xsi:type="CD" nullFlavor="NI"/>
+									<!--
+										DEFECT #640: precondition/criterion/effectiveTime.
+										WAS: criterion had no effectiveTime. SEMD often flags missing effectiveTime under precondition criterion when body acts emit it.
+										NOW: effectiveTime nullFlavor NI; do not invent criterion window.
+									-->
+									<effectiveTime nullFlavor="NI"/>
 								</criterion>
 							</precondition>
 							<!--
@@ -3308,6 +3458,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<reference typeCode="REFR">
 								<externalAct classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
+									<!--
+										DEFECT #663: reference/externalAct/code.
+										WAS: externalAct had id NI only — no code. HL7 CDA R2 ExternalAct has code 0..1. SEMD often flags bare externalAct under reference REFR.
+										NOW: code nullFlavor NI; do not invent external act type.
+									-->
+									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #664: reference/externalAct/text.
+										WAS: externalAct had no text. HL7 CDA R2 ExternalAct has text 0..1.
+										NOW: text nullFlavor NI; do not invent external narrative.
+									-->
+									<text nullFlavor="NI"/>
 								</externalAct>
 							</reference>
 							<!--
@@ -3411,6 +3573,12 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<consumable typeCode="CSM">
 								<manufacturedProduct classCode="MANU">
+									<!--
+										DEFECT #679: manufacturedProduct/id.
+										WAS: manufacturedProduct opened then manufacturedMaterial — no id. Tray product carries barcode id; consumable shells had no product id. HL7 CDA R2 ManufacturedProduct has id 0..*. SEMD often flags bare product under consumable without id slot.
+										NOW: id nullFlavor NI; do not invent extension=unknown.
+									-->
+									<id nullFlavor="NI"/>
 									<manufacturedMaterial>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
@@ -3534,7 +3702,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<act classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #597: entryRelationship/act/text.
+										WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
+										NOW: text nullFlavor NI.
+									-->
+									<text nullFlavor="NI"/>
 									<statusCode code="completed"/>
+									<!--
+										DEFECT #598: entryRelationship/act/priorityCode.
+										WAS: nested COMP act had no priorityCode. Parent body acts emit priorityCode NI. SEMD often flags missing priority under nested COMP acts.
+										NOW: priorityCode nullFlavor NI; do not invent ActPriority.
+									-->
+									<priorityCode nullFlavor="NI"/>
+									<!--
+										DEFECT #599: entryRelationship/act/effectiveTime.
+										WAS: nested COMP act had no effectiveTime. Parent body acts stamp documentClock. Nested COMP has no separate chart timestamp; do not invent times.
+										NOW: effectiveTime nullFlavor NI.
+									-->
+									<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #600: entryRelationship/act/languageCode.
+										WAS: nested COMP act had no languageCode. ClinicalDocument/sections declare ru-RU.
+										NOW: languageCode code=ru-RU.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #601: entryRelationship/act/confidentialityCode.
+										WAS: nested COMP act had no confidentialityCode. ClinicalDocument sets N.
+										NOW: confidentialityCode N matching ClinicalDocument.
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 								</act>
 							</entryRelationship>
 
@@ -3947,7 +4145,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<criterion>
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #641: precondition/criterion/text.
+										WAS: criterion had id/code/value only — no text. HL7 CDA R2 Criterion (Act) has text 0..1. SEMD often flags bare criterion under precondition.
+										NOW: text nullFlavor NI; do not invent precondition prose.
+									-->
+									<text nullFlavor="NI"/>
+									<!--
+										DEFECT #642: precondition/criterion/statusCode.
+										WAS: criterion had no statusCode. HL7 CDA R2 Act has statusCode 1..1 in many profiles; sibling nested acts use completed.
+										NOW: statusCode completed.
+									-->
+									<statusCode code="completed"/>
 									<value xsi:type="CD" nullFlavor="NI"/>
+									<!--
+										DEFECT #643: precondition/criterion/effectiveTime.
+										WAS: criterion had no effectiveTime. SEMD often flags missing effectiveTime under precondition criterion when body acts emit it.
+										NOW: effectiveTime nullFlavor NI; do not invent criterion window.
+									-->
+									<effectiveTime nullFlavor="NI"/>
 								</criterion>
 							</precondition>
 							<!--
@@ -3965,6 +4181,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<reference typeCode="REFR">
 								<externalAct classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
+									<!--
+										DEFECT #665: reference/externalAct/code.
+										WAS: externalAct had id NI only — no code. HL7 CDA R2 ExternalAct has code 0..1. SEMD often flags bare externalAct under reference REFR.
+										NOW: code nullFlavor NI; do not invent external act type.
+									-->
+									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #666: reference/externalAct/text.
+										WAS: externalAct had no text. HL7 CDA R2 ExternalAct has text 0..1.
+										NOW: text nullFlavor NI; do not invent external narrative.
+									-->
+									<text nullFlavor="NI"/>
 								</externalAct>
 							</reference>
 							<!--
@@ -4068,6 +4296,12 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<consumable typeCode="CSM">
 								<manufacturedProduct classCode="MANU">
+									<!--
+										DEFECT #680: manufacturedProduct/id.
+										WAS: manufacturedProduct opened then manufacturedMaterial — no id. Tray product carries barcode id; consumable shells had no product id. HL7 CDA R2 ManufacturedProduct has id 0..*. SEMD often flags bare product under consumable without id slot.
+										NOW: id nullFlavor NI; do not invent extension=unknown.
+									-->
+									<id nullFlavor="NI"/>
 									<manufacturedMaterial>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
@@ -4191,7 +4425,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<act classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #602: entryRelationship/act/text.
+										WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
+										NOW: text nullFlavor NI.
+									-->
+									<text nullFlavor="NI"/>
 									<statusCode code="completed"/>
+									<!--
+										DEFECT #603: entryRelationship/act/priorityCode.
+										WAS: nested COMP act had no priorityCode. Parent body acts emit priorityCode NI. SEMD often flags missing priority under nested COMP acts.
+										NOW: priorityCode nullFlavor NI; do not invent ActPriority.
+									-->
+									<priorityCode nullFlavor="NI"/>
+									<!--
+										DEFECT #604: entryRelationship/act/effectiveTime.
+										WAS: nested COMP act had no effectiveTime. Parent body acts stamp documentClock. Nested COMP has no separate chart timestamp; do not invent times.
+										NOW: effectiveTime nullFlavor NI.
+									-->
+									<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #605: entryRelationship/act/languageCode.
+										WAS: nested COMP act had no languageCode. ClinicalDocument/sections declare ru-RU.
+										NOW: languageCode code=ru-RU.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #606: entryRelationship/act/confidentialityCode.
+										WAS: nested COMP act had no confidentialityCode. ClinicalDocument sets N.
+										NOW: confidentialityCode N matching ClinicalDocument.
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 								</act>
 							</entryRelationship>
 
@@ -4618,7 +4882,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<criterion>
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #644: precondition/criterion/text.
+										WAS: criterion had id/code/value only — no text. HL7 CDA R2 Criterion (Act) has text 0..1. SEMD often flags bare criterion under precondition.
+										NOW: text nullFlavor NI; do not invent precondition prose.
+									-->
+									<text nullFlavor="NI"/>
+									<!--
+										DEFECT #645: precondition/criterion/statusCode.
+										WAS: criterion had no statusCode. HL7 CDA R2 Act has statusCode 1..1 in many profiles; sibling nested acts use completed.
+										NOW: statusCode completed.
+									-->
+									<statusCode code="completed"/>
 									<value xsi:type="CD" nullFlavor="NI"/>
+									<!--
+										DEFECT #646: precondition/criterion/effectiveTime.
+										WAS: criterion had no effectiveTime. SEMD often flags missing effectiveTime under precondition criterion when body acts emit it.
+										NOW: effectiveTime nullFlavor NI; do not invent criterion window.
+									-->
+									<effectiveTime nullFlavor="NI"/>
 								</criterion>
 							</precondition>
 							<!--
@@ -4636,6 +4918,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<reference typeCode="REFR">
 								<externalAct classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
+									<!--
+										DEFECT #667: reference/externalAct/code.
+										WAS: externalAct had id NI only — no code. HL7 CDA R2 ExternalAct has code 0..1. SEMD often flags bare externalAct under reference REFR.
+										NOW: code nullFlavor NI; do not invent external act type.
+									-->
+									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #668: reference/externalAct/text.
+										WAS: externalAct had no text. HL7 CDA R2 ExternalAct has text 0..1.
+										NOW: text nullFlavor NI; do not invent external narrative.
+									-->
+									<text nullFlavor="NI"/>
 								</externalAct>
 							</reference>
 							<!--
@@ -4739,6 +5033,12 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<consumable typeCode="CSM">
 								<manufacturedProduct classCode="MANU">
+									<!--
+										DEFECT #681: manufacturedProduct/id.
+										WAS: manufacturedProduct opened then manufacturedMaterial — no id. Tray product carries barcode id; consumable shells had no product id. HL7 CDA R2 ManufacturedProduct has id 0..*. SEMD often flags bare product under consumable without id slot.
+										NOW: id nullFlavor NI; do not invent extension=unknown.
+									-->
+									<id nullFlavor="NI"/>
 									<manufacturedMaterial>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
@@ -4862,7 +5162,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<act classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #607: entryRelationship/act/text.
+										WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
+										NOW: text nullFlavor NI.
+									-->
+									<text nullFlavor="NI"/>
 									<statusCode code="completed"/>
+									<!--
+										DEFECT #608: entryRelationship/act/priorityCode.
+										WAS: nested COMP act had no priorityCode. Parent body acts emit priorityCode NI. SEMD often flags missing priority under nested COMP acts.
+										NOW: priorityCode nullFlavor NI; do not invent ActPriority.
+									-->
+									<priorityCode nullFlavor="NI"/>
+									<!--
+										DEFECT #609: entryRelationship/act/effectiveTime.
+										WAS: nested COMP act had no effectiveTime. Parent body acts stamp documentClock. Nested COMP has no separate chart timestamp; do not invent times.
+										NOW: effectiveTime nullFlavor NI.
+									-->
+									<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #610: entryRelationship/act/languageCode.
+										WAS: nested COMP act had no languageCode. ClinicalDocument/sections declare ru-RU.
+										NOW: languageCode code=ru-RU.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #611: entryRelationship/act/confidentialityCode.
+										WAS: nested COMP act had no confidentialityCode. ClinicalDocument sets N.
+										NOW: confidentialityCode N matching ClinicalDocument.
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 								</act>
 							</entryRelationship>
 
@@ -5283,7 +5613,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<criterion>
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #647: precondition/criterion/text.
+										WAS: criterion had id/code/value only — no text. HL7 CDA R2 Criterion (Act) has text 0..1. SEMD often flags bare criterion under precondition.
+										NOW: text nullFlavor NI; do not invent precondition prose.
+									-->
+									<text nullFlavor="NI"/>
+									<!--
+										DEFECT #648: precondition/criterion/statusCode.
+										WAS: criterion had no statusCode. HL7 CDA R2 Act has statusCode 1..1 in many profiles; sibling nested acts use completed.
+										NOW: statusCode completed.
+									-->
+									<statusCode code="completed"/>
 									<value xsi:type="CD" nullFlavor="NI"/>
+									<!--
+										DEFECT #649: precondition/criterion/effectiveTime.
+										WAS: criterion had no effectiveTime. SEMD often flags missing effectiveTime under precondition criterion when body acts emit it.
+										NOW: effectiveTime nullFlavor NI; do not invent criterion window.
+									-->
+									<effectiveTime nullFlavor="NI"/>
 								</criterion>
 							</precondition>
 							<!--
@@ -5301,6 +5649,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<reference typeCode="REFR">
 								<externalAct classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
+									<!--
+										DEFECT #669: reference/externalAct/code.
+										WAS: externalAct had id NI only — no code. HL7 CDA R2 ExternalAct has code 0..1. SEMD often flags bare externalAct under reference REFR.
+										NOW: code nullFlavor NI; do not invent external act type.
+									-->
+									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #670: reference/externalAct/text.
+										WAS: externalAct had no text. HL7 CDA R2 ExternalAct has text 0..1.
+										NOW: text nullFlavor NI; do not invent external narrative.
+									-->
+									<text nullFlavor="NI"/>
 								</externalAct>
 							</reference>
 							
@@ -5319,6 +5679,12 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<consumable typeCode="CSM">
 								<manufacturedProduct classCode="MANU">
+									<!--
+										DEFECT #682: manufacturedProduct/id.
+										WAS: manufacturedProduct opened then manufacturedMaterial — no id. Tray product carries barcode id; consumable shells had no product id. HL7 CDA R2 ManufacturedProduct has id 0..*. SEMD often flags bare product under consumable without id slot.
+										NOW: id nullFlavor NI; do not invent extension=unknown.
+									-->
+									<id nullFlavor="NI"/>
 									<manufacturedMaterial>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
@@ -5492,7 +5858,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<act classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #612: entryRelationship/act/text.
+										WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
+										NOW: text nullFlavor NI.
+									-->
+									<text nullFlavor="NI"/>
 									<statusCode code="completed"/>
+									<!--
+										DEFECT #613: entryRelationship/act/priorityCode.
+										WAS: nested COMP act had no priorityCode. Parent body acts emit priorityCode NI. SEMD often flags missing priority under nested COMP acts.
+										NOW: priorityCode nullFlavor NI; do not invent ActPriority.
+									-->
+									<priorityCode nullFlavor="NI"/>
+									<!--
+										DEFECT #614: entryRelationship/act/effectiveTime.
+										WAS: nested COMP act had no effectiveTime. Parent body acts stamp documentClock. Nested COMP has no separate chart timestamp; do not invent times.
+										NOW: effectiveTime nullFlavor NI.
+									-->
+									<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #615: entryRelationship/act/languageCode.
+										WAS: nested COMP act had no languageCode. ClinicalDocument/sections declare ru-RU.
+										NOW: languageCode code=ru-RU.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #616: entryRelationship/act/confidentialityCode.
+										WAS: nested COMP act had no confidentialityCode. ClinicalDocument sets N.
+										NOW: confidentialityCode N matching ClinicalDocument.
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 								</act>
 							</entryRelationship>
 
@@ -5911,7 +6307,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<criterion>
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #650: precondition/criterion/text.
+										WAS: criterion had id/code/value only — no text. HL7 CDA R2 Criterion (Act) has text 0..1. SEMD often flags bare criterion under precondition.
+										NOW: text nullFlavor NI; do not invent precondition prose.
+									-->
+									<text nullFlavor="NI"/>
+									<!--
+										DEFECT #651: precondition/criterion/statusCode.
+										WAS: criterion had no statusCode. HL7 CDA R2 Act has statusCode 1..1 in many profiles; sibling nested acts use completed.
+										NOW: statusCode completed.
+									-->
+									<statusCode code="completed"/>
 									<value xsi:type="CD" nullFlavor="NI"/>
+									<!--
+										DEFECT #652: precondition/criterion/effectiveTime.
+										WAS: criterion had no effectiveTime. SEMD often flags missing effectiveTime under precondition criterion when body acts emit it.
+										NOW: effectiveTime nullFlavor NI; do not invent criterion window.
+									-->
+									<effectiveTime nullFlavor="NI"/>
 								</criterion>
 							</precondition>
 							<!--
@@ -5929,6 +6343,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<reference typeCode="REFR">
 								<externalAct classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
+									<!--
+										DEFECT #671: reference/externalAct/code.
+										WAS: externalAct had id NI only — no code. HL7 CDA R2 ExternalAct has code 0..1. SEMD often flags bare externalAct under reference REFR.
+										NOW: code nullFlavor NI; do not invent external act type.
+									-->
+									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #672: reference/externalAct/text.
+										WAS: externalAct had no text. HL7 CDA R2 ExternalAct has text 0..1.
+										NOW: text nullFlavor NI; do not invent external narrative.
+									-->
+									<text nullFlavor="NI"/>
 								</externalAct>
 							</reference>
 							<!--
@@ -6032,6 +6458,12 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<consumable typeCode="CSM">
 								<manufacturedProduct classCode="MANU">
+									<!--
+										DEFECT #683: manufacturedProduct/id.
+										WAS: manufacturedProduct opened then manufacturedMaterial — no id. Tray product carries barcode id; consumable shells had no product id. HL7 CDA R2 ManufacturedProduct has id 0..*. SEMD often flags bare product under consumable without id slot.
+										NOW: id nullFlavor NI; do not invent extension=unknown.
+									-->
+									<id nullFlavor="NI"/>
 									<manufacturedMaterial>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
@@ -6155,7 +6587,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<act classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #617: entryRelationship/act/text.
+										WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
+										NOW: text nullFlavor NI.
+									-->
+									<text nullFlavor="NI"/>
 									<statusCode code="completed"/>
+									<!--
+										DEFECT #618: entryRelationship/act/priorityCode.
+										WAS: nested COMP act had no priorityCode. Parent body acts emit priorityCode NI. SEMD often flags missing priority under nested COMP acts.
+										NOW: priorityCode nullFlavor NI; do not invent ActPriority.
+									-->
+									<priorityCode nullFlavor="NI"/>
+									<!--
+										DEFECT #619: entryRelationship/act/effectiveTime.
+										WAS: nested COMP act had no effectiveTime. Parent body acts stamp documentClock. Nested COMP has no separate chart timestamp; do not invent times.
+										NOW: effectiveTime nullFlavor NI.
+									-->
+									<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #620: entryRelationship/act/languageCode.
+										WAS: nested COMP act had no languageCode. ClinicalDocument/sections declare ru-RU.
+										NOW: languageCode code=ru-RU.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #621: entryRelationship/act/confidentialityCode.
+										WAS: nested COMP act had no confidentialityCode. ClinicalDocument sets N.
+										NOW: confidentialityCode N matching ClinicalDocument.
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 								</act>
 							</entryRelationship>
 
@@ -6581,7 +7043,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<criterion>
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #653: precondition/criterion/text.
+										WAS: criterion had id/code/value only — no text. HL7 CDA R2 Criterion (Act) has text 0..1. SEMD often flags bare criterion under precondition.
+										NOW: text nullFlavor NI; do not invent precondition prose.
+									-->
+									<text nullFlavor="NI"/>
+									<!--
+										DEFECT #654: precondition/criterion/statusCode.
+										WAS: criterion had no statusCode. HL7 CDA R2 Act has statusCode 1..1 in many profiles; sibling nested acts use completed.
+										NOW: statusCode completed.
+									-->
+									<statusCode code="completed"/>
 									<value xsi:type="CD" nullFlavor="NI"/>
+									<!--
+										DEFECT #655: precondition/criterion/effectiveTime.
+										WAS: criterion had no effectiveTime. SEMD often flags missing effectiveTime under precondition criterion when body acts emit it.
+										NOW: effectiveTime nullFlavor NI; do not invent criterion window.
+									-->
+									<effectiveTime nullFlavor="NI"/>
 								</criterion>
 							</precondition>
 							<!--
@@ -6599,6 +7079,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<reference typeCode="REFR">
 								<externalAct classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
+									<!--
+										DEFECT #673: reference/externalAct/code.
+										WAS: externalAct had id NI only — no code. HL7 CDA R2 ExternalAct has code 0..1. SEMD often flags bare externalAct under reference REFR.
+										NOW: code nullFlavor NI; do not invent external act type.
+									-->
+									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #674: reference/externalAct/text.
+										WAS: externalAct had no text. HL7 CDA R2 ExternalAct has text 0..1.
+										NOW: text nullFlavor NI; do not invent external narrative.
+									-->
+									<text nullFlavor="NI"/>
 								</externalAct>
 							</reference>
 							<!--
@@ -6702,6 +7194,12 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<consumable typeCode="CSM">
 								<manufacturedProduct classCode="MANU">
+									<!--
+										DEFECT #684: manufacturedProduct/id.
+										WAS: manufacturedProduct opened then manufacturedMaterial — no id. Tray product carries barcode id; consumable shells had no product id. HL7 CDA R2 ManufacturedProduct has id 0..*. SEMD often flags bare product under consumable without id slot.
+										NOW: id nullFlavor NI; do not invent extension=unknown.
+									-->
+									<id nullFlavor="NI"/>
 									<manufacturedMaterial>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
@@ -6825,7 +7323,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<act classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #622: entryRelationship/act/text.
+										WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
+										NOW: text nullFlavor NI.
+									-->
+									<text nullFlavor="NI"/>
 									<statusCode code="completed"/>
+									<!--
+										DEFECT #623: entryRelationship/act/priorityCode.
+										WAS: nested COMP act had no priorityCode. Parent body acts emit priorityCode NI. SEMD often flags missing priority under nested COMP acts.
+										NOW: priorityCode nullFlavor NI; do not invent ActPriority.
+									-->
+									<priorityCode nullFlavor="NI"/>
+									<!--
+										DEFECT #624: entryRelationship/act/effectiveTime.
+										WAS: nested COMP act had no effectiveTime. Parent body acts stamp documentClock. Nested COMP has no separate chart timestamp; do not invent times.
+										NOW: effectiveTime nullFlavor NI.
+									-->
+									<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #625: entryRelationship/act/languageCode.
+										WAS: nested COMP act had no languageCode. ClinicalDocument/sections declare ru-RU.
+										NOW: languageCode code=ru-RU.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #626: entryRelationship/act/confidentialityCode.
+										WAS: nested COMP act had no confidentialityCode. ClinicalDocument sets N.
+										NOW: confidentialityCode N matching ClinicalDocument.
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 								</act>
 							</entryRelationship>
 
@@ -7328,7 +7856,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<criterion>
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #656: precondition/criterion/text.
+										WAS: criterion had id/code/value only — no text. HL7 CDA R2 Criterion (Act) has text 0..1. SEMD often flags bare criterion under precondition.
+										NOW: text nullFlavor NI; do not invent precondition prose.
+									-->
+									<text nullFlavor="NI"/>
+									<!--
+										DEFECT #657: precondition/criterion/statusCode.
+										WAS: criterion had no statusCode. HL7 CDA R2 Act has statusCode 1..1 in many profiles; sibling nested acts use completed.
+										NOW: statusCode completed.
+									-->
+									<statusCode code="completed"/>
 									<value xsi:type="CD" nullFlavor="NI"/>
+									<!--
+										DEFECT #658: precondition/criterion/effectiveTime.
+										WAS: criterion had no effectiveTime. SEMD often flags missing effectiveTime under precondition criterion when body acts emit it.
+										NOW: effectiveTime nullFlavor NI; do not invent criterion window.
+									-->
+									<effectiveTime nullFlavor="NI"/>
 								</criterion>
 							</precondition>
 							<!--
@@ -7346,6 +7892,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<reference typeCode="REFR">
 								<externalAct classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
+									<!--
+										DEFECT #675: reference/externalAct/code.
+										WAS: externalAct had id NI only — no code. HL7 CDA R2 ExternalAct has code 0..1. SEMD often flags bare externalAct under reference REFR.
+										NOW: code nullFlavor NI; do not invent external act type.
+									-->
+									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #676: reference/externalAct/text.
+										WAS: externalAct had no text. HL7 CDA R2 ExternalAct has text 0..1.
+										NOW: text nullFlavor NI; do not invent external narrative.
+									-->
+									<text nullFlavor="NI"/>
 								</externalAct>
 							</reference>
 							
@@ -7365,6 +7923,12 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<consumable typeCode="CSM">
 								<manufacturedProduct classCode="MANU">
+									<!--
+										DEFECT #685: manufacturedProduct/id.
+										WAS: manufacturedProduct opened then manufacturedMaterial — no id. Tray product carries barcode id; consumable shells had no product id. HL7 CDA R2 ManufacturedProduct has id 0..*. SEMD often flags bare product under consumable without id slot.
+										NOW: id nullFlavor NI; do not invent extension=unknown.
+									-->
+									<id nullFlavor="NI"/>
 									<manufacturedMaterial>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
@@ -7538,7 +8102,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<act classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #627: entryRelationship/act/text.
+										WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
+										NOW: text nullFlavor NI.
+									-->
+									<text nullFlavor="NI"/>
 									<statusCode code="completed"/>
+									<!--
+										DEFECT #628: entryRelationship/act/priorityCode.
+										WAS: nested COMP act had no priorityCode. Parent body acts emit priorityCode NI. SEMD often flags missing priority under nested COMP acts.
+										NOW: priorityCode nullFlavor NI; do not invent ActPriority.
+									-->
+									<priorityCode nullFlavor="NI"/>
+									<!--
+										DEFECT #629: entryRelationship/act/effectiveTime.
+										WAS: nested COMP act had no effectiveTime. Parent body acts stamp documentClock. Nested COMP has no separate chart timestamp; do not invent times.
+										NOW: effectiveTime nullFlavor NI.
+									-->
+									<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #630: entryRelationship/act/languageCode.
+										WAS: nested COMP act had no languageCode. ClinicalDocument/sections declare ru-RU.
+										NOW: languageCode code=ru-RU.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #631: entryRelationship/act/confidentialityCode.
+										WAS: nested COMP act had no confidentialityCode. ClinicalDocument sets N.
+										NOW: confidentialityCode N matching ClinicalDocument.
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 								</act>
 							</entryRelationship>
 
