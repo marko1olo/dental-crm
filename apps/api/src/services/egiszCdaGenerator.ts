@@ -426,11 +426,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					name nullFlavor NI until chart fields exist.
 				-->
 				<guardian>
+					<!--
+						DEFECT #177: patient/guardian id + addr + telecom.
+						WAS: guardian had only code NI + guardianPerson/name NI
+						(#175). HL7 CDA R2 Guardian may carry id, addr, telecom
+						before guardianPerson. SEMD validators often flag bare
+						guardian without contact/id slots under recordTarget.
+						Form 043/u chart does not collect guardian identity or
+						contacts yet — do not invent extension="unknown" or
+						fake phone/address.
+						NOW: id/addr/telecom nullFlavor NI before guardianPerson.
+					-->
+					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
 					<guardianPerson>
 						<name nullFlavor="NI"/>
 					</guardianPerson>
 				</guardian>
+
 				<!--
 					DEFECT #176: patient/birthplace.
 					WAS: patient demographics had guardian (#175) but no
