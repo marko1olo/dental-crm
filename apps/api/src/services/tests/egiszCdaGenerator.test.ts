@@ -2159,6 +2159,53 @@ describe("egiszCdaGenerator", () => {
 	});
 
 
+	test("DEFECT #107: legalAuthenticator representedOrganization addr and telecom nullFlavor NI", () => {
+		const params: EgiszCdaParams = {
+			patientId: "pat-107",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.107",
+			clinicName: "ООО Клиника Legal Org Contact",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate: new Date("2025-07-01T10:00:00.000Z"),
+			documentId: "doc-107",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		const laEnd = "</legalAuthenticator>";
+		const laStart = xml.indexOf("<legalAuthenticator>");
+		const la = xml.slice(laStart, xml.indexOf(laEnd, laStart) + laEnd.length);
+		const roStart = la.indexOf("<representedOrganization>");
+		const roEnd = "</representedOrganization>";
+		assert.ok(roStart >= 0, "legalAuthenticator must include representedOrganization");
+		const ro = la.slice(roStart, la.indexOf(roEnd, roStart) + roEnd.length);
+		assert.ok(
+			ro.includes('<addr nullFlavor="NI"/>'),
+			"representedOrganization must emit addr nullFlavor=NI when contact unknown",
+		);
+		assert.ok(
+			ro.includes('<telecom nullFlavor="NI"/>'),
+			"representedOrganization must emit telecom nullFlavor=NI when contact unknown",
+		);
+		assert.ok(!ro.includes("<streetAddressLine"));
+		assert.ok(!ro.includes("tel:"));
+		/* order: addr → telecom → name (ignore XML comments) */
+		const roNoComments = ro.replace(/<!--[\s\S]*?-->/g, "");
+		const addrIdx = roNoComments.indexOf("<addr ");
+		const telIdx = roNoComments.indexOf("<telecom ");
+		const nameIdx = roNoComments.indexOf("<name>");
+		assert.ok(
+			addrIdx >= 0 && telIdx > addrIdx && nameIdx > telIdx,
+			"representedOrganization order: addr → telecom → name",
+		);
+		assert.ok(ro.includes("<name>ООО Клиника Legal Org Contact</name>"));
+	});
+
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
 
 
