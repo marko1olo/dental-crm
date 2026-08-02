@@ -1909,7 +1909,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: priorityCode nullFlavor NI until chart field exists.
 							-->
 							<priorityCode nullFlavor="NI"/>
+							<!--
+								DEFECT #208: treatment act/methodCode.
+								WAS: treatment ACT had id/code/text/statusCode/effectiveTime/
+								priorityCode only — no methodCode. Body OBS entries already
+								carry methodCode NI (#186-#192). HL7 CDA R2 Act has
+								methodCode 0..* (how the procedure was performed). SEMD
+								validators often flag missing method under treatment ACT.
+								Form 043/u treatment is free-text description — do not invent
+								a fake NSI method OID.
+								NOW: methodCode nullFlavor NI until chart field exists.
+							-->
+							<methodCode nullFlavor="NI"/>
 						</act>
+
 					</entry></section>
 			</component>
 			<!-- Осложнения (043) -->
