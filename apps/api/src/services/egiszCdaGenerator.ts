@@ -1897,10 +1897,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<statusCode code="completed"/>
 							<!-- DEFECT #145: act effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
+							<!--
+								DEFECT #201: treatment act/priorityCode.
+								WAS: treatment ACT had id/code/text/statusCode/effectiveTime
+								only — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1
+								(urgency of the act). encompassingEncounter already carries
+								priorityCode NI (#183). SEMD validators often flag missing
+								priority under procedure/treatment ACT. Form 043/u chart does
+								not collect act-level priority (routine dental care) — do not
+								invent a fake HL7 ActPriority code.
+								NOW: priorityCode nullFlavor NI until chart field exists.
+							-->
+							<priorityCode nullFlavor="NI"/>
 						</act>
 					</entry></section>
 			</component>
 			<!-- Осложнения (043) -->
+
 			<component>
 				<section>
 					<!-- DEFECT #165: section/id REMD join key (complications) -->
