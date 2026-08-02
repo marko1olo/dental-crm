@@ -1843,7 +1843,51 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							${params.diagnosisTooth && String(params.diagnosisTooth).trim()
 								? `<targetSiteCode code="${escapeXml(String(params.diagnosisTooth).trim())}" codeSystem="1.2.643.5.1.13.13.11.1466" codeSystemName="Зубы" displayName="Зуб ${escapeXml(String(params.diagnosisTooth).trim())}"/>`
 								: `<targetSiteCode nullFlavor="NI"/>`}
+							<!--
+								DEFECT #233: diagnosis observation/performer.
+								WAS: diagnosis OBS had id/code/status/time/value/method/
+								interpretation/uncertainty/approach/targetSite only — no
+								performer. documentationOf/serviceEvent already has
+								performer PRF (#93). HL7 CDA R2 Observation has performer
+								0..* (who performed the finding act). SEMD validators often
+								flag missing performer under diagnosis OBS so REMD cannot
+								attribute the ICD-10 finding to the treating dentist at the
+								entry level (header performer is care-event only).
+								NOW: performer typeCode=PRF with time=visitTime and
+								assignedEntity mirroring serviceEvent performer (SNILS or NI,
+								code with position or bare NI, person, MO org). No invented
+								extension="unknown" or street/phone.
+							-->
+							<performer typeCode="PRF">
+								<time value="${visitTime}"/>
+								<assignedEntity>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
 						</observation>
+
 
 
 
