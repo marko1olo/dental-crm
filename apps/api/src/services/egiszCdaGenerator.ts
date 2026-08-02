@@ -1460,6 +1460,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</scopingOrganization>
 				</associatedEntity>
 			</participant>
+			<!--
+				DEFECT #326: documentationOf/serviceEvent/precondition.
+				WAS: serviceEvent had performer/author/informant/participant then closed — no precondition. Body entries (#319-#325) already carry precondition PRCN.
+				HL7 CDA R2 Act/Observation/Supply has precondition 0..*
+				(criteria that must be true for the act). SEMD validators
+				often flag missing precondition under body entries when the
+				care event is documented without explicit criteria. Form 043/u
+				chart does not collect discrete clinical preconditions for
+				these entries — do not invent criterion codes or values.
+				NOW: precondition typeCode=PRCN with criterion nullFlavor NI
+				(id/code/value all NI) until chart fields exist.
+			-->
+			<precondition typeCode="PRCN">
+				<criterion>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<value xsi:type="CD" nullFlavor="NI"/>
+				</criterion>
+			</precondition>
+
 
 
 
@@ -2135,6 +2155,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</scopingOrganization>
 				</associatedEntity>
 			</participant>
+			<!--
+				DEFECT #327: encompassingEncounter/precondition.
+				WAS: encompassingEncounter had author/informant/participant then closed — no precondition. serviceEvent (#326) and body entries (#319-#325) already carry precondition PRCN.
+				HL7 CDA R2 Act/Observation/Supply has precondition 0..*
+				(criteria that must be true for the act). SEMD validators
+				often flag missing precondition under body entries when the
+				care event is documented without explicit criteria. Form 043/u
+				chart does not collect discrete clinical preconditions for
+				these entries — do not invent criterion codes or values.
+				NOW: precondition typeCode=PRCN with criterion nullFlavor NI
+				(id/code/value all NI) until chart fields exist.
+			-->
+			<precondition typeCode="PRCN">
+				<criterion>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<value xsi:type="CD" nullFlavor="NI"/>
+				</criterion>
+			</precondition>
+
 
 
 </encompassingEncounter>
@@ -2527,6 +2567,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</scopingOrganization>
 								</associatedEntity>
 							</participant>
+							<!--
+								DEFECT #319: diagnosis observation/precondition.
+								WAS: diagnosis OBS had performer/author/informant/participant then closed — no precondition.
+								HL7 CDA R2 Act/Observation/Supply has precondition 0..*
+								(criteria that must be true for the act). SEMD validators
+								often flag missing precondition under body entries when the
+								care event is documented without explicit criteria. Form 043/u
+								chart does not collect discrete clinical preconditions for
+								these entries — do not invent criterion codes or values.
+								NOW: precondition typeCode=PRCN with criterion nullFlavor NI
+								(id/code/value all NI) until chart fields exist.
+							-->
+							<precondition typeCode="PRCN">
+								<criterion>
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<value xsi:type="CD" nullFlavor="NI"/>
+								</criterion>
+							</precondition>
+
 
 
 
@@ -2873,6 +2933,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</scopingOrganization>
 								</associatedEntity>
 							</participant>
+							<!--
+								DEFECT #320: anamnesis observation/precondition.
+								WAS: anamnesis OBS had performer/author/informant/participant then closed — no precondition. Diagnosis OBS (#319) already carries precondition PRCN.
+								HL7 CDA R2 Act/Observation/Supply has precondition 0..*
+								(criteria that must be true for the act). SEMD validators
+								often flag missing precondition under body entries when the
+								care event is documented without explicit criteria. Form 043/u
+								chart does not collect discrete clinical preconditions for
+								these entries — do not invent criterion codes or values.
+								NOW: precondition typeCode=PRCN with criterion nullFlavor NI
+								(id/code/value all NI) until chart fields exist.
+							-->
+							<precondition typeCode="PRCN">
+								<criterion>
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<value xsi:type="CD" nullFlavor="NI"/>
+								</criterion>
+							</precondition>
+
 
 
 
@@ -3233,6 +3313,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</scopingOrganization>
 								</associatedEntity>
 							</participant>
+							<!--
+								DEFECT #321: objective-status observation/precondition.
+								WAS: objective OBS had performer/author/informant/participant then closed — no precondition. Diagnosis (#319) and anamnesis (#320) already carry precondition PRCN.
+								HL7 CDA R2 Act/Observation/Supply has precondition 0..*
+								(criteria that must be true for the act). SEMD validators
+								often flag missing precondition under body entries when the
+								care event is documented without explicit criteria. Form 043/u
+								chart does not collect discrete clinical preconditions for
+								these entries — do not invent criterion codes or values.
+								NOW: precondition typeCode=PRCN with criterion nullFlavor NI
+								(id/code/value all NI) until chart fields exist.
+							-->
+							<precondition typeCode="PRCN">
+								<criterion>
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<value xsi:type="CD" nullFlavor="NI"/>
+								</criterion>
+							</precondition>
+
 
 
 
@@ -3587,6 +3687,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</scopingOrganization>
 								</associatedEntity>
 							</participant>
+							<!--
+								DEFECT #324: treatment act/precondition.
+								WAS: treatment ACT had performer/author/informant/participant then closed — no precondition. Body OBS (#319-#323) already carry precondition PRCN.
+								HL7 CDA R2 Act/Observation/Supply has precondition 0..*
+								(criteria that must be true for the act). SEMD validators
+								often flag missing precondition under body entries when the
+								care event is documented without explicit criteria. Form 043/u
+								chart does not collect discrete clinical preconditions for
+								these entries — do not invent criterion codes or values.
+								NOW: precondition typeCode=PRCN with criterion nullFlavor NI
+								(id/code/value all NI) until chart fields exist.
+							-->
+							<precondition typeCode="PRCN">
+								<criterion>
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<value xsi:type="CD" nullFlavor="NI"/>
+								</criterion>
+							</precondition>
+
 
 
 
@@ -3940,6 +4060,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</scopingOrganization>
 								</associatedEntity>
 							</participant>
+							<!--
+								DEFECT #322: complications observation/precondition.
+								WAS: complications OBS had performer/author/informant/participant then closed — no precondition. Diagnosis (#319) through objective (#321) already carry precondition PRCN.
+								HL7 CDA R2 Act/Observation/Supply has precondition 0..*
+								(criteria that must be true for the act). SEMD validators
+								often flag missing precondition under body entries when the
+								care event is documented without explicit criteria. Form 043/u
+								chart does not collect discrete clinical preconditions for
+								these entries — do not invent criterion codes or values.
+								NOW: precondition typeCode=PRCN with criterion nullFlavor NI
+								(id/code/value all NI) until chart fields exist.
+							-->
+							<precondition typeCode="PRCN">
+								<criterion>
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<value xsi:type="CD" nullFlavor="NI"/>
+								</criterion>
+							</precondition>
+
 
 
 
@@ -4299,6 +4439,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</scopingOrganization>
 								</associatedEntity>
 							</participant>
+							<!--
+								DEFECT #323: comorbidities observation/precondition.
+								WAS: comorbidities OBS had performer/author/informant/participant then closed — no precondition. Diagnosis (#319) through complications (#322) already carry precondition PRCN.
+								HL7 CDA R2 Act/Observation/Supply has precondition 0..*
+								(criteria that must be true for the act). SEMD validators
+								often flag missing precondition under body entries when the
+								care event is documented without explicit criteria. Form 043/u
+								chart does not collect discrete clinical preconditions for
+								these entries — do not invent criterion codes or values.
+								NOW: precondition typeCode=PRCN with criterion nullFlavor NI
+								(id/code/value all NI) until chart fields exist.
+							-->
+							<precondition typeCode="PRCN">
+								<criterion>
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<value xsi:type="CD" nullFlavor="NI"/>
+								</criterion>
+							</precondition>
+
 
 
 
@@ -4689,6 +4849,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</scopingOrganization>
 								</associatedEntity>
 							</participant>
+							<!--
+								DEFECT #325: instrument-tray supply/precondition.
+								WAS: supply had performer/author/informant/participant then closed — no precondition. Body OBS (#319-#323) and treatment ACT (#324) already carry precondition PRCN.
+								HL7 CDA R2 Act/Observation/Supply has precondition 0..*
+								(criteria that must be true for the act). SEMD validators
+								often flag missing precondition under body entries when the
+								care event is documented without explicit criteria. Form 043/u
+								chart does not collect discrete clinical preconditions for
+								these entries — do not invent criterion codes or values.
+								NOW: precondition typeCode=PRCN with criterion nullFlavor NI
+								(id/code/value all NI) until chart fields exist.
+							-->
+							<precondition typeCode="PRCN">
+								<criterion>
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<value xsi:type="CD" nullFlavor="NI"/>
+								</criterion>
+							</precondition>
+
 
 
 
