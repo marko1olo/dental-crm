@@ -1366,7 +1366,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<admissionReferralSourceCode nullFlavor="NI"/>
 			<!--
+				DEFECT #183: encompassingEncounter/priorityCode.
+				WAS: encounter had dischargeDisposition (#179) and
+				admissionReferralSource (#182) but no priorityCode. HL7 CDA R2
+				Encounter has priorityCode 0..1 (urgency of the encounter).
+				SEMD validators often flag missing priority under ambulatory
+				close. Form 043/u chart does not collect encounter priority
+				(routine dental) — do not invent a fake HL7 ActPriority code.
+				NOW: priorityCode nullFlavor NI until chart field exists.
+			-->
+			<priorityCode nullFlavor="NI"/>
+			<!--
 				DEFECT #181: encompassingEncounter/encounterParticipant.
+
 
 				WAS: encounter had id/code/status/effectiveTime/dischargeDisposition/
 				responsibleParty/location only — no encounterParticipant. HL7 CDA R2
