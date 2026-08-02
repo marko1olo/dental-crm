@@ -1946,6 +1946,212 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument (#158).
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #2182: precondition/criterion/subject.
+						WAS: rich criterion had codes through confidentialityCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under precondition criterion when nested COMP acts emit SBJ. Form 043/u has no discrete criterion related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject person name/gender/birthTime/birthplace NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #2183: precondition/criterion/specimen.
+						WAS: rich criterion had no specimen. HL7 CDA R2 Act has specimen 0..*. Form 043/u criterion does not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #2184: precondition/criterion/performer.
+						WAS: rich criterion had no performer. HL7 CDA R2 Act has performer 0..*. Form 043/u has no criterion performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #2185: precondition/criterion/author.
+						WAS: rich criterion had no author. HL7 CDA R2 Act has author 0..*. Form 043/u has no criterion author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #2186: precondition/criterion/informant.
+						WAS: rich criterion had no informant. HL7 CDA R2 Act has informant 0..*. Form 043/u has no discrete criterion informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #2187: precondition/criterion/participant.
+						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #2188: precondition/criterion/entryRelationship.
+						WAS: rich criterion had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #2189: precondition/criterion/reference.
+						WAS: rich criterion had no reference. HL7 CDA R2 Act has reference 0..*. Form 043/u has no discrete criterion external document; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #2190: precondition/criterion/precondition.
+						WAS: rich criterion had no nested precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value/interp/method/target/unc NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 				</criterion>
 			</precondition>
 			<!--
@@ -5565,6 +5771,212 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument (#158).
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #2191: precondition/criterion/subject.
+						WAS: rich criterion had codes through confidentialityCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under precondition criterion when nested COMP acts emit SBJ. Form 043/u has no discrete criterion related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject person name/gender/birthTime/birthplace NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #2192: precondition/criterion/specimen.
+						WAS: rich criterion had no specimen. HL7 CDA R2 Act has specimen 0..*. Form 043/u criterion does not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #2193: precondition/criterion/performer.
+						WAS: rich criterion had no performer. HL7 CDA R2 Act has performer 0..*. Form 043/u has no criterion performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #2194: precondition/criterion/author.
+						WAS: rich criterion had no author. HL7 CDA R2 Act has author 0..*. Form 043/u has no criterion author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #2195: precondition/criterion/informant.
+						WAS: rich criterion had no informant. HL7 CDA R2 Act has informant 0..*. Form 043/u has no discrete criterion informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #2196: precondition/criterion/participant.
+						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #2197: precondition/criterion/entryRelationship.
+						WAS: rich criterion had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #2198: precondition/criterion/reference.
+						WAS: rich criterion had no reference. HL7 CDA R2 Act has reference 0..*. Form 043/u has no discrete criterion external document; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #2199: precondition/criterion/precondition.
+						WAS: rich criterion had no nested precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value/interp/method/target/unc NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 				</criterion>
 			</precondition>
 			<!--
@@ -7266,6 +7678,212 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument (#158).
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #2200: precondition/criterion/subject.
+						WAS: rich criterion had codes through confidentialityCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under precondition criterion when nested COMP acts emit SBJ. Form 043/u has no discrete criterion related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject person name/gender/birthTime/birthplace NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #2201: precondition/criterion/specimen.
+						WAS: rich criterion had no specimen. HL7 CDA R2 Act has specimen 0..*. Form 043/u criterion does not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #2202: precondition/criterion/performer.
+						WAS: rich criterion had no performer. HL7 CDA R2 Act has performer 0..*. Form 043/u has no criterion performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #2203: precondition/criterion/author.
+						WAS: rich criterion had no author. HL7 CDA R2 Act has author 0..*. Form 043/u has no criterion author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #2204: precondition/criterion/informant.
+						WAS: rich criterion had no informant. HL7 CDA R2 Act has informant 0..*. Form 043/u has no discrete criterion informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #2205: precondition/criterion/participant.
+						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #2206: precondition/criterion/entryRelationship.
+						WAS: rich criterion had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #2207: precondition/criterion/reference.
+						WAS: rich criterion had no reference. HL7 CDA R2 Act has reference 0..*. Form 043/u has no discrete criterion external document; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #2208: precondition/criterion/precondition.
+						WAS: rich criterion had no nested precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value/interp/method/target/unc NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 				</criterion>
 							</precondition>
 							<!--
@@ -9725,6 +10343,212 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument (#158).
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #2209: precondition/criterion/subject.
+						WAS: rich criterion had codes through confidentialityCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under precondition criterion when nested COMP acts emit SBJ. Form 043/u has no discrete criterion related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject person name/gender/birthTime/birthplace NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #2210: precondition/criterion/specimen.
+						WAS: rich criterion had no specimen. HL7 CDA R2 Act has specimen 0..*. Form 043/u criterion does not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #2211: precondition/criterion/performer.
+						WAS: rich criterion had no performer. HL7 CDA R2 Act has performer 0..*. Form 043/u has no criterion performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #2212: precondition/criterion/author.
+						WAS: rich criterion had no author. HL7 CDA R2 Act has author 0..*. Form 043/u has no criterion author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #2213: precondition/criterion/informant.
+						WAS: rich criterion had no informant. HL7 CDA R2 Act has informant 0..*. Form 043/u has no discrete criterion informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #2214: precondition/criterion/participant.
+						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #2215: precondition/criterion/entryRelationship.
+						WAS: rich criterion had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #2216: precondition/criterion/reference.
+						WAS: rich criterion had no reference. HL7 CDA R2 Act has reference 0..*. Form 043/u has no discrete criterion external document; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #2217: precondition/criterion/precondition.
+						WAS: rich criterion had no nested precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value/interp/method/target/unc NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 				</criterion>
 							</precondition>
 							<!--
@@ -12198,6 +13022,212 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument (#158).
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #2218: precondition/criterion/subject.
+						WAS: rich criterion had codes through confidentialityCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under precondition criterion when nested COMP acts emit SBJ. Form 043/u has no discrete criterion related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject person name/gender/birthTime/birthplace NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #2219: precondition/criterion/specimen.
+						WAS: rich criterion had no specimen. HL7 CDA R2 Act has specimen 0..*. Form 043/u criterion does not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #2220: precondition/criterion/performer.
+						WAS: rich criterion had no performer. HL7 CDA R2 Act has performer 0..*. Form 043/u has no criterion performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #2221: precondition/criterion/author.
+						WAS: rich criterion had no author. HL7 CDA R2 Act has author 0..*. Form 043/u has no criterion author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #2222: precondition/criterion/informant.
+						WAS: rich criterion had no informant. HL7 CDA R2 Act has informant 0..*. Form 043/u has no discrete criterion informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #2223: precondition/criterion/participant.
+						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #2224: precondition/criterion/entryRelationship.
+						WAS: rich criterion had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #2225: precondition/criterion/reference.
+						WAS: rich criterion had no reference. HL7 CDA R2 Act has reference 0..*. Form 043/u has no discrete criterion external document; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #2226: precondition/criterion/precondition.
+						WAS: rich criterion had no nested precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value/interp/method/target/unc NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 				</criterion>
 							</precondition>
 							<!--
@@ -14665,6 +15695,212 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument (#158).
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #2227: precondition/criterion/subject.
+						WAS: rich criterion had codes through confidentialityCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under precondition criterion when nested COMP acts emit SBJ. Form 043/u has no discrete criterion related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject person name/gender/birthTime/birthplace NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #2228: precondition/criterion/specimen.
+						WAS: rich criterion had no specimen. HL7 CDA R2 Act has specimen 0..*. Form 043/u criterion does not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #2229: precondition/criterion/performer.
+						WAS: rich criterion had no performer. HL7 CDA R2 Act has performer 0..*. Form 043/u has no criterion performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #2230: precondition/criterion/author.
+						WAS: rich criterion had no author. HL7 CDA R2 Act has author 0..*. Form 043/u has no criterion author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #2231: precondition/criterion/informant.
+						WAS: rich criterion had no informant. HL7 CDA R2 Act has informant 0..*. Form 043/u has no discrete criterion informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #2232: precondition/criterion/participant.
+						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #2233: precondition/criterion/entryRelationship.
+						WAS: rich criterion had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #2234: precondition/criterion/reference.
+						WAS: rich criterion had no reference. HL7 CDA R2 Act has reference 0..*. Form 043/u has no discrete criterion external document; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #2235: precondition/criterion/precondition.
+						WAS: rich criterion had no nested precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value/interp/method/target/unc NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 				</criterion>
 							</precondition>
 							<!--
@@ -16013,6 +17249,212 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument (#158).
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #2236: precondition/criterion/subject.
+						WAS: rich criterion had codes through confidentialityCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under precondition criterion when nested COMP acts emit SBJ. Form 043/u has no discrete criterion related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject person name/gender/birthTime/birthplace NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #2237: precondition/criterion/specimen.
+						WAS: rich criterion had no specimen. HL7 CDA R2 Act has specimen 0..*. Form 043/u criterion does not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #2238: precondition/criterion/performer.
+						WAS: rich criterion had no performer. HL7 CDA R2 Act has performer 0..*. Form 043/u has no criterion performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #2239: precondition/criterion/author.
+						WAS: rich criterion had no author. HL7 CDA R2 Act has author 0..*. Form 043/u has no criterion author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #2240: precondition/criterion/informant.
+						WAS: rich criterion had no informant. HL7 CDA R2 Act has informant 0..*. Form 043/u has no discrete criterion informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #2241: precondition/criterion/participant.
+						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #2242: precondition/criterion/entryRelationship.
+						WAS: rich criterion had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #2243: precondition/criterion/reference.
+						WAS: rich criterion had no reference. HL7 CDA R2 Act has reference 0..*. Form 043/u has no discrete criterion external document; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #2244: precondition/criterion/precondition.
+						WAS: rich criterion had no nested precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value/interp/method/target/unc NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 				</criterion>
 							</precondition>
 							<!--
@@ -18485,6 +19927,212 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument (#158).
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #2245: precondition/criterion/subject.
+						WAS: rich criterion had codes through confidentialityCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under precondition criterion when nested COMP acts emit SBJ. Form 043/u has no discrete criterion related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject person name/gender/birthTime/birthplace NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #2246: precondition/criterion/specimen.
+						WAS: rich criterion had no specimen. HL7 CDA R2 Act has specimen 0..*. Form 043/u criterion does not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #2247: precondition/criterion/performer.
+						WAS: rich criterion had no performer. HL7 CDA R2 Act has performer 0..*. Form 043/u has no criterion performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #2248: precondition/criterion/author.
+						WAS: rich criterion had no author. HL7 CDA R2 Act has author 0..*. Form 043/u has no criterion author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #2249: precondition/criterion/informant.
+						WAS: rich criterion had no informant. HL7 CDA R2 Act has informant 0..*. Form 043/u has no discrete criterion informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #2250: precondition/criterion/participant.
+						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #2251: precondition/criterion/entryRelationship.
+						WAS: rich criterion had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #2252: precondition/criterion/reference.
+						WAS: rich criterion had no reference. HL7 CDA R2 Act has reference 0..*. Form 043/u has no discrete criterion external document; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #2253: precondition/criterion/precondition.
+						WAS: rich criterion had no nested precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value/interp/method/target/unc NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 				</criterion>
 							</precondition>
 							<!--
@@ -21034,6 +22682,212 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument (#158).
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #2254: precondition/criterion/subject.
+						WAS: rich criterion had codes through confidentialityCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under precondition criterion when nested COMP acts emit SBJ. Form 043/u has no discrete criterion related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject person name/gender/birthTime/birthplace NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #2255: precondition/criterion/specimen.
+						WAS: rich criterion had no specimen. HL7 CDA R2 Act has specimen 0..*. Form 043/u criterion does not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #2256: precondition/criterion/performer.
+						WAS: rich criterion had no performer. HL7 CDA R2 Act has performer 0..*. Form 043/u has no criterion performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #2257: precondition/criterion/author.
+						WAS: rich criterion had no author. HL7 CDA R2 Act has author 0..*. Form 043/u has no criterion author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #2258: precondition/criterion/informant.
+						WAS: rich criterion had no informant. HL7 CDA R2 Act has informant 0..*. Form 043/u has no discrete criterion informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #2259: precondition/criterion/participant.
+						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson name/gender/birthTime/birthplace NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #2260: precondition/criterion/entryRelationship.
+						WAS: rich criterion had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #2261: precondition/criterion/reference.
+						WAS: rich criterion had no reference. HL7 CDA R2 Act has reference 0..*. Form 043/u has no discrete criterion external document; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #2262: precondition/criterion/precondition.
+						WAS: rich criterion had no nested precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value/interp/method/target/unc NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 				</criterion>
 							</precondition>
 							<!--
