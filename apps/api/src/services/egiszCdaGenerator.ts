@@ -1491,7 +1491,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<uncertaintyCode nullFlavor="NI"/>
 			<!--
+				DEFECT #219: encompassingEncounter/repeatNumber.
+				WAS: encounter had methodCode (#217) and uncertaintyCode (#218)
+				only — no repeatNumber. serviceEvent (#215) and treatment ACT
+				(#210) already carry repeatNumber NI. HL7 CDA R2 Act has
+				repeatNumber 0..1 on the encounter. SEMD validators often flag
+				missing repeatNumber under componentOf. Form 043/u ambulatory
+				close is a single completed visit — no discrete repeat field
+				and do not invent a fake INT count.
+				NOW: repeatNumber nullFlavor NI until chart field exists.
+			-->
+			<repeatNumber nullFlavor="NI"/>
+			<!--
 				DEFECT #181: encompassingEncounter/encounterParticipant.
+
 
 
 
