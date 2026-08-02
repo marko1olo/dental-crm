@@ -1661,13 +1661,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								OID lookup.
 								NOW: codeSystemName="МКБ-10" on diagnosis value CD.
 							-->
-							<value xsi:type="CD" code="${escapeXml(params.icd10Code)}" codeSystem="1.2.643.5.1.13.13.11.1005" codeSystemName="МКБ-10" displayName="${escapeXml(params.diagnosisText)}"/>${params.diagnosisTooth && String(params.diagnosisTooth).trim()
-
+							<value xsi:type="CD" code="${escapeXml(params.icd10Code)}" codeSystem="1.2.643.5.1.13.13.11.1005" codeSystemName="МКБ-10" displayName="${escapeXml(params.diagnosisText)}"/>
+							<!--
+								DEFECT #186: diagnosis observation/methodCode.
+								WAS: diagnosis OBS had id/code/statusCode/effectiveTime/value
+								(+ optional targetSiteCode) only — no methodCode. HL7 CDA R2
+								Observation has methodCode 0..* (how the finding was obtained:
+								exam / imaging / lab). SEMD validators often flag missing
+								method under diagnosis OBS. Form 043/u chart does not collect
+								a discrete diagnosis method code — do not invent a fake NSI
+								method OID.
+								NOW: methodCode nullFlavor NI until chart field exists.
+							-->
+							<methodCode nullFlavor="NI"/>${params.diagnosisTooth && String(params.diagnosisTooth).trim()
 								? `
 							<!-- DEFECT #74: ISO 3950 tooth from visit_diaries.diagnosis_tooth -->
 							<targetSiteCode code="${escapeXml(String(params.diagnosisTooth).trim())}" codeSystem="1.2.643.5.1.13.13.11.1466" codeSystemName="Зубы" displayName="Зуб ${escapeXml(String(params.diagnosisTooth).trim())}"/>`
 								: ""}
 						</observation>
+
 					</entry>
 				</section>
 			</component>
