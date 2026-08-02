@@ -2232,7 +2232,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: uncertaintyCode nullFlavor NI until chart field exists.
 							-->
 							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #227: complications observation/approachSiteCode.
+								WAS: complications OBS had methodCode/interpretationCode/
+								uncertaintyCode only — no approachSiteCode. Diagnosis (#224),
+								anamnesis (#225) and objective (#226) already carry
+								approachSiteCode NI. HL7 CDA R2 Observation has
+								approachSiteCode 0..*. SEMD validators often flag missing
+								approach under complications OBS. Form 043/u complications
+								is free-text note — do not invent ISO 3950.
+								NOW: approachSiteCode nullFlavor NI until chart field exists.
+							-->
+							<approachSiteCode nullFlavor="NI"/>
 						</observation>
+
 					</entry></section>
 			</component>
 			<!-- Сопутствующие заболевания (043) -->
