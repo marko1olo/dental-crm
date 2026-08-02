@@ -1917,6 +1917,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument.
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+					<!--
+						DEFECT #1231: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+						NOW: interpretationCode nullFlavor NI.
+					-->
+					<interpretationCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1232: entryRelationship/act/methodCode.
+						WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+						NOW: methodCode nullFlavor NI.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1233: entryRelationship/act/targetSiteCode.
+						WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+						NOW: targetSiteCode nullFlavor NI.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1234: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+						NOW: uncertaintyCode nullFlavor NI.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -1926,9 +1950,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<precondition typeCode="PRCN">
 					<criterion classCode="OBS" moodCode="EVN">
+						<!--
+							DEFECT #1310: precondition/criterion/id.
+							WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+							NOW: id nullFlavor NI.
+						-->
+						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
 						<statusCode code="completed"/>
+						<!--
+							DEFECT #1311: precondition/criterion/effectiveTime.
+							WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+							NOW: effectiveTime nullFlavor NI.
+						-->
+						<effectiveTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1312: precondition/criterion/priorityCode.
+							WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+							NOW: priorityCode nullFlavor NI.
+						-->
+						<priorityCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1313: precondition/criterion/languageCode.
+							WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+							NOW: languageCode code=ru-RU.
+						-->
+						<languageCode code="ru-RU"/>
+						<!--
+							DEFECT #1314: precondition/criterion/confidentialityCode.
+							WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+							NOW: confidentialityCode N matching ClinicalDocument.
+						-->
+						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
@@ -2492,6 +2546,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: confidentialityCode N matching ClinicalDocument.
 			-->
 			<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+			<!--
+				DEFECT #1227: entryRelationship/act/interpretationCode.
+				WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+				NOW: interpretationCode nullFlavor NI.
+			-->
+			<interpretationCode nullFlavor="NI"/>
+			<!--
+				DEFECT #1228: entryRelationship/act/methodCode.
+				WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+				NOW: methodCode nullFlavor NI.
+			-->
+			<methodCode nullFlavor="NI"/>
+			<!--
+				DEFECT #1229: entryRelationship/act/targetSiteCode.
+				WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+				NOW: targetSiteCode nullFlavor NI.
+			-->
+			<targetSiteCode nullFlavor="NI"/>
+			<!--
+				DEFECT #1230: entryRelationship/act/uncertaintyCode.
+				WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+				NOW: uncertaintyCode nullFlavor NI.
+			-->
+			<uncertaintyCode nullFlavor="NI"/>
 			</act>
 		</entryRelationship>
 		<!--
@@ -2539,9 +2617,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		-->
 		<precondition typeCode="PRCN">
 			<criterion classCode="OBS" moodCode="EVN">
+				<!--
+					DEFECT #1305: precondition/criterion/id.
+					WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+					NOW: id nullFlavor NI.
+				-->
+				<id nullFlavor="NI"/>
 				<code nullFlavor="NI"/>
 				<text nullFlavor="NI"/>
 				<statusCode code="completed"/>
+				<!--
+					DEFECT #1306: precondition/criterion/effectiveTime.
+					WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+					NOW: effectiveTime nullFlavor NI.
+				-->
+				<effectiveTime nullFlavor="NI"/>
+				<!--
+					DEFECT #1307: precondition/criterion/priorityCode.
+					WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+					NOW: priorityCode nullFlavor NI.
+				-->
+				<priorityCode nullFlavor="NI"/>
+				<!--
+					DEFECT #1308: precondition/criterion/languageCode.
+					WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+					NOW: languageCode code=ru-RU.
+				-->
+				<languageCode code="ru-RU"/>
+				<!--
+					DEFECT #1309: precondition/criterion/confidentialityCode.
+					WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+					NOW: confidentialityCode N matching ClinicalDocument.
+				-->
+				<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 				<value xsi:type="CD" nullFlavor="NI"/>
 			</criterion>
 		</precondition>
@@ -2893,6 +3001,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: confidentialityCode N matching ClinicalDocument.
 			-->
 			<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+			<!--
+				DEFECT #1223: entryRelationship/act/interpretationCode.
+				WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+				NOW: interpretationCode nullFlavor NI.
+			-->
+			<interpretationCode nullFlavor="NI"/>
+			<!--
+				DEFECT #1224: entryRelationship/act/methodCode.
+				WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+				NOW: methodCode nullFlavor NI.
+			-->
+			<methodCode nullFlavor="NI"/>
+			<!--
+				DEFECT #1225: entryRelationship/act/targetSiteCode.
+				WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+				NOW: targetSiteCode nullFlavor NI.
+			-->
+			<targetSiteCode nullFlavor="NI"/>
+			<!--
+				DEFECT #1226: entryRelationship/act/uncertaintyCode.
+				WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+				NOW: uncertaintyCode nullFlavor NI.
+			-->
+			<uncertaintyCode nullFlavor="NI"/>
 			</act>
 		</entryRelationship>
 		<!--
@@ -2902,9 +3034,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		-->
 		<precondition typeCode="PRCN">
 			<criterion classCode="OBS" moodCode="EVN">
+				<!--
+					DEFECT #1300: precondition/criterion/id.
+					WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+					NOW: id nullFlavor NI.
+				-->
+				<id nullFlavor="NI"/>
 				<code nullFlavor="NI"/>
 				<text nullFlavor="NI"/>
 				<statusCode code="completed"/>
+				<!--
+					DEFECT #1301: precondition/criterion/effectiveTime.
+					WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+					NOW: effectiveTime nullFlavor NI.
+				-->
+				<effectiveTime nullFlavor="NI"/>
+				<!--
+					DEFECT #1302: precondition/criterion/priorityCode.
+					WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+					NOW: priorityCode nullFlavor NI.
+				-->
+				<priorityCode nullFlavor="NI"/>
+				<!--
+					DEFECT #1303: precondition/criterion/languageCode.
+					WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+					NOW: languageCode code=ru-RU.
+				-->
+				<languageCode code="ru-RU"/>
+				<!--
+					DEFECT #1304: precondition/criterion/confidentialityCode.
+					WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+					NOW: confidentialityCode N matching ClinicalDocument.
+				-->
+				<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 				<value xsi:type="CD" nullFlavor="NI"/>
 			</criterion>
 		</precondition>
@@ -3788,6 +3950,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument.
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+					<!--
+						DEFECT #1219: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+						NOW: interpretationCode nullFlavor NI.
+					-->
+					<interpretationCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1220: entryRelationship/act/methodCode.
+						WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+						NOW: methodCode nullFlavor NI.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1221: entryRelationship/act/targetSiteCode.
+						WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+						NOW: targetSiteCode nullFlavor NI.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1222: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+						NOW: uncertaintyCode nullFlavor NI.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -3797,9 +3983,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<precondition typeCode="PRCN">
 					<criterion classCode="OBS" moodCode="EVN">
+						<!--
+							DEFECT #1295: precondition/criterion/id.
+							WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+							NOW: id nullFlavor NI.
+						-->
+						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
 						<statusCode code="completed"/>
+						<!--
+							DEFECT #1296: precondition/criterion/effectiveTime.
+							WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+							NOW: effectiveTime nullFlavor NI.
+						-->
+						<effectiveTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1297: precondition/criterion/priorityCode.
+							WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+							NOW: priorityCode nullFlavor NI.
+						-->
+						<priorityCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1298: precondition/criterion/languageCode.
+							WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+							NOW: languageCode code=ru-RU.
+						-->
+						<languageCode code="ru-RU"/>
+						<!--
+							DEFECT #1299: precondition/criterion/confidentialityCode.
+							WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+							NOW: confidentialityCode N matching ClinicalDocument.
+						-->
+						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
@@ -4826,6 +5042,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument.
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+					<!--
+						DEFECT #1215: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+						NOW: interpretationCode nullFlavor NI.
+					-->
+					<interpretationCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1216: entryRelationship/act/methodCode.
+						WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+						NOW: methodCode nullFlavor NI.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1217: entryRelationship/act/targetSiteCode.
+						WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+						NOW: targetSiteCode nullFlavor NI.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1218: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+						NOW: uncertaintyCode nullFlavor NI.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -4835,9 +5075,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<precondition typeCode="PRCN">
 					<criterion classCode="OBS" moodCode="EVN">
+						<!--
+							DEFECT #1290: precondition/criterion/id.
+							WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+							NOW: id nullFlavor NI.
+						-->
+						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
 						<statusCode code="completed"/>
+						<!--
+							DEFECT #1291: precondition/criterion/effectiveTime.
+							WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+							NOW: effectiveTime nullFlavor NI.
+						-->
+						<effectiveTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1292: precondition/criterion/priorityCode.
+							WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+							NOW: priorityCode nullFlavor NI.
+						-->
+						<priorityCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1293: precondition/criterion/languageCode.
+							WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+							NOW: languageCode code=ru-RU.
+						-->
+						<languageCode code="ru-RU"/>
+						<!--
+							DEFECT #1294: precondition/criterion/confidentialityCode.
+							WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+							NOW: confidentialityCode N matching ClinicalDocument.
+						-->
+						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
@@ -5276,6 +5546,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: confidentialityCode N matching ClinicalDocument.
 									-->
 									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+									<!--
+										DEFECT #1211: entryRelationship/act/interpretationCode.
+										WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+										NOW: interpretationCode nullFlavor NI.
+									-->
+									<interpretationCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1212: entryRelationship/act/methodCode.
+										WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+										NOW: methodCode nullFlavor NI.
+									-->
+									<methodCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1213: entryRelationship/act/targetSiteCode.
+										WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+										NOW: targetSiteCode nullFlavor NI.
+									-->
+									<targetSiteCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1214: entryRelationship/act/uncertaintyCode.
+										WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+										NOW: uncertaintyCode nullFlavor NI.
+									-->
+									<uncertaintyCode nullFlavor="NI"/>
 									</act>
 								</entryRelationship>
 								<!--
@@ -5323,9 +5617,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								-->
 								<precondition typeCode="PRCN">
 									<criterion classCode="OBS" moodCode="EVN">
+										<!--
+											DEFECT #1285: precondition/criterion/id.
+											WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+											NOW: id nullFlavor NI.
+										-->
+										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<text nullFlavor="NI"/>
 										<statusCode code="completed"/>
+										<!--
+											DEFECT #1286: precondition/criterion/effectiveTime.
+											WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+											NOW: effectiveTime nullFlavor NI.
+										-->
+										<effectiveTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1287: precondition/criterion/priorityCode.
+											WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+											NOW: priorityCode nullFlavor NI.
+										-->
+										<priorityCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1288: precondition/criterion/languageCode.
+											WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+											NOW: languageCode code=ru-RU.
+										-->
+										<languageCode code="ru-RU"/>
+										<!--
+											DEFECT #1289: precondition/criterion/confidentialityCode.
+											WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+											NOW: confidentialityCode N matching ClinicalDocument.
+										-->
+										<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 										<value xsi:type="CD" nullFlavor="NI"/>
 									</criterion>
 								</precondition>
@@ -6093,6 +6417,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument.
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+					<!--
+						DEFECT #1207: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+						NOW: interpretationCode nullFlavor NI.
+					-->
+					<interpretationCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1208: entryRelationship/act/methodCode.
+						WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+						NOW: methodCode nullFlavor NI.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1209: entryRelationship/act/targetSiteCode.
+						WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+						NOW: targetSiteCode nullFlavor NI.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1210: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+						NOW: uncertaintyCode nullFlavor NI.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -6102,9 +6450,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<precondition typeCode="PRCN">
 					<criterion classCode="OBS" moodCode="EVN">
+						<!--
+							DEFECT #1280: precondition/criterion/id.
+							WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+							NOW: id nullFlavor NI.
+						-->
+						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
 						<statusCode code="completed"/>
+						<!--
+							DEFECT #1281: precondition/criterion/effectiveTime.
+							WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+							NOW: effectiveTime nullFlavor NI.
+						-->
+						<effectiveTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1282: precondition/criterion/priorityCode.
+							WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+							NOW: priorityCode nullFlavor NI.
+						-->
+						<priorityCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1283: precondition/criterion/languageCode.
+							WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+							NOW: languageCode code=ru-RU.
+						-->
+						<languageCode code="ru-RU"/>
+						<!--
+							DEFECT #1284: precondition/criterion/confidentialityCode.
+							WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+							NOW: confidentialityCode N matching ClinicalDocument.
+						-->
+						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
@@ -6543,6 +6921,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: confidentialityCode N matching ClinicalDocument.
 									-->
 									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+									<!--
+										DEFECT #1203: entryRelationship/act/interpretationCode.
+										WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+										NOW: interpretationCode nullFlavor NI.
+									-->
+									<interpretationCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1204: entryRelationship/act/methodCode.
+										WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+										NOW: methodCode nullFlavor NI.
+									-->
+									<methodCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1205: entryRelationship/act/targetSiteCode.
+										WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+										NOW: targetSiteCode nullFlavor NI.
+									-->
+									<targetSiteCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1206: entryRelationship/act/uncertaintyCode.
+										WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+										NOW: uncertaintyCode nullFlavor NI.
+									-->
+									<uncertaintyCode nullFlavor="NI"/>
 									</act>
 								</entryRelationship>
 								<!--
@@ -6590,9 +6992,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								-->
 								<precondition typeCode="PRCN">
 									<criterion classCode="OBS" moodCode="EVN">
+										<!--
+											DEFECT #1275: precondition/criterion/id.
+											WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+											NOW: id nullFlavor NI.
+										-->
+										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<text nullFlavor="NI"/>
 										<statusCode code="completed"/>
+										<!--
+											DEFECT #1276: precondition/criterion/effectiveTime.
+											WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+											NOW: effectiveTime nullFlavor NI.
+										-->
+										<effectiveTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1277: precondition/criterion/priorityCode.
+											WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+											NOW: priorityCode nullFlavor NI.
+										-->
+										<priorityCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1278: precondition/criterion/languageCode.
+											WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+											NOW: languageCode code=ru-RU.
+										-->
+										<languageCode code="ru-RU"/>
+										<!--
+											DEFECT #1279: precondition/criterion/confidentialityCode.
+											WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+											NOW: confidentialityCode N matching ClinicalDocument.
+										-->
+										<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 										<value xsi:type="CD" nullFlavor="NI"/>
 									</criterion>
 								</precondition>
@@ -7374,6 +7806,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument.
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+					<!--
+						DEFECT #1199: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+						NOW: interpretationCode nullFlavor NI.
+					-->
+					<interpretationCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1200: entryRelationship/act/methodCode.
+						WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+						NOW: methodCode nullFlavor NI.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1201: entryRelationship/act/targetSiteCode.
+						WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+						NOW: targetSiteCode nullFlavor NI.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1202: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+						NOW: uncertaintyCode nullFlavor NI.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -7383,9 +7839,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<precondition typeCode="PRCN">
 					<criterion classCode="OBS" moodCode="EVN">
+						<!--
+							DEFECT #1270: precondition/criterion/id.
+							WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+							NOW: id nullFlavor NI.
+						-->
+						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
 						<statusCode code="completed"/>
+						<!--
+							DEFECT #1271: precondition/criterion/effectiveTime.
+							WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+							NOW: effectiveTime nullFlavor NI.
+						-->
+						<effectiveTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1272: precondition/criterion/priorityCode.
+							WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+							NOW: priorityCode nullFlavor NI.
+						-->
+						<priorityCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1273: precondition/criterion/languageCode.
+							WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+							NOW: languageCode code=ru-RU.
+						-->
+						<languageCode code="ru-RU"/>
+						<!--
+							DEFECT #1274: precondition/criterion/confidentialityCode.
+							WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+							NOW: confidentialityCode N matching ClinicalDocument.
+						-->
+						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
@@ -7824,6 +8310,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: confidentialityCode N matching ClinicalDocument.
 									-->
 									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+									<!--
+										DEFECT #1195: entryRelationship/act/interpretationCode.
+										WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+										NOW: interpretationCode nullFlavor NI.
+									-->
+									<interpretationCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1196: entryRelationship/act/methodCode.
+										WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+										NOW: methodCode nullFlavor NI.
+									-->
+									<methodCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1197: entryRelationship/act/targetSiteCode.
+										WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+										NOW: targetSiteCode nullFlavor NI.
+									-->
+									<targetSiteCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1198: entryRelationship/act/uncertaintyCode.
+										WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+										NOW: uncertaintyCode nullFlavor NI.
+									-->
+									<uncertaintyCode nullFlavor="NI"/>
 									</act>
 								</entryRelationship>
 								<!--
@@ -7871,9 +8381,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								-->
 								<precondition typeCode="PRCN">
 									<criterion classCode="OBS" moodCode="EVN">
+										<!--
+											DEFECT #1265: precondition/criterion/id.
+											WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+											NOW: id nullFlavor NI.
+										-->
+										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<text nullFlavor="NI"/>
 										<statusCode code="completed"/>
+										<!--
+											DEFECT #1266: precondition/criterion/effectiveTime.
+											WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+											NOW: effectiveTime nullFlavor NI.
+										-->
+										<effectiveTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1267: precondition/criterion/priorityCode.
+											WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+											NOW: priorityCode nullFlavor NI.
+										-->
+										<priorityCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1268: precondition/criterion/languageCode.
+											WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+											NOW: languageCode code=ru-RU.
+										-->
+										<languageCode code="ru-RU"/>
+										<!--
+											DEFECT #1269: precondition/criterion/confidentialityCode.
+											WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+											NOW: confidentialityCode N matching ClinicalDocument.
+										-->
+										<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 										<value xsi:type="CD" nullFlavor="NI"/>
 									</criterion>
 								</precondition>
@@ -8649,6 +9189,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument.
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+					<!--
+						DEFECT #1191: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+						NOW: interpretationCode nullFlavor NI.
+					-->
+					<interpretationCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1192: entryRelationship/act/methodCode.
+						WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+						NOW: methodCode nullFlavor NI.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1193: entryRelationship/act/targetSiteCode.
+						WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+						NOW: targetSiteCode nullFlavor NI.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1194: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+						NOW: uncertaintyCode nullFlavor NI.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -8658,9 +9222,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<precondition typeCode="PRCN">
 					<criterion classCode="OBS" moodCode="EVN">
+						<!--
+							DEFECT #1260: precondition/criterion/id.
+							WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+							NOW: id nullFlavor NI.
+						-->
+						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
 						<statusCode code="completed"/>
+						<!--
+							DEFECT #1261: precondition/criterion/effectiveTime.
+							WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+							NOW: effectiveTime nullFlavor NI.
+						-->
+						<effectiveTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1262: precondition/criterion/priorityCode.
+							WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+							NOW: priorityCode nullFlavor NI.
+						-->
+						<priorityCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1263: precondition/criterion/languageCode.
+							WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+							NOW: languageCode code=ru-RU.
+						-->
+						<languageCode code="ru-RU"/>
+						<!--
+							DEFECT #1264: precondition/criterion/confidentialityCode.
+							WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+							NOW: confidentialityCode N matching ClinicalDocument.
+						-->
+						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
@@ -9650,6 +10244,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument.
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+					<!--
+						DEFECT #1187: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+						NOW: interpretationCode nullFlavor NI.
+					-->
+					<interpretationCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1188: entryRelationship/act/methodCode.
+						WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+						NOW: methodCode nullFlavor NI.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1189: entryRelationship/act/targetSiteCode.
+						WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+						NOW: targetSiteCode nullFlavor NI.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1190: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+						NOW: uncertaintyCode nullFlavor NI.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -9659,9 +10277,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<precondition typeCode="PRCN">
 					<criterion classCode="OBS" moodCode="EVN">
+						<!--
+							DEFECT #1255: precondition/criterion/id.
+							WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+							NOW: id nullFlavor NI.
+						-->
+						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
 						<statusCode code="completed"/>
+						<!--
+							DEFECT #1256: precondition/criterion/effectiveTime.
+							WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+							NOW: effectiveTime nullFlavor NI.
+						-->
+						<effectiveTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1257: precondition/criterion/priorityCode.
+							WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+							NOW: priorityCode nullFlavor NI.
+						-->
+						<priorityCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1258: precondition/criterion/languageCode.
+							WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+							NOW: languageCode code=ru-RU.
+						-->
+						<languageCode code="ru-RU"/>
+						<!--
+							DEFECT #1259: precondition/criterion/confidentialityCode.
+							WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+							NOW: confidentialityCode N matching ClinicalDocument.
+						-->
+						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
@@ -10100,6 +10748,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: confidentialityCode N matching ClinicalDocument.
 									-->
 									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+									<!--
+										DEFECT #1183: entryRelationship/act/interpretationCode.
+										WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+										NOW: interpretationCode nullFlavor NI.
+									-->
+									<interpretationCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1184: entryRelationship/act/methodCode.
+										WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+										NOW: methodCode nullFlavor NI.
+									-->
+									<methodCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1185: entryRelationship/act/targetSiteCode.
+										WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+										NOW: targetSiteCode nullFlavor NI.
+									-->
+									<targetSiteCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1186: entryRelationship/act/uncertaintyCode.
+										WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+										NOW: uncertaintyCode nullFlavor NI.
+									-->
+									<uncertaintyCode nullFlavor="NI"/>
 									</act>
 								</entryRelationship>
 								<!--
@@ -10147,9 +10819,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								-->
 								<precondition typeCode="PRCN">
 									<criterion classCode="OBS" moodCode="EVN">
+										<!--
+											DEFECT #1250: precondition/criterion/id.
+											WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+											NOW: id nullFlavor NI.
+										-->
+										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<text nullFlavor="NI"/>
 										<statusCode code="completed"/>
+										<!--
+											DEFECT #1251: precondition/criterion/effectiveTime.
+											WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+											NOW: effectiveTime nullFlavor NI.
+										-->
+										<effectiveTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1252: precondition/criterion/priorityCode.
+											WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+											NOW: priorityCode nullFlavor NI.
+										-->
+										<priorityCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1253: precondition/criterion/languageCode.
+											WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+											NOW: languageCode code=ru-RU.
+										-->
+										<languageCode code="ru-RU"/>
+										<!--
+											DEFECT #1254: precondition/criterion/confidentialityCode.
+											WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+											NOW: confidentialityCode N matching ClinicalDocument.
+										-->
+										<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 										<value xsi:type="CD" nullFlavor="NI"/>
 									</criterion>
 								</precondition>
@@ -10930,6 +11632,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument.
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+					<!--
+						DEFECT #1179: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+						NOW: interpretationCode nullFlavor NI.
+					-->
+					<interpretationCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1180: entryRelationship/act/methodCode.
+						WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+						NOW: methodCode nullFlavor NI.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1181: entryRelationship/act/targetSiteCode.
+						WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+						NOW: targetSiteCode nullFlavor NI.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1182: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+						NOW: uncertaintyCode nullFlavor NI.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -10939,9 +11665,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<precondition typeCode="PRCN">
 					<criterion classCode="OBS" moodCode="EVN">
+						<!--
+							DEFECT #1245: precondition/criterion/id.
+							WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+							NOW: id nullFlavor NI.
+						-->
+						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
 						<statusCode code="completed"/>
+						<!--
+							DEFECT #1246: precondition/criterion/effectiveTime.
+							WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+							NOW: effectiveTime nullFlavor NI.
+						-->
+						<effectiveTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1247: precondition/criterion/priorityCode.
+							WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+							NOW: priorityCode nullFlavor NI.
+						-->
+						<priorityCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1248: precondition/criterion/languageCode.
+							WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+							NOW: languageCode code=ru-RU.
+						-->
+						<languageCode code="ru-RU"/>
+						<!--
+							DEFECT #1249: precondition/criterion/confidentialityCode.
+							WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+							NOW: confidentialityCode N matching ClinicalDocument.
+						-->
+						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
@@ -11380,6 +12136,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: confidentialityCode N matching ClinicalDocument.
 									-->
 									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+									<!--
+										DEFECT #1175: entryRelationship/act/interpretationCode.
+										WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+										NOW: interpretationCode nullFlavor NI.
+									-->
+									<interpretationCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1176: entryRelationship/act/methodCode.
+										WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+										NOW: methodCode nullFlavor NI.
+									-->
+									<methodCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1177: entryRelationship/act/targetSiteCode.
+										WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+										NOW: targetSiteCode nullFlavor NI.
+									-->
+									<targetSiteCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1178: entryRelationship/act/uncertaintyCode.
+										WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+										NOW: uncertaintyCode nullFlavor NI.
+									-->
+									<uncertaintyCode nullFlavor="NI"/>
 									</act>
 								</entryRelationship>
 								<!--
@@ -11427,9 +12207,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								-->
 								<precondition typeCode="PRCN">
 									<criterion classCode="OBS" moodCode="EVN">
+										<!--
+											DEFECT #1240: precondition/criterion/id.
+											WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+											NOW: id nullFlavor NI.
+										-->
+										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<text nullFlavor="NI"/>
 										<statusCode code="completed"/>
+										<!--
+											DEFECT #1241: precondition/criterion/effectiveTime.
+											WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+											NOW: effectiveTime nullFlavor NI.
+										-->
+										<effectiveTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1242: precondition/criterion/priorityCode.
+											WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+											NOW: priorityCode nullFlavor NI.
+										-->
+										<priorityCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1243: precondition/criterion/languageCode.
+											WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+											NOW: languageCode code=ru-RU.
+										-->
+										<languageCode code="ru-RU"/>
+										<!--
+											DEFECT #1244: precondition/criterion/confidentialityCode.
+											WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+											NOW: confidentialityCode N matching ClinicalDocument.
+										-->
+										<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 										<value xsi:type="CD" nullFlavor="NI"/>
 									</criterion>
 								</precondition>
@@ -12287,6 +13097,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument.
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+					<!--
+						DEFECT #1171: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had language/confidentiality — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under nested COMP acts. Form 043/u has no nested-act interpretation; do not invent.
+						NOW: interpretationCode nullFlavor NI.
+					-->
+					<interpretationCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1172: entryRelationship/act/methodCode.
+						WAS: nested COMP act had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under nested COMP acts.
+						NOW: methodCode nullFlavor NI.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1173: entryRelationship/act/targetSiteCode.
+						WAS: nested COMP act had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under nested COMP acts.
+						NOW: targetSiteCode nullFlavor NI.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1174: entryRelationship/act/uncertaintyCode.
+						WAS: nested COMP act had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under nested COMP acts.
+						NOW: uncertaintyCode nullFlavor NI.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -12296,9 +13130,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<precondition typeCode="PRCN">
 					<criterion classCode="OBS" moodCode="EVN">
+						<!--
+							DEFECT #1235: precondition/criterion/id.
+							WAS: compact criterion OBS had code/text/status/value only — no id. Sibling rich criteria emit id NI. SEMD often flags bare criterion under precondition.
+							NOW: id nullFlavor NI.
+						-->
+						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
 						<statusCode code="completed"/>
+						<!--
+							DEFECT #1236: precondition/criterion/effectiveTime.
+							WAS: compact criterion had no effectiveTime. Sibling rich criteria emit effectiveTime NI.
+							NOW: effectiveTime nullFlavor NI.
+						-->
+						<effectiveTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1237: precondition/criterion/priorityCode.
+							WAS: compact criterion had no priorityCode. Parent Act shells emit priorityCode NI.
+							NOW: priorityCode nullFlavor NI.
+						-->
+						<priorityCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1238: precondition/criterion/languageCode.
+							WAS: compact criterion had no languageCode. Parent body acts emit languageCode ru-RU.
+							NOW: languageCode code=ru-RU.
+						-->
+						<languageCode code="ru-RU"/>
+						<!--
+							DEFECT #1239: precondition/criterion/confidentialityCode.
+							WAS: compact criterion had no confidentialityCode. Parent body acts emit confidentialityCode N.
+							NOW: confidentialityCode N matching ClinicalDocument.
+						-->
+						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
