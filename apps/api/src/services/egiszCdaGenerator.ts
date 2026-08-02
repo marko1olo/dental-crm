@@ -1113,7 +1113,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<text>
 						<paragraph>${escapeXml(params.treatmentDescription || "Осмотр и консультация")}</paragraph>
 					</text>
-				</section>
+				
+					<!--
+						DEFECT #134: Treatment section entry/act.
+						WAS: section 18776-5 had only narrative text - no entry.
+						Anamnesis (#132) and objective (#133) already carry entries;
+						SEMD validators expect structured entry under treatment.
+						NOW: entry/act EVN with LOINC 18776-5 and text from
+						params.treatmentDescription (default Osmotr i konsultatsiya).
+					-->
+					<entry>
+						<act classCode="ACT" moodCode="EVN">
+							<code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Проведенное лечение"/>
+							<text>${escapeXml(params.treatmentDescription || "Осмотр и консультация")}</text>
+							<statusCode code="completed"/>
+						</act>
+					</entry></section>
 			</component>
 			<!-- Осложнения (043) -->
 			<component>
