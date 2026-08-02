@@ -352,7 +352,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						2.16.840.1.113883.5.60 with dictionary label.
 					-->
 					<modeCode code="SPK" codeSystem="2.16.840.1.113883.5.60" codeSystemName="LanguageAbilityMode" displayName="Устная речь"/>
+					<!--
+						DEFECT #164: patient/languageCommunication/proficiencyLevelCode.
+						WAS: languageCommunication had languageCode + modeCode (#163)
+						+ preferenceInd — no proficiencyLevelCode. HL7 CDA R2
+						LanguageCommunication expects how well the patient uses
+						the language (excellent/good/fair/poor). SEMD validators
+						flag incomplete communication demographics without
+						proficiency. Form 043/u ambulatory dental assumes native
+						or excellent spoken RU as primary preferred language.
+						NOW: proficiencyLevelCode E (excellent) from HL7
+						LanguageAbilityProficiency 2.16.840.1.113883.5.61.
+					-->
+					<proficiencyLevelCode code="E" codeSystem="2.16.840.1.113883.5.61" codeSystemName="LanguageAbilityProficiency" displayName="Свободно"/>
 					<preferenceInd value="true"/>
+
 				</languageCommunication>
 
 
