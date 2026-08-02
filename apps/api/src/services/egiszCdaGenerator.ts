@@ -1142,9 +1142,34 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				true/false.
 				NOW: independentInd nullFlavor NI until chart field exists.
 			-->
-			<independentInd nullFlavor="NI"/>
-			<!--
-				DEFECT #144: documentationOf/serviceEvent/effectiveTime as IVL_TS.
+							<independentInd nullFlavor="NI"/>
+							<!--
+								DEFECT #272: documentationOf/serviceEvent/approachSiteCode.
+								WAS: serviceEvent had priorityCode/methodCode/uncertaintyCode/
+								repeatNumber/independentInd only — no approachSiteCode.
+								Treatment ACT (#221), body OBS (#224-#228) and tray supply
+								(#269) already carry approachSiteCode NI. HL7 CDA R2 Act has
+								approachSiteCode 0..* on the care event. SEMD validators often
+								flag missing approach under documentationOf. Form 043/u care
+								event is whole-visit dental exam — do not invent ISO 3950.
+								NOW: approachSiteCode nullFlavor NI until chart field exists.
+							-->
+							<approachSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #273: documentationOf/serviceEvent/targetSiteCode.
+								WAS: serviceEvent had approachSiteCode NI (#272) but no
+								targetSiteCode. Treatment ACT (#222), body OBS (#223/#229-#232)
+								and tray supply (#270) already emit targetSiteCode. HL7 CDA R2
+								Act has targetSiteCode 0..* on the care event. SEMD validators
+								often flag missing target site under documentationOf. Form
+								043/u care event may span multiple teeth — diagnosis tooth is
+								on the OBS entry, not the care-event shell; do not invent ISO 3950.
+								NOW: targetSiteCode nullFlavor NI until chart field exists.
+							-->
+							<targetSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #144: documentationOf/serviceEvent/effectiveTime as IVL_TS.
+
 
 
 
@@ -1514,7 +1539,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<independentInd nullFlavor="NI"/>
 			<!--
+				DEFECT #274: encompassingEncounter/approachSiteCode.
+				WAS: encounter had methodCode/uncertaintyCode/repeatNumber/
+				independentInd only — no approachSiteCode. serviceEvent (#272),
+				treatment ACT (#221), body OBS and tray supply already carry
+				approachSiteCode NI. HL7 CDA R2 Act has approachSiteCode 0..*
+				on the encounter. SEMD validators often flag missing approach
+				under componentOf. Form 043/u ambulatory dental visit is
+				whole-mouth care — do not invent ISO 3950.
+				NOW: approachSiteCode nullFlavor NI until chart field exists.
+			-->
+			<approachSiteCode nullFlavor="NI"/>
+			<!--
+				DEFECT #275: encompassingEncounter/targetSiteCode.
+				WAS: encounter had approachSiteCode NI (#274) but no
+				targetSiteCode. serviceEvent (#273), treatment ACT (#222),
+				body OBS and tray supply already emit targetSiteCode. HL7 CDA
+				R2 Act has targetSiteCode 0..* on the encounter. SEMD
+				validators often flag missing target site under componentOf.
+				Form 043/u ambulatory visit may span multiple teeth —
+				diagnosis tooth is on the OBS entry; do not invent ISO 3950.
+				NOW: targetSiteCode nullFlavor NI until chart field exists.
+			-->
+			<targetSiteCode nullFlavor="NI"/>
+			<!--
 				DEFECT #181: encompassingEncounter/encounterParticipant.
+
 
 
 
