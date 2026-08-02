@@ -364,8 +364,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				params.clinicOid && String(params.clinicOid).trim()
 					? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
 					: `<id nullFlavor="NI"/>`}
+				<!--
+					DEFECT #102: custodian representedCustodianOrganization
+					addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+					БЫЛО: custodian had id + name only — no addr/telecom.
+					SEMD validators expect MO contact under custodian org
+					(mirror of patientRole #98 / assignedAuthor #99).
+					We do not invent clinic street or phone.
+					СТАЛО: emit addr and telecom with nullFlavor="NI".
+				-->
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
 				<name>${escapeXml(params.clinicName)}</name>
 			</representedCustodianOrganization>
+
 		</assignedCustodian>
 	</custodian>
 	<!--

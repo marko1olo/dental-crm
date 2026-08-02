@@ -1904,6 +1904,58 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(auth.includes('<signatureCode code="S"/>'));
 	});
 
+	test("DEFECT #102: custodian representedCustodianOrganization addr and telecom nullFlavor NI", () => {
+		const params: EgiszCdaParams = {
+			patientId: "pat-102",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.102",
+			clinicName: "ООО Клиника Custodian Contact",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate: new Date("2025-06-01T10:00:00.000Z"),
+			documentId: "doc-102",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		const custEnd = "</custodian>";
+		const cust = xml.slice(
+			xml.indexOf("<custodian>"),
+			xml.indexOf(custEnd) + custEnd.length,
+		);
+		assert.ok(
+			cust.includes("<representedCustodianOrganization>"),
+			"custodian must wrap representedCustodianOrganization",
+		);
+		assert.ok(
+			cust.includes('<addr nullFlavor="NI"/>'),
+			"custodian org must emit addr nullFlavor=NI when contact unknown",
+		);
+		assert.ok(
+			cust.includes('<telecom nullFlavor="NI"/>'),
+			"custodian org must emit telecom nullFlavor=NI when contact unknown",
+		);
+		assert.ok(!cust.includes("<streetAddressLine"));
+		assert.ok(!cust.includes("tel:"));
+		/* order: id → addr → telecom → name */
+		const idIdx = cust.indexOf("<id ");
+		const addrIdx = cust.indexOf("<addr ");
+		const telIdx = cust.indexOf("<telecom ");
+		const nameIdx = cust.indexOf("<name>");
+		assert.ok(
+			idIdx >= 0 &&
+				addrIdx > idIdx &&
+				telIdx > addrIdx &&
+				nameIdx > telIdx,
+			"custodian org order: id → addr → telecom → name",
+		);
+		assert.ok(cust.includes("<name>ООО Клиника Custodian Contact</name>"));
+	});
+
+
 
 
 
