@@ -1053,6 +1053,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<text>
 						<paragraph>${escapeXml(params.anamnesis || "Без особенностей")}</paragraph>
 					</text>
+					<!--
+						DEFECT #132: Anamnesis section entry/observation (HL7 CDA R2 / EGISZ SEMD).
+						WAS: section 10164-2 had only narrative text - no entry.
+						Diagnosis section already carries observation entry; SEMD
+						validators expect structured entry under anamnesis so REMD
+						can index the history narrative separately from free text.
+						NOW: entry/observation EVN with LOINC 10164-2 and ST value
+						from params.anamnesis (default Bez osobennostey).
+					-->
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Анамнез"/>
+							<value xsi:type="ST">${escapeXml(params.anamnesis || "Без особенностей")}</value>
+						</observation>
+					</entry>
 				</section>
 			</component>
 			<!-- Объективный статус / Status localis (043 O-block) -->
