@@ -1905,6 +1905,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<statusCode code="completed"/>
 						<priorityCode nullFlavor="NI"/>
 						<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1139: entryRelationship/act/languageCode.
+						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+						NOW: languageCode code=ru-RU.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1155: entryRelationship/act/confidentialityCode.
+						WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+						NOW: confidentialityCode N matching ClinicalDocument.
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -1932,6 +1944,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<text nullFlavor="NI"/>
 						<setId nullFlavor="NI"/>
 						<versionNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #1075: reference/externalDocument/statusCode.
+						WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+						NOW: statusCode nullFlavor NI.
+					-->
+					<statusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1091: reference/externalDocument/effectiveTime.
+						WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+						NOW: effectiveTime nullFlavor NI.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1107: reference/externalDocument/languageCode.
+						WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1123: reference/externalDocument/confidentialityCode.
+						WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</externalDocument>
 				</reference>
 				</externalAct>
@@ -2444,6 +2480,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<statusCode code="completed"/>
 				<priorityCode nullFlavor="NI"/>
 				<effectiveTime nullFlavor="NI"/>
+			<!--
+				DEFECT #1140: entryRelationship/act/languageCode.
+				WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+				NOW: languageCode code=ru-RU.
+			-->
+			<languageCode code="ru-RU"/>
+			<!--
+				DEFECT #1156: entryRelationship/act/confidentialityCode.
+				WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+				NOW: confidentialityCode N matching ClinicalDocument.
+			-->
+			<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 			</act>
 		</entryRelationship>
 		<!--
@@ -2458,6 +2506,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<text nullFlavor="NI"/>
 				<setId nullFlavor="NI"/>
 				<versionNumber nullFlavor="NI"/>
+			<!--
+				DEFECT #1076: reference/externalDocument/statusCode.
+				WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+				NOW: statusCode nullFlavor NI.
+			-->
+			<statusCode nullFlavor="NI"/>
+			<!--
+				DEFECT #1092: reference/externalDocument/effectiveTime.
+				WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+				NOW: effectiveTime nullFlavor NI.
+			-->
+			<effectiveTime nullFlavor="NI"/>
+			<!--
+				DEFECT #1108: reference/externalDocument/languageCode.
+				WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+				NOW: languageCode code=ru-RU matching ClinicalDocument.
+			-->
+			<languageCode code="ru-RU"/>
+			<!--
+				DEFECT #1124: reference/externalDocument/confidentialityCode.
+				WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+				NOW: confidentialityCode N matching ClinicalDocument (#158).
+			-->
+			<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 			</externalDocument>
 		</reference>
 		<!--
@@ -2809,6 +2881,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<statusCode code="completed"/>
 				<priorityCode nullFlavor="NI"/>
 				<effectiveTime nullFlavor="NI"/>
+			<!--
+				DEFECT #1141: entryRelationship/act/languageCode.
+				WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+				NOW: languageCode code=ru-RU.
+			-->
+			<languageCode code="ru-RU"/>
+			<!--
+				DEFECT #1157: entryRelationship/act/confidentialityCode.
+				WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+				NOW: confidentialityCode N matching ClinicalDocument.
+			-->
+			<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 			</act>
 		</entryRelationship>
 		<!--
@@ -2836,6 +2920,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<text nullFlavor="NI"/>
 				<setId nullFlavor="NI"/>
 				<versionNumber nullFlavor="NI"/>
+			<!--
+				DEFECT #1077: reference/externalDocument/statusCode.
+				WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+				NOW: statusCode nullFlavor NI.
+			-->
+			<statusCode nullFlavor="NI"/>
+			<!--
+				DEFECT #1093: reference/externalDocument/effectiveTime.
+				WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+				NOW: effectiveTime nullFlavor NI.
+			-->
+			<effectiveTime nullFlavor="NI"/>
+			<!--
+				DEFECT #1109: reference/externalDocument/languageCode.
+				WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+				NOW: languageCode code=ru-RU matching ClinicalDocument.
+			-->
+			<languageCode code="ru-RU"/>
+			<!--
+				DEFECT #1125: reference/externalDocument/confidentialityCode.
+				WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+				NOW: confidentialityCode N matching ClinicalDocument (#158).
+			-->
+			<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 			</externalDocument>
 		</reference>
 		</consent>
@@ -3668,6 +3776,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<statusCode code="completed"/>
 						<priorityCode nullFlavor="NI"/>
 						<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1142: entryRelationship/act/languageCode.
+						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+						NOW: languageCode code=ru-RU.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1158: entryRelationship/act/confidentialityCode.
+						WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+						NOW: confidentialityCode N matching ClinicalDocument.
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -3695,6 +3815,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<text nullFlavor="NI"/>
 						<setId nullFlavor="NI"/>
 						<versionNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #1078: reference/externalDocument/statusCode.
+						WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+						NOW: statusCode nullFlavor NI.
+					-->
+					<statusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1094: reference/externalDocument/effectiveTime.
+						WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+						NOW: effectiveTime nullFlavor NI.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1110: reference/externalDocument/languageCode.
+						WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1126: reference/externalDocument/confidentialityCode.
+						WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</externalDocument>
 				</reference>
 				</externalAct>
@@ -4670,6 +4814,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<statusCode code="completed"/>
 						<priorityCode nullFlavor="NI"/>
 						<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1143: entryRelationship/act/languageCode.
+						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+						NOW: languageCode code=ru-RU.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1159: entryRelationship/act/confidentialityCode.
+						WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+						NOW: confidentialityCode N matching ClinicalDocument.
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -4697,6 +4853,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<text nullFlavor="NI"/>
 						<setId nullFlavor="NI"/>
 						<versionNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #1079: reference/externalDocument/statusCode.
+						WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+						NOW: statusCode nullFlavor NI.
+					-->
+					<statusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1095: reference/externalDocument/effectiveTime.
+						WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+						NOW: effectiveTime nullFlavor NI.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1111: reference/externalDocument/languageCode.
+						WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1127: reference/externalDocument/confidentialityCode.
+						WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</externalDocument>
 				</reference>
 				</externalAct>
@@ -5084,6 +5264,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<statusCode code="completed"/>
 										<priorityCode nullFlavor="NI"/>
 										<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #1144: entryRelationship/act/languageCode.
+										WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+										NOW: languageCode code=ru-RU.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #1160: entryRelationship/act/confidentialityCode.
+										WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+										NOW: confidentialityCode N matching ClinicalDocument.
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 									</act>
 								</entryRelationship>
 								<!--
@@ -5098,6 +5290,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<text nullFlavor="NI"/>
 										<setId nullFlavor="NI"/>
 										<versionNumber nullFlavor="NI"/>
+									<!--
+										DEFECT #1080: reference/externalDocument/statusCode.
+										WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+										NOW: statusCode nullFlavor NI.
+									-->
+									<statusCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1096: reference/externalDocument/effectiveTime.
+										WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+										NOW: effectiveTime nullFlavor NI.
+									-->
+									<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #1112: reference/externalDocument/languageCode.
+										WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+										NOW: languageCode code=ru-RU matching ClinicalDocument.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #1128: reference/externalDocument/confidentialityCode.
+										WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+										NOW: confidentialityCode N matching ClinicalDocument (#158).
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 									</externalDocument>
 								</reference>
 								<!--
@@ -5865,6 +6081,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<statusCode code="completed"/>
 						<priorityCode nullFlavor="NI"/>
 						<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1145: entryRelationship/act/languageCode.
+						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+						NOW: languageCode code=ru-RU.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1161: entryRelationship/act/confidentialityCode.
+						WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+						NOW: confidentialityCode N matching ClinicalDocument.
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -5892,6 +6120,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<text nullFlavor="NI"/>
 						<setId nullFlavor="NI"/>
 						<versionNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #1081: reference/externalDocument/statusCode.
+						WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+						NOW: statusCode nullFlavor NI.
+					-->
+					<statusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1097: reference/externalDocument/effectiveTime.
+						WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+						NOW: effectiveTime nullFlavor NI.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1113: reference/externalDocument/languageCode.
+						WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1129: reference/externalDocument/confidentialityCode.
+						WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</externalDocument>
 				</reference>
 				</externalAct>
@@ -6279,6 +6531,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<statusCode code="completed"/>
 										<priorityCode nullFlavor="NI"/>
 										<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #1146: entryRelationship/act/languageCode.
+										WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+										NOW: languageCode code=ru-RU.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #1162: entryRelationship/act/confidentialityCode.
+										WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+										NOW: confidentialityCode N matching ClinicalDocument.
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 									</act>
 								</entryRelationship>
 								<!--
@@ -6293,6 +6557,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<text nullFlavor="NI"/>
 										<setId nullFlavor="NI"/>
 										<versionNumber nullFlavor="NI"/>
+									<!--
+										DEFECT #1082: reference/externalDocument/statusCode.
+										WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+										NOW: statusCode nullFlavor NI.
+									-->
+									<statusCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1098: reference/externalDocument/effectiveTime.
+										WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+										NOW: effectiveTime nullFlavor NI.
+									-->
+									<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #1114: reference/externalDocument/languageCode.
+										WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+										NOW: languageCode code=ru-RU matching ClinicalDocument.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #1130: reference/externalDocument/confidentialityCode.
+										WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+										NOW: confidentialityCode N matching ClinicalDocument (#158).
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 									</externalDocument>
 								</reference>
 								<!--
@@ -7074,6 +7362,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<statusCode code="completed"/>
 						<priorityCode nullFlavor="NI"/>
 						<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1147: entryRelationship/act/languageCode.
+						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+						NOW: languageCode code=ru-RU.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1163: entryRelationship/act/confidentialityCode.
+						WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+						NOW: confidentialityCode N matching ClinicalDocument.
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -7101,6 +7401,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<text nullFlavor="NI"/>
 						<setId nullFlavor="NI"/>
 						<versionNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #1083: reference/externalDocument/statusCode.
+						WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+						NOW: statusCode nullFlavor NI.
+					-->
+					<statusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1099: reference/externalDocument/effectiveTime.
+						WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+						NOW: effectiveTime nullFlavor NI.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1115: reference/externalDocument/languageCode.
+						WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1131: reference/externalDocument/confidentialityCode.
+						WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</externalDocument>
 				</reference>
 				</externalAct>
@@ -7488,6 +7812,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<statusCode code="completed"/>
 										<priorityCode nullFlavor="NI"/>
 										<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #1148: entryRelationship/act/languageCode.
+										WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+										NOW: languageCode code=ru-RU.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #1164: entryRelationship/act/confidentialityCode.
+										WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+										NOW: confidentialityCode N matching ClinicalDocument.
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 									</act>
 								</entryRelationship>
 								<!--
@@ -7502,6 +7838,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<text nullFlavor="NI"/>
 										<setId nullFlavor="NI"/>
 										<versionNumber nullFlavor="NI"/>
+									<!--
+										DEFECT #1084: reference/externalDocument/statusCode.
+										WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+										NOW: statusCode nullFlavor NI.
+									-->
+									<statusCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1100: reference/externalDocument/effectiveTime.
+										WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+										NOW: effectiveTime nullFlavor NI.
+									-->
+									<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #1116: reference/externalDocument/languageCode.
+										WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+										NOW: languageCode code=ru-RU matching ClinicalDocument.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #1132: reference/externalDocument/confidentialityCode.
+										WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+										NOW: confidentialityCode N matching ClinicalDocument (#158).
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 									</externalDocument>
 								</reference>
 								<!--
@@ -8277,6 +8637,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<statusCode code="completed"/>
 						<priorityCode nullFlavor="NI"/>
 						<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1149: entryRelationship/act/languageCode.
+						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+						NOW: languageCode code=ru-RU.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1165: entryRelationship/act/confidentialityCode.
+						WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+						NOW: confidentialityCode N matching ClinicalDocument.
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -8304,6 +8676,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<text nullFlavor="NI"/>
 						<setId nullFlavor="NI"/>
 						<versionNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #1085: reference/externalDocument/statusCode.
+						WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+						NOW: statusCode nullFlavor NI.
+					-->
+					<statusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1101: reference/externalDocument/effectiveTime.
+						WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+						NOW: effectiveTime nullFlavor NI.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1117: reference/externalDocument/languageCode.
+						WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1133: reference/externalDocument/confidentialityCode.
+						WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</externalDocument>
 				</reference>
 				</externalAct>
@@ -9242,6 +9638,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<statusCode code="completed"/>
 						<priorityCode nullFlavor="NI"/>
 						<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1150: entryRelationship/act/languageCode.
+						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+						NOW: languageCode code=ru-RU.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1166: entryRelationship/act/confidentialityCode.
+						WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+						NOW: confidentialityCode N matching ClinicalDocument.
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -9269,6 +9677,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<text nullFlavor="NI"/>
 						<setId nullFlavor="NI"/>
 						<versionNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #1086: reference/externalDocument/statusCode.
+						WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+						NOW: statusCode nullFlavor NI.
+					-->
+					<statusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1102: reference/externalDocument/effectiveTime.
+						WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+						NOW: effectiveTime nullFlavor NI.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1118: reference/externalDocument/languageCode.
+						WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1134: reference/externalDocument/confidentialityCode.
+						WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</externalDocument>
 				</reference>
 				</externalAct>
@@ -9656,6 +10088,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<statusCode code="completed"/>
 										<priorityCode nullFlavor="NI"/>
 										<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #1151: entryRelationship/act/languageCode.
+										WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+										NOW: languageCode code=ru-RU.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #1167: entryRelationship/act/confidentialityCode.
+										WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+										NOW: confidentialityCode N matching ClinicalDocument.
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 									</act>
 								</entryRelationship>
 								<!--
@@ -9670,6 +10114,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<text nullFlavor="NI"/>
 										<setId nullFlavor="NI"/>
 										<versionNumber nullFlavor="NI"/>
+									<!--
+										DEFECT #1087: reference/externalDocument/statusCode.
+										WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+										NOW: statusCode nullFlavor NI.
+									-->
+									<statusCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1103: reference/externalDocument/effectiveTime.
+										WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+										NOW: effectiveTime nullFlavor NI.
+									-->
+									<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #1119: reference/externalDocument/languageCode.
+										WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+										NOW: languageCode code=ru-RU matching ClinicalDocument.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #1135: reference/externalDocument/confidentialityCode.
+										WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+										NOW: confidentialityCode N matching ClinicalDocument (#158).
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 									</externalDocument>
 								</reference>
 								<!--
@@ -10450,6 +10918,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<statusCode code="completed"/>
 						<priorityCode nullFlavor="NI"/>
 						<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1152: entryRelationship/act/languageCode.
+						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+						NOW: languageCode code=ru-RU.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1168: entryRelationship/act/confidentialityCode.
+						WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+						NOW: confidentialityCode N matching ClinicalDocument.
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -10477,6 +10957,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<text nullFlavor="NI"/>
 						<setId nullFlavor="NI"/>
 						<versionNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #1088: reference/externalDocument/statusCode.
+						WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+						NOW: statusCode nullFlavor NI.
+					-->
+					<statusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1104: reference/externalDocument/effectiveTime.
+						WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+						NOW: effectiveTime nullFlavor NI.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1120: reference/externalDocument/languageCode.
+						WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1136: reference/externalDocument/confidentialityCode.
+						WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</externalDocument>
 				</reference>
 				</externalAct>
@@ -10864,6 +11368,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<statusCode code="completed"/>
 										<priorityCode nullFlavor="NI"/>
 										<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #1153: entryRelationship/act/languageCode.
+										WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+										NOW: languageCode code=ru-RU.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #1169: entryRelationship/act/confidentialityCode.
+										WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+										NOW: confidentialityCode N matching ClinicalDocument.
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 									</act>
 								</entryRelationship>
 								<!--
@@ -10878,6 +11394,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<text nullFlavor="NI"/>
 										<setId nullFlavor="NI"/>
 										<versionNumber nullFlavor="NI"/>
+									<!--
+										DEFECT #1089: reference/externalDocument/statusCode.
+										WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+										NOW: statusCode nullFlavor NI.
+									-->
+									<statusCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1105: reference/externalDocument/effectiveTime.
+										WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+										NOW: effectiveTime nullFlavor NI.
+									-->
+									<effectiveTime nullFlavor="NI"/>
+									<!--
+										DEFECT #1121: reference/externalDocument/languageCode.
+										WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+										NOW: languageCode code=ru-RU matching ClinicalDocument.
+									-->
+									<languageCode code="ru-RU"/>
+									<!--
+										DEFECT #1137: reference/externalDocument/confidentialityCode.
+										WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+										NOW: confidentialityCode N matching ClinicalDocument (#158).
+									-->
+									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 									</externalDocument>
 								</reference>
 								<!--
@@ -11735,6 +12275,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<statusCode code="completed"/>
 						<priorityCode nullFlavor="NI"/>
 						<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1154: entryRelationship/act/languageCode.
+						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
+						NOW: languageCode code=ru-RU.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1170: entryRelationship/act/confidentialityCode.
+						WAS: nested COMP act had no confidentialityCode. Parent body acts emit confidentialityCode N. SEMD often flags missing confidentiality under nested COMP acts.
+						NOW: confidentialityCode N matching ClinicalDocument.
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</act>
 				</entryRelationship>
 				<!--
@@ -11762,6 +12314,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<text nullFlavor="NI"/>
 						<setId nullFlavor="NI"/>
 						<versionNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #1090: reference/externalDocument/statusCode.
+						WAS: externalDocument had id/code/text/setId/versionNumber — no statusCode. HL7 CDA R2 ExternalDocument (Act) has statusCode 0..1. SEMD often flags missing status under externalDocument when ClinicalDocument emits statusCode. Form 043/u has no nested external doc status; do not invent.
+						NOW: statusCode nullFlavor NI.
+					-->
+					<statusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1106: reference/externalDocument/effectiveTime.
+						WAS: externalDocument had no effectiveTime. HL7 CDA R2 Act has effectiveTime 0..1. SEMD often flags missing effectiveTime under externalDocument when parent acts stamp time. Form 043/u has no nested external doc timestamp; do not invent.
+						NOW: effectiveTime nullFlavor NI.
+					-->
+					<effectiveTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1122: reference/externalDocument/languageCode.
+						WAS: externalDocument had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and body acts emit ru-RU. Form 043/u nested external doc has no separate language; do not invent.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #1138: reference/externalDocument/confidentialityCode.
+						WAS: externalDocument had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument emits N. Form 043/u nested external doc has no separate confidentiality; do not invent.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 					</externalDocument>
 				</reference>
 				</externalAct>
