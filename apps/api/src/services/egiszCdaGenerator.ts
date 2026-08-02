@@ -694,6 +694,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		<encompassingEncounter>
 			<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(encounterExtension)}"/>
 			<code code="AMB" codeSystem="1.2.643.5.1.13.13.11.1461" codeSystemName="Виды медицинской помощи" displayName="Амбулаторная помощь"/>
+			<!--
+				DEFECT #125: encompassingEncounter/statusCode.
+				БЫЛО (#86/#91): encounter had id + AMB code + effectiveTime +
+				responsibleParty + location — no statusCode. HL7 CDA R2 Act
+				status is expected on encompassingEncounter so REMD knows the
+				visit is finished (Form 043/у export happens after the slot,
+				not mid-encounter). Without it validators flag incomplete
+				encounter lifecycle.
+				СТАЛО: statusCode code="completed" (normal ambulatory close).
+			-->
+			<statusCode code="completed"/>
 			<effectiveTime value="${visitTime}"/>
 			<responsibleParty>
 				<assignedEntity>
