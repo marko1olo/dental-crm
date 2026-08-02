@@ -197,11 +197,124 @@ describe("egiszCdaGenerator", () => {
 	});
 
 	/**
+	 * DEFECT #75: legalAuthenticator (signer of Form 043/у) is required by
+	 * EGISZ REMD / SEMD validators. CDA previously had author + custodian only.
+	 * Signature party must mirror doctorName and use documentClock (lockedAt).
+	 */
+	test("DEFECT #75: legalAuthenticator present with doctor name and document time", () => {
+		const lockedAt = new Date("2024-06-01T12:30:00.000Z");
+		const xml = generateDentalCdaXml({
+			patientId: "pat-75",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicName: "Клиника Тест",
+			doctorName: { first: "Петр", last: "Петров", middle: "Сергеевич" },
+			doctorSnils: "111-222-333 44",
+			doctorPosition: "Врач-стоматолог",
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес дентина",
+			visitDate: new Date("2024-06-01T10:00:00.000Z"),
+			documentId: "doc-75",
+			documentTime: lockedAt,
+		});
+
+		assert.ok(
+			xml.includes("<legalAuthenticator>"),
+			"CDA must include legalAuthenticator block",
+		);
+		assert.ok(
+			xml.includes('<signatureCode code="S"/>'),
+			"legalAuthenticator must carry signatureCode S",
+		);
+		// documentClock = lockedAt → 20240601123000+0000 (or local offset)
+		assert.ok(
+			xml.includes("<legalAuthenticator>") &&
+				xml.includes("</legalAuthenticator>"),
+			"legalAuthenticator must be a closed element pair",
+		);
+		const laBlock = xml.slice(
+			xml.indexOf("<legalAuthenticator>"),
+			xml.indexOf("</legalAuthenticator>") + "</legalAuthenticator>".length,
+		);
+		assert.ok(
+			laBlock.includes("<family>Петров</family>"),
+			"legalAuthenticator must include doctor family name",
+		);
+		assert.ok(
+			laBlock.includes("<given>Петр</given>"),
+			"legalAuthenticator must include doctor given name",
+		);
+		assert.ok(
+			laBlock.includes("<given>Сергеевич</given>"),
+			"legalAuthenticator must include doctor middle name when provided",
+		);
+		assert.ok(
+			laBlock.includes('root="1.2.643.100.3" extension="111-222-333 44"'),
+			"legalAuthenticator must include doctor SNILS when provided",
+		);
+		assert.ok(
+			laBlock.includes('displayName="Врач-стоматолог"'),
+			"legalAuthenticator must include doctor position when provided",
+		);
+		assert.ok(
+			laBlock.includes("<name>Клиника Тест</name>"),
+			"legalAuthenticator representedOrganization must carry clinic name",
+		);
+		// time value must match document effectiveTime (lockedAt)
+		assert.ok(
+			laBlock.includes('<time value="'),
+			"legalAuthenticator must include time",
+		);
+		// Generator uses local yyyyMMddHHmmss (14 digits), same as ClinicalDocument effectiveTime
+		const timeMatch = laBlock.match(/<time value="(\d{14})"/);
+		assert.ok(timeMatch, "legalAuthenticator time must be yyyyMMddHHmmss");
+		assert.ok(
+			xml.includes(`<effectiveTime value="${timeMatch![1]}"`),
+			"legalAuthenticator time must equal document effectiveTime (documentClock)",
+		);
+
+		// Without optional SNILS/position — block still present, optional tags omitted
+		const minimal = generateDentalCdaXml({
+			patientId: "pat-75b",
+			patientName: { first: "А", last: "Б" },
+			patientSnils: "000",
+			patientBirthDate: "1990-01-01",
+			patientGender: "female",
+			clinicName: "X",
+			doctorName: { first: "D", last: "E" },
+			icd10Code: "K02.0",
+			diagnosisText: "d",
+			visitDate: new Date("2024-01-01T00:00:00.000Z"),
+			documentId: "doc-75b",
+		});
+		assert.ok(
+			minimal.includes("<legalAuthenticator>"),
+			"legalAuthenticator required even without doctorSnils/position",
+		);
+		const laMin = minimal.slice(
+			minimal.indexOf("<legalAuthenticator>"),
+			minimal.indexOf("</legalAuthenticator>") +
+				"</legalAuthenticator>".length,
+		);
+		assert.ok(
+			!laMin.includes('root="1.2.643.100.3"'),
+			"SNILS id omitted when doctorSnils absent",
+		);
+		assert.ok(
+			!laMin.includes("displayName="),
+			"position code omitted when doctorPosition absent",
+		);
+	});
+
+	/**
 	 * DEFECT #74: ISO 3950 tooth from visit_diaries.diagnosis_tooth must appear
 	 * in CDA diagnosis observation as targetSiteCode (and in human-readable text).
 	 * Without this, signed 043 tooth never reaches EGISZ/REMD export.
 	 */
 	test("DEFECT #74: diagnosisTooth exports as targetSiteCode on diagnosis observation", () => {
+
 		const base: EgiszCdaParams = {
 			patientId: "pat-74",
 			patientName: { first: "Иван", last: "Иванов" },

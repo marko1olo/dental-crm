@@ -201,13 +201,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								: ""}
 						</observation>
 					</entry>
-
 				</section>
 			</component>
 			<!-- Анамнез -->
 			<component>
 				<section>
 					<code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Анамнез"/>
+
 					<title>Анамнез</title>
 					<text>
 						<paragraph>${escapeXml(params.anamnesis || "Без особенностей")}</paragraph>
