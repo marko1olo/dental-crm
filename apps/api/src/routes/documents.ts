@@ -19,6 +19,7 @@ import {
   type DocumentReleaseMaterialKind,
   type GeneratedDocument,
   type ClinicProfile,
+  type DentalMedicalCard043uPayload,
   type MedicalDocumentReleaseReceiptPayload,
   type MedicalRecordCopyRequestPayload,
   type MedicalRecordExtractPayload,
@@ -475,6 +476,15 @@ export function outpatientMedicalCard025uDatesAreValid(payload: OutpatientMedica
   return dates.every(documentChainDateIsBlankOrValid) && documentChainDateRangeIsChronological(payload.periodStart, payload.periodEnd);
 }
 
+export function dentalMedicalCard043uDatesAreValid(payload: DentalMedicalCard043uPayload): boolean {
+  return (
+    documentChainDateIsBlankOrValid(payload.visitDate) &&
+    documentChainDateIsBlankOrValid(payload.patient?.birthDate) &&
+    documentChainDateIsBlankOrValid(payload.organization?.licenseIssueDate) &&
+    documentChainDateIsBlankOrValid(payload.lockedAt)
+  );
+}
+
 export function medicalDocumentReleaseReceiptDatesAreValid(payload: MedicalDocumentReleaseReceiptPayload): boolean {
   const deliveredAt = comparableDocumentChainDate(payload.deliveredAt);
   const accessExpiresAt = comparableDocumentChainDate(payload.accessExpiresAt);
@@ -906,7 +916,15 @@ export async function documentIssueChainBlockReason(document: GeneratedDocument)
     }
   }
 
+  const card043u = document.payload?.dentalMedicalCard043u;
+  if (document.kind === "dental_medical_card_043u" && card043u) {
+    if (!dentalMedicalCard043uDatesAreValid(card043u)) {
+      return "Карту 043/у нельзя выдать: дата приема, рождения пациента, лицензии или блокировки указаны в нераспознаваемом формате.";
+    }
+  }
+
   const extract = document.payload?.medicalRecordExtract;
+
   if (document.kind === "medical_record_extract" && extract) {
     if (!medicalRecordExtractDatesAreValid(extract)) {
       return "Выписку нельзя выдать: даты периода или выдачи указаны в нераспознаваемом формате либо период указан в обратном порядке.";

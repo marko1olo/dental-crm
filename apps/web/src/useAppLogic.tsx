@@ -11907,7 +11907,6 @@ export function useAppLogic(): any {
 
 	function dentalMedicalCard043uPayloadValue(): DentalMedicalCard043uPayload {
 		const doctor = outpatient025uDoctorValue();
-		const sourceVisitIds = outpatient025uSourceVisitIdsValue();
 		const visitDate = outpatient025uVisitDateValue();
 		const patientProfile = documentPatient?.administrativeProfile;
 		const complaintsAndAnamnesis = recordExtractComplaintAndAnamnesisValue();
@@ -11939,31 +11938,40 @@ export function useAppLogic(): any {
 			sexRaw === "f" ||
 			sexRaw === "жен" ||
 			sexRaw === "женский"
-				? ("female" as const)
+				? "женский"
 				: sexRaw === "male" ||
 					  sexRaw === "m" ||
 					  sexRaw === "муж" ||
 					  sexRaw === "мужской"
-					? ("male" as const)
-					: ("unknown" as const);
+					? "мужской"
+					: null;
 		const birthDate =
 			toDateInputValue(documentPatient?.birthDate) ||
 			toDateInputValue(patientProfile?.birthDate) ||
-			"1970-01-01";
+			null;
+		const orgFullName =
+			clinicProfileDraft.legalName?.trim() ||
+			clinicProfileDraft.clinicName?.trim() ||
+			"Стоматологическая клиника";
+		const identityDocument =
+			patientProfile?.identityDocument?.trim() || null;
 
 		return {
-			formCode: "043/у",
-			formTitle: "Медицинская карта стоматологического больного",
+			formNumber: "043/у",
 			organization: {
-				name:
-					clinicProfileDraft.legalName.trim() ||
-					clinicProfileDraft.clinicName.trim() ||
-					"Стоматологическая клиника",
-				address: clinicProfileDraft.address.trim() || "—",
-				ogrn: clinicProfileDraft.ogrn.trim() || null,
-				license: outpatient025uLicenseValue(),
+				fullName: orgFullName,
+				shortName: clinicProfileDraft.clinicName?.trim() || null,
+				address: clinicProfileDraft.address?.trim() || null,
+				phone: clinicProfileDraft.phone?.trim() || null,
+				ogrn: clinicProfileDraft.ogrn?.trim() || null,
+				inn: clinicProfileDraft.inn?.trim() || null,
+				licenseNumber:
+					clinicProfileDraft.medicalLicenseNumber?.trim() || null,
+				licenseIssueDate:
+					clinicProfileDraft.medicalLicenseIssuedAt?.trim() || null,
+				licenseAuthority:
+					clinicProfileDraft.medicalLicenseIssuer?.trim() || null,
 			},
-			medicalCardNumber: outpatient025uMedicalCardNumberValue(),
 			patient: {
 				fullName: documentPatient?.fullName?.trim() || "—",
 				birthDate,
@@ -11977,54 +11985,40 @@ export function useAppLogic(): any {
 					patientProfile?.residentialAddress?.trim() ||
 					documentPatient?.address?.trim() ||
 					null,
+				documentSeriesNumber: identityDocument,
 				snils:
 					patientProfile?.snils?.trim() ||
 					documentPatient?.snils?.trim() ||
 					null,
-				omsPolicy: patientProfile?.omsPolicyNumber?.trim() || null,
-				identityDocument: patientProfile?.identityDocument?.trim() || null,
-				identityDocumentSeries: null,
-				identityDocumentNumber: null,
+				medicalCardNumber: outpatient025uMedicalCardNumberValue() || null,
 			},
-			visitDate,
-			anamnesis: {
-				complaints: complaintText || "—",
-				diseaseAnamnesis: anamnesisText || "—",
-				lifeAnamnesis: null,
-				allergies: null,
-				concomitantDiseases: null,
-			},
-			examination: {
-				externalInspection: null,
-				oralCavity: objectiveText || "—",
-				bite: null,
-				oralHygiene: null,
-				xrayData: null,
-				labData: null,
-			},
-			diagnosis: {
-				primaryText: diagnosisText || "—",
-				primaryIcd10: null,
-				comorbidText: null,
-				diagnosisTooth: null,
-			},
-			clinicalToothRows: clinicalToothRowsValue(),
-			treatment: {
-				plan: treatmentText || null,
-				performed: treatmentText || "—",
-				recommendations: null,
-				nextVisitPlan: null,
-			},
-			instrumentTrayBarcode: null,
 			doctor: {
 				fullName: doctor.fullName || activeDoctor?.fullName || "—",
-				position: doctor.position,
-				specialty: doctor.specialty,
+				position: doctor.position || null,
+				specialty: doctor.specialty || null,
 			},
-			issuedAt: new Date().toISOString(),
-			sourceVisitIds,
-			contentHash: null,
+			visitDate,
+			visitId: null,
+			diaryId: null,
+			complaint: complaintText || null,
+			anamnesis: anamnesisText || null,
+			structuredAnamnesis: null,
+			statusLocalis: null,
+			objectiveStatus: objectiveText || null,
+			diagnosisIcd10: null,
+			diagnosisTooth: null,
+			diagnosisText: diagnosisText || null,
+			treatmentDescription: treatmentText || null,
+			treatmentPlan: treatmentText || null,
+			complications: null,
+			comorbidities: null,
+			instrumentTrayBarcode: null,
+			clinicalToothRows: clinicalToothRowsValue(),
+			recommendations: null,
+			nextVisitPlan: null,
+			content: null,
 			lockedAt: null,
+			contentHash: null,
 		};
 	}
 

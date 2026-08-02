@@ -661,117 +661,185 @@ try {
 		"release receipt journal must point to the issued source copy-request snapshot sha256",
 	);
 
-	function outpatient025uPayload(overrides = {}) {
-		const base = {
-			formNumber: "025/у",
-			sourceOrderReference: "Приказ Минздрава России от 13.05.2025 N 274н",
-			medicalOrganizationName: "ООО ДЕНТЕ Чейн",
-			medicalOrganizationAddress: "Самара, тестовая улица, 1",
-			medicalOrganizationOgrnOrOgrnip: "1236300000000",
-			medicalOrganizationLicense: "L041-01184-63/00000000",
-			medicalCardNumber: "025U-CHAIN-001",
-			openedAt: "2026-05-01",
-			periodStart: "2026-05-01",
-			periodEnd: "2026-05-20",
-			sourceVisitIds: [activeVisit.id],
-			patientFullName: "Patient",
-			patientBirthDate: "1988-02-03",
-			patientSexCode: "1",
-			citizenship: "Российская Федерация",
-			identityDocument: "паспорт 36 00 123456",
-			identityDocumentSeries: "36 00",
-			identityDocumentNumber: "123456",
-			patientPhone: "+7 900 000-00-00",
-			patientEmail: null,
-			registrationAddress: "Самара, улица пациента, 2",
-			registrationUrbanRuralCode: "1",
-			stayAddress: "Самара, улица пациента, 2",
-			stayUrbanRuralCode: "1",
-			omsPolicy: "1234567890123456",
-			omsIssuedAt: "2020-01-01",
-			insurerName: "Тестовая страховая",
-			snils: "123-456-789 00",
-			socialSupportCode: null,
-			healthStatusDisclosureContact: "+7 900 000-00-02",
-			employmentCode: "работает",
-			disabilityGroup: null,
-			workOrStudyPlace: "ООО Тест",
-			palliativeCareNeedCode: null,
-			bloodGroup: "A(II)",
-			rhFactor: "Rh+",
-			kellK1: "K-",
-			otherBloodData: null,
-			allergyHistory: "Аллергии на лекарства со слов пациента не отмечены",
-			chronicDispensaryRegister: [],
-			finalDiagnoses: [
-				{
-					date: "2026-05-20",
-					diagnosis: "Кариес дентина 36 зуба.",
-					icd10Code: "K02.1",
-					firstOrRepeat: "unknown",
-					doctorFullName: "Doctor",
-					doctorPosition: "врач-стоматолог",
-					doctorSpecialty: "терапевтическая стоматология",
-				},
-			],
-			specialistVisitRecords: [
-				{
-					sourceVisitId: activeVisit.id,
-					visitDate: "2026-05-20",
-					location: "DENTE Chain Clinic",
-					doctorFullName: "Doctor",
-					doctorPosition: "врач-стоматолог",
-					doctorSpecialty: "терапевтическая стоматология",
-					firstOrRepeat: "repeat",
-					complaints: "Боль при накусывании в области 36 зуба.",
-					anamnesis: "Анамнез собран со слов пациента.",
-					objectiveData: "Кариозная полость 36 зуба.",
-					primaryDiagnosis: "Кариес дентина 36 зуба",
-					primaryDiagnosisIcd10: "K02.1",
-					complications: null,
-					comorbidities: null,
-					externalCause: null,
-					healthGroup: null,
-					dispensaryObservation: null,
-					orders: "Контрольный осмотр по записи.",
-					treatmentProvided: "Проведено терапевтическое лечение 36 зуба.",
-					medicinesAndPhysiotherapy: null,
-					sickLeaveOrCertificate: null,
-					preferentialPrescriptions: null,
-					informedConsentOrRefusal: "Информированное согласие проверено.",
-					clinicalToothRows: sampleClinicalToothRows,
-				},
-			],
-			dynamicObservationRecords: [],
-			stageEpicrisisRecords: [],
-			departmentHeadConsultations: [],
-			medicalCommissionRecords: [],
-			dispensaryObservationEntries: [],
-			hospitalizationRows: [],
-			ambulatorySurgeryRows: [],
-			xrayDoseRows: [],
-			functionalResults: [],
-			laboratoryResults: [],
-			finalEpicrisis: "Лечение завершено.",
-			preparedFromSignedMedicalRecords: true,
-			officialForm274nChecked: true,
-			thirdPartyDataChecked: true,
-		};
-		return {
-			outpatientMedicalCard025u: {
-				...base,
-				...overrides,
-				specialistVisitRecords:
-					overrides.specialistVisitRecords ??
-					base.specialistVisitRecords.map((record) => ({
-						...record,
-						sourceVisitId:
-							overrides.sourceVisitIds?.[0] ?? record.sourceVisitId,
-						visitDate: overrides.periodEnd ?? record.visitDate,
-					})),
+function outpatient025uPayload(overrides = {}) {
+	return {
+		formNumber: "025/у",
+		sourceOrderReference: "Приказ Минздрава России от 13.05.2025 N 274н",
+		medicalOrganizationName: "ООО ДЕНТЕ Смоук",
+		medicalOrganizationAddress: "Самара, тестовая улица, 1",
+		medicalOrganizationOgrnOrOgrnip: "1236300000000",
+		medicalOrganizationLicense: "L041-01184-63/00000000 от 2024-01-15",
+		medicalCardNumber: "025U-CHAIN-001",
+		openedAt: "2026-05-01",
+		periodStart: "2026-05-01",
+		periodEnd: "2026-05-18",
+		sourceVisitIds: [activeVisit.id],
+		patientFullName: "Тестовый пациент",
+		patientBirthDate: "1990-01-01",
+		patientSexCode: "1",
+		citizenship: "Российская Федерация",
+		identityDocument: "паспорт 36 00 123456",
+		identityDocumentSeries: "36 00",
+		identityDocumentNumber: "123456",
+		patientPhone: "+7 900 000-00-00",
+		patientEmail: "patient@example.test",
+		registrationAddress: "Самара, улица пациента, 2",
+		registrationUrbanRuralCode: "1",
+		stayAddress: "Самара, улица пациента, 2",
+		stayUrbanRuralCode: "1",
+		omsPolicy: "1234567890123456",
+		omsIssuedAt: "2020-01-01",
+		insurerName: "Тестовая страховая",
+		snils: "123-456-789 00",
+		socialSupportCode: null,
+		healthStatusDisclosureContact: "+7 900 000-00-02",
+		employmentCode: "работает",
+		disabilityGroup: null,
+		workOrStudyPlace: "ООО Тест",
+		palliativeCareNeedCode: null,
+		bloodGroup: null,
+		rhFactor: null,
+		kellK1: null,
+		otherBloodData: null,
+		allergyHistory: "Аллергии не отмечены",
+		chronicDispensaryRegister: [],
+		finalDiagnoses: [
+			{
+				date: "2026-05-18",
+				diagnosis: "Кариес дентина 36 зуба",
+				icd10Code: "K02.1",
+				firstOrRepeat: "unknown",
+				doctorFullName: "Доктор Смоук",
+				doctorPosition: "врач-стоматолог",
+				doctorSpecialty: "терапевтическая стоматология",
 			},
-		};
-	}
+		],
+		specialistVisitRecords: [
+			{
+				sourceVisitId: activeVisit.id,
+				visitDate: "2026-05-18",
+				location: "DENTE Smoke Clinic",
+				doctorFullName: "Доктор Смоук",
+				doctorPosition: "врач-стоматолог",
+				doctorSpecialty: "терапевтическая стоматология",
+				firstOrRepeat: "repeat",
+				complaints: "Боль при накусывании в области 36 зуба.",
+				anamnesis: "Анамнез собран со слов пациента.",
+				objectiveData: "Кариозная полость 36 зуба.",
+				primaryDiagnosis: "Кариес дентина 36 зуба",
+				primaryDiagnosisIcd10: "K02.1",
+				complications: null,
+				comorbidities: null,
+				externalCause: null,
+				healthGroup: null,
+				dispensaryObservation: null,
+				orders: "Контрольный осмотр.",
+				treatmentProvided: "Лечение кариеса 36 зуба.",
+				medicinesAndPhysiotherapy: null,
+				sickLeaveOrCertificate: null,
+				preferentialPrescriptions: null,
+				informedConsentOrRefusal: "Информированное согласие получено.",
+				clinicalToothRows: [
+					{
+						toothOrArea: "36 зуб",
+						surfaces: ["occlusal"],
+						status: "caries",
+						diagnosisOrFinding: "Кариес дентина 36 зуба",
+						indication: "лечение",
+						plannedAction: "реставрация",
+						prognosis: "благоприятный",
+						periodontalStatus: null,
+						implantOrProstheticNotes: null,
+						orthodonticNotes: null,
+					},
+				],
+			},
+		],
+		dynamicObservationRecords: [],
+		stageEpicrisisRecords: [],
+		departmentHeadConsultations: [],
+		medicalCommissionRecords: [],
+		dispensaryObservationEntries: [],
+		hospitalizationRows: [],
+		ambulatorySurgeryRows: [],
+		xrayDoseRows: [],
+		functionalResults: [],
+		laboratoryResults: [],
+		finalEpicrisis: "Лечение завершено.",
+		preparedFromSignedMedicalRecords: true,
+		officialForm274nChecked: true,
+		thirdPartyDataChecked: true,
+		...overrides,
+	};
+}
+
+function dentalMedicalCard043uPayload(overrides = {}) {
+	return {
+		formNumber: "043/у",
+		organization: {
+			fullName: "ООО ДЕНТЕ Смоук",
+			shortName: "DENTE Smoke",
+			address: "Самара, тестовая улица, 1",
+			phone: "+7 900 000-00-01",
+			ogrn: "1236300000000",
+			inn: "6312000000",
+			licenseNumber: "L041-01184-63/00000000",
+			licenseIssueDate: "2024-01-15",
+			licenseAuthority: "Министерство здравоохранения тестового региона",
+		},
+		patient: {
+			fullName: "Тестовый пациент",
+			birthDate: "1990-01-01",
+			sex: "мужской",
+			phone: "+7 900 000-00-00",
+			address: "Самара, улица пациента, 2",
+			documentSeriesNumber: "паспорт 36 00 123456",
+			snils: "123-456-789 00",
+			medicalCardNumber: "043U-CHAIN-001",
+		},
+		doctor: {
+			fullName: "Доктор Смоук",
+			position: "врач-стоматолог",
+			specialty: "терапевтическая стоматология",
+		},
+		visitDate: "2026-05-18",
+		visitId: null,
+		diaryId: null,
+		complaint: "Боль при накусывании в области 36 зуба",
+		anamnesis: "Анамнез собран со слов пациента.",
+		structuredAnamnesis: null,
+		statusLocalis: "36 зуб: кариозная полость",
+		objectiveStatus: "Кариозная полость 36 зуба, слизистая без острого отека.",
+		diagnosisIcd10: "K02.1",
+		diagnosisTooth: "36",
+		diagnosisText: "Кариес дентина 36 зуба",
+		treatmentDescription: "Лечение кариеса 36 зуба и композитная реставрация.",
+		treatmentPlan: "Реставрация 36, контроль через 14 дней",
+		complications: null,
+		comorbidities: null,
+		instrumentTrayBarcode: null,
+		clinicalToothRows: [
+			{
+				toothOrArea: "36 зуб",
+				surfaces: ["occlusal"],
+				status: "caries",
+				diagnosisOrFinding: "Кариес дентина 36 зуба",
+				indication: "лечение",
+				plannedAction: "реставрация",
+				prognosis: "благоприятный",
+				periodontalStatus: null,
+				implantOrProstheticNotes: null,
+				orthodonticNotes: null,
+			},
+		],
+		recommendations: "Гигиена, контроль при жалобах",
+		nextVisitPlan: "Контрольный осмотр через 14 дней",
+		content: null,
+		lockedAt: null,
+		contentHash: null,
+		...overrides,
+	};
+}
 
 	const draftSourceCardResponse = await app.inject({
 		method: "POST",
@@ -1129,6 +1197,144 @@ try {
 		"025/u outside-period block must mention period",
 	);
 
+	// --- 043/у dental medical card issue chain ---
+	const emptyToothRows043Response = await app.inject({
+		method: "POST",
+		url: "/api/documents",
+		payload: {
+			patientId: activeVisit.patientId,
+			visitId: activeVisit.id,
+			kind: "dental_medical_card_043u",
+			payload: {
+				dentalMedicalCard043u: dentalMedicalCard043uPayload({
+					clinicalToothRows: [],
+				}),
+			},
+		},
+	});
+	assert(
+		emptyToothRows043Response.statusCode === 201 ||
+			emptyToothRows043Response.statusCode === 400,
+		`empty tooth-rows 043/u create unexpected status: ${emptyToothRows043Response.statusCode}`,
+	);
+	if (emptyToothRows043Response.statusCode === 201) {
+		const emptyToothRows043IssueResponse = await app.inject({
+			method: "POST",
+			url: `/api/documents/${emptyToothRows043Response.json().id}/issue`,
+		});
+		assert(
+			emptyToothRows043IssueResponse.statusCode === 409,
+			`043/u with empty clinicalToothRows must be blocked: ${emptyToothRows043IssueResponse.statusCode}`,
+		);
+		assert(
+			documentErrorText(emptyToothRows043IssueResponse)
+				.toLowerCase()
+				.includes("зуб") ||
+				documentErrorText(emptyToothRows043IssueResponse)
+					.toLowerCase()
+					.includes("клинич"),
+			`043/u empty tooth-rows block must mention teeth/clinical rows: ${documentErrorText(emptyToothRows043IssueResponse)}`,
+		);
+	}
+
+	const invalidDate043Response = await app.inject({
+		method: "POST",
+		url: "/api/documents",
+		payload: {
+			patientId: activeVisit.patientId,
+			visitId: activeVisit.id,
+			kind: "dental_medical_card_043u",
+			payload: {
+				dentalMedicalCard043u: dentalMedicalCard043uPayload({
+					visitDate: "2026-02-31",
+				}),
+			},
+		},
+	});
+	assert(
+		invalidDate043Response.statusCode === 201 ||
+			invalidDate043Response.statusCode === 400,
+		`invalid-date 043/u create unexpected status: ${invalidDate043Response.statusCode}`,
+	);
+	if (invalidDate043Response.statusCode === 201) {
+		const invalidDate043IssueResponse = await app.inject({
+			method: "POST",
+			url: `/api/documents/${invalidDate043Response.json().id}/issue`,
+		});
+		assert(
+			invalidDate043IssueResponse.statusCode === 409,
+			`043/u with invalid visitDate must be blocked: ${invalidDate043IssueResponse.statusCode}`,
+		);
+		assert(
+			documentErrorText(invalidDate043IssueResponse)
+				.toLowerCase()
+				.includes("дат"),
+			"043/u invalid-date block must mention dates",
+		);
+	}
+
+	const valid043Response = await app.inject({
+		method: "POST",
+		url: "/api/documents",
+		payload: {
+			patientId: activeVisit.patientId,
+			visitId: activeVisit.id,
+			kind: "dental_medical_card_043u",
+			payload: {
+				dentalMedicalCard043u: dentalMedicalCard043uPayload(),
+			},
+		},
+	});
+	assert(
+		valid043Response.statusCode === 201,
+		`valid 043/u create failed: ${valid043Response.statusCode} ${valid043Response.body}`,
+	);
+	const valid043IssueResponse = await app.inject({
+		method: "POST",
+		url: `/api/documents/${valid043Response.json().id}/issue`,
+		payload: issueAttestation({
+			signatureAttestation: {
+				recipientFullName: "Patient",
+				note: "signed source 043/u",
+			},
+		}),
+	});
+	assert(
+		valid043IssueResponse.statusCode === 200,
+		`valid 043/u issue failed: ${valid043IssueResponse.statusCode} ${valid043IssueResponse.body}`,
+	);
+	const issued043 = valid043IssueResponse.json();
+	assert(
+		issued043.status === "issued" || issued043.issuedAt,
+		"043/u issue must mark document as issued",
+	);
+
+	const issued043HtmlResponse = await app.inject({
+		method: "GET",
+		url: `/api/documents/${issued043.id}/html?download=1`,
+	});
+	assert(
+		issued043HtmlResponse.statusCode === 200,
+		`issued 043/u HTML must load: ${issued043HtmlResponse.statusCode}`,
+	);
+	assert(
+		issued043HtmlResponse.body.includes("043/у") ||
+			issued043HtmlResponse.body.includes("043/u") ||
+			issued043HtmlResponse.body.includes("стоматологического больного"),
+		"issued 043/u HTML must contain form title or number",
+	);
+	assert(
+		issued043HtmlResponse.body.includes("Кариес дентина 36 зуба") ||
+			issued043HtmlResponse.body.includes("36 зуб"),
+		"issued 043/u HTML must contain clinical tooth detail",
+	);
+	assert(
+		issued043HtmlResponse.body.includes("окклюзионная") ||
+			issued043HtmlResponse.body.includes("occlusal") ||
+			issued043HtmlResponse.body.includes("36"),
+		"issued 043/u HTML must render tooth surfaces or tooth code",
+	);
+
 	const extractResponse = await app.inject({
 		method: "POST",
 		url: "/api/documents",
@@ -1191,8 +1397,12 @@ try {
 			outpatient025uSignedSourceGuard: true,
 			outpatient025uDateGuard: true,
 			outpatient025uSourcePeriodGuard: true,
+			dental043uEmptyToothRowsGuard: true,
+			dental043uDateGuard: true,
+			dental043uIssueAndHtml: true,
 		}),
 	);
+
 } finally {
 	activeVisit.status = originalActiveVisitStatus;
 	await app.close();

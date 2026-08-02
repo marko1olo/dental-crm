@@ -1349,46 +1349,49 @@ export function validateDentalMedicalCard043U(
     clinicProfileDraft,
     requiredDocumentField,
     outpatient025uMedicalCardNumberValue,
-    outpatient025uSourceVisitIdsValue,
     dentalMedicalCard043uPayloadValue,
   } = state as DocumentState & {
     dentalMedicalCard043uPayloadValue?: () => {
-      visitDate?: string;
-      organization?: { name?: string };
-      medicalCardNumber?: string;
-      anamnesis?: { complaints?: string; diseaseAnamnesis?: string };
-      examination?: { oralCavity?: string };
-      diagnosis?: { primaryText?: string };
-      treatment?: { performed?: string };
-      doctor?: { fullName?: string };
+      visitDate?: string | null;
+      organization?: { fullName?: string | null; shortName?: string | null };
+      patient?: {
+        fullName?: string | null;
+        medicalCardNumber?: string | null;
+      };
+      complaint?: string | null;
+      anamnesis?: string | null;
+      objectiveStatus?: string | null;
+      diagnosisText?: string | null;
+      treatmentDescription?: string | null;
+      treatmentPlan?: string | null;
+      doctor?: { fullName?: string | null };
       clinicalToothRows?: unknown[];
-      sourceVisitIds?: string[];
     };
   };
 
   const payload = dentalMedicalCard043uPayloadValue?.();
   const orgName =
-    payload?.organization?.name?.trim() ||
+    payload?.organization?.fullName?.trim() ||
+    payload?.organization?.shortName?.trim() ||
     clinicProfileDraft.legalName.trim() ||
     clinicProfileDraft.clinicName.trim();
   const cardNumber =
-    payload?.medicalCardNumber?.trim() ||
+    payload?.patient?.medicalCardNumber?.trim() ||
     outpatient025uMedicalCardNumberValue();
   const visitDate = payload?.visitDate?.trim() || recordExtractPeriodEnd;
   const complaint =
-    payload?.anamnesis?.complaints?.trim() ||
+    payload?.complaint?.trim() ||
     recordExtractComplaintAndAnamnesisValue().split(/\n{2,}/)[0]?.trim() ||
     "";
   const anamnesis =
-    payload?.anamnesis?.diseaseAnamnesis?.trim() ||
-    recordExtractComplaintAndAnamnesisValue();
+    payload?.anamnesis?.trim() || recordExtractComplaintAndAnamnesisValue();
   const objective =
-    payload?.examination?.oralCavity?.trim() ||
-    recordExtractObjectiveStatusValue();
+    payload?.objectiveStatus?.trim() || recordExtractObjectiveStatusValue();
   const diagnosis =
-    payload?.diagnosis?.primaryText?.trim() || recordExtractDiagnosisValue();
+    payload?.diagnosisText?.trim() || recordExtractDiagnosisValue();
   const treatment =
-    payload?.treatment?.performed?.trim() ||
+    payload?.treatmentDescription?.trim() ||
+    payload?.treatmentPlan?.trim() ||
     recordExtractTreatmentProvidedValue();
   const doctorName =
     payload?.doctor?.fullName?.trim() ||
@@ -1399,22 +1402,14 @@ export function validateDentalMedicalCard043U(
     payload?.clinicalToothRows?.length
       ? payload.clinicalToothRows
       : clinicalToothRowsValue();
-  const sourceVisitIds =
-    payload?.sourceVisitIds?.length
-      ? payload.sourceVisitIds
-      : outpatient025uSourceVisitIdsValue();
+  const patientName =
+    payload?.patient?.fullName?.trim() || documentPatient?.fullName || "";
 
   return (
     requiredDocumentField(orgName, "карта 043/у, медорганизация") ??
     requiredDocumentField(cardNumber, "карта 043/у, номер медицинской карты") ??
     requiredDocumentField(visitDate, "карта 043/у, дата приема") ??
-    (sourceVisitIds.length
-      ? null
-      : "Добавьте источник подписанной медицинской записи для карты 043/у.") ??
-    requiredDocumentField(
-      documentPatient?.fullName ?? "",
-      "карта 043/у, пациент",
-    ) ??
+    requiredDocumentField(patientName, "карта 043/у, пациент") ??
     requiredDocumentField(complaint, "карта 043/у, жалобы") ??
     requiredDocumentField(anamnesis, "карта 043/у, анамнез") ??
     requiredDocumentField(objective, "карта 043/у, объективный статус") ??
