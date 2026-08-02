@@ -521,7 +521,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					${params.doctorPosition && params.doctorPosition.trim()
 						? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 						: ""}
-					<assignedPerson>
+										<!--
+						DEFECT #104: documentationOf/serviceEvent/performer
+						assignedEntity addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+						БЫЛО: performer assignedEntity had id/code/person/org
+						only — no addr/telecom. SEMD validators expect contact
+						under the care-event performer (mirror of
+						legalAuthenticator #100 / authenticator #101 /
+						assignedAuthor #99). We do not invent doctor/clinic
+						street or phone.
+						СТАЛО: emit addr and telecom with nullFlavor="NI".
+					-->
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+<assignedPerson>
 						<name>
 							<family>${escapeXml(params.doctorName.last)}</family>
 							<given>${escapeXml(params.doctorName.first)}</given>

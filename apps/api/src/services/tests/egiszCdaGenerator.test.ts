@@ -2011,6 +2011,56 @@ describe("egiszCdaGenerator", () => {
 
 
 
+	test("DEFECT #104: serviceEvent performer assignedEntity addr and telecom nullFlavor NI", () => {
+		const params: EgiszCdaParams = {
+			patientId: "pat-104",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.104",
+			clinicName: "ООО Клиника Performer Contact",
+			doctorName: { first: "Петр", last: "Петров" },
+			doctorSnils: "987-654-321 00",
+			doctorPosition: "Врач-стоматолог",
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate: new Date("2025-07-01T10:00:00.000Z"),
+			documentId: "doc-104",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		const perfEnd = "</performer>";
+		const perfStart = xml.indexOf('<performer typeCode="PRF">');
+		const perf = xml.slice(perfStart, xml.indexOf(perfEnd, perfStart) + perfEnd.length);
+		assert.ok(perfStart >= 0, "serviceEvent must include performer");
+		assert.ok(
+			perf.includes('<addr nullFlavor="NI"/>'),
+			"performer assignedEntity must emit addr nullFlavor=NI when contact unknown",
+		);
+		assert.ok(
+			perf.includes('<telecom nullFlavor="NI"/>'),
+			"performer assignedEntity must emit telecom nullFlavor=NI when contact unknown",
+		);
+		assert.ok(!perf.includes("<streetAddressLine"));
+		assert.ok(!perf.includes("tel:"));
+		/* order: id → (optional code) → addr → telecom → assignedPerson */
+		const idIdx = perf.indexOf("<id ");
+		const addrIdx = perf.indexOf("<addr ");
+		const telIdx = perf.indexOf("<telecom ");
+		const personIdx = perf.indexOf("<assignedPerson>");
+		assert.ok(
+			idIdx >= 0 &&
+				addrIdx > idIdx &&
+				telIdx > addrIdx &&
+				personIdx > telIdx,
+			"performer assignedEntity order: id → addr → telecom → assignedPerson",
+		);
+		assert.ok(perf.includes("<family>Петров</family>"));
+		assert.ok(perf.includes("<name>ООО Клиника Performer Contact</name>"));
+	});
+
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
 
 
