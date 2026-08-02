@@ -1953,10 +1953,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: interpretationCode nullFlavor NI until chart field exists.
 							-->
 							<interpretationCode nullFlavor="NI"/>
+							<!--
+								DEFECT #199: complications observation/uncertaintyCode.
+								WAS: complications OBS gained methodCode (#191) and
+								interpretationCode (#195) but still had no uncertaintyCode.
+								Diagnosis (#188), anamnesis (#197) and objective (#198)
+								already carry uncertaintyCode NI. HL7 CDA R2 Observation has
+								uncertaintyCode 0..1 (U/N from ActUncertainty). SEMD
+								validators often flag missing uncertainty under complications
+								OBS. Form 043/u complications is free-text note — do not
+								invent U/N.
+								NOW: uncertaintyCode nullFlavor NI until chart field exists.
+							-->
+							<uncertaintyCode nullFlavor="NI"/>
 						</observation>
 					</entry></section>
 			</component>
 			<!-- Сопутствующие заболевания (043) -->
+
 
 
 			<component>
