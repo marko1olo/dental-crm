@@ -330,7 +330,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					: `<!-- DEFECT #80: unknown DOB — nullFlavor UNK (never invent a fake date) -->
 				<birthTime nullFlavor="UNK"/>`}
 				<!--
+					DEFECT #171: patient/maritalStatusCode.
+					WAS: patient had name + gender + birthTime + languageCommunication
+					only — no maritalStatusCode. HL7 CDA R2 Patient has
+					maritalStatusCode 0..1; EGISZ SEMD validators often flag
+					missing marital status under recordTarget demographics.
+					Form 043/u chart does not collect marital status yet —
+					do not invent a fake NSI code (1/2/3/…).
+					NOW: maritalStatusCode nullFlavor NI until chart field exists.
+				-->
+				<maritalStatusCode nullFlavor="NI"/>
+				<!--
 					DEFECT #97: patient/languageCommunication (preferred language).
+
 					БЫЛО: patient had name + gender + birthTime only. HL7 CDA R2
 					and EGISZ SEMD expect languageCommunication so the record
 					declares the language of care/communication (ru-RU for RF
