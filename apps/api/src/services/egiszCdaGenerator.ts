@@ -2736,7 +2736,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</specimenRole>
 							</specimen>
+							
 							<!--
+								DEFECT #364: diagnosis observation/subject.
+								WAS: diagnosis observation had specimen then entryRelationship — no subject.
+								HL7 CDA R2 Act/Observation/Supply has subject 0..1 (related
+								subject when different from recordTarget). SEMD validators often
+								flag missing subject under clinical body entries. Form 043/u
+								patient is already recordTarget — entry-level related subject is
+								not collected separately; do not invent relationship codes or ids.
+								NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and
+								code nullFlavor NI until chart field exists.
+							-->
+							<subject typeCode="SBJ">
+								<relatedSubject classCode="PRS">
+									<code nullFlavor="NI"/>
+								</relatedSubject>
+							</subject>
+<!--
 								DEFECT #342: diagnosis observation/entryRelationship.
 								WAS: diagnosis OBS had specimen (#337) then closed — no entryRelationship.
 								HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
@@ -3164,7 +3181,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</specimenRole>
 							</specimen>
+							
 							<!--
+								DEFECT #365: anamnesis observation/subject.
+								WAS: anamnesis observation had specimen then entryRelationship — no subject.
+								HL7 CDA R2 Act/Observation/Supply has subject 0..1 (related
+								subject when different from recordTarget). SEMD validators often
+								flag missing subject under clinical body entries. Form 043/u
+								patient is already recordTarget — entry-level related subject is
+								not collected separately; do not invent relationship codes or ids.
+								NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and
+								code nullFlavor NI until chart field exists.
+							-->
+							<subject typeCode="SBJ">
+								<relatedSubject classCode="PRS">
+									<code nullFlavor="NI"/>
+								</relatedSubject>
+							</subject>
+<!--
 								DEFECT #343: anamnesis observation/entryRelationship.
 								WAS: anamnesis OBS had specimen (#338) then closed — no entryRelationship. Diagnosis OBS (#342) already carries entryRelationship COMP.
 								HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
@@ -3606,7 +3640,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</specimenRole>
 							</specimen>
+							
 							<!--
+								DEFECT #366: objective-status observation/subject.
+								WAS: objective-status observation had specimen then entryRelationship — no subject.
+								HL7 CDA R2 Act/Observation/Supply has subject 0..1 (related
+								subject when different from recordTarget). SEMD validators often
+								flag missing subject under clinical body entries. Form 043/u
+								patient is already recordTarget — entry-level related subject is
+								not collected separately; do not invent relationship codes or ids.
+								NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and
+								code nullFlavor NI until chart field exists.
+							-->
+							<subject typeCode="SBJ">
+								<relatedSubject classCode="PRS">
+									<code nullFlavor="NI"/>
+								</relatedSubject>
+							</subject>
+<!--
 								DEFECT #344: objective-status observation/entryRelationship.
 								WAS: objective OBS had specimen (#339) then closed — no entryRelationship. Diagnosis (#342) and anamnesis (#343) already carry entryRelationship COMP.
 								HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
@@ -4042,6 +4093,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</specimenRole>
 							</specimen>
+
+							<!--
+								DEFECT #369: treatment act/subject.
+								WAS: treatment act had specimen then entryRelationship — no subject.
+								HL7 CDA R2 Act/Observation/Supply has subject 0..1 (related
+								subject when different from recordTarget). SEMD validators often
+								flag missing subject under clinical body entries. Form 043/u
+								patient is already recordTarget — entry-level related subject is
+								not collected separately; do not invent relationship codes or ids.
+								NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and
+								code nullFlavor NI until chart field exists.
+							-->
+							<subject typeCode="SBJ">
+								<relatedSubject classCode="PRS">
+									<code nullFlavor="NI"/>
+								</relatedSubject>
+							</subject>
 <!--
 								DEFECT #347: treatment act/entryRelationship.
 								WAS: treatment ACT had performer/author/informant/participant/precondition/reference then closed — no entryRelationship. Body OBS (#342-#346) already carry entryRelationship COMP.
@@ -4476,7 +4544,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</specimenRole>
 							</specimen>
+							
 							<!--
+								DEFECT #367: complications observation/subject.
+								WAS: complications observation had specimen then entryRelationship — no subject.
+								HL7 CDA R2 Act/Observation/Supply has subject 0..1 (related
+								subject when different from recordTarget). SEMD validators often
+								flag missing subject under clinical body entries. Form 043/u
+								patient is already recordTarget — entry-level related subject is
+								not collected separately; do not invent relationship codes or ids.
+								NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and
+								code nullFlavor NI until chart field exists.
+							-->
+							<subject typeCode="SBJ">
+								<relatedSubject classCode="PRS">
+									<code nullFlavor="NI"/>
+								</relatedSubject>
+							</subject>
+<!--
 								DEFECT #345: complications observation/entryRelationship.
 								WAS: complications OBS had specimen (#340) then closed — no entryRelationship. Diagnosis (#342) through objective (#344) already carry entryRelationship COMP.
 								HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
@@ -4917,7 +5002,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</specimenRole>
 							</specimen>
+							
 							<!--
+								DEFECT #368: comorbidities observation/subject.
+								WAS: comorbidities observation had specimen then entryRelationship — no subject.
+								HL7 CDA R2 Act/Observation/Supply has subject 0..1 (related
+								subject when different from recordTarget). SEMD validators often
+								flag missing subject under clinical body entries. Form 043/u
+								patient is already recordTarget — entry-level related subject is
+								not collected separately; do not invent relationship codes or ids.
+								NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and
+								code nullFlavor NI until chart field exists.
+							-->
+							<subject typeCode="SBJ">
+								<relatedSubject classCode="PRS">
+									<code nullFlavor="NI"/>
+								</relatedSubject>
+							</subject>
+<!--
 								DEFECT #346: comorbidities observation/entryRelationship.
 								WAS: comorbidities OBS had specimen (#341) then closed — no entryRelationship. Diagnosis (#342) through complications (#345) already carry entryRelationship COMP.
 								HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
@@ -5389,6 +5491,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</specimenRole>
 							</specimen>
+
+							<!--
+								DEFECT #370: instrument-tray supply/subject.
+								WAS: instrument-tray supply had specimen then entryRelationship — no subject.
+								HL7 CDA R2 Act/Observation/Supply has subject 0..1 (related
+								subject when different from recordTarget). SEMD validators often
+								flag missing subject under clinical body entries. Form 043/u
+								patient is already recordTarget — entry-level related subject is
+								not collected separately; do not invent relationship codes or ids.
+								NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and
+								code nullFlavor NI until chart field exists.
+							-->
+							<subject typeCode="SBJ">
+								<relatedSubject classCode="PRS">
+									<code nullFlavor="NI"/>
+								</relatedSubject>
+							</subject>
 <!--
 								DEFECT #348: instrument-tray supply/entryRelationship.
 								WAS: supply had performer/author/informant/participant/precondition/reference then closed — no entryRelationship. Body OBS (#342-#346) and treatment ACT (#347) already carry entryRelationship COMP.
