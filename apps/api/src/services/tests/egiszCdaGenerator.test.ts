@@ -862,7 +862,84 @@ describe("egiszCdaGenerator", () => {
 		);
 	});
 
+	test("DEFECT #86: componentOf/encompassingEncounter links CDA to ambulatory encounter", () => {
+		const visitDate = new Date("2024-05-15T10:30:45.000Z");
+		const pad = (n: number) => n.toString().padStart(2, "0");
+		const expectedVisit =
+			`${visitDate.getFullYear()}${pad(visitDate.getMonth() + 1)}${pad(visitDate.getDate())}` +
+			`${pad(visitDate.getHours())}${pad(visitDate.getMinutes())}${pad(visitDate.getSeconds())}`;
+
+		const params: EgiszCdaParams = {
+			patientId: "pat-enc",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.888",
+			clinicName: "ООО Стоматология",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес дентина",
+			visitDate,
+			documentId: "doc-enc-001",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		assert.ok(
+			xml.includes("<componentOf>"),
+			"CDA R2 header must include componentOf",
+		);
+		assert.ok(
+			xml.includes("<encompassingEncounter>"),
+			"componentOf must wrap encompassingEncounter",
+		);
+		assert.ok(
+			xml.includes(
+				`<id root="1.2.643.5.1.13.13.12.2.888" extension="doc-enc-001"/>`,
+			),
+			"encompassingEncounter id must use clinicOid root + documentId extension",
+		);
+		assert.ok(
+			xml.includes(
+				`<encompassingEncounter>\n\t\t\t<id root="1.2.643.5.1.13.13.12.2.888" extension="doc-enc-001"/>\n\t\t\t<effectiveTime value="${expectedVisit}"/>`,
+			) ||
+				(xml.includes("<encompassingEncounter>") &&
+					xml.includes(`extension="doc-enc-001"`) &&
+					xml.includes(`<effectiveTime value="${expectedVisit}"/>`)),
+			"encompassingEncounter effectiveTime must match visitDate yyyyMMddHHmmss",
+		);
+		/* same clock as documentationOf/serviceEvent */
+		const serviceIdx = xml.indexOf("<documentationOf>");
+		const encIdx = xml.indexOf("<encompassingEncounter>");
+		assert.ok(serviceIdx > 0 && encIdx > serviceIdx);
+		assert.ok(
+			xml.includes(
+				`<serviceEvent classCode="PCPR">\n\t\t\t<effectiveTime value="${expectedVisit}"/>`,
+			) || xml.includes(`<effectiveTime value="${expectedVisit}"/>`),
+		);
+
+		/* missing clinicOid → default MO registry root; documentId XML-escaped */
+		const noOid = generateDentalCdaXml({
+			...params,
+			clinicOid: undefined,
+			documentId: "doc" + String.fromCharCode(60) + "enc" + String.fromCharCode(62) + String.fromCharCode(38) + "x",
+		});
+		const lt = "&" + "lt;";
+		const gt = "&" + "gt;";
+		const amp = "&" + "amp;";
+		assert.ok(
+			noOid.includes(
+				'root="1.2.643.5.1.13.13.12.2" extension="doc' + lt + "enc" + gt + amp + 'x"',
+			),
+			"missing clinicOid uses default root; documentId must be XML-escaped",
+		);
+		assert.ok(noOid.includes("<componentOf>"));
+		assert.ok(noOid.includes("<encompassingEncounter>"));
+	});
+
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 
 
 		const params: EgiszCdaParams = {

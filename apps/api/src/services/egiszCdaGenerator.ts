@@ -268,7 +268,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<effectiveTime value="${visitTime}"/>
 		</serviceEvent>
 	</documentationOf>
+	<!--
+		DEFECT #86: componentOf/encompassingEncounter (CDA R2 header).
+		БЫЛО: only documentationOf/serviceEvent carried visitDate. HL7 CDA R2
+		and EGISZ SEMD also expect componentOf → encompassingEncounter so the
+		document is explicitly linked to the ambulatory encounter (id + time).
+		Without it validators treat the protocol as detached from the visit;
+		REMD audit cannot join the SEMD to the appointment slot id.
+		СТАЛО: encompassingEncounter with id (documentId as encounter extension
+		when no separate visit UUID is on the generator surface) and the same
+		visitTime clock as documentationOf (yyyyMMddHHmmss).
+	-->
+	<componentOf>
+		<encompassingEncounter>
+			<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(params.documentId)}"/>
+			<effectiveTime value="${visitTime}"/>
+		</encompassingEncounter>
+	</componentOf>
 	<component>
+
 		<structuredBody>
 			<!-- Диагноз -->
 			<component>
