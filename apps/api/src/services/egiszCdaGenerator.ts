@@ -615,7 +615,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	-->
 	<legalAuthenticator>
 		<time value="${effectiveTime}"/>
-		<signatureCode code="S"/>
+		<!--
+			DEFECT #159: legalAuthenticator/signatureCode codeSystem + displayName.
+			WAS: signatureCode had code=S only — no codeSystem/codeSystemName/
+			displayName. confidentialityCode (#158) and LOINC/NSI CEs already
+			label the dictionary. HL7 ParticipationSignature (2.16.840.1.113883.5.89)
+			is the standard code system for S=signed; SEMD validators expect
+			the dictionary label so REMD can render without OID guesswork.
+			NOW: codeSystem + codeSystemName + RU displayName on code S.
+		-->
+		<signatureCode code="S" codeSystem="2.16.840.1.113883.5.89" codeSystemName="ParticipationSignature" displayName="Подписано"/>
 		<assignedEntity>
 			${/* DEFECT #77: assignedEntity/id required (1..*) — same as assignedAuthor */
 			params.doctorSnils && String(params.doctorSnils).trim()
@@ -691,8 +700,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	-->
 	<authenticator>
 		<time value="${effectiveTime}"/>
-		<signatureCode code="S"/>
+		<!--
+			DEFECT #159: authenticator/signatureCode codeSystem + displayName.
+			WAS: same bare code=S as legalAuthenticator pre-#159. Mirror legal
+			signer ParticipationSignature CE so both signature parties carry
+			the HL7 dictionary label.
+			NOW: codeSystem + codeSystemName + RU displayName on code S.
+		-->
+		<signatureCode code="S" codeSystem="2.16.840.1.113883.5.89" codeSystemName="ParticipationSignature" displayName="Подписано"/>
 		<assignedEntity>
+
 			${params.doctorSnils && String(params.doctorSnils).trim()
 				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 				: `<id nullFlavor="NI"/>`}
