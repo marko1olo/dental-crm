@@ -600,6 +600,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	-->
 	<documentationOf>
 		<serviceEvent classCode="PCPR">
+			<!--
+				DEFECT #124: documentationOf/serviceEvent/code (care event type).
+				БЫЛО (#55/#65/#93): serviceEvent had classCode=PCPR + effectiveTime
+				+ performer only — no code. HL7 CDA R2 / EGISZ SEMD expect the
+				type of care event under documentationOf (what was performed),
+				distinct from ClinicalDocument/code (document type) and from
+				encompassingEncounter/code (AMB setting). Without serviceEvent
+				code validators treat the care event as untyped PCPR shell.
+				СТАЛО: LOINC 74208-1 (протокол стоматологического осмотра) —
+				same code as ClinicalDocument for this Form 043/у SEMD; the
+				service IS the dental exam protocol documented by this CDA.
+			-->
+			<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Протокол стоматологического осмотра"/>
 			<effectiveTime value="${visitTime}"/>
 			<performer typeCode="PRF">
 				<assignedEntity>
