@@ -1162,7 +1162,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<text>
 						<paragraph>${escapeXml(params.comorbidities || "Не отмечены")}</paragraph>
 					</text>
-				</section>
+				
+					<!--
+						DEFECT #136: Сопутствующие заболевания section entry.
+						WAS: section 75326-9 had only narrative text - no entry.
+						NOW: structured entry so REMD can index the section.
+					-->
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<code code="75326-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Сопутствующие заболевания"/>
+							<value xsi:type="ST">${escapeXml(params.comorbidities || "Не отмечены")}</value>
+						</observation>
+					</entry></section>
 			</component>
 			<!-- DEFECT #57: инструментальный лоток 043 (sterilization barcode) -->
 			${params.instrumentTrayBarcode && params.instrumentTrayBarcode.trim()
@@ -1173,7 +1184,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<text>
 						<paragraph>Штрихкод: ${escapeXml(params.instrumentTrayBarcode.trim())}</paragraph>
 					</text>
-				</section>
+				
+					<!--
+						DEFECT #137: Инструментальный лоток section entry.
+						WAS: section 69764-9 had only narrative text - no entry.
+						NOW: structured entry so REMD can index the section.
+					-->
+					<entry>
+						<supply classCode="SPLY" moodCode="EVN">
+							<code code="69764-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Инструментальный лоток"/>
+							<text>${escapeXml(params.instrumentTrayBarcode || "") || "—"}</text>
+							<statusCode code="completed"/>
+						</supply>
+					</entry></section>
 			</component>`
 				: ""}
 		</structuredBody>
