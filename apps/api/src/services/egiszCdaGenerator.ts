@@ -431,8 +431,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</guardianPerson>
 				</guardian>
+				<!--
+					DEFECT #176: patient/birthplace.
+					WAS: patient demographics had guardian (#175) but no
+					birthplace. HL7 CDA R2 Patient has birthplace 0..1 (place
+					of birth). EGISZ SEMD validators often flag missing
+					birthplace under recordTarget. Form 043/u chart does not
+					collect birth place yet — do not invent a fake city/region.
+					NOW: birthplace/place/addr nullFlavor NI until chart field exists.
+				-->
+				<birthplace>
+					<place>
+						<addr nullFlavor="NI"/>
+					</place>
+				</birthplace>
 
 			</patient>
+
 
 
 
