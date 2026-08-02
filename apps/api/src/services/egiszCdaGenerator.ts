@@ -199,11 +199,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<relatedDocument typeCode="RPLC">
 		<parentDocument>
 			<id root="${docIdRoot}" extension="${escapeXml(replacesId)}"/>
+			<!--
+				DEFECT #162: relatedDocument/parentDocument/code.
+				WAS: parentDocument had id + setId + versionNumber only — no
+				code. HL7 CDA R2 ParentDocument is a ClinicalDocument stub;
+				SEMD validators expect the document type CE so REMD knows
+				which SEMD kind is being replaced (same LOINC as this CDA).
+				NOW: code LOINC 74208-1 (dental exam protocol) matching
+				ClinicalDocument/code and serviceEvent/code.
+			-->
+			<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Протокол стоматологического осмотра"/>
 			<setId root="${docIdRoot}" extension="${escapeXml(setIdExtension)}"/>
 			<versionNumber value="${Math.max(1, Math.floor(Number(params.documentVersion) || 1) - 1)}"/>
 		</parentDocument>
 	</relatedDocument>`
 		: "";
+
 
 	return `<?xml version="1.0" encoding="UTF-8"?>
 
