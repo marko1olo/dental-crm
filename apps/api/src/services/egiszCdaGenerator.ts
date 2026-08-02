@@ -413,9 +413,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<preferenceInd value="true"/>
 
 				</languageCommunication>
-
+				<!--
+					DEFECT #175: patient/guardian.
+					WAS: patient demographics ended at languageCommunication —
+					no guardian. HL7 CDA R2 Patient has guardian 0..* (legal
+					guardian / parent for minors). EGISZ SEMD validators often
+					flag missing guardian structure under recordTarget when the
+					profile expects the slot even if the patient is adult.
+					Form 043/u chart does not collect guardian yet — do not
+					invent a fake person name or id.
+					NOW: guardian with code nullFlavor NI and guardianPerson
+					name nullFlavor NI until chart fields exist.
+				-->
+				<guardian>
+					<code nullFlavor="NI"/>
+					<guardianPerson>
+						<name nullFlavor="NI"/>
+					</guardianPerson>
+				</guardian>
 
 			</patient>
+
 
 
 		</patientRole>
