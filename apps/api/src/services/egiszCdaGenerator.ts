@@ -1322,6 +1322,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<effectiveTime xsi:type="IVL_TS">
 				<low value="${visitTime}"/>
 			</effectiveTime>
+			<!--
+				DEFECT #179: encompassingEncounter/dischargeDispositionCode.
+				WAS: encounter had id/code/statusCode/effectiveTime/responsibleParty/location
+				only — no dischargeDispositionCode. HL7 CDA R2 Encounter has
+				dischargeDispositionCode 0..1. SEMD validators often flag missing
+				disposition under ambulatory close. Form 043/u chart does not collect
+				discharge disposition (ambulatory dental visit) — do not invent a fake
+				NSI disposition code.
+				NOW: dischargeDispositionCode nullFlavor NI until chart field exists.
+			-->
+			<dischargeDispositionCode nullFlavor="NI"/>
 			<responsibleParty>
 				<assignedEntity>
 					${params.doctorSnils && String(params.doctorSnils).trim()
@@ -1329,6 +1340,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						: `<id nullFlavor="NI"/>`}
 					${/*
 					 * DEFECT #141: encompassingEncounter/responsibleParty assignedEntity/code always present.
+
 					 * WAS: same optional code as performer pre-#141 first half — omitted when
 					 * doctorPosition blank. SEMD validators expect the specialty
 					 * slot under encompassingEncounter/responsibleParty the same way as author/legal/authenticator.
