@@ -396,10 +396,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				${params.clinicOid && String(params.clinicOid).trim()
 					? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
 					: `<id nullFlavor="NI"/>`}
+				<!--
+					DEFECT #103: informationRecipient receivedOrganization
+					addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+					БЫЛО: receivedOrganization had id + name only — no
+					addr/telecom. SEMD validators expect MO contact under
+					the intended recipient (mirror of custodian #102).
+					We do not invent clinic street or phone.
+					СТАЛО: emit addr and telecom with nullFlavor="NI".
+				-->
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
 				<name>${escapeXml(params.clinicName)}</name>
 			</receivedOrganization>
 		</intendedRecipient>
 	</informationRecipient>
+
 
 	<!--
 		DEFECT #75: legalAuthenticator (who signed / locks Form 043/у).
