@@ -2112,6 +2112,53 @@ describe("egiszCdaGenerator", () => {
 	});
 
 
+	test("DEFECT #106: assignedAuthor representedOrganization addr and telecom nullFlavor NI", () => {
+		const params: EgiszCdaParams = {
+			patientId: "pat-106",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.106",
+			clinicName: "ООО Клиника Author Org Contact",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate: new Date("2025-07-01T10:00:00.000Z"),
+			documentId: "doc-106",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		const aaEnd = "</assignedAuthor>";
+		const aaStart = xml.indexOf("<assignedAuthor>");
+		const aa = xml.slice(aaStart, xml.indexOf(aaEnd, aaStart) + aaEnd.length);
+		const roStart = aa.indexOf("<representedOrganization>");
+		const roEnd = "</representedOrganization>";
+		assert.ok(roStart >= 0, "assignedAuthor must include representedOrganization");
+		const ro = aa.slice(roStart, aa.indexOf(roEnd, roStart) + roEnd.length);
+		assert.ok(
+			ro.includes('<addr nullFlavor="NI"/>'),
+			"representedOrganization must emit addr nullFlavor=NI when contact unknown",
+		);
+		assert.ok(
+			ro.includes('<telecom nullFlavor="NI"/>'),
+			"representedOrganization must emit telecom nullFlavor=NI when contact unknown",
+		);
+		assert.ok(!ro.includes("<streetAddressLine"));
+		assert.ok(!ro.includes("tel:"));
+		/* order: addr → telecom → name (ignore XML comments) */
+		const roNoComments = ro.replace(/<!--[\s\S]*?-->/g, "");
+		const addrIdx = roNoComments.indexOf("<addr ");
+		const telIdx = roNoComments.indexOf("<telecom ");
+		const nameIdx = roNoComments.indexOf("<name>");
+		assert.ok(
+			addrIdx >= 0 && telIdx > addrIdx && nameIdx > telIdx,
+			"representedOrganization order: addr → telecom → name",
+		);
+		assert.ok(ro.includes("<name>ООО Клиника Author Org Contact</name>"));
+	});
+
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
 
 

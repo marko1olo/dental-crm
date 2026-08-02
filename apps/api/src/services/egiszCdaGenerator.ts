@@ -344,6 +344,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			 * СТАЛО: mirror clinicName (XML-escaped) as in legalAuthenticator.
 			 */
 			`<representedOrganization>
+				
+				<!--
+					DEFECT #106: assignedAuthor representedOrganization
+					addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+					БЫЛО: representedOrganization had only name child — no
+					addr/telecom. SEMD validators expect MO contact under
+					author org (mirror of custodian #102 / recipient #103).
+					We do not invent clinic street or phone.
+					СТАЛО: emit addr and telecom with nullFlavor="NI".
+				-->
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
 				<name>${escapeXml(params.clinicName)}</name>
 			</representedOrganization>`}
 		</assignedAuthor>
