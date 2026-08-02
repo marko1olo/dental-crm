@@ -1673,12 +1673,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								method OID.
 								NOW: methodCode nullFlavor NI until chart field exists.
 							-->
-							<methodCode nullFlavor="NI"/>${params.diagnosisTooth && String(params.diagnosisTooth).trim()
+							<methodCode nullFlavor="NI"/>
+							<!--
+								DEFECT #187: diagnosis observation/interpretationCode.
+								WAS: diagnosis OBS gained methodCode NI (#186) but still had
+								no interpretationCode. HL7 CDA R2 Observation has
+								interpretationCode 0..* (Abnormal/Normal/High/Low etc from
+								ObservationInterpretation). SEMD validators often flag missing
+								interpretation under coded diagnosis OBS. Form 043/u chart does
+								not collect a discrete HL7 interpretation flag for the ICD-10
+								finding — do not invent a fake N/A/H code.
+								NOW: interpretationCode nullFlavor NI until chart field exists.
+							-->
+							<interpretationCode nullFlavor="NI"/>${params.diagnosisTooth && String(params.diagnosisTooth).trim()
 								? `
 							<!-- DEFECT #74: ISO 3950 tooth from visit_diaries.diagnosis_tooth -->
 							<targetSiteCode code="${escapeXml(String(params.diagnosisTooth).trim())}" codeSystem="1.2.643.5.1.13.13.11.1466" codeSystemName="Зубы" displayName="Зуб ${escapeXml(String(params.diagnosisTooth).trim())}"/>`
 								: ""}
 						</observation>
+
 
 					</entry>
 				</section>
