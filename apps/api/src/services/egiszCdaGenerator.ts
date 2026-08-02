@@ -1766,6 +1766,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
 							<!--
+								DEFECT #240: diagnosis observation/priorityCode.
+								WAS: diagnosis OBS had id/code/statusCode/effectiveTime/value
+								only - no priorityCode. Treatment ACT (#201), instrument-tray
+								supply (#202), serviceEvent (#212) and encompassingEncounter
+								(#183) already carry priorityCode NI. HL7 CDA R2 Observation
+								has priorityCode 0..1 (urgency of the finding act). SEMD
+								validators often flag missing priority under diagnosis OBS.
+								Form 043/u chart does not collect a discrete diagnosis
+								priority flag - do not invent R/UR/S.
+								NOW: priorityCode nullFlavor NI until chart field exists.
+							-->
+							<priorityCode nullFlavor="NI"/>
+							<!--
 								DEFECT #156: diagnosis value CD codeSystemName (МКБ-10).
 								WAS: value xsi:type=CD had code+codeSystem+displayName
 								only — no codeSystemName. Observation code now carries
@@ -1924,6 +1937,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<statusCode code="completed"/>
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
+							<!--
+								DEFECT #241: anamnesis observation/priorityCode.
+								WAS: anamnesis OBS had id/code/statusCode/effectiveTime/value
+								only - no priorityCode. Diagnosis OBS (#240), treatment ACT
+								(#201) and serviceEvent (#212) already carry priorityCode NI.
+								HL7 CDA R2 Observation has priorityCode 0..1. SEMD validators
+								often flag missing priority under history OBS. Form 043/u
+								anamnesis is free-text interview - do not invent R/UR/S.
+								NOW: priorityCode nullFlavor NI until chart field exists.
+							-->
+							<priorityCode nullFlavor="NI"/>
 							<value xsi:type="ST">${escapeXml(params.anamnesis || "Без особенностей")}</value>
 							<!--
 								DEFECT #189: anamnesis observation/methodCode.
@@ -2070,6 +2094,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<statusCode code="completed"/>
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
+							<!--
+								DEFECT #242: objective-status observation/priorityCode.
+								WAS: objective OBS had id/code/statusCode/effectiveTime/value
+								only - no priorityCode. Diagnosis (#240) and anamnesis (#241)
+								already carry priorityCode NI. HL7 CDA R2 Observation has
+								priorityCode 0..1. SEMD validators often flag missing priority
+								under status-localis OBS. Form 043/u objective status is
+								free-text exam note - do not invent R/UR/S.
+								NOW: priorityCode nullFlavor NI until chart field exists.
+							-->
+							<priorityCode nullFlavor="NI"/>
 							<value xsi:type="ST">${escapeXml(params.objectiveStatus || "Без особенностей")}</value>
 							<!--
 								DEFECT #190: objective-status observation/methodCode.
@@ -2389,6 +2424,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<statusCode code="completed"/>
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
+							<!--
+								DEFECT #243: complications observation/priorityCode.
+								WAS: complications OBS had id/code/statusCode/effectiveTime/value
+								only - no priorityCode. Diagnosis (#240), anamnesis (#241) and
+								objective (#242) already carry priorityCode NI. HL7 CDA R2
+								Observation has priorityCode 0..1. SEMD validators often flag
+								missing priority under complications OBS. Form 043/u
+								complications is free-text note - do not invent R/UR/S.
+								NOW: priorityCode nullFlavor NI until chart field exists.
+							-->
+							<priorityCode nullFlavor="NI"/>
 							<value xsi:type="ST">${escapeXml(params.complications || "Не отмечены")}</value>
 							<!--
 								DEFECT #191: complications observation/methodCode.
@@ -2532,6 +2578,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<statusCode code="completed"/>
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
+							<!--
+								DEFECT #244: comorbidities observation/priorityCode.
+								WAS: comorbidities OBS had id/code/statusCode/effectiveTime/value
+								only - no priorityCode. Diagnosis (#240), anamnesis (#241),
+								objective (#242) and complications (#243) already carry
+								priorityCode NI. HL7 CDA R2 Observation has priorityCode 0..1.
+								SEMD validators often flag missing priority under comorbidities
+								OBS. Form 043/u comorbidities is free-text note - do not invent
+								R/UR/S.
+								NOW: priorityCode nullFlavor NI until chart field exists.
+							-->
+							<priorityCode nullFlavor="NI"/>
 							<value xsi:type="ST">${escapeXml(params.comorbidities || "Не отмечены")}</value>
 							<!--
 								DEFECT #192: comorbidities observation/methodCode.
