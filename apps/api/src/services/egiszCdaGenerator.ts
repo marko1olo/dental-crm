@@ -2074,7 +2074,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: independentInd nullFlavor NI until chart field exists.
 							-->
 							<independentInd nullFlavor="NI"/>
+							<!--
+								DEFECT #221: treatment act/approachSiteCode.
+								WAS: treatment ACT had priorityCode/methodCode/uncertaintyCode/
+								repeatNumber/independentInd only — no approachSiteCode.
+								Diagnosis OBS already carries targetSiteCode when
+								diagnosisTooth is set (#74). HL7 CDA R2 Act has
+								approachSiteCode 0..* (anatomical approach for the
+								procedure). SEMD validators often flag missing approach
+								site under treatment ACT. Form 043/u treatment is free-text
+								— tooth may be on diagnosis only; do not invent a second
+								ISO 3950 code here when treatmentDescription has no tooth.
+								NOW: approachSiteCode nullFlavor NI until chart field exists.
+							-->
+							<approachSiteCode nullFlavor="NI"/>
 						</act>
+
 
 
 
