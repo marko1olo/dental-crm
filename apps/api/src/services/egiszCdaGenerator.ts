@@ -1624,6 +1624,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: effectiveTime nullFlavor NI; do not invent criterion window.
 					-->
 					<effectiveTime nullFlavor="NI"/>
+				<!--
+					DEFECT #704: precondition/criterion/languageCode.
+					WAS: criterion had id/code/text/status/value/effectiveTime — no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under precondition criterion.
+					NOW: languageCode code=ru-RU.
+				-->
+				<languageCode code="ru-RU"/>
+				<!--
+					DEFECT #705: precondition/criterion/interpretationCode.
+					WAS: criterion had no interpretationCode. HL7 CDA R2 Observation-like criterion may carry interpretationCode 0..*. SEMD often flags bare criterion value without interpretation slot.
+					NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+				-->
+				<interpretationCode nullFlavor="NI"/>
 				</criterion>
 			</precondition>
 			<!--
@@ -1904,6 +1916,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument.
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+				<!--
+					DEFECT #686: entryRelationship/act/methodCode.
+					WAS: nested COMP act had text/status/priority/effectiveTime/lang/conf — no methodCode. Parent body OBS/ACT emit methodCode. SEMD often flags missing method under nested COMP acts.
+					NOW: methodCode nullFlavor NI; do not invent procedure method codes.
+				-->
+				<methodCode nullFlavor="NI"/>
+				<!--
+					DEFECT #687: entryRelationship/act/targetSiteCode.
+					WAS: nested COMP act had no targetSiteCode. Parent body acts emit targetSiteCode NI for dental sites.
+					NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
+				-->
+				<targetSiteCode nullFlavor="NI"/>
 				</act>
 			</entryRelationship>
 
@@ -2125,6 +2149,46 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				
 			-->
 			<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+		<!--
+
+			DEFECT #722: authorization/consent/performer.
+
+			WAS: consent had id/code/status/effectiveTime/text/priority/lang/conf — no performer. HL7 CDA R2 Consent Act has performer 0..*. SEMD validators often flag missing consent performer when legalAuthenticator is present but consent has no assigned entity. Form 043/u has no separate consent-signer field beyond document author; do not invent person names.
+
+			NOW: performer typeCode=PRF with assignedEntity id/addr/telecom/assignedPerson name NI.
+
+		-->
+
+		<performer typeCode="PRF">
+
+			<assignedEntity>
+
+				<!--
+
+					DEFECT #723: consent/performer/assignedEntity demographics.
+
+					WAS: performer shell needs assignedEntity children.
+
+					NOW: id/addr/telecom NI + assignedPerson/name NI; do not invent.
+
+				-->
+
+				<id nullFlavor="NI"/>
+
+				<addr nullFlavor="NI"/>
+
+				<telecom nullFlavor="NI"/>
+
+				<assignedPerson>
+
+					<name nullFlavor="NI"/>
+
+				</assignedPerson>
+
+			</assignedEntity>
+
+		</performer>
+
 		</consent>
 	</authorization>
 
@@ -2710,6 +2774,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: effectiveTime nullFlavor NI; do not invent criterion window.
 					-->
 					<effectiveTime nullFlavor="NI"/>
+				<!--
+					DEFECT #706: precondition/criterion/languageCode.
+					WAS: criterion had id/code/text/status/value/effectiveTime — no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under precondition criterion.
+					NOW: languageCode code=ru-RU.
+				-->
+				<languageCode code="ru-RU"/>
+				<!--
+					DEFECT #707: precondition/criterion/interpretationCode.
+					WAS: criterion had no interpretationCode. HL7 CDA R2 Observation-like criterion may carry interpretationCode 0..*. SEMD often flags bare criterion value without interpretation slot.
+					NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+				-->
+				<interpretationCode nullFlavor="NI"/>
 				</criterion>
 			</precondition>
 			<!--
@@ -2965,6 +3041,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: confidentialityCode N matching ClinicalDocument.
 					-->
 					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+				<!--
+					DEFECT #688: entryRelationship/act/methodCode.
+					WAS: nested COMP act had text/status/priority/effectiveTime/lang/conf — no methodCode. Parent body OBS/ACT emit methodCode. SEMD often flags missing method under nested COMP acts.
+					NOW: methodCode nullFlavor NI; do not invent procedure method codes.
+				-->
+				<methodCode nullFlavor="NI"/>
+				<!--
+					DEFECT #689: entryRelationship/act/targetSiteCode.
+					WAS: nested COMP act had no targetSiteCode. Parent body acts emit targetSiteCode NI for dental sites.
+					NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
+				-->
+				<targetSiteCode nullFlavor="NI"/>
 				</act>
 			</entryRelationship>
 
@@ -3441,6 +3529,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: effectiveTime nullFlavor NI; do not invent criterion window.
 									-->
 									<effectiveTime nullFlavor="NI"/>
+								<!--
+									DEFECT #708: precondition/criterion/languageCode.
+									WAS: criterion had id/code/text/status/value/effectiveTime — no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under precondition criterion.
+									NOW: languageCode code=ru-RU.
+								-->
+								<languageCode code="ru-RU"/>
+								<!--
+									DEFECT #709: precondition/criterion/interpretationCode.
+									WAS: criterion had no interpretationCode. HL7 CDA R2 Observation-like criterion may carry interpretationCode 0..*. SEMD often flags bare criterion value without interpretation slot.
+									NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+								-->
+								<interpretationCode nullFlavor="NI"/>
 								</criterion>
 							</precondition>
 							<!--
@@ -3733,6 +3833,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: confidentialityCode N matching ClinicalDocument.
 									-->
 									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+								<!--
+									DEFECT #690: entryRelationship/act/methodCode.
+									WAS: nested COMP act had text/status/priority/effectiveTime/lang/conf — no methodCode. Parent body OBS/ACT emit methodCode. SEMD often flags missing method under nested COMP acts.
+									NOW: methodCode nullFlavor NI; do not invent procedure method codes.
+								-->
+								<methodCode nullFlavor="NI"/>
+								<!--
+									DEFECT #691: entryRelationship/act/targetSiteCode.
+									WAS: nested COMP act had no targetSiteCode. Parent body acts emit targetSiteCode NI for dental sites.
+									NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
+								-->
+								<targetSiteCode nullFlavor="NI"/>
 								</act>
 							</entryRelationship>
 
@@ -4164,6 +4276,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: effectiveTime nullFlavor NI; do not invent criterion window.
 									-->
 									<effectiveTime nullFlavor="NI"/>
+								<!--
+									DEFECT #710: precondition/criterion/languageCode.
+									WAS: criterion had id/code/text/status/value/effectiveTime — no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under precondition criterion.
+									NOW: languageCode code=ru-RU.
+								-->
+								<languageCode code="ru-RU"/>
+								<!--
+									DEFECT #711: precondition/criterion/interpretationCode.
+									WAS: criterion had no interpretationCode. HL7 CDA R2 Observation-like criterion may carry interpretationCode 0..*. SEMD often flags bare criterion value without interpretation slot.
+									NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+								-->
+								<interpretationCode nullFlavor="NI"/>
 								</criterion>
 							</precondition>
 							<!--
@@ -4456,6 +4580,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: confidentialityCode N matching ClinicalDocument.
 									-->
 									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+								<!--
+									DEFECT #692: entryRelationship/act/methodCode.
+									WAS: nested COMP act had text/status/priority/effectiveTime/lang/conf — no methodCode. Parent body OBS/ACT emit methodCode. SEMD often flags missing method under nested COMP acts.
+									NOW: methodCode nullFlavor NI; do not invent procedure method codes.
+								-->
+								<methodCode nullFlavor="NI"/>
+								<!--
+									DEFECT #693: entryRelationship/act/targetSiteCode.
+									WAS: nested COMP act had no targetSiteCode. Parent body acts emit targetSiteCode NI for dental sites.
+									NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
+								-->
+								<targetSiteCode nullFlavor="NI"/>
 								</act>
 							</entryRelationship>
 
@@ -4901,6 +5037,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: effectiveTime nullFlavor NI; do not invent criterion window.
 									-->
 									<effectiveTime nullFlavor="NI"/>
+								<!--
+									DEFECT #712: precondition/criterion/languageCode.
+									WAS: criterion had id/code/text/status/value/effectiveTime — no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under precondition criterion.
+									NOW: languageCode code=ru-RU.
+								-->
+								<languageCode code="ru-RU"/>
+								<!--
+									DEFECT #713: precondition/criterion/interpretationCode.
+									WAS: criterion had no interpretationCode. HL7 CDA R2 Observation-like criterion may carry interpretationCode 0..*. SEMD often flags bare criterion value without interpretation slot.
+									NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+								-->
+								<interpretationCode nullFlavor="NI"/>
 								</criterion>
 							</precondition>
 							<!--
@@ -5193,6 +5341,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: confidentialityCode N matching ClinicalDocument.
 									-->
 									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+								<!--
+									DEFECT #694: entryRelationship/act/methodCode.
+									WAS: nested COMP act had text/status/priority/effectiveTime/lang/conf — no methodCode. Parent body OBS/ACT emit methodCode. SEMD often flags missing method under nested COMP acts.
+									NOW: methodCode nullFlavor NI; do not invent procedure method codes.
+								-->
+								<methodCode nullFlavor="NI"/>
+								<!--
+									DEFECT #695: entryRelationship/act/targetSiteCode.
+									WAS: nested COMP act had no targetSiteCode. Parent body acts emit targetSiteCode NI for dental sites.
+									NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
+								-->
+								<targetSiteCode nullFlavor="NI"/>
 								</act>
 							</entryRelationship>
 
@@ -5632,6 +5792,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: effectiveTime nullFlavor NI; do not invent criterion window.
 									-->
 									<effectiveTime nullFlavor="NI"/>
+								<!--
+									DEFECT #714: precondition/criterion/languageCode.
+									WAS: criterion had id/code/text/status/value/effectiveTime — no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under precondition criterion.
+									NOW: languageCode code=ru-RU.
+								-->
+								<languageCode code="ru-RU"/>
+								<!--
+									DEFECT #715: precondition/criterion/interpretationCode.
+									WAS: criterion had no interpretationCode. HL7 CDA R2 Observation-like criterion may carry interpretationCode 0..*. SEMD often flags bare criterion value without interpretation slot.
+									NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+								-->
+								<interpretationCode nullFlavor="NI"/>
 								</criterion>
 							</precondition>
 							<!--
@@ -5889,6 +6061,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: confidentialityCode N matching ClinicalDocument.
 									-->
 									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+								<!--
+									DEFECT #696: entryRelationship/act/methodCode.
+									WAS: nested COMP act had text/status/priority/effectiveTime/lang/conf — no methodCode. Parent body OBS/ACT emit methodCode. SEMD often flags missing method under nested COMP acts.
+									NOW: methodCode nullFlavor NI; do not invent procedure method codes.
+								-->
+								<methodCode nullFlavor="NI"/>
+								<!--
+									DEFECT #697: entryRelationship/act/targetSiteCode.
+									WAS: nested COMP act had no targetSiteCode. Parent body acts emit targetSiteCode NI for dental sites.
+									NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
+								-->
+								<targetSiteCode nullFlavor="NI"/>
 								</act>
 							</entryRelationship>
 
@@ -6326,6 +6510,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: effectiveTime nullFlavor NI; do not invent criterion window.
 									-->
 									<effectiveTime nullFlavor="NI"/>
+								<!--
+									DEFECT #716: precondition/criterion/languageCode.
+									WAS: criterion had id/code/text/status/value/effectiveTime — no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under precondition criterion.
+									NOW: languageCode code=ru-RU.
+								-->
+								<languageCode code="ru-RU"/>
+								<!--
+									DEFECT #717: precondition/criterion/interpretationCode.
+									WAS: criterion had no interpretationCode. HL7 CDA R2 Observation-like criterion may carry interpretationCode 0..*. SEMD often flags bare criterion value without interpretation slot.
+									NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+								-->
+								<interpretationCode nullFlavor="NI"/>
 								</criterion>
 							</precondition>
 							<!--
@@ -6618,6 +6814,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: confidentialityCode N matching ClinicalDocument.
 									-->
 									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+								<!--
+									DEFECT #698: entryRelationship/act/methodCode.
+									WAS: nested COMP act had text/status/priority/effectiveTime/lang/conf — no methodCode. Parent body OBS/ACT emit methodCode. SEMD often flags missing method under nested COMP acts.
+									NOW: methodCode nullFlavor NI; do not invent procedure method codes.
+								-->
+								<methodCode nullFlavor="NI"/>
+								<!--
+									DEFECT #699: entryRelationship/act/targetSiteCode.
+									WAS: nested COMP act had no targetSiteCode. Parent body acts emit targetSiteCode NI for dental sites.
+									NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
+								-->
+								<targetSiteCode nullFlavor="NI"/>
 								</act>
 							</entryRelationship>
 
@@ -7062,6 +7270,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: effectiveTime nullFlavor NI; do not invent criterion window.
 									-->
 									<effectiveTime nullFlavor="NI"/>
+								<!--
+									DEFECT #718: precondition/criterion/languageCode.
+									WAS: criterion had id/code/text/status/value/effectiveTime — no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under precondition criterion.
+									NOW: languageCode code=ru-RU.
+								-->
+								<languageCode code="ru-RU"/>
+								<!--
+									DEFECT #719: precondition/criterion/interpretationCode.
+									WAS: criterion had no interpretationCode. HL7 CDA R2 Observation-like criterion may carry interpretationCode 0..*. SEMD often flags bare criterion value without interpretation slot.
+									NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+								-->
+								<interpretationCode nullFlavor="NI"/>
 								</criterion>
 							</precondition>
 							<!--
@@ -7354,6 +7574,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: confidentialityCode N matching ClinicalDocument.
 									-->
 									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+								<!--
+									DEFECT #700: entryRelationship/act/methodCode.
+									WAS: nested COMP act had text/status/priority/effectiveTime/lang/conf — no methodCode. Parent body OBS/ACT emit methodCode. SEMD often flags missing method under nested COMP acts.
+									NOW: methodCode nullFlavor NI; do not invent procedure method codes.
+								-->
+								<methodCode nullFlavor="NI"/>
+								<!--
+									DEFECT #701: entryRelationship/act/targetSiteCode.
+									WAS: nested COMP act had no targetSiteCode. Parent body acts emit targetSiteCode NI for dental sites.
+									NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
+								-->
+								<targetSiteCode nullFlavor="NI"/>
 								</act>
 							</entryRelationship>
 
@@ -7875,6 +8107,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: effectiveTime nullFlavor NI; do not invent criterion window.
 									-->
 									<effectiveTime nullFlavor="NI"/>
+								<!--
+									DEFECT #720: precondition/criterion/languageCode.
+									WAS: criterion had id/code/text/status/value/effectiveTime — no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under precondition criterion.
+									NOW: languageCode code=ru-RU.
+								-->
+								<languageCode code="ru-RU"/>
+								<!--
+									DEFECT #721: precondition/criterion/interpretationCode.
+									WAS: criterion had no interpretationCode. HL7 CDA R2 Observation-like criterion may carry interpretationCode 0..*. SEMD often flags bare criterion value without interpretation slot.
+									NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+								-->
+								<interpretationCode nullFlavor="NI"/>
 								</criterion>
 							</precondition>
 							<!--
@@ -8133,6 +8377,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: confidentialityCode N matching ClinicalDocument.
 									-->
 									<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+								<!--
+									DEFECT #702: entryRelationship/act/methodCode.
+									WAS: nested COMP act had text/status/priority/effectiveTime/lang/conf — no methodCode. Parent body OBS/ACT emit methodCode. SEMD often flags missing method under nested COMP acts.
+									NOW: methodCode nullFlavor NI; do not invent procedure method codes.
+								-->
+								<methodCode nullFlavor="NI"/>
+								<!--
+									DEFECT #703: entryRelationship/act/targetSiteCode.
+									WAS: nested COMP act had no targetSiteCode. Parent body acts emit targetSiteCode NI for dental sites.
+									NOW: targetSiteCode nullFlavor NI; do not invent tooth/site codes.
+								-->
+								<targetSiteCode nullFlavor="NI"/>
 								</act>
 							</entryRelationship>
 
