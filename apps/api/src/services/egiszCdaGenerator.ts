@@ -1941,6 +1941,187 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1315: entryRelationship/act/subject.
+						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #1316: entryRelationship/act/specimen.
+						WAS: nested COMP act had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries already carry SPC shells. Form 043/u nested COMP acts do not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #1317: entryRelationship/act/performer.
+						WAS: nested COMP act had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under nested COMP acts when serviceEvent/body emit PRF. Form 043/u has no nested-act performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #1318: entryRelationship/act/author.
+						WAS: nested COMP act had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under nested COMP acts when body acts emit AUT. Form 043/u has no nested-act author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #1319: entryRelationship/act/informant.
+						WAS: nested COMP act had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete nested-act informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #1320: entryRelationship/act/participant.
+						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #1321: entryRelationship/act/entryRelationship.
+						WAS: nested COMP act had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #1322: entryRelationship/act/reference.
+						WAS: nested COMP act had no reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. Form 043/u has no discrete nested external document here; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #1323: entryRelationship/act/precondition.
+						WAS: nested COMP act had no precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested-act precondition criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<!--
+								DEFECT #1514: precondition/criterion/interpretationCode.
+								WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+								NOW: interpretationCode nullFlavor NI.
+							-->
+							<interpretationCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1515: precondition/criterion/methodCode.
+								WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI.
+								NOW: methodCode nullFlavor NI.
+							-->
+							<methodCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1516: precondition/criterion/targetSiteCode.
+								WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI.
+								NOW: targetSiteCode nullFlavor NI.
+							-->
+							<targetSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1517: precondition/criterion/uncertaintyCode.
+								WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI.
+								NOW: uncertaintyCode nullFlavor NI.
+							-->
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 					</act>
 				</entryRelationship>
 				<!--
@@ -1984,6 +2165,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						-->
 						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
+						<!--
+							DEFECT #1450: precondition/criterion/interpretationCode.
+							WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+							NOW: interpretationCode nullFlavor NI.
+						-->
+						<interpretationCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1451: precondition/criterion/methodCode.
+							WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+							NOW: methodCode nullFlavor NI.
+						-->
+						<methodCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1452: precondition/criterion/targetSiteCode.
+							WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+							NOW: targetSiteCode nullFlavor NI.
+						-->
+						<targetSiteCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1453: precondition/criterion/uncertaintyCode.
+							WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+							NOW: uncertaintyCode nullFlavor NI.
+						-->
+						<uncertaintyCode nullFlavor="NI"/>
 					</criterion>
 				</precondition>
 				<!--
@@ -2570,6 +2775,187 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: uncertaintyCode nullFlavor NI.
 			-->
 			<uncertaintyCode nullFlavor="NI"/>
+			<!--
+				DEFECT #1324: entryRelationship/act/subject.
+				WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
+				NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+			-->
+			<subject typeCode="SBJ">
+				<relatedSubject>
+					<code nullFlavor="NI"/>
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<subject>
+						<name nullFlavor="NI"/>
+					</subject>
+				</relatedSubject>
+			</subject>
+			<!--
+				DEFECT #1325: entryRelationship/act/specimen.
+				WAS: nested COMP act had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries already carry SPC shells. Form 043/u nested COMP acts do not collect specimen identity; do not invent type codes.
+				NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+			-->
+			<specimen typeCode="SPC">
+				<specimenRole>
+					<id nullFlavor="NI"/>
+					<specimenPlayingEntity>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+						<quantity nullFlavor="NI"/>
+					</specimenPlayingEntity>
+				</specimenRole>
+			</specimen>
+			<!--
+				DEFECT #1326: entryRelationship/act/performer.
+				WAS: nested COMP act had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under nested COMP acts when serviceEvent/body emit PRF. Form 043/u has no nested-act performer identity; do not invent SNILS/FIO.
+				NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+			-->
+			<performer typeCode="PRF">
+				<functionCode nullFlavor="NI"/>
+				<time nullFlavor="NI"/>
+				<assignedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<assignedPerson>
+						<name nullFlavor="NI"/>
+					</assignedPerson>
+				</assignedEntity>
+			</performer>
+			<!--
+				DEFECT #1327: entryRelationship/act/author.
+				WAS: nested COMP act had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under nested COMP acts when body acts emit AUT. Form 043/u has no nested-act author identity; do not invent.
+				NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+			-->
+			<author typeCode="AUT">
+				<time nullFlavor="NI"/>
+				<assignedAuthor>
+					<id nullFlavor="NI"/>
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<assignedPerson>
+						<name nullFlavor="NI"/>
+					</assignedPerson>
+					<representedOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</representedOrganization>
+				</assignedAuthor>
+			</author>
+			<!--
+				DEFECT #1328: entryRelationship/act/informant.
+				WAS: nested COMP act had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete nested-act informant; do not invent.
+				NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+			-->
+			<informant typeCode="INF">
+				<assignedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<assignedPerson>
+						<name nullFlavor="NI"/>
+					</assignedPerson>
+				</assignedEntity>
+			</informant>
+			<!--
+				DEFECT #1329: entryRelationship/act/participant.
+				WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
+				NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+			-->
+			<participant typeCode="IND">
+				<time nullFlavor="NI"/>
+				<associatedEntity classCode="PRS">
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<associatedPerson>
+						<name nullFlavor="NI"/>
+					</associatedPerson>
+				</associatedEntity>
+			</participant>
+			<!--
+				DEFECT #1330: entryRelationship/act/entryRelationship.
+				WAS: nested COMP act had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+				NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode NI shells.
+			-->
+			<entryRelationship typeCode="COMP">
+				<act classCode="ACT" moodCode="EVN">
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<text nullFlavor="NI"/>
+					<statusCode code="completed"/>
+					<priorityCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<languageCode code="ru-RU"/>
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+					<interpretationCode nullFlavor="NI"/>
+					<methodCode nullFlavor="NI"/>
+					<targetSiteCode nullFlavor="NI"/>
+					<uncertaintyCode nullFlavor="NI"/>
+				</act>
+			</entryRelationship>
+			<!--
+				DEFECT #1331: entryRelationship/act/reference.
+				WAS: nested COMP act had no reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. Form 043/u has no discrete nested external document here; do not invent OIDs.
+				NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+			-->
+			<reference typeCode="REFR">
+				<externalDocument classCode="DOC" moodCode="EVN">
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<text nullFlavor="NI"/>
+					<setId nullFlavor="NI"/>
+					<versionNumber nullFlavor="NI"/>
+				</externalDocument>
+			</reference>
+			<!--
+				DEFECT #1332: entryRelationship/act/precondition.
+				WAS: nested COMP act had no precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested-act precondition criterion; do not invent.
+				NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value NI.
+			-->
+			<precondition typeCode="PRCN">
+				<criterion classCode="OBS" moodCode="EVN">
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<text nullFlavor="NI"/>
+					<statusCode code="completed"/>
+					<effectiveTime nullFlavor="NI"/>
+					<priorityCode nullFlavor="NI"/>
+					<languageCode code="ru-RU"/>
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+					<value xsi:type="CD" nullFlavor="NI"/>
+					<!--
+						DEFECT #1518: precondition/criterion/interpretationCode.
+						WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+						NOW: interpretationCode nullFlavor NI.
+					-->
+					<interpretationCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1519: precondition/criterion/methodCode.
+						WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI.
+						NOW: methodCode nullFlavor NI.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1520: precondition/criterion/targetSiteCode.
+						WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI.
+						NOW: targetSiteCode nullFlavor NI.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1521: precondition/criterion/uncertaintyCode.
+						WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI.
+						NOW: uncertaintyCode nullFlavor NI.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+				</criterion>
+			</precondition>
 			</act>
 		</entryRelationship>
 		<!--
@@ -2651,6 +3037,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 				<value xsi:type="CD" nullFlavor="NI"/>
+				<!--
+					DEFECT #1454: precondition/criterion/interpretationCode.
+					WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+					NOW: interpretationCode nullFlavor NI.
+				-->
+				<interpretationCode nullFlavor="NI"/>
+				<!--
+					DEFECT #1455: precondition/criterion/methodCode.
+					WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+					NOW: methodCode nullFlavor NI.
+				-->
+				<methodCode nullFlavor="NI"/>
+				<!--
+					DEFECT #1456: precondition/criterion/targetSiteCode.
+					WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+					NOW: targetSiteCode nullFlavor NI.
+				-->
+				<targetSiteCode nullFlavor="NI"/>
+				<!--
+					DEFECT #1457: precondition/criterion/uncertaintyCode.
+					WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+					NOW: uncertaintyCode nullFlavor NI.
+				-->
+				<uncertaintyCode nullFlavor="NI"/>
 			</criterion>
 		</precondition>
 		</order>
@@ -3025,6 +3435,187 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: uncertaintyCode nullFlavor NI.
 			-->
 			<uncertaintyCode nullFlavor="NI"/>
+			<!--
+				DEFECT #1333: entryRelationship/act/subject.
+				WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
+				NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+			-->
+			<subject typeCode="SBJ">
+				<relatedSubject>
+					<code nullFlavor="NI"/>
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<subject>
+						<name nullFlavor="NI"/>
+					</subject>
+				</relatedSubject>
+			</subject>
+			<!--
+				DEFECT #1334: entryRelationship/act/specimen.
+				WAS: nested COMP act had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries already carry SPC shells. Form 043/u nested COMP acts do not collect specimen identity; do not invent type codes.
+				NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+			-->
+			<specimen typeCode="SPC">
+				<specimenRole>
+					<id nullFlavor="NI"/>
+					<specimenPlayingEntity>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+						<quantity nullFlavor="NI"/>
+					</specimenPlayingEntity>
+				</specimenRole>
+			</specimen>
+			<!--
+				DEFECT #1335: entryRelationship/act/performer.
+				WAS: nested COMP act had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under nested COMP acts when serviceEvent/body emit PRF. Form 043/u has no nested-act performer identity; do not invent SNILS/FIO.
+				NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+			-->
+			<performer typeCode="PRF">
+				<functionCode nullFlavor="NI"/>
+				<time nullFlavor="NI"/>
+				<assignedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<assignedPerson>
+						<name nullFlavor="NI"/>
+					</assignedPerson>
+				</assignedEntity>
+			</performer>
+			<!--
+				DEFECT #1336: entryRelationship/act/author.
+				WAS: nested COMP act had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under nested COMP acts when body acts emit AUT. Form 043/u has no nested-act author identity; do not invent.
+				NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+			-->
+			<author typeCode="AUT">
+				<time nullFlavor="NI"/>
+				<assignedAuthor>
+					<id nullFlavor="NI"/>
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<assignedPerson>
+						<name nullFlavor="NI"/>
+					</assignedPerson>
+					<representedOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</representedOrganization>
+				</assignedAuthor>
+			</author>
+			<!--
+				DEFECT #1337: entryRelationship/act/informant.
+				WAS: nested COMP act had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete nested-act informant; do not invent.
+				NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+			-->
+			<informant typeCode="INF">
+				<assignedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<assignedPerson>
+						<name nullFlavor="NI"/>
+					</assignedPerson>
+				</assignedEntity>
+			</informant>
+			<!--
+				DEFECT #1338: entryRelationship/act/participant.
+				WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
+				NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+			-->
+			<participant typeCode="IND">
+				<time nullFlavor="NI"/>
+				<associatedEntity classCode="PRS">
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<associatedPerson>
+						<name nullFlavor="NI"/>
+					</associatedPerson>
+				</associatedEntity>
+			</participant>
+			<!--
+				DEFECT #1339: entryRelationship/act/entryRelationship.
+				WAS: nested COMP act had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+				NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode NI shells.
+			-->
+			<entryRelationship typeCode="COMP">
+				<act classCode="ACT" moodCode="EVN">
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<text nullFlavor="NI"/>
+					<statusCode code="completed"/>
+					<priorityCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<languageCode code="ru-RU"/>
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+					<interpretationCode nullFlavor="NI"/>
+					<methodCode nullFlavor="NI"/>
+					<targetSiteCode nullFlavor="NI"/>
+					<uncertaintyCode nullFlavor="NI"/>
+				</act>
+			</entryRelationship>
+			<!--
+				DEFECT #1340: entryRelationship/act/reference.
+				WAS: nested COMP act had no reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. Form 043/u has no discrete nested external document here; do not invent OIDs.
+				NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+			-->
+			<reference typeCode="REFR">
+				<externalDocument classCode="DOC" moodCode="EVN">
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<text nullFlavor="NI"/>
+					<setId nullFlavor="NI"/>
+					<versionNumber nullFlavor="NI"/>
+				</externalDocument>
+			</reference>
+			<!--
+				DEFECT #1341: entryRelationship/act/precondition.
+				WAS: nested COMP act had no precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested-act precondition criterion; do not invent.
+				NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value NI.
+			-->
+			<precondition typeCode="PRCN">
+				<criterion classCode="OBS" moodCode="EVN">
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<text nullFlavor="NI"/>
+					<statusCode code="completed"/>
+					<effectiveTime nullFlavor="NI"/>
+					<priorityCode nullFlavor="NI"/>
+					<languageCode code="ru-RU"/>
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+					<value xsi:type="CD" nullFlavor="NI"/>
+					<!--
+						DEFECT #1522: precondition/criterion/interpretationCode.
+						WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+						NOW: interpretationCode nullFlavor NI.
+					-->
+					<interpretationCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1523: precondition/criterion/methodCode.
+						WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI.
+						NOW: methodCode nullFlavor NI.
+					-->
+					<methodCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1524: precondition/criterion/targetSiteCode.
+						WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI.
+						NOW: targetSiteCode nullFlavor NI.
+					-->
+					<targetSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1525: precondition/criterion/uncertaintyCode.
+						WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI.
+						NOW: uncertaintyCode nullFlavor NI.
+					-->
+					<uncertaintyCode nullFlavor="NI"/>
+				</criterion>
+			</precondition>
 			</act>
 		</entryRelationship>
 		<!--
@@ -3068,6 +3659,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 				<value xsi:type="CD" nullFlavor="NI"/>
+				<!--
+					DEFECT #1458: precondition/criterion/interpretationCode.
+					WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+					NOW: interpretationCode nullFlavor NI.
+				-->
+				<interpretationCode nullFlavor="NI"/>
+				<!--
+					DEFECT #1459: precondition/criterion/methodCode.
+					WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+					NOW: methodCode nullFlavor NI.
+				-->
+				<methodCode nullFlavor="NI"/>
+				<!--
+					DEFECT #1460: precondition/criterion/targetSiteCode.
+					WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+					NOW: targetSiteCode nullFlavor NI.
+				-->
+				<targetSiteCode nullFlavor="NI"/>
+				<!--
+					DEFECT #1461: precondition/criterion/uncertaintyCode.
+					WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+					NOW: uncertaintyCode nullFlavor NI.
+				-->
+				<uncertaintyCode nullFlavor="NI"/>
 			</criterion>
 		</precondition>
 		<!--
@@ -3974,6 +4589,187 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1342: entryRelationship/act/subject.
+						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #1343: entryRelationship/act/specimen.
+						WAS: nested COMP act had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries already carry SPC shells. Form 043/u nested COMP acts do not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #1344: entryRelationship/act/performer.
+						WAS: nested COMP act had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under nested COMP acts when serviceEvent/body emit PRF. Form 043/u has no nested-act performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #1345: entryRelationship/act/author.
+						WAS: nested COMP act had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under nested COMP acts when body acts emit AUT. Form 043/u has no nested-act author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #1346: entryRelationship/act/informant.
+						WAS: nested COMP act had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete nested-act informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #1347: entryRelationship/act/participant.
+						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #1348: entryRelationship/act/entryRelationship.
+						WAS: nested COMP act had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #1349: entryRelationship/act/reference.
+						WAS: nested COMP act had no reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. Form 043/u has no discrete nested external document here; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #1350: entryRelationship/act/precondition.
+						WAS: nested COMP act had no precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested-act precondition criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<!--
+								DEFECT #1526: precondition/criterion/interpretationCode.
+								WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+								NOW: interpretationCode nullFlavor NI.
+							-->
+							<interpretationCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1527: precondition/criterion/methodCode.
+								WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI.
+								NOW: methodCode nullFlavor NI.
+							-->
+							<methodCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1528: precondition/criterion/targetSiteCode.
+								WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI.
+								NOW: targetSiteCode nullFlavor NI.
+							-->
+							<targetSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1529: precondition/criterion/uncertaintyCode.
+								WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI.
+								NOW: uncertaintyCode nullFlavor NI.
+							-->
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 					</act>
 				</entryRelationship>
 				<!--
@@ -4017,6 +4813,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						-->
 						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
+						<!--
+							DEFECT #1462: precondition/criterion/interpretationCode.
+							WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+							NOW: interpretationCode nullFlavor NI.
+						-->
+						<interpretationCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1463: precondition/criterion/methodCode.
+							WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+							NOW: methodCode nullFlavor NI.
+						-->
+						<methodCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1464: precondition/criterion/targetSiteCode.
+							WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+							NOW: targetSiteCode nullFlavor NI.
+						-->
+						<targetSiteCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1465: precondition/criterion/uncertaintyCode.
+							WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+							NOW: uncertaintyCode nullFlavor NI.
+						-->
+						<uncertaintyCode nullFlavor="NI"/>
 					</criterion>
 				</precondition>
 				<!--
@@ -5066,6 +5886,187 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1351: entryRelationship/act/subject.
+						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #1352: entryRelationship/act/specimen.
+						WAS: nested COMP act had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries already carry SPC shells. Form 043/u nested COMP acts do not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #1353: entryRelationship/act/performer.
+						WAS: nested COMP act had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under nested COMP acts when serviceEvent/body emit PRF. Form 043/u has no nested-act performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #1354: entryRelationship/act/author.
+						WAS: nested COMP act had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under nested COMP acts when body acts emit AUT. Form 043/u has no nested-act author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #1355: entryRelationship/act/informant.
+						WAS: nested COMP act had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete nested-act informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #1356: entryRelationship/act/participant.
+						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #1357: entryRelationship/act/entryRelationship.
+						WAS: nested COMP act had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #1358: entryRelationship/act/reference.
+						WAS: nested COMP act had no reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. Form 043/u has no discrete nested external document here; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #1359: entryRelationship/act/precondition.
+						WAS: nested COMP act had no precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested-act precondition criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<!--
+								DEFECT #1530: precondition/criterion/interpretationCode.
+								WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+								NOW: interpretationCode nullFlavor NI.
+							-->
+							<interpretationCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1531: precondition/criterion/methodCode.
+								WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI.
+								NOW: methodCode nullFlavor NI.
+							-->
+							<methodCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1532: precondition/criterion/targetSiteCode.
+								WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI.
+								NOW: targetSiteCode nullFlavor NI.
+							-->
+							<targetSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1533: precondition/criterion/uncertaintyCode.
+								WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI.
+								NOW: uncertaintyCode nullFlavor NI.
+							-->
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 					</act>
 				</entryRelationship>
 				<!--
@@ -5109,6 +6110,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						-->
 						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
+						<!--
+							DEFECT #1466: precondition/criterion/interpretationCode.
+							WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+							NOW: interpretationCode nullFlavor NI.
+						-->
+						<interpretationCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1467: precondition/criterion/methodCode.
+							WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+							NOW: methodCode nullFlavor NI.
+						-->
+						<methodCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1468: precondition/criterion/targetSiteCode.
+							WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+							NOW: targetSiteCode nullFlavor NI.
+						-->
+						<targetSiteCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1469: precondition/criterion/uncertaintyCode.
+							WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+							NOW: uncertaintyCode nullFlavor NI.
+						-->
+						<uncertaintyCode nullFlavor="NI"/>
 					</criterion>
 				</precondition>
 				<!--
@@ -5570,6 +6595,187 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: uncertaintyCode nullFlavor NI.
 									-->
 									<uncertaintyCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1360: entryRelationship/act/subject.
+										WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
+										NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+									-->
+									<subject typeCode="SBJ">
+										<relatedSubject>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<subject>
+												<name nullFlavor="NI"/>
+											</subject>
+										</relatedSubject>
+									</subject>
+									<!--
+										DEFECT #1361: entryRelationship/act/specimen.
+										WAS: nested COMP act had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries already carry SPC shells. Form 043/u nested COMP acts do not collect specimen identity; do not invent type codes.
+										NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+									-->
+									<specimen typeCode="SPC">
+										<specimenRole>
+											<id nullFlavor="NI"/>
+											<specimenPlayingEntity>
+												<code nullFlavor="NI"/>
+												<name nullFlavor="NI"/>
+												<desc nullFlavor="NI"/>
+												<quantity nullFlavor="NI"/>
+											</specimenPlayingEntity>
+										</specimenRole>
+									</specimen>
+									<!--
+										DEFECT #1362: entryRelationship/act/performer.
+										WAS: nested COMP act had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under nested COMP acts when serviceEvent/body emit PRF. Form 043/u has no nested-act performer identity; do not invent SNILS/FIO.
+										NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+									-->
+									<performer typeCode="PRF">
+										<functionCode nullFlavor="NI"/>
+										<time nullFlavor="NI"/>
+										<assignedEntity>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<assignedPerson>
+												<name nullFlavor="NI"/>
+											</assignedPerson>
+										</assignedEntity>
+									</performer>
+									<!--
+										DEFECT #1363: entryRelationship/act/author.
+										WAS: nested COMP act had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under nested COMP acts when body acts emit AUT. Form 043/u has no nested-act author identity; do not invent.
+										NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+									-->
+									<author typeCode="AUT">
+										<time nullFlavor="NI"/>
+										<assignedAuthor>
+											<id nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<assignedPerson>
+												<name nullFlavor="NI"/>
+											</assignedPerson>
+											<representedOrganization>
+												<id nullFlavor="NI"/>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</representedOrganization>
+										</assignedAuthor>
+									</author>
+									<!--
+										DEFECT #1364: entryRelationship/act/informant.
+										WAS: nested COMP act had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete nested-act informant; do not invent.
+										NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+									-->
+									<informant typeCode="INF">
+										<assignedEntity>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<assignedPerson>
+												<name nullFlavor="NI"/>
+											</assignedPerson>
+										</assignedEntity>
+									</informant>
+									<!--
+										DEFECT #1365: entryRelationship/act/participant.
+										WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
+										NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+									-->
+									<participant typeCode="IND">
+										<time nullFlavor="NI"/>
+										<associatedEntity classCode="PRS">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<associatedPerson>
+												<name nullFlavor="NI"/>
+											</associatedPerson>
+										</associatedEntity>
+									</participant>
+									<!--
+										DEFECT #1366: entryRelationship/act/entryRelationship.
+										WAS: nested COMP act had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+										NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode NI shells.
+									-->
+									<entryRelationship typeCode="COMP">
+										<act classCode="ACT" moodCode="EVN">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<text nullFlavor="NI"/>
+											<statusCode code="completed"/>
+											<priorityCode nullFlavor="NI"/>
+											<effectiveTime nullFlavor="NI"/>
+											<languageCode code="ru-RU"/>
+											<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+											<interpretationCode nullFlavor="NI"/>
+											<methodCode nullFlavor="NI"/>
+											<targetSiteCode nullFlavor="NI"/>
+											<uncertaintyCode nullFlavor="NI"/>
+										</act>
+									</entryRelationship>
+									<!--
+										DEFECT #1367: entryRelationship/act/reference.
+										WAS: nested COMP act had no reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. Form 043/u has no discrete nested external document here; do not invent OIDs.
+										NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+									-->
+									<reference typeCode="REFR">
+										<externalDocument classCode="DOC" moodCode="EVN">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<text nullFlavor="NI"/>
+											<setId nullFlavor="NI"/>
+											<versionNumber nullFlavor="NI"/>
+										</externalDocument>
+									</reference>
+									<!--
+										DEFECT #1368: entryRelationship/act/precondition.
+										WAS: nested COMP act had no precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested-act precondition criterion; do not invent.
+										NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value NI.
+									-->
+									<precondition typeCode="PRCN">
+										<criterion classCode="OBS" moodCode="EVN">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<text nullFlavor="NI"/>
+											<statusCode code="completed"/>
+											<effectiveTime nullFlavor="NI"/>
+											<priorityCode nullFlavor="NI"/>
+											<languageCode code="ru-RU"/>
+											<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+											<value xsi:type="CD" nullFlavor="NI"/>
+											<!--
+												DEFECT #1534: precondition/criterion/interpretationCode.
+												WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+												NOW: interpretationCode nullFlavor NI.
+											-->
+											<interpretationCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1535: precondition/criterion/methodCode.
+												WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI.
+												NOW: methodCode nullFlavor NI.
+											-->
+											<methodCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1536: precondition/criterion/targetSiteCode.
+												WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI.
+												NOW: targetSiteCode nullFlavor NI.
+											-->
+											<targetSiteCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1537: precondition/criterion/uncertaintyCode.
+												WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI.
+												NOW: uncertaintyCode nullFlavor NI.
+											-->
+											<uncertaintyCode nullFlavor="NI"/>
+										</criterion>
+									</precondition>
 									</act>
 								</entryRelationship>
 								<!--
@@ -5651,6 +6857,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										-->
 										<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 										<value xsi:type="CD" nullFlavor="NI"/>
+										<!--
+											DEFECT #1470: precondition/criterion/interpretationCode.
+											WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+											NOW: interpretationCode nullFlavor NI.
+										-->
+										<interpretationCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1471: precondition/criterion/methodCode.
+											WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+											NOW: methodCode nullFlavor NI.
+										-->
+										<methodCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1472: precondition/criterion/targetSiteCode.
+											WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+											NOW: targetSiteCode nullFlavor NI.
+										-->
+										<targetSiteCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1473: precondition/criterion/uncertaintyCode.
+											WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+											NOW: uncertaintyCode nullFlavor NI.
+										-->
+										<uncertaintyCode nullFlavor="NI"/>
 									</criterion>
 								</precondition>
 								</observationRange>
@@ -6441,6 +7671,187 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1369: entryRelationship/act/subject.
+						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #1370: entryRelationship/act/specimen.
+						WAS: nested COMP act had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries already carry SPC shells. Form 043/u nested COMP acts do not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #1371: entryRelationship/act/performer.
+						WAS: nested COMP act had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under nested COMP acts when serviceEvent/body emit PRF. Form 043/u has no nested-act performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #1372: entryRelationship/act/author.
+						WAS: nested COMP act had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under nested COMP acts when body acts emit AUT. Form 043/u has no nested-act author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #1373: entryRelationship/act/informant.
+						WAS: nested COMP act had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete nested-act informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #1374: entryRelationship/act/participant.
+						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #1375: entryRelationship/act/entryRelationship.
+						WAS: nested COMP act had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #1376: entryRelationship/act/reference.
+						WAS: nested COMP act had no reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. Form 043/u has no discrete nested external document here; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #1377: entryRelationship/act/precondition.
+						WAS: nested COMP act had no precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested-act precondition criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<!--
+								DEFECT #1538: precondition/criterion/interpretationCode.
+								WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+								NOW: interpretationCode nullFlavor NI.
+							-->
+							<interpretationCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1539: precondition/criterion/methodCode.
+								WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI.
+								NOW: methodCode nullFlavor NI.
+							-->
+							<methodCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1540: precondition/criterion/targetSiteCode.
+								WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI.
+								NOW: targetSiteCode nullFlavor NI.
+							-->
+							<targetSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1541: precondition/criterion/uncertaintyCode.
+								WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI.
+								NOW: uncertaintyCode nullFlavor NI.
+							-->
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 					</act>
 				</entryRelationship>
 				<!--
@@ -6484,6 +7895,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						-->
 						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
+						<!--
+							DEFECT #1474: precondition/criterion/interpretationCode.
+							WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+							NOW: interpretationCode nullFlavor NI.
+						-->
+						<interpretationCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1475: precondition/criterion/methodCode.
+							WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+							NOW: methodCode nullFlavor NI.
+						-->
+						<methodCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1476: precondition/criterion/targetSiteCode.
+							WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+							NOW: targetSiteCode nullFlavor NI.
+						-->
+						<targetSiteCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1477: precondition/criterion/uncertaintyCode.
+							WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+							NOW: uncertaintyCode nullFlavor NI.
+						-->
+						<uncertaintyCode nullFlavor="NI"/>
 					</criterion>
 				</precondition>
 				<!--
@@ -6945,6 +8380,187 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: uncertaintyCode nullFlavor NI.
 									-->
 									<uncertaintyCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1378: entryRelationship/act/subject.
+										WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
+										NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+									-->
+									<subject typeCode="SBJ">
+										<relatedSubject>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<subject>
+												<name nullFlavor="NI"/>
+											</subject>
+										</relatedSubject>
+									</subject>
+									<!--
+										DEFECT #1379: entryRelationship/act/specimen.
+										WAS: nested COMP act had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries already carry SPC shells. Form 043/u nested COMP acts do not collect specimen identity; do not invent type codes.
+										NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+									-->
+									<specimen typeCode="SPC">
+										<specimenRole>
+											<id nullFlavor="NI"/>
+											<specimenPlayingEntity>
+												<code nullFlavor="NI"/>
+												<name nullFlavor="NI"/>
+												<desc nullFlavor="NI"/>
+												<quantity nullFlavor="NI"/>
+											</specimenPlayingEntity>
+										</specimenRole>
+									</specimen>
+									<!--
+										DEFECT #1380: entryRelationship/act/performer.
+										WAS: nested COMP act had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under nested COMP acts when serviceEvent/body emit PRF. Form 043/u has no nested-act performer identity; do not invent SNILS/FIO.
+										NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+									-->
+									<performer typeCode="PRF">
+										<functionCode nullFlavor="NI"/>
+										<time nullFlavor="NI"/>
+										<assignedEntity>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<assignedPerson>
+												<name nullFlavor="NI"/>
+											</assignedPerson>
+										</assignedEntity>
+									</performer>
+									<!--
+										DEFECT #1381: entryRelationship/act/author.
+										WAS: nested COMP act had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under nested COMP acts when body acts emit AUT. Form 043/u has no nested-act author identity; do not invent.
+										NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+									-->
+									<author typeCode="AUT">
+										<time nullFlavor="NI"/>
+										<assignedAuthor>
+											<id nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<assignedPerson>
+												<name nullFlavor="NI"/>
+											</assignedPerson>
+											<representedOrganization>
+												<id nullFlavor="NI"/>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</representedOrganization>
+										</assignedAuthor>
+									</author>
+									<!--
+										DEFECT #1382: entryRelationship/act/informant.
+										WAS: nested COMP act had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete nested-act informant; do not invent.
+										NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+									-->
+									<informant typeCode="INF">
+										<assignedEntity>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<assignedPerson>
+												<name nullFlavor="NI"/>
+											</assignedPerson>
+										</assignedEntity>
+									</informant>
+									<!--
+										DEFECT #1383: entryRelationship/act/participant.
+										WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
+										NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+									-->
+									<participant typeCode="IND">
+										<time nullFlavor="NI"/>
+										<associatedEntity classCode="PRS">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<associatedPerson>
+												<name nullFlavor="NI"/>
+											</associatedPerson>
+										</associatedEntity>
+									</participant>
+									<!--
+										DEFECT #1384: entryRelationship/act/entryRelationship.
+										WAS: nested COMP act had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+										NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode NI shells.
+									-->
+									<entryRelationship typeCode="COMP">
+										<act classCode="ACT" moodCode="EVN">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<text nullFlavor="NI"/>
+											<statusCode code="completed"/>
+											<priorityCode nullFlavor="NI"/>
+											<effectiveTime nullFlavor="NI"/>
+											<languageCode code="ru-RU"/>
+											<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+											<interpretationCode nullFlavor="NI"/>
+											<methodCode nullFlavor="NI"/>
+											<targetSiteCode nullFlavor="NI"/>
+											<uncertaintyCode nullFlavor="NI"/>
+										</act>
+									</entryRelationship>
+									<!--
+										DEFECT #1385: entryRelationship/act/reference.
+										WAS: nested COMP act had no reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. Form 043/u has no discrete nested external document here; do not invent OIDs.
+										NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+									-->
+									<reference typeCode="REFR">
+										<externalDocument classCode="DOC" moodCode="EVN">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<text nullFlavor="NI"/>
+											<setId nullFlavor="NI"/>
+											<versionNumber nullFlavor="NI"/>
+										</externalDocument>
+									</reference>
+									<!--
+										DEFECT #1386: entryRelationship/act/precondition.
+										WAS: nested COMP act had no precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested-act precondition criterion; do not invent.
+										NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value NI.
+									-->
+									<precondition typeCode="PRCN">
+										<criterion classCode="OBS" moodCode="EVN">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<text nullFlavor="NI"/>
+											<statusCode code="completed"/>
+											<effectiveTime nullFlavor="NI"/>
+											<priorityCode nullFlavor="NI"/>
+											<languageCode code="ru-RU"/>
+											<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+											<value xsi:type="CD" nullFlavor="NI"/>
+											<!--
+												DEFECT #1542: precondition/criterion/interpretationCode.
+												WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+												NOW: interpretationCode nullFlavor NI.
+											-->
+											<interpretationCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1543: precondition/criterion/methodCode.
+												WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI.
+												NOW: methodCode nullFlavor NI.
+											-->
+											<methodCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1544: precondition/criterion/targetSiteCode.
+												WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI.
+												NOW: targetSiteCode nullFlavor NI.
+											-->
+											<targetSiteCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1545: precondition/criterion/uncertaintyCode.
+												WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI.
+												NOW: uncertaintyCode nullFlavor NI.
+											-->
+											<uncertaintyCode nullFlavor="NI"/>
+										</criterion>
+									</precondition>
 									</act>
 								</entryRelationship>
 								<!--
@@ -7026,6 +8642,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										-->
 										<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 										<value xsi:type="CD" nullFlavor="NI"/>
+										<!--
+											DEFECT #1478: precondition/criterion/interpretationCode.
+											WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+											NOW: interpretationCode nullFlavor NI.
+										-->
+										<interpretationCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1479: precondition/criterion/methodCode.
+											WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+											NOW: methodCode nullFlavor NI.
+										-->
+										<methodCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1480: precondition/criterion/targetSiteCode.
+											WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+											NOW: targetSiteCode nullFlavor NI.
+										-->
+										<targetSiteCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1481: precondition/criterion/uncertaintyCode.
+											WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+											NOW: uncertaintyCode nullFlavor NI.
+										-->
+										<uncertaintyCode nullFlavor="NI"/>
 									</criterion>
 								</precondition>
 								</observationRange>
@@ -7830,6 +9470,187 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1387: entryRelationship/act/subject.
+						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #1388: entryRelationship/act/specimen.
+						WAS: nested COMP act had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries already carry SPC shells. Form 043/u nested COMP acts do not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #1389: entryRelationship/act/performer.
+						WAS: nested COMP act had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under nested COMP acts when serviceEvent/body emit PRF. Form 043/u has no nested-act performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #1390: entryRelationship/act/author.
+						WAS: nested COMP act had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under nested COMP acts when body acts emit AUT. Form 043/u has no nested-act author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #1391: entryRelationship/act/informant.
+						WAS: nested COMP act had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete nested-act informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #1392: entryRelationship/act/participant.
+						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #1393: entryRelationship/act/entryRelationship.
+						WAS: nested COMP act had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #1394: entryRelationship/act/reference.
+						WAS: nested COMP act had no reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. Form 043/u has no discrete nested external document here; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #1395: entryRelationship/act/precondition.
+						WAS: nested COMP act had no precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested-act precondition criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<!--
+								DEFECT #1546: precondition/criterion/interpretationCode.
+								WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+								NOW: interpretationCode nullFlavor NI.
+							-->
+							<interpretationCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1547: precondition/criterion/methodCode.
+								WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI.
+								NOW: methodCode nullFlavor NI.
+							-->
+							<methodCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1548: precondition/criterion/targetSiteCode.
+								WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI.
+								NOW: targetSiteCode nullFlavor NI.
+							-->
+							<targetSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1549: precondition/criterion/uncertaintyCode.
+								WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI.
+								NOW: uncertaintyCode nullFlavor NI.
+							-->
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 					</act>
 				</entryRelationship>
 				<!--
@@ -7873,6 +9694,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						-->
 						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
+						<!--
+							DEFECT #1482: precondition/criterion/interpretationCode.
+							WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+							NOW: interpretationCode nullFlavor NI.
+						-->
+						<interpretationCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1483: precondition/criterion/methodCode.
+							WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+							NOW: methodCode nullFlavor NI.
+						-->
+						<methodCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1484: precondition/criterion/targetSiteCode.
+							WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+							NOW: targetSiteCode nullFlavor NI.
+						-->
+						<targetSiteCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1485: precondition/criterion/uncertaintyCode.
+							WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+							NOW: uncertaintyCode nullFlavor NI.
+						-->
+						<uncertaintyCode nullFlavor="NI"/>
 					</criterion>
 				</precondition>
 				<!--
@@ -8334,6 +10179,187 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: uncertaintyCode nullFlavor NI.
 									-->
 									<uncertaintyCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1396: entryRelationship/act/subject.
+										WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
+										NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+									-->
+									<subject typeCode="SBJ">
+										<relatedSubject>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<subject>
+												<name nullFlavor="NI"/>
+											</subject>
+										</relatedSubject>
+									</subject>
+									<!--
+										DEFECT #1397: entryRelationship/act/specimen.
+										WAS: nested COMP act had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries already carry SPC shells. Form 043/u nested COMP acts do not collect specimen identity; do not invent type codes.
+										NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+									-->
+									<specimen typeCode="SPC">
+										<specimenRole>
+											<id nullFlavor="NI"/>
+											<specimenPlayingEntity>
+												<code nullFlavor="NI"/>
+												<name nullFlavor="NI"/>
+												<desc nullFlavor="NI"/>
+												<quantity nullFlavor="NI"/>
+											</specimenPlayingEntity>
+										</specimenRole>
+									</specimen>
+									<!--
+										DEFECT #1398: entryRelationship/act/performer.
+										WAS: nested COMP act had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under nested COMP acts when serviceEvent/body emit PRF. Form 043/u has no nested-act performer identity; do not invent SNILS/FIO.
+										NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+									-->
+									<performer typeCode="PRF">
+										<functionCode nullFlavor="NI"/>
+										<time nullFlavor="NI"/>
+										<assignedEntity>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<assignedPerson>
+												<name nullFlavor="NI"/>
+											</assignedPerson>
+										</assignedEntity>
+									</performer>
+									<!--
+										DEFECT #1399: entryRelationship/act/author.
+										WAS: nested COMP act had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under nested COMP acts when body acts emit AUT. Form 043/u has no nested-act author identity; do not invent.
+										NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+									-->
+									<author typeCode="AUT">
+										<time nullFlavor="NI"/>
+										<assignedAuthor>
+											<id nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<assignedPerson>
+												<name nullFlavor="NI"/>
+											</assignedPerson>
+											<representedOrganization>
+												<id nullFlavor="NI"/>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</representedOrganization>
+										</assignedAuthor>
+									</author>
+									<!--
+										DEFECT #1400: entryRelationship/act/informant.
+										WAS: nested COMP act had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete nested-act informant; do not invent.
+										NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+									-->
+									<informant typeCode="INF">
+										<assignedEntity>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<assignedPerson>
+												<name nullFlavor="NI"/>
+											</assignedPerson>
+										</assignedEntity>
+									</informant>
+									<!--
+										DEFECT #1401: entryRelationship/act/participant.
+										WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
+										NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+									-->
+									<participant typeCode="IND">
+										<time nullFlavor="NI"/>
+										<associatedEntity classCode="PRS">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<associatedPerson>
+												<name nullFlavor="NI"/>
+											</associatedPerson>
+										</associatedEntity>
+									</participant>
+									<!--
+										DEFECT #1402: entryRelationship/act/entryRelationship.
+										WAS: nested COMP act had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+										NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode NI shells.
+									-->
+									<entryRelationship typeCode="COMP">
+										<act classCode="ACT" moodCode="EVN">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<text nullFlavor="NI"/>
+											<statusCode code="completed"/>
+											<priorityCode nullFlavor="NI"/>
+											<effectiveTime nullFlavor="NI"/>
+											<languageCode code="ru-RU"/>
+											<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+											<interpretationCode nullFlavor="NI"/>
+											<methodCode nullFlavor="NI"/>
+											<targetSiteCode nullFlavor="NI"/>
+											<uncertaintyCode nullFlavor="NI"/>
+										</act>
+									</entryRelationship>
+									<!--
+										DEFECT #1403: entryRelationship/act/reference.
+										WAS: nested COMP act had no reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. Form 043/u has no discrete nested external document here; do not invent OIDs.
+										NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+									-->
+									<reference typeCode="REFR">
+										<externalDocument classCode="DOC" moodCode="EVN">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<text nullFlavor="NI"/>
+											<setId nullFlavor="NI"/>
+											<versionNumber nullFlavor="NI"/>
+										</externalDocument>
+									</reference>
+									<!--
+										DEFECT #1404: entryRelationship/act/precondition.
+										WAS: nested COMP act had no precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested-act precondition criterion; do not invent.
+										NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value NI.
+									-->
+									<precondition typeCode="PRCN">
+										<criterion classCode="OBS" moodCode="EVN">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<text nullFlavor="NI"/>
+											<statusCode code="completed"/>
+											<effectiveTime nullFlavor="NI"/>
+											<priorityCode nullFlavor="NI"/>
+											<languageCode code="ru-RU"/>
+											<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+											<value xsi:type="CD" nullFlavor="NI"/>
+											<!--
+												DEFECT #1550: precondition/criterion/interpretationCode.
+												WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+												NOW: interpretationCode nullFlavor NI.
+											-->
+											<interpretationCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1551: precondition/criterion/methodCode.
+												WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI.
+												NOW: methodCode nullFlavor NI.
+											-->
+											<methodCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1552: precondition/criterion/targetSiteCode.
+												WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI.
+												NOW: targetSiteCode nullFlavor NI.
+											-->
+											<targetSiteCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1553: precondition/criterion/uncertaintyCode.
+												WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI.
+												NOW: uncertaintyCode nullFlavor NI.
+											-->
+											<uncertaintyCode nullFlavor="NI"/>
+										</criterion>
+									</precondition>
 									</act>
 								</entryRelationship>
 								<!--
@@ -8415,6 +10441,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										-->
 										<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 										<value xsi:type="CD" nullFlavor="NI"/>
+										<!--
+											DEFECT #1486: precondition/criterion/interpretationCode.
+											WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+											NOW: interpretationCode nullFlavor NI.
+										-->
+										<interpretationCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1487: precondition/criterion/methodCode.
+											WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+											NOW: methodCode nullFlavor NI.
+										-->
+										<methodCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1488: precondition/criterion/targetSiteCode.
+											WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+											NOW: targetSiteCode nullFlavor NI.
+										-->
+										<targetSiteCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1489: precondition/criterion/uncertaintyCode.
+											WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+											NOW: uncertaintyCode nullFlavor NI.
+										-->
+										<uncertaintyCode nullFlavor="NI"/>
 									</criterion>
 								</precondition>
 								</observationRange>
@@ -9256,6 +11306,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						-->
 						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
+						<!--
+							DEFECT #1490: precondition/criterion/interpretationCode.
+							WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+							NOW: interpretationCode nullFlavor NI.
+						-->
+						<interpretationCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1491: precondition/criterion/methodCode.
+							WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+							NOW: methodCode nullFlavor NI.
+						-->
+						<methodCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1492: precondition/criterion/targetSiteCode.
+							WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+							NOW: targetSiteCode nullFlavor NI.
+						-->
+						<targetSiteCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1493: precondition/criterion/uncertaintyCode.
+							WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+							NOW: uncertaintyCode nullFlavor NI.
+						-->
+						<uncertaintyCode nullFlavor="NI"/>
 					</criterion>
 				</precondition>
 				<!--
@@ -10268,6 +12342,187 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1405: entryRelationship/act/subject.
+						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #1406: entryRelationship/act/specimen.
+						WAS: nested COMP act had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries already carry SPC shells. Form 043/u nested COMP acts do not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #1407: entryRelationship/act/performer.
+						WAS: nested COMP act had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under nested COMP acts when serviceEvent/body emit PRF. Form 043/u has no nested-act performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #1408: entryRelationship/act/author.
+						WAS: nested COMP act had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under nested COMP acts when body acts emit AUT. Form 043/u has no nested-act author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #1409: entryRelationship/act/informant.
+						WAS: nested COMP act had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete nested-act informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #1410: entryRelationship/act/participant.
+						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #1411: entryRelationship/act/entryRelationship.
+						WAS: nested COMP act had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #1412: entryRelationship/act/reference.
+						WAS: nested COMP act had no reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. Form 043/u has no discrete nested external document here; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #1413: entryRelationship/act/precondition.
+						WAS: nested COMP act had no precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested-act precondition criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<!--
+								DEFECT #1554: precondition/criterion/interpretationCode.
+								WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+								NOW: interpretationCode nullFlavor NI.
+							-->
+							<interpretationCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1555: precondition/criterion/methodCode.
+								WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI.
+								NOW: methodCode nullFlavor NI.
+							-->
+							<methodCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1556: precondition/criterion/targetSiteCode.
+								WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI.
+								NOW: targetSiteCode nullFlavor NI.
+							-->
+							<targetSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1557: precondition/criterion/uncertaintyCode.
+								WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI.
+								NOW: uncertaintyCode nullFlavor NI.
+							-->
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 					</act>
 				</entryRelationship>
 				<!--
@@ -10311,6 +12566,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						-->
 						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
+						<!--
+							DEFECT #1494: precondition/criterion/interpretationCode.
+							WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+							NOW: interpretationCode nullFlavor NI.
+						-->
+						<interpretationCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1495: precondition/criterion/methodCode.
+							WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+							NOW: methodCode nullFlavor NI.
+						-->
+						<methodCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1496: precondition/criterion/targetSiteCode.
+							WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+							NOW: targetSiteCode nullFlavor NI.
+						-->
+						<targetSiteCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1497: precondition/criterion/uncertaintyCode.
+							WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+							NOW: uncertaintyCode nullFlavor NI.
+						-->
+						<uncertaintyCode nullFlavor="NI"/>
 					</criterion>
 				</precondition>
 				<!--
@@ -10772,6 +13051,187 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: uncertaintyCode nullFlavor NI.
 									-->
 									<uncertaintyCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1414: entryRelationship/act/subject.
+										WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
+										NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+									-->
+									<subject typeCode="SBJ">
+										<relatedSubject>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<subject>
+												<name nullFlavor="NI"/>
+											</subject>
+										</relatedSubject>
+									</subject>
+									<!--
+										DEFECT #1415: entryRelationship/act/specimen.
+										WAS: nested COMP act had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries already carry SPC shells. Form 043/u nested COMP acts do not collect specimen identity; do not invent type codes.
+										NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+									-->
+									<specimen typeCode="SPC">
+										<specimenRole>
+											<id nullFlavor="NI"/>
+											<specimenPlayingEntity>
+												<code nullFlavor="NI"/>
+												<name nullFlavor="NI"/>
+												<desc nullFlavor="NI"/>
+												<quantity nullFlavor="NI"/>
+											</specimenPlayingEntity>
+										</specimenRole>
+									</specimen>
+									<!--
+										DEFECT #1416: entryRelationship/act/performer.
+										WAS: nested COMP act had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under nested COMP acts when serviceEvent/body emit PRF. Form 043/u has no nested-act performer identity; do not invent SNILS/FIO.
+										NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+									-->
+									<performer typeCode="PRF">
+										<functionCode nullFlavor="NI"/>
+										<time nullFlavor="NI"/>
+										<assignedEntity>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<assignedPerson>
+												<name nullFlavor="NI"/>
+											</assignedPerson>
+										</assignedEntity>
+									</performer>
+									<!--
+										DEFECT #1417: entryRelationship/act/author.
+										WAS: nested COMP act had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under nested COMP acts when body acts emit AUT. Form 043/u has no nested-act author identity; do not invent.
+										NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+									-->
+									<author typeCode="AUT">
+										<time nullFlavor="NI"/>
+										<assignedAuthor>
+											<id nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<assignedPerson>
+												<name nullFlavor="NI"/>
+											</assignedPerson>
+											<representedOrganization>
+												<id nullFlavor="NI"/>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</representedOrganization>
+										</assignedAuthor>
+									</author>
+									<!--
+										DEFECT #1418: entryRelationship/act/informant.
+										WAS: nested COMP act had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete nested-act informant; do not invent.
+										NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+									-->
+									<informant typeCode="INF">
+										<assignedEntity>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<assignedPerson>
+												<name nullFlavor="NI"/>
+											</assignedPerson>
+										</assignedEntity>
+									</informant>
+									<!--
+										DEFECT #1419: entryRelationship/act/participant.
+										WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
+										NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+									-->
+									<participant typeCode="IND">
+										<time nullFlavor="NI"/>
+										<associatedEntity classCode="PRS">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<associatedPerson>
+												<name nullFlavor="NI"/>
+											</associatedPerson>
+										</associatedEntity>
+									</participant>
+									<!--
+										DEFECT #1420: entryRelationship/act/entryRelationship.
+										WAS: nested COMP act had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+										NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode NI shells.
+									-->
+									<entryRelationship typeCode="COMP">
+										<act classCode="ACT" moodCode="EVN">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<text nullFlavor="NI"/>
+											<statusCode code="completed"/>
+											<priorityCode nullFlavor="NI"/>
+											<effectiveTime nullFlavor="NI"/>
+											<languageCode code="ru-RU"/>
+											<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+											<interpretationCode nullFlavor="NI"/>
+											<methodCode nullFlavor="NI"/>
+											<targetSiteCode nullFlavor="NI"/>
+											<uncertaintyCode nullFlavor="NI"/>
+										</act>
+									</entryRelationship>
+									<!--
+										DEFECT #1421: entryRelationship/act/reference.
+										WAS: nested COMP act had no reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. Form 043/u has no discrete nested external document here; do not invent OIDs.
+										NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+									-->
+									<reference typeCode="REFR">
+										<externalDocument classCode="DOC" moodCode="EVN">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<text nullFlavor="NI"/>
+											<setId nullFlavor="NI"/>
+											<versionNumber nullFlavor="NI"/>
+										</externalDocument>
+									</reference>
+									<!--
+										DEFECT #1422: entryRelationship/act/precondition.
+										WAS: nested COMP act had no precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested-act precondition criterion; do not invent.
+										NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value NI.
+									-->
+									<precondition typeCode="PRCN">
+										<criterion classCode="OBS" moodCode="EVN">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<text nullFlavor="NI"/>
+											<statusCode code="completed"/>
+											<effectiveTime nullFlavor="NI"/>
+											<priorityCode nullFlavor="NI"/>
+											<languageCode code="ru-RU"/>
+											<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+											<value xsi:type="CD" nullFlavor="NI"/>
+											<!--
+												DEFECT #1558: precondition/criterion/interpretationCode.
+												WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+												NOW: interpretationCode nullFlavor NI.
+											-->
+											<interpretationCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1559: precondition/criterion/methodCode.
+												WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI.
+												NOW: methodCode nullFlavor NI.
+											-->
+											<methodCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1560: precondition/criterion/targetSiteCode.
+												WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI.
+												NOW: targetSiteCode nullFlavor NI.
+											-->
+											<targetSiteCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1561: precondition/criterion/uncertaintyCode.
+												WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI.
+												NOW: uncertaintyCode nullFlavor NI.
+											-->
+											<uncertaintyCode nullFlavor="NI"/>
+										</criterion>
+									</precondition>
 									</act>
 								</entryRelationship>
 								<!--
@@ -10853,6 +13313,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										-->
 										<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 										<value xsi:type="CD" nullFlavor="NI"/>
+										<!--
+											DEFECT #1498: precondition/criterion/interpretationCode.
+											WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+											NOW: interpretationCode nullFlavor NI.
+										-->
+										<interpretationCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1499: precondition/criterion/methodCode.
+											WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+											NOW: methodCode nullFlavor NI.
+										-->
+										<methodCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1500: precondition/criterion/targetSiteCode.
+											WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+											NOW: targetSiteCode nullFlavor NI.
+										-->
+										<targetSiteCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1501: precondition/criterion/uncertaintyCode.
+											WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+											NOW: uncertaintyCode nullFlavor NI.
+										-->
+										<uncertaintyCode nullFlavor="NI"/>
 									</criterion>
 								</precondition>
 								</observationRange>
@@ -11656,6 +14140,187 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1423: entryRelationship/act/subject.
+						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #1424: entryRelationship/act/specimen.
+						WAS: nested COMP act had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries already carry SPC shells. Form 043/u nested COMP acts do not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #1425: entryRelationship/act/performer.
+						WAS: nested COMP act had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under nested COMP acts when serviceEvent/body emit PRF. Form 043/u has no nested-act performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #1426: entryRelationship/act/author.
+						WAS: nested COMP act had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under nested COMP acts when body acts emit AUT. Form 043/u has no nested-act author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #1427: entryRelationship/act/informant.
+						WAS: nested COMP act had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete nested-act informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #1428: entryRelationship/act/participant.
+						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #1429: entryRelationship/act/entryRelationship.
+						WAS: nested COMP act had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #1430: entryRelationship/act/reference.
+						WAS: nested COMP act had no reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. Form 043/u has no discrete nested external document here; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #1431: entryRelationship/act/precondition.
+						WAS: nested COMP act had no precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested-act precondition criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<!--
+								DEFECT #1562: precondition/criterion/interpretationCode.
+								WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+								NOW: interpretationCode nullFlavor NI.
+							-->
+							<interpretationCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1563: precondition/criterion/methodCode.
+								WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI.
+								NOW: methodCode nullFlavor NI.
+							-->
+							<methodCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1564: precondition/criterion/targetSiteCode.
+								WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI.
+								NOW: targetSiteCode nullFlavor NI.
+							-->
+							<targetSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1565: precondition/criterion/uncertaintyCode.
+								WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI.
+								NOW: uncertaintyCode nullFlavor NI.
+							-->
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 					</act>
 				</entryRelationship>
 				<!--
@@ -11699,6 +14364,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						-->
 						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
+						<!--
+							DEFECT #1502: precondition/criterion/interpretationCode.
+							WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+							NOW: interpretationCode nullFlavor NI.
+						-->
+						<interpretationCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1503: precondition/criterion/methodCode.
+							WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+							NOW: methodCode nullFlavor NI.
+						-->
+						<methodCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1504: precondition/criterion/targetSiteCode.
+							WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+							NOW: targetSiteCode nullFlavor NI.
+						-->
+						<targetSiteCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1505: precondition/criterion/uncertaintyCode.
+							WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+							NOW: uncertaintyCode nullFlavor NI.
+						-->
+						<uncertaintyCode nullFlavor="NI"/>
 					</criterion>
 				</precondition>
 				<!--
@@ -12160,6 +14849,187 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: uncertaintyCode nullFlavor NI.
 									-->
 									<uncertaintyCode nullFlavor="NI"/>
+									<!--
+										DEFECT #1432: entryRelationship/act/subject.
+										WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
+										NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+									-->
+									<subject typeCode="SBJ">
+										<relatedSubject>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<subject>
+												<name nullFlavor="NI"/>
+											</subject>
+										</relatedSubject>
+									</subject>
+									<!--
+										DEFECT #1433: entryRelationship/act/specimen.
+										WAS: nested COMP act had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries already carry SPC shells. Form 043/u nested COMP acts do not collect specimen identity; do not invent type codes.
+										NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+									-->
+									<specimen typeCode="SPC">
+										<specimenRole>
+											<id nullFlavor="NI"/>
+											<specimenPlayingEntity>
+												<code nullFlavor="NI"/>
+												<name nullFlavor="NI"/>
+												<desc nullFlavor="NI"/>
+												<quantity nullFlavor="NI"/>
+											</specimenPlayingEntity>
+										</specimenRole>
+									</specimen>
+									<!--
+										DEFECT #1434: entryRelationship/act/performer.
+										WAS: nested COMP act had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under nested COMP acts when serviceEvent/body emit PRF. Form 043/u has no nested-act performer identity; do not invent SNILS/FIO.
+										NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+									-->
+									<performer typeCode="PRF">
+										<functionCode nullFlavor="NI"/>
+										<time nullFlavor="NI"/>
+										<assignedEntity>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<assignedPerson>
+												<name nullFlavor="NI"/>
+											</assignedPerson>
+										</assignedEntity>
+									</performer>
+									<!--
+										DEFECT #1435: entryRelationship/act/author.
+										WAS: nested COMP act had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under nested COMP acts when body acts emit AUT. Form 043/u has no nested-act author identity; do not invent.
+										NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+									-->
+									<author typeCode="AUT">
+										<time nullFlavor="NI"/>
+										<assignedAuthor>
+											<id nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<assignedPerson>
+												<name nullFlavor="NI"/>
+											</assignedPerson>
+											<representedOrganization>
+												<id nullFlavor="NI"/>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</representedOrganization>
+										</assignedAuthor>
+									</author>
+									<!--
+										DEFECT #1436: entryRelationship/act/informant.
+										WAS: nested COMP act had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete nested-act informant; do not invent.
+										NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+									-->
+									<informant typeCode="INF">
+										<assignedEntity>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<assignedPerson>
+												<name nullFlavor="NI"/>
+											</assignedPerson>
+										</assignedEntity>
+									</informant>
+									<!--
+										DEFECT #1437: entryRelationship/act/participant.
+										WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
+										NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+									-->
+									<participant typeCode="IND">
+										<time nullFlavor="NI"/>
+										<associatedEntity classCode="PRS">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<associatedPerson>
+												<name nullFlavor="NI"/>
+											</associatedPerson>
+										</associatedEntity>
+									</participant>
+									<!--
+										DEFECT #1438: entryRelationship/act/entryRelationship.
+										WAS: nested COMP act had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+										NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode NI shells.
+									-->
+									<entryRelationship typeCode="COMP">
+										<act classCode="ACT" moodCode="EVN">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<text nullFlavor="NI"/>
+											<statusCode code="completed"/>
+											<priorityCode nullFlavor="NI"/>
+											<effectiveTime nullFlavor="NI"/>
+											<languageCode code="ru-RU"/>
+											<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+											<interpretationCode nullFlavor="NI"/>
+											<methodCode nullFlavor="NI"/>
+											<targetSiteCode nullFlavor="NI"/>
+											<uncertaintyCode nullFlavor="NI"/>
+										</act>
+									</entryRelationship>
+									<!--
+										DEFECT #1439: entryRelationship/act/reference.
+										WAS: nested COMP act had no reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. Form 043/u has no discrete nested external document here; do not invent OIDs.
+										NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+									-->
+									<reference typeCode="REFR">
+										<externalDocument classCode="DOC" moodCode="EVN">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<text nullFlavor="NI"/>
+											<setId nullFlavor="NI"/>
+											<versionNumber nullFlavor="NI"/>
+										</externalDocument>
+									</reference>
+									<!--
+										DEFECT #1440: entryRelationship/act/precondition.
+										WAS: nested COMP act had no precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested-act precondition criterion; do not invent.
+										NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value NI.
+									-->
+									<precondition typeCode="PRCN">
+										<criterion classCode="OBS" moodCode="EVN">
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<text nullFlavor="NI"/>
+											<statusCode code="completed"/>
+											<effectiveTime nullFlavor="NI"/>
+											<priorityCode nullFlavor="NI"/>
+											<languageCode code="ru-RU"/>
+											<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+											<value xsi:type="CD" nullFlavor="NI"/>
+											<!--
+												DEFECT #1566: precondition/criterion/interpretationCode.
+												WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+												NOW: interpretationCode nullFlavor NI.
+											-->
+											<interpretationCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1567: precondition/criterion/methodCode.
+												WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI.
+												NOW: methodCode nullFlavor NI.
+											-->
+											<methodCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1568: precondition/criterion/targetSiteCode.
+												WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI.
+												NOW: targetSiteCode nullFlavor NI.
+											-->
+											<targetSiteCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1569: precondition/criterion/uncertaintyCode.
+												WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI.
+												NOW: uncertaintyCode nullFlavor NI.
+											-->
+											<uncertaintyCode nullFlavor="NI"/>
+										</criterion>
+									</precondition>
 									</act>
 								</entryRelationship>
 								<!--
@@ -12241,6 +15111,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										-->
 										<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 										<value xsi:type="CD" nullFlavor="NI"/>
+										<!--
+											DEFECT #1506: precondition/criterion/interpretationCode.
+											WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+											NOW: interpretationCode nullFlavor NI.
+										-->
+										<interpretationCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1507: precondition/criterion/methodCode.
+											WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+											NOW: methodCode nullFlavor NI.
+										-->
+										<methodCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1508: precondition/criterion/targetSiteCode.
+											WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+											NOW: targetSiteCode nullFlavor NI.
+										-->
+										<targetSiteCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1509: precondition/criterion/uncertaintyCode.
+											WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+											NOW: uncertaintyCode nullFlavor NI.
+										-->
+										<uncertaintyCode nullFlavor="NI"/>
 									</criterion>
 								</precondition>
 								</observationRange>
@@ -13121,6 +16015,187 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1441: entryRelationship/act/subject.
+						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
+						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<!--
+						DEFECT #1442: entryRelationship/act/specimen.
+						WAS: nested COMP act had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries already carry SPC shells. Form 043/u nested COMP acts do not collect specimen identity; do not invent type codes.
+						NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+					-->
+					<specimen typeCode="SPC">
+						<specimenRole>
+							<id nullFlavor="NI"/>
+							<specimenPlayingEntity>
+								<code nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<desc nullFlavor="NI"/>
+								<quantity nullFlavor="NI"/>
+							</specimenPlayingEntity>
+						</specimenRole>
+					</specimen>
+					<!--
+						DEFECT #1443: entryRelationship/act/performer.
+						WAS: nested COMP act had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under nested COMP acts when serviceEvent/body emit PRF. Form 043/u has no nested-act performer identity; do not invent SNILS/FIO.
+						NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<performer typeCode="PRF">
+						<functionCode nullFlavor="NI"/>
+						<time nullFlavor="NI"/>
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</performer>
+					<!--
+						DEFECT #1444: entryRelationship/act/author.
+						WAS: nested COMP act had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under nested COMP acts when body acts emit AUT. Form 043/u has no nested-act author identity; do not invent.
+						NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+					-->
+					<author typeCode="AUT">
+						<time nullFlavor="NI"/>
+						<assignedAuthor>
+							<id nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</representedOrganization>
+						</assignedAuthor>
+					</author>
+					<!--
+						DEFECT #1445: entryRelationship/act/informant.
+						WAS: nested COMP act had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete nested-act informant; do not invent.
+						NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+					-->
+					<informant typeCode="INF">
+						<assignedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<assignedPerson>
+								<name nullFlavor="NI"/>
+							</assignedPerson>
+						</assignedEntity>
+					</informant>
+					<!--
+						DEFECT #1446: entryRelationship/act/participant.
+						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
+						NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+					-->
+					<participant typeCode="IND">
+						<time nullFlavor="NI"/>
+						<associatedEntity classCode="PRS">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<associatedPerson>
+								<name nullFlavor="NI"/>
+							</associatedPerson>
+						</associatedEntity>
+					</participant>
+					<!--
+						DEFECT #1447: entryRelationship/act/entryRelationship.
+						WAS: nested COMP act had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Form 043/u has no nested related-act graph here; do not invent codes.
+						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode NI shells.
+					-->
+					<entryRelationship typeCode="COMP">
+						<act classCode="ACT" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<priorityCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<interpretationCode nullFlavor="NI"/>
+							<methodCode nullFlavor="NI"/>
+							<targetSiteCode nullFlavor="NI"/>
+							<uncertaintyCode nullFlavor="NI"/>
+						</act>
+					</entryRelationship>
+					<!--
+						DEFECT #1448: entryRelationship/act/reference.
+						WAS: nested COMP act had no reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. Form 043/u has no discrete nested external document here; do not invent OIDs.
+						NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+					-->
+					<reference typeCode="REFR">
+						<externalDocument classCode="DOC" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<setId nullFlavor="NI"/>
+							<versionNumber nullFlavor="NI"/>
+						</externalDocument>
+					</reference>
+					<!--
+						DEFECT #1449: entryRelationship/act/precondition.
+						WAS: nested COMP act had no precondition. HL7 CDA R2 Act has precondition 0..*. Form 043/u has no discrete nested-act precondition criterion; do not invent.
+						NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN id/code/text/statusCode/effectiveTime/priorityCode/languageCode/confidentialityCode/value NI.
+					-->
+					<precondition typeCode="PRCN">
+						<criterion classCode="OBS" moodCode="EVN">
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<text nullFlavor="NI"/>
+							<statusCode code="completed"/>
+							<effectiveTime nullFlavor="NI"/>
+							<priorityCode nullFlavor="NI"/>
+							<languageCode code="ru-RU"/>
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
+							<value xsi:type="CD" nullFlavor="NI"/>
+							<!--
+								DEFECT #1570: precondition/criterion/interpretationCode.
+								WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+								NOW: interpretationCode nullFlavor NI.
+							-->
+							<interpretationCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1571: precondition/criterion/methodCode.
+								WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI.
+								NOW: methodCode nullFlavor NI.
+							-->
+							<methodCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1572: precondition/criterion/targetSiteCode.
+								WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI.
+								NOW: targetSiteCode nullFlavor NI.
+							-->
+							<targetSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1573: precondition/criterion/uncertaintyCode.
+								WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI.
+								NOW: uncertaintyCode nullFlavor NI.
+							-->
+							<uncertaintyCode nullFlavor="NI"/>
+						</criterion>
+					</precondition>
 					</act>
 				</entryRelationship>
 				<!--
@@ -13164,6 +16239,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						-->
 						<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Normal"/>
 						<value xsi:type="CD" nullFlavor="NI"/>
+						<!--
+							DEFECT #1510: precondition/criterion/interpretationCode.
+							WAS: compact criterion had id/time/priority/language/confidentiality/value — no interpretationCode. Parent Act shells emit interpretationCode NI. SEMD often flags missing interpretation under precondition criterion. Form 043/u has no criterion interpretation; do not invent.
+							NOW: interpretationCode nullFlavor NI.
+						-->
+						<interpretationCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1511: precondition/criterion/methodCode.
+							WAS: compact criterion had no methodCode. Parent Act shells emit methodCode NI. SEMD often flags missing method under precondition criterion.
+							NOW: methodCode nullFlavor NI.
+						-->
+						<methodCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1512: precondition/criterion/targetSiteCode.
+							WAS: compact criterion had no targetSiteCode. Parent Act shells emit targetSiteCode NI. SEMD often flags missing target site under precondition criterion.
+							NOW: targetSiteCode nullFlavor NI.
+						-->
+						<targetSiteCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1513: precondition/criterion/uncertaintyCode.
+							WAS: compact criterion had no uncertaintyCode. Parent Act shells emit uncertaintyCode NI. SEMD often flags missing uncertainty under precondition criterion.
+							NOW: uncertaintyCode nullFlavor NI.
+						-->
+						<uncertaintyCode nullFlavor="NI"/>
 					</criterion>
 				</precondition>
 				<!--
