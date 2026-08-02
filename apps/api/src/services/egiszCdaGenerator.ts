@@ -683,6 +683,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<given>${escapeXml(params.doctorName.first)}</given>
 					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 				</name>
+				<!--
+					DEFECT #1574: assignedPerson/administrativeGenderCode.
+					WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+					Form 043/u chart does not collect this person sex; do not invent M/F.
+					NOW: administrativeGenderCode nullFlavor NI.
+				-->
+				<administrativeGenderCode nullFlavor="NI"/>
+				<!--
+					DEFECT #1575: assignedPerson/birthTime.
+					WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+					Form 043/u chart does not collect this person DOB; do not invent.
+					NOW: birthTime nullFlavor NI.
+				-->
+				<birthTime nullFlavor="NI"/>
+				<!--
+					DEFECT #1576: assignedPerson/birthplace.
+					WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+					SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+					NOW: birthplace/place name/addr/telecom NI.
+				-->
+				<birthplace>
+					<place>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</place>
+				</birthplace>
 			</assignedPerson>
 			${/*
 			 * DEFECT #83: assignedAuthor must carry representedOrganization.
@@ -781,6 +808,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<given>${escapeXml(params.doctorName.first)}</given>
 					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 				</name>
+				<!--
+					DEFECT #1577: assignedPerson/administrativeGenderCode.
+					WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+					Form 043/u chart does not collect this person sex; do not invent M/F.
+					NOW: administrativeGenderCode nullFlavor NI.
+				-->
+				<administrativeGenderCode nullFlavor="NI"/>
+				<!--
+					DEFECT #1578: assignedPerson/birthTime.
+					WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+					Form 043/u chart does not collect this person DOB; do not invent.
+					NOW: birthTime nullFlavor NI.
+				-->
+				<birthTime nullFlavor="NI"/>
+				<!--
+					DEFECT #1579: assignedPerson/birthplace.
+					WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+					SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+					NOW: birthplace/place name/addr/telecom NI.
+				-->
+				<birthplace>
+					<place>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</place>
+				</birthplace>
 			</assignedPerson>
 			${`<representedOrganization>
 				${
@@ -862,6 +916,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<given>${escapeXml(params.doctorName.first)}</given>
 					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 				</name>
+				<!--
+					DEFECT #1580: assignedPerson/administrativeGenderCode.
+					WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+					Form 043/u chart does not collect this person sex; do not invent M/F.
+					NOW: administrativeGenderCode nullFlavor NI.
+				-->
+				<administrativeGenderCode nullFlavor="NI"/>
+				<!--
+					DEFECT #1581: assignedPerson/birthTime.
+					WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+					Form 043/u chart does not collect this person DOB; do not invent.
+					NOW: birthTime nullFlavor NI.
+				-->
+				<birthTime nullFlavor="NI"/>
+				<!--
+					DEFECT #1582: assignedPerson/birthplace.
+					WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+					SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+					NOW: birthplace/place name/addr/telecom NI.
+				-->
+				<birthplace>
+					<place>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</place>
+				</birthplace>
 			</assignedPerson>
 			${`<representedOrganization>
 				${
@@ -1053,6 +1134,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<given>${escapeXml(params.doctorName.first)}</given>
 					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 				</name>
+				<!--
+					DEFECT #1583: assignedPerson/administrativeGenderCode.
+					WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+					Form 043/u chart does not collect this person sex; do not invent M/F.
+					NOW: administrativeGenderCode nullFlavor NI.
+				-->
+				<administrativeGenderCode nullFlavor="NI"/>
+				<!--
+					DEFECT #1584: assignedPerson/birthTime.
+					WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+					Form 043/u chart does not collect this person DOB; do not invent.
+					NOW: birthTime nullFlavor NI.
+				-->
+				<birthTime nullFlavor="NI"/>
+				<!--
+					DEFECT #1585: assignedPerson/birthplace.
+					WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+					SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+					NOW: birthplace/place name/addr/telecom NI.
+				-->
+				<birthplace>
+					<place>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</place>
+				</birthplace>
 			</assignedPerson>
 			<representedOrganization>
 				${/*
@@ -1163,6 +1271,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<given>${escapeXml(params.doctorName.first)}</given>
 					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 				</name>
+				<!--
+					DEFECT #1586: assignedPerson/administrativeGenderCode.
+					WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+					Form 043/u chart does not collect this person sex; do not invent M/F.
+					NOW: administrativeGenderCode nullFlavor NI.
+				-->
+				<administrativeGenderCode nullFlavor="NI"/>
+				<!--
+					DEFECT #1587: assignedPerson/birthTime.
+					WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+					Form 043/u chart does not collect this person DOB; do not invent.
+					NOW: birthTime nullFlavor NI.
+				-->
+				<birthTime nullFlavor="NI"/>
+				<!--
+					DEFECT #1588: assignedPerson/birthplace.
+					WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+					SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+					NOW: birthplace/place name/addr/telecom NI.
+				-->
+				<birthplace>
+					<place>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</place>
+				</birthplace>
 			</assignedPerson>
 			<representedOrganization>
 				${/*
@@ -1461,6 +1596,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<given>${escapeXml(params.doctorName.first)}</given>
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
+						<!--
+							DEFECT #1589: assignedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1590: assignedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1591: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</assignedPerson>
 					<representedOrganization>
 						${/*
@@ -1521,6 +1683,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<given>${escapeXml(params.doctorName.first)}</given>
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
+						<!--
+							DEFECT #1592: assignedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1593: assignedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1594: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</assignedPerson>
 					<representedOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
@@ -1568,6 +1757,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<given>${escapeXml(params.doctorName.first)}</given>
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
+						<!--
+							DEFECT #1595: assignedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1596: assignedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1597: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</assignedPerson>
 					<representedOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
@@ -1614,6 +1830,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<given>${escapeXml(params.doctorName.first)}</given>
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
+						<!--
+							DEFECT #1598: associatedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1599: associatedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1600: associatedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</associatedPerson>
 					<scopingOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
@@ -1800,6 +2043,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<subject>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1601: relatedSubject/subject/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1602: relatedSubject/subject/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1603: relatedSubject/subject/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</subject>
 					</relatedSubject>
 				</subject>
@@ -1834,6 +2104,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1604: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1605: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1606: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</performer>
@@ -1850,6 +2147,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1607: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1608: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1609: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -1872,6 +2196,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1610: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1611: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1612: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</informant>
@@ -1889,6 +2240,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<associatedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1613: associatedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1614: associatedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1615: associatedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</associatedPerson>
 					</associatedEntity>
 				</participant>
@@ -1953,6 +2331,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<subject>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1616: relatedSubject/subject/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1617: relatedSubject/subject/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1618: relatedSubject/subject/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</subject>
 						</relatedSubject>
 					</subject>
@@ -1987,6 +2392,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1619: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1620: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1621: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</performer>
@@ -2003,6 +2435,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1622: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1623: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1624: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -2025,6 +2484,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1625: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1626: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1627: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</informant>
@@ -2042,6 +2528,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<associatedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1628: associatedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1629: associatedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1630: associatedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</associatedPerson>
 						</associatedEntity>
 					</participant>
@@ -2429,6 +2942,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: birthTime nullFlavor NI.
 						-->
 						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1631: relatedSubject/subject/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</subject>
 				</relatedSubject>
 			</subject>
@@ -2624,6 +3150,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<assignedPerson>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #1632: assignedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1633: assignedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1634: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</assignedPerson>
 					<!--
 						DEFECT #910: inFulfillmentOf/order/author/assignedAuthor/representedOrganization.
@@ -2656,6 +3209,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<telecom nullFlavor="NI"/>
 				<subject>
 					<name nullFlavor="NI"/>
+					<!--
+						DEFECT #1635: relatedSubject/subject/administrativeGenderCode.
+						WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+						Form 043/u chart does not collect this person sex; do not invent M/F.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1636: relatedSubject/subject/birthTime.
+						WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+						Form 043/u chart does not collect this person DOB; do not invent.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1637: relatedSubject/subject/birthplace.
+						WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+						SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
 				</subject>
 			</relatedSubject>
 		</subject>
@@ -2690,6 +3270,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<telecom nullFlavor="NI"/>
 				<assignedPerson>
 					<name nullFlavor="NI"/>
+					<!--
+						DEFECT #1638: assignedPerson/administrativeGenderCode.
+						WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+						Form 043/u chart does not collect this person sex; do not invent M/F.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1639: assignedPerson/birthTime.
+						WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+						Form 043/u chart does not collect this person DOB; do not invent.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1640: assignedPerson/birthplace.
+						WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+						SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
 				</assignedPerson>
 			</assignedEntity>
 		</performer>
@@ -2706,6 +3313,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<telecom nullFlavor="NI"/>
 				<assignedPerson>
 					<name nullFlavor="NI"/>
+					<!--
+						DEFECT #1641: assignedPerson/administrativeGenderCode.
+						WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+						Form 043/u chart does not collect this person sex; do not invent M/F.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1642: assignedPerson/birthTime.
+						WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+						Form 043/u chart does not collect this person DOB; do not invent.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1643: assignedPerson/birthplace.
+						WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+						SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
 				</assignedPerson>
 			</assignedEntity>
 		</informant>
@@ -2723,6 +3357,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<telecom nullFlavor="NI"/>
 				<associatedPerson>
 					<name nullFlavor="NI"/>
+					<!--
+						DEFECT #1644: associatedPerson/administrativeGenderCode.
+						WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+						Form 043/u chart does not collect this person sex; do not invent M/F.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1645: associatedPerson/birthTime.
+						WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+						Form 043/u chart does not collect this person DOB; do not invent.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1646: associatedPerson/birthplace.
+						WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+						SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
 				</associatedPerson>
 			</associatedEntity>
 		</participant>
@@ -2787,6 +3448,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<subject>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #1647: relatedSubject/subject/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1648: relatedSubject/subject/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1649: relatedSubject/subject/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</subject>
 				</relatedSubject>
 			</subject>
@@ -2821,6 +3509,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<assignedPerson>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #1650: assignedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1651: assignedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1652: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</assignedPerson>
 				</assignedEntity>
 			</performer>
@@ -2837,6 +3552,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<assignedPerson>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #1653: assignedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1654: assignedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1655: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</assignedPerson>
 					<representedOrganization>
 						<id nullFlavor="NI"/>
@@ -2859,6 +3601,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<assignedPerson>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #1656: assignedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1657: assignedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1658: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</assignedPerson>
 				</assignedEntity>
 			</informant>
@@ -2876,6 +3645,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<associatedPerson>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #1659: associatedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1660: associatedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1661: associatedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</associatedPerson>
 				</associatedEntity>
 			</participant>
@@ -3135,6 +3931,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<given>${escapeXml(params.doctorName.first)}</given>
 					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 				</name>
+				<!--
+					DEFECT #1662: associatedPerson/administrativeGenderCode.
+					WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+					Form 043/u chart does not collect this person sex; do not invent M/F.
+					NOW: administrativeGenderCode nullFlavor NI.
+				-->
+				<administrativeGenderCode nullFlavor="NI"/>
+				<!--
+					DEFECT #1663: associatedPerson/birthTime.
+					WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+					Form 043/u chart does not collect this person DOB; do not invent.
+					NOW: birthTime nullFlavor NI.
+				-->
+				<birthTime nullFlavor="NI"/>
+				<!--
+					DEFECT #1664: associatedPerson/birthplace.
+					WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+					SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+					NOW: birthplace/place name/addr/telecom NI.
+				-->
+				<birthplace>
+					<place>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</place>
+				</birthplace>
 			</associatedPerson>
 			${`<scopingOrganization>
 				${
@@ -3257,6 +4080,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<assignedPerson>
 
 					<name nullFlavor="NI"/>
+					<!--
+						DEFECT #1665: assignedPerson/administrativeGenderCode.
+						WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+						Form 043/u chart does not collect this person sex; do not invent M/F.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1666: assignedPerson/birthTime.
+						WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+						Form 043/u chart does not collect this person DOB; do not invent.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1667: assignedPerson/birthplace.
+						WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+						SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
 
 				</assignedPerson>
 
@@ -3284,6 +4134,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<telecom nullFlavor="NI"/>
 				<assignedPerson>
 					<name nullFlavor="NI"/>
+					<!--
+						DEFECT #1668: assignedPerson/administrativeGenderCode.
+						WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+						Form 043/u chart does not collect this person sex; do not invent M/F.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1669: assignedPerson/birthTime.
+						WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+						Form 043/u chart does not collect this person DOB; do not invent.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1670: assignedPerson/birthplace.
+						WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+						SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
 				</assignedPerson>
 			</assignedAuthor>
 		</author>
@@ -3300,6 +4177,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<telecom nullFlavor="NI"/>
 				<assignedPerson>
 					<name nullFlavor="NI"/>
+					<!--
+						DEFECT #1671: assignedPerson/administrativeGenderCode.
+						WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+						Form 043/u chart does not collect this person sex; do not invent M/F.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1672: assignedPerson/birthTime.
+						WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+						Form 043/u chart does not collect this person DOB; do not invent.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1673: assignedPerson/birthplace.
+						WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+						SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
 				</assignedPerson>
 			</assignedEntity>
 		</informant>
@@ -3335,6 +4239,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: birthTime nullFlavor NI; do not invent witness DOB.
 					-->
 					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1674: associatedPerson/birthplace.
+						WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+						SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
 				</associatedPerson>
 				<!--
 					DEFECT #908: consent/participant/WIT/associatedEntity/scopingOrganization.
@@ -3367,6 +4284,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<telecom nullFlavor="NI"/>
 				<subject>
 					<name nullFlavor="NI"/>
+					<!--
+						DEFECT #1675: relatedSubject/subject/administrativeGenderCode.
+						WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+						Form 043/u chart does not collect this person sex; do not invent M/F.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #1676: relatedSubject/subject/birthTime.
+						WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+						Form 043/u chart does not collect this person DOB; do not invent.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #1677: relatedSubject/subject/birthplace.
+						WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+						SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
 				</subject>
 			</relatedSubject>
 		</subject>
@@ -3447,6 +4391,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<subject>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #1678: relatedSubject/subject/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1679: relatedSubject/subject/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1680: relatedSubject/subject/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</subject>
 				</relatedSubject>
 			</subject>
@@ -3481,6 +4452,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<assignedPerson>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #1681: assignedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1682: assignedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1683: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</assignedPerson>
 				</assignedEntity>
 			</performer>
@@ -3497,6 +4495,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<assignedPerson>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #1684: assignedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1685: assignedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1686: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</assignedPerson>
 					<representedOrganization>
 						<id nullFlavor="NI"/>
@@ -3519,6 +4544,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<assignedPerson>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #1687: assignedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1688: assignedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1689: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</assignedPerson>
 				</assignedEntity>
 			</informant>
@@ -3536,6 +4588,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<associatedPerson>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #1690: associatedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1691: associatedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1692: associatedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</associatedPerson>
 				</associatedEntity>
 			</participant>
@@ -3980,6 +5059,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<given>${escapeXml(params.doctorName.first)}</given>
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
+						<!--
+							DEFECT #1693: assignedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1694: assignedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1695: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</assignedPerson>
 					<representedOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
@@ -4027,6 +5133,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<given>${escapeXml(params.doctorName.first)}</given>
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
+						<!--
+							DEFECT #1696: assignedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1697: assignedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1698: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</assignedPerson>
 					<representedOrganization>
 	${/*
@@ -4169,6 +5302,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<given>${escapeXml(params.doctorName.first)}</given>
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
+						<!--
+							DEFECT #1699: assignedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1700: assignedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1701: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</assignedPerson>
 					<representedOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
@@ -4216,6 +5376,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<given>${escapeXml(params.doctorName.first)}</given>
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
+						<!--
+							DEFECT #1702: assignedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1703: assignedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1704: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</assignedPerson>
 					<representedOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
@@ -4262,6 +5449,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<given>${escapeXml(params.doctorName.first)}</given>
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
+						<!--
+							DEFECT #1705: associatedPerson/administrativeGenderCode.
+							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+							Form 043/u chart does not collect this person sex; do not invent M/F.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #1706: associatedPerson/birthTime.
+							WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+							Form 043/u chart does not collect this person DOB; do not invent.
+							NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1707: associatedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</associatedPerson>
 					<scopingOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
@@ -4448,6 +5662,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<subject>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1708: relatedSubject/subject/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1709: relatedSubject/subject/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1710: relatedSubject/subject/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</subject>
 					</relatedSubject>
 				</subject>
@@ -4482,6 +5723,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1711: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1712: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1713: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</performer>
@@ -4498,6 +5766,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1714: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1715: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1716: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -4520,6 +5815,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1717: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1718: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1719: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</informant>
@@ -4537,6 +5859,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<associatedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1720: associatedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1721: associatedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1722: associatedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</associatedPerson>
 					</associatedEntity>
 				</participant>
@@ -4601,6 +5950,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<subject>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1723: relatedSubject/subject/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1724: relatedSubject/subject/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1725: relatedSubject/subject/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</subject>
 						</relatedSubject>
 					</subject>
@@ -4635,6 +6011,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1726: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1727: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1728: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</performer>
@@ -4651,6 +6054,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1729: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1730: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1731: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -4673,6 +6103,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1732: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1733: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1734: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</informant>
@@ -4690,6 +6147,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<associatedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1735: associatedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1736: associatedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1737: associatedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</associatedPerson>
 						</associatedEntity>
 					</participant>
@@ -5052,6 +6536,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: birthTime nullFlavor NI.
 						-->
 						<birthTime nullFlavor="NI"/>
+						<!--
+							DEFECT #1738: relatedSubject/subject/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
 					</subject>
 				</relatedSubject>
 			</subject>
@@ -5198,6 +6695,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1739: relatedSubject/subject/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</subject>
 						</relatedSubject>
 					</subject>
@@ -5424,6 +6934,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1740: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1741: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1742: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -5466,6 +7003,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1743: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1744: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1745: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -5513,6 +7077,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1746: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1747: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1748: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -5559,6 +7150,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1749: associatedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1750: associatedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1751: associatedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -5745,6 +7363,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<subject>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1752: relatedSubject/subject/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1753: relatedSubject/subject/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1754: relatedSubject/subject/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</subject>
 					</relatedSubject>
 				</subject>
@@ -5779,6 +7424,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1755: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1756: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1757: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</performer>
@@ -5795,6 +7467,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1758: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1759: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1760: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -5817,6 +7516,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1761: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1762: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1763: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</informant>
@@ -5834,6 +7560,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<associatedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1764: associatedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1765: associatedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1766: associatedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</associatedPerson>
 					</associatedEntity>
 				</participant>
@@ -5898,6 +7651,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<subject>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1767: relatedSubject/subject/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1768: relatedSubject/subject/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1769: relatedSubject/subject/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</subject>
 						</relatedSubject>
 					</subject>
@@ -5932,6 +7712,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1770: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1771: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1772: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</performer>
@@ -5948,6 +7755,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1773: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1774: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1775: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -5970,6 +7804,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1776: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1777: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1778: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</informant>
@@ -5987,6 +7848,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<associatedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1779: associatedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1780: associatedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1781: associatedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</associatedPerson>
 						</associatedEntity>
 					</participant>
@@ -6258,6 +8146,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: birthTime nullFlavor NI.
 										-->
 										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1782: relatedSubject/subject/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</subject>
 								</relatedSubject>
 							</subject>
@@ -6454,6 +8355,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<subject>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #1783: relatedSubject/subject/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1784: relatedSubject/subject/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #1785: relatedSubject/subject/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</subject>
 									</relatedSubject>
 								</subject>
@@ -6488,6 +8416,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #1786: assignedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1787: assignedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #1788: assignedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</assignedPerson>
 									</assignedEntity>
 								</performer>
@@ -6504,6 +8459,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #1789: assignedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1790: assignedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #1791: assignedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</assignedPerson>
 										<representedOrganization>
 											<id nullFlavor="NI"/>
@@ -6526,6 +8508,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #1792: assignedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1793: assignedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #1794: assignedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</assignedPerson>
 									</assignedEntity>
 								</informant>
@@ -6543,6 +8552,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<associatedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #1795: associatedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1796: associatedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #1797: associatedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</associatedPerson>
 									</associatedEntity>
 								</participant>
@@ -6607,6 +8643,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<subject>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #1798: relatedSubject/subject/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #1799: relatedSubject/subject/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #1800: relatedSubject/subject/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</subject>
 										</relatedSubject>
 									</subject>
@@ -6641,6 +8704,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #1801: assignedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #1802: assignedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #1803: assignedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</assignedPerson>
 										</assignedEntity>
 									</performer>
@@ -6657,6 +8747,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #1804: assignedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #1805: assignedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #1806: assignedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</assignedPerson>
 											<representedOrganization>
 												<id nullFlavor="NI"/>
@@ -6679,6 +8796,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #1807: assignedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #1808: assignedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #1809: assignedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</assignedPerson>
 										</assignedEntity>
 									</informant>
@@ -6696,6 +8840,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<associatedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #1810: associatedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #1811: associatedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #1812: associatedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</associatedPerson>
 										</associatedEntity>
 									</participant>
@@ -7032,6 +9203,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1813: relatedSubject/subject/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</subject>
 						</relatedSubject>
 					</subject>
@@ -7209,6 +9393,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1814: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1815: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1816: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -7251,6 +9462,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1817: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1818: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1819: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -7298,6 +9536,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1820: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1821: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1822: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -7344,6 +9609,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1823: associatedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1824: associatedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1825: associatedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -7530,6 +9822,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<subject>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1826: relatedSubject/subject/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1827: relatedSubject/subject/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1828: relatedSubject/subject/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</subject>
 					</relatedSubject>
 				</subject>
@@ -7564,6 +9883,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1829: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1830: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1831: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</performer>
@@ -7580,6 +9926,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1832: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1833: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1834: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -7602,6 +9975,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1835: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1836: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1837: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</informant>
@@ -7619,6 +10019,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<associatedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1838: associatedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1839: associatedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1840: associatedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</associatedPerson>
 					</associatedEntity>
 				</participant>
@@ -7683,6 +10110,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<subject>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1841: relatedSubject/subject/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1842: relatedSubject/subject/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1843: relatedSubject/subject/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</subject>
 						</relatedSubject>
 					</subject>
@@ -7717,6 +10171,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1844: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1845: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1846: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</performer>
@@ -7733,6 +10214,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1847: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1848: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1849: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -7755,6 +10263,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1850: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1851: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1852: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</informant>
@@ -7772,6 +10307,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<associatedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1853: associatedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1854: associatedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1855: associatedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</associatedPerson>
 						</associatedEntity>
 					</participant>
@@ -8043,6 +10605,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: birthTime nullFlavor NI.
 										-->
 										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1856: relatedSubject/subject/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</subject>
 								</relatedSubject>
 							</subject>
@@ -8239,6 +10814,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<subject>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #1857: relatedSubject/subject/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1858: relatedSubject/subject/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #1859: relatedSubject/subject/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</subject>
 									</relatedSubject>
 								</subject>
@@ -8273,6 +10875,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #1860: assignedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1861: assignedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #1862: assignedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</assignedPerson>
 									</assignedEntity>
 								</performer>
@@ -8289,6 +10918,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #1863: assignedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1864: assignedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #1865: assignedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</assignedPerson>
 										<representedOrganization>
 											<id nullFlavor="NI"/>
@@ -8311,6 +10967,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #1866: assignedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1867: assignedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #1868: assignedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</assignedPerson>
 									</assignedEntity>
 								</informant>
@@ -8328,6 +11011,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<associatedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #1869: associatedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1870: associatedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #1871: associatedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</associatedPerson>
 									</associatedEntity>
 								</participant>
@@ -8392,6 +11102,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<subject>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #1872: relatedSubject/subject/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #1873: relatedSubject/subject/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #1874: relatedSubject/subject/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</subject>
 										</relatedSubject>
 									</subject>
@@ -8426,6 +11163,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #1875: assignedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #1876: assignedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #1877: assignedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</assignedPerson>
 										</assignedEntity>
 									</performer>
@@ -8442,6 +11206,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #1878: assignedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #1879: assignedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #1880: assignedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</assignedPerson>
 											<representedOrganization>
 												<id nullFlavor="NI"/>
@@ -8464,6 +11255,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #1881: assignedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #1882: assignedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #1883: assignedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</assignedPerson>
 										</assignedEntity>
 									</informant>
@@ -8481,6 +11299,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<associatedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #1884: associatedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #1885: associatedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #1886: associatedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</associatedPerson>
 										</associatedEntity>
 									</participant>
@@ -8828,6 +11673,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1887: relatedSubject/subject/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</subject>
 						</relatedSubject>
 					</subject>
@@ -9008,6 +11866,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1888: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1889: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1890: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -9050,6 +11935,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1891: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1892: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1893: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -9097,6 +12009,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1894: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1895: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1896: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -9143,6 +12082,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1897: associatedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1898: associatedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1899: associatedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -9329,6 +12295,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<subject>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1900: relatedSubject/subject/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1901: relatedSubject/subject/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1902: relatedSubject/subject/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</subject>
 					</relatedSubject>
 				</subject>
@@ -9363,6 +12356,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1903: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1904: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1905: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</performer>
@@ -9379,6 +12399,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1906: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1907: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1908: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -9401,6 +12448,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1909: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1910: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1911: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</informant>
@@ -9418,6 +12492,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<associatedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1912: associatedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1913: associatedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1914: associatedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</associatedPerson>
 					</associatedEntity>
 				</participant>
@@ -9482,6 +12583,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<subject>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1915: relatedSubject/subject/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1916: relatedSubject/subject/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1917: relatedSubject/subject/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</subject>
 						</relatedSubject>
 					</subject>
@@ -9516,6 +12644,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1918: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1919: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1920: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</performer>
@@ -9532,6 +12687,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1921: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1922: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1923: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -9554,6 +12736,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1924: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1925: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1926: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</informant>
@@ -9571,6 +12780,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<associatedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #1927: associatedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1928: associatedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1929: associatedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</associatedPerson>
 						</associatedEntity>
 					</participant>
@@ -9842,6 +13078,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: birthTime nullFlavor NI.
 										-->
 										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1930: relatedSubject/subject/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</subject>
 								</relatedSubject>
 							</subject>
@@ -10038,6 +13287,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<subject>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #1931: relatedSubject/subject/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1932: relatedSubject/subject/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #1933: relatedSubject/subject/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</subject>
 									</relatedSubject>
 								</subject>
@@ -10072,6 +13348,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #1934: assignedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1935: assignedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #1936: assignedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</assignedPerson>
 									</assignedEntity>
 								</performer>
@@ -10088,6 +13391,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #1937: assignedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1938: assignedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #1939: assignedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</assignedPerson>
 										<representedOrganization>
 											<id nullFlavor="NI"/>
@@ -10110,6 +13440,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #1940: assignedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1941: assignedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #1942: assignedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</assignedPerson>
 									</assignedEntity>
 								</informant>
@@ -10127,6 +13484,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<associatedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #1943: associatedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #1944: associatedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #1945: associatedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</associatedPerson>
 									</associatedEntity>
 								</participant>
@@ -10191,6 +13575,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<subject>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #1946: relatedSubject/subject/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #1947: relatedSubject/subject/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #1948: relatedSubject/subject/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</subject>
 										</relatedSubject>
 									</subject>
@@ -10225,6 +13636,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #1949: assignedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #1950: assignedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #1951: assignedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</assignedPerson>
 										</assignedEntity>
 									</performer>
@@ -10241,6 +13679,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #1952: assignedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #1953: assignedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #1954: assignedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</assignedPerson>
 											<representedOrganization>
 												<id nullFlavor="NI"/>
@@ -10263,6 +13728,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #1955: assignedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #1956: assignedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #1957: assignedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</assignedPerson>
 										</assignedEntity>
 									</informant>
@@ -10280,6 +13772,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<associatedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #1958: associatedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #1959: associatedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #1960: associatedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</associatedPerson>
 										</associatedEntity>
 									</participant>
@@ -10622,6 +14141,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1961: relatedSubject/subject/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</subject>
 						</relatedSubject>
 					</subject>
@@ -10801,6 +14333,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1962: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1963: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1964: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -10843,6 +14402,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1965: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1966: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1967: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -10890,6 +14476,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1968: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1969: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1970: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -10936,6 +14549,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1971: associatedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1972: associatedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1973: associatedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -11122,6 +14762,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<subject>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1974: relatedSubject/subject/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1975: relatedSubject/subject/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1976: relatedSubject/subject/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</subject>
 					</relatedSubject>
 				</subject>
@@ -11156,6 +14823,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1977: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1978: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1979: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</performer>
@@ -11172,6 +14866,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1980: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1981: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1982: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -11194,6 +14915,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1983: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1984: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1985: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</informant>
@@ -11211,6 +14959,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<associatedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #1986: associatedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #1987: associatedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #1988: associatedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</associatedPerson>
 					</associatedEntity>
 				</participant>
@@ -11547,6 +15322,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: birthTime nullFlavor NI.
 										-->
 										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1989: relatedSubject/subject/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</subject>
 								</relatedSubject>
 							</subject>
@@ -11696,6 +15484,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #1990: relatedSubject/subject/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</subject>
 						</relatedSubject>
 					</subject>
@@ -11880,6 +15681,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1991: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1992: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1993: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -11922,6 +15750,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1994: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1995: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1996: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -11969,6 +15824,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #1997: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #1998: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #1999: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -12015,6 +15897,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #2000: associatedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #2001: associatedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2002: associatedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -12201,6 +16110,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<subject>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #2003: relatedSubject/subject/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2004: relatedSubject/subject/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #2005: relatedSubject/subject/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</subject>
 					</relatedSubject>
 				</subject>
@@ -12235,6 +16171,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #2006: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2007: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #2008: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</performer>
@@ -12251,6 +16214,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #2009: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2010: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #2011: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -12273,6 +16263,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #2012: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2013: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #2014: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</informant>
@@ -12290,6 +16307,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<associatedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #2015: associatedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2016: associatedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #2017: associatedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</associatedPerson>
 					</associatedEntity>
 				</participant>
@@ -12354,6 +16398,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<subject>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #2018: relatedSubject/subject/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2019: relatedSubject/subject/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2020: relatedSubject/subject/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</subject>
 						</relatedSubject>
 					</subject>
@@ -12388,6 +16459,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #2021: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2022: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2023: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</performer>
@@ -12404,6 +16502,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #2024: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2025: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2026: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -12426,6 +16551,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #2027: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2028: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2029: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</informant>
@@ -12443,6 +16595,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<associatedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #2030: associatedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2031: associatedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2032: associatedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</associatedPerson>
 						</associatedEntity>
 					</participant>
@@ -12714,6 +16893,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: birthTime nullFlavor NI.
 										-->
 										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2033: relatedSubject/subject/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</subject>
 								</relatedSubject>
 							</subject>
@@ -12910,6 +17102,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<subject>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #2034: relatedSubject/subject/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #2035: relatedSubject/subject/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #2036: relatedSubject/subject/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</subject>
 									</relatedSubject>
 								</subject>
@@ -12944,6 +17163,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #2037: assignedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #2038: assignedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #2039: assignedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</assignedPerson>
 									</assignedEntity>
 								</performer>
@@ -12960,6 +17206,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #2040: assignedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #2041: assignedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #2042: assignedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</assignedPerson>
 										<representedOrganization>
 											<id nullFlavor="NI"/>
@@ -12982,6 +17255,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #2043: assignedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #2044: assignedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #2045: assignedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</assignedPerson>
 									</assignedEntity>
 								</informant>
@@ -12999,6 +17299,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<associatedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #2046: associatedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #2047: associatedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #2048: associatedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</associatedPerson>
 									</associatedEntity>
 								</participant>
@@ -13063,6 +17390,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<subject>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #2049: relatedSubject/subject/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #2050: relatedSubject/subject/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #2051: relatedSubject/subject/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</subject>
 										</relatedSubject>
 									</subject>
@@ -13097,6 +17451,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #2052: assignedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #2053: assignedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #2054: assignedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</assignedPerson>
 										</assignedEntity>
 									</performer>
@@ -13113,6 +17494,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #2055: assignedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #2056: assignedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #2057: assignedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</assignedPerson>
 											<representedOrganization>
 												<id nullFlavor="NI"/>
@@ -13135,6 +17543,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #2058: assignedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #2059: assignedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #2060: assignedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</assignedPerson>
 										</assignedEntity>
 									</informant>
@@ -13152,6 +17587,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<associatedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #2061: associatedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #2062: associatedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #2063: associatedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</associatedPerson>
 										</associatedEntity>
 									</participant>
@@ -13490,6 +17952,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2064: relatedSubject/subject/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</subject>
 						</relatedSubject>
 					</subject>
@@ -13678,6 +18153,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #2065: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #2066: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2067: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -13720,6 +18222,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #2068: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #2069: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2070: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -13767,6 +18296,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #2071: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #2072: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2073: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -13813,6 +18369,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #2074: associatedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #2075: associatedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2076: associatedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -13999,6 +18582,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<subject>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #2077: relatedSubject/subject/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2078: relatedSubject/subject/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #2079: relatedSubject/subject/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</subject>
 					</relatedSubject>
 				</subject>
@@ -14033,6 +18643,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #2080: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2081: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #2082: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</performer>
@@ -14049,6 +18686,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #2083: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2084: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #2085: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -14071,6 +18735,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #2086: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2087: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #2088: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</informant>
@@ -14088,6 +18779,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<associatedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #2089: associatedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2090: associatedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #2091: associatedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</associatedPerson>
 					</associatedEntity>
 				</participant>
@@ -14152,6 +18870,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<subject>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #2092: relatedSubject/subject/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2093: relatedSubject/subject/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2094: relatedSubject/subject/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</subject>
 						</relatedSubject>
 					</subject>
@@ -14186,6 +18931,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #2095: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2096: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2097: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</performer>
@@ -14202,6 +18974,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #2098: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2099: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2100: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -14224,6 +19023,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #2101: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2102: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2103: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</informant>
@@ -14241,6 +19067,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<associatedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #2104: associatedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2105: associatedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2106: associatedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</associatedPerson>
 						</associatedEntity>
 					</participant>
@@ -14512,6 +19365,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: birthTime nullFlavor NI.
 										-->
 										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2107: relatedSubject/subject/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</subject>
 								</relatedSubject>
 							</subject>
@@ -14708,6 +19574,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<subject>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #2108: relatedSubject/subject/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #2109: relatedSubject/subject/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #2110: relatedSubject/subject/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</subject>
 									</relatedSubject>
 								</subject>
@@ -14742,6 +19635,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #2111: assignedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #2112: assignedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #2113: assignedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</assignedPerson>
 									</assignedEntity>
 								</performer>
@@ -14758,6 +19678,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #2114: assignedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #2115: assignedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #2116: assignedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</assignedPerson>
 										<representedOrganization>
 											<id nullFlavor="NI"/>
@@ -14780,6 +19727,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #2117: assignedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #2118: assignedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #2119: assignedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</assignedPerson>
 									</assignedEntity>
 								</informant>
@@ -14797,6 +19771,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<associatedPerson>
 											<name nullFlavor="NI"/>
+											<!--
+												DEFECT #2120: associatedPerson/administrativeGenderCode.
+												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+												Form 043/u chart does not collect this person sex; do not invent M/F.
+												NOW: administrativeGenderCode nullFlavor NI.
+											-->
+											<administrativeGenderCode nullFlavor="NI"/>
+											<!--
+												DEFECT #2121: associatedPerson/birthTime.
+												WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+												Form 043/u chart does not collect this person DOB; do not invent.
+												NOW: birthTime nullFlavor NI.
+											-->
+											<birthTime nullFlavor="NI"/>
+											<!--
+												DEFECT #2122: associatedPerson/birthplace.
+												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+												NOW: birthplace/place name/addr/telecom NI.
+											-->
+											<birthplace>
+												<place>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</place>
+											</birthplace>
 										</associatedPerson>
 									</associatedEntity>
 								</participant>
@@ -14861,6 +19862,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<subject>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #2123: relatedSubject/subject/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #2124: relatedSubject/subject/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #2125: relatedSubject/subject/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</subject>
 										</relatedSubject>
 									</subject>
@@ -14895,6 +19923,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #2126: assignedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #2127: assignedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #2128: assignedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</assignedPerson>
 										</assignedEntity>
 									</performer>
@@ -14911,6 +19966,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #2129: assignedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #2130: assignedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #2131: assignedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</assignedPerson>
 											<representedOrganization>
 												<id nullFlavor="NI"/>
@@ -14933,6 +20015,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #2132: assignedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #2133: assignedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #2134: assignedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</assignedPerson>
 										</assignedEntity>
 									</informant>
@@ -14950,6 +20059,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<associatedPerson>
 												<name nullFlavor="NI"/>
+												<!--
+													DEFECT #2135: associatedPerson/administrativeGenderCode.
+													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+													Form 043/u chart does not collect this person sex; do not invent M/F.
+													NOW: administrativeGenderCode nullFlavor NI.
+												-->
+												<administrativeGenderCode nullFlavor="NI"/>
+												<!--
+													DEFECT #2136: associatedPerson/birthTime.
+													WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+													Form 043/u chart does not collect this person DOB; do not invent.
+													NOW: birthTime nullFlavor NI.
+												-->
+												<birthTime nullFlavor="NI"/>
+												<!--
+													DEFECT #2137: associatedPerson/birthplace.
+													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+													NOW: birthplace/place name/addr/telecom NI.
+												-->
+												<birthplace>
+													<place>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</place>
+												</birthplace>
 											</associatedPerson>
 										</associatedEntity>
 									</participant>
@@ -15289,6 +20425,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2138: relatedSubject/subject/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</subject>
 						</relatedSubject>
 					</subject>
@@ -15553,6 +20702,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #2139: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #2140: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2141: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -15595,6 +20771,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #2142: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #2143: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2144: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -15642,6 +20845,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #2145: assignedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #2146: assignedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2147: assignedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -15688,6 +20918,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+										<!--
+											DEFECT #2148: associatedPerson/administrativeGenderCode.
+											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+											Form 043/u chart does not collect this person sex; do not invent M/F.
+											NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+											DEFECT #2149: associatedPerson/birthTime.
+											WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+											Form 043/u chart does not collect this person DOB; do not invent.
+											NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2150: associatedPerson/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -15874,6 +21131,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<subject>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #2151: relatedSubject/subject/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2152: relatedSubject/subject/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #2153: relatedSubject/subject/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</subject>
 					</relatedSubject>
 				</subject>
@@ -15908,6 +21192,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #2154: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2155: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #2156: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</performer>
@@ -15924,6 +21235,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #2157: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2158: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #2159: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -15946,6 +21284,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #2160: assignedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2161: assignedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #2162: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</assignedPerson>
 					</assignedEntity>
 				</informant>
@@ -15963,6 +21328,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<associatedPerson>
 							<name nullFlavor="NI"/>
+							<!--
+								DEFECT #2163: associatedPerson/administrativeGenderCode.
+								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+								Form 043/u chart does not collect this person sex; do not invent M/F.
+								NOW: administrativeGenderCode nullFlavor NI.
+							-->
+							<administrativeGenderCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2164: associatedPerson/birthTime.
+								WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+								Form 043/u chart does not collect this person DOB; do not invent.
+								NOW: birthTime nullFlavor NI.
+							-->
+							<birthTime nullFlavor="NI"/>
+							<!--
+								DEFECT #2165: associatedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
 						</associatedPerson>
 					</associatedEntity>
 				</participant>
@@ -16027,6 +21419,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<subject>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #2166: relatedSubject/subject/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2167: relatedSubject/subject/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2168: relatedSubject/subject/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</subject>
 						</relatedSubject>
 					</subject>
@@ -16061,6 +21480,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #2169: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2170: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2171: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</performer>
@@ -16077,6 +21523,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #2172: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2173: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2174: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -16099,6 +21572,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #2175: assignedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2176: assignedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2177: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</assignedPerson>
 						</assignedEntity>
 					</informant>
@@ -16116,6 +21616,33 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<associatedPerson>
 								<name nullFlavor="NI"/>
+								<!--
+									DEFECT #2178: associatedPerson/administrativeGenderCode.
+									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
+									Form 043/u chart does not collect this person sex; do not invent M/F.
+									NOW: administrativeGenderCode nullFlavor NI.
+								-->
+								<administrativeGenderCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2179: associatedPerson/birthTime.
+									WAS: person missing birthTime. HL7 CDA R2 Person has birthTime 0..1.
+									Form 043/u chart does not collect this person DOB; do not invent.
+									NOW: birthTime nullFlavor NI.
+								-->
+								<birthTime nullFlavor="NI"/>
+								<!--
+									DEFECT #2180: associatedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
 							</associatedPerson>
 						</associatedEntity>
 					</participant>
@@ -16481,6 +22008,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: birthTime nullFlavor NI.
 										-->
 										<birthTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2181: relatedSubject/subject/birthplace.
+											WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+											SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+											NOW: birthplace/place name/addr/telecom NI.
+										-->
+										<birthplace>
+											<place>
+												<name nullFlavor="NI"/>
+												<addr nullFlavor="NI"/>
+												<telecom nullFlavor="NI"/>
+											</place>
+										</birthplace>
 									</subject>
 								</relatedSubject>
 							</subject>
