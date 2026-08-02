@@ -229,17 +229,31 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 		<patientRole>
 			${/*
-			 * DEFECT #79: patientRole/id must not emit empty SNILS extension.
-			 * БЫЛО: always <id root="1.2.643.100.3" extension="${patientSnils}"/>.
-			 * When SNILS missing/blank (route falls back to ""), CDA carried
-			 * extension="" — schema-invalid II and REMD rejects the patient.
-			 * Patient also has no alternate id (local MRN) in this path.
-			 * СТАЛО: SNILS id when non-empty after trim; else <id nullFlavor="NI"/>.
+			 * DEFECT #94: patientRole must carry local MRN (patientId) always.
+			 * БЫЛО (#79): only SNILS id OR nullFlavor NI — params.patientId was
+			 * never emitted. When SNILS missing, patientRole had only NI and
+			 * REMD/EMK could not join the SEMD to the clinic chart (patients.id).
+			 * Even with SNILS, local MRN is the ambulatory chart key.
+			 * СТАЛО: first id = clinicOid (or default MO root) + patientId
+			 * extension (XML-escaped); second id = SNILS when present (else
+			 * no second SNILS id — MRN alone is sufficient, no empty NI when
+			 * we already have a real local id).
 			 */
-			params.patientSnils && String(params.patientSnils).trim()
-				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.patientSnils).trim())}"/>`
-				: `<id nullFlavor="NI"/>`}
+			(() => {
+				const mrnRoot =
+					params.clinicOid && String(params.clinicOid).trim()
+						? escapeXml(String(params.clinicOid).trim())
+						: "1.2.643.5.1.13.13.12.2";
+				const mrnExt = escapeXml(String(params.patientId ?? "").trim() || "unknown");
+				const mrnId = `<id root="${mrnRoot}" extension="${mrnExt}"/>`;
+				const snils =
+					params.patientSnils && String(params.patientSnils).trim()
+						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.patientSnils).trim())}"/>`
+						: "";
+				return snils ? `${mrnId}\n\t\t\t${snils}` : mrnId;
+			})()}
 			<patient>
+
 
 				<name>
 					<family>${escapeXml(params.patientName.last)}</family>

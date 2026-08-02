@@ -384,10 +384,12 @@ describe("egiszCdaGenerator", () => {
 	});
 
 	/**
-	 * DEFECT #79: patientRole/id must not emit empty SNILS extension="" when
-	 * patientSnils is blank/missing. REMD rejects empty II.extension.
+	 * DEFECT #79 + #94: patientRole/id must not emit empty SNILS extension=""
+	 * when patientSnils is blank/missing. REMD rejects empty II.extension.
+	 * After #94: local MRN (patientId) is always present, so blank SNILS no
+	 * longer needs nullFlavor NI — MRN alone satisfies II 1..*.
 	 */
-	test("DEFECT #79: patientRole id nullFlavor NI without patientSnils; SNILS when present", () => {
+	test("DEFECT #79: patientRole never emits empty SNILS extension; SNILS when present", () => {
 
 		const base = {
 			patientId: "pat-79",
@@ -409,16 +411,17 @@ describe("egiszCdaGenerator", () => {
 			blank.indexOf("</patientRole>") + "</patientRole>".length,
 		);
 		assert.ok(
-			roleBlank.includes('<id nullFlavor="NI"/>'),
-			"patientRole must emit id nullFlavor=NI when patientSnils blank",
-		);
-		assert.ok(
 			!roleBlank.includes('extension=""'),
 			"patientRole must not emit empty extension attribute",
 		);
 		assert.ok(
 			!roleBlank.includes('root="1.2.643.100.3"'),
 			"patientRole must not emit SNILS root when patientSnils blank",
+		);
+		/* DEFECT #94: MRN present instead of NI placeholder */
+		assert.ok(
+			roleBlank.includes('extension="pat-79"'),
+			"patientRole must carry local MRN when SNILS blank",
 		);
 
 		const whitespace = generateDentalCdaXml({
@@ -430,8 +433,12 @@ describe("egiszCdaGenerator", () => {
 			whitespace.indexOf("</patientRole>") + "</patientRole>".length,
 		);
 		assert.ok(
-			roleWs.includes('<id nullFlavor="NI"/>'),
-			"whitespace-only patientSnils must emit nullFlavor NI",
+			!roleWs.includes('root="1.2.643.100.3"'),
+			"whitespace-only patientSnils must not emit SNILS id",
+		);
+		assert.ok(
+			roleWs.includes('extension="pat-79"'),
+			"whitespace-only SNILS still keeps MRN id",
 		);
 
 		const withSnils = generateDentalCdaXml({
@@ -465,6 +472,7 @@ describe("egiszCdaGenerator", () => {
 			"patientSnils must be XML-escaped in patientRole id extension",
 		);
 	});
+
 
 	/**
 	 * DEFECT #78: custodian organization id must not emit empty extension=""
@@ -1441,7 +1449,90 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(nsDoc.includes("<given>Анна</given>"));
 	});
 
+	test("DEFECT #94: patientRole carries local MRN (patientId) plus optional SNILS", () => {
+		const visitDate = new Date("2024-12-01T08:00:00.000Z");
+		const withBoth: EgiszCdaParams = {
+			patientId: "pat-mrn-001",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.444",
+			clinicName: "ООО Клиника MRN",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate,
+			documentId: "doc-94",
+		};
+
+		const xml = generateDentalCdaXml(withBoth);
+		const role = xml.slice(
+			xml.indexOf("<patientRole>"),
+			xml.indexOf("</patientRole>"),
+		);
+		assert.ok(
+			role.includes(
+				`<id root="1.2.643.5.1.13.13.12.2.444" extension="pat-mrn-001"/>`,
+			),
+			"patientRole must emit local MRN id (clinicOid + patientId)",
+		);
+		assert.ok(
+			role.includes(
+				`<id root="1.2.643.100.3" extension="123-456-789 00"/>`,
+			),
+			"patientRole must still emit SNILS when present",
+		);
+		/* MRN before SNILS */
+		const mrnIdx = role.indexOf('extension="pat-mrn-001"');
+		const snilsIdx = role.indexOf('root="1.2.643.100.3"');
+		assert.ok(mrnIdx >= 0 && snilsIdx > mrnIdx);
+
+		/* no SNILS → MRN only, no nullFlavor NI for missing SNILS */
+		const noSnils = generateDentalCdaXml({
+			...withBoth,
+			patientSnils: "   ",
+		});
+		const nsRole = noSnils.slice(
+			noSnils.indexOf("<patientRole>"),
+			noSnils.indexOf("</patientRole>"),
+		);
+		assert.ok(
+			nsRole.includes(
+				`<id root="1.2.643.5.1.13.13.12.2.444" extension="pat-mrn-001"/>`,
+			),
+		);
+		assert.ok(
+			!nsRole.includes('root="1.2.643.100.3"'),
+			"blank SNILS must not emit empty SNILS id",
+		);
+		assert.ok(
+			!nsRole.includes('nullFlavor="NI"'),
+			"when MRN present, do not emit NI placeholder for missing SNILS",
+		);
+
+		/* missing clinicOid → default MO root */
+		const noOid = generateDentalCdaXml({
+			...withBoth,
+			clinicOid: undefined,
+			patientId: "p" + String.fromCharCode(60) + "x" + String.fromCharCode(38) + "y",
+		});
+		const noRole = noOid.slice(
+			noOid.indexOf("<patientRole>"),
+			noOid.indexOf("</patientRole>"),
+		);
+		const lt = "&" + "lt;";
+		const amp = "&" + "amp;";
+		assert.ok(
+			noRole.includes(
+				`root="1.2.643.5.1.13.13.12.2" extension="p` + lt + "x" + amp + 'y"',
+			),
+			"missing clinicOid uses default root; patientId XML-escaped",
+		);
+	});
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 
 
 
