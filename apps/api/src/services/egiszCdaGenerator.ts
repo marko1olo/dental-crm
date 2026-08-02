@@ -388,8 +388,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			</representedOrganization>`}
 		</assignedAuthor>
 	</author>
-
-
+	<!--
+		DEFECT #127: ClinicalDocument/dataEnterer (HL7 CDA R2 / EGISZ SEMD).
+		БЫЛО: header jumped author → custodian with no dataEnterer.
+		SEMD validators expect the chart-entry agent (who typed the
+		protocol into the EMR) under ClinicalDocument. In this Form 043/у
+		pipeline the treating dentist is also the data enterer (no separate
+		transcriptionist role in the clinic chart).
+		СТАЛО: dataEnterer after author, before custodian; assignedEntity
+		mirrors assignedAuthor identity (SNILS or nullFlavor NI, person
+		name, MO representedOrganization with clinicOid or NI). time =
+		effectiveTime (entry at document generation / visit close).
+		No invented street/phone — addr/telecom nullFlavor NI.
+	-->
+	<dataEnterer>
+		<time value="${effectiveTime}"/>
+		<assignedEntity>
+			${/*
+			 * Same id rule as assignedAuthor (#77): SNILS when present,
+			 * else nullFlavor NI. Do not invent extension="unknown".
+			 */
+			params.doctorSnils && String(params.doctorSnils).trim()
+				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+				: `<id nullFlavor="NI"/>`}
+			<addr nullFlavor="NI"/>
+			<telecom nullFlavor="NI"/>
+			<assignedPerson>
+				<name>
+					<family>${escapeXml(params.doctorName.last)}</family>
+					<given>${escapeXml(params.doctorName.first)}</given>
+					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+				</name>
+			</assignedPerson>
+			${`<representedOrganization>
+				${
+					params.clinicOid && String(params.clinicOid).trim()
+						? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+						: `<id nullFlavor="NI"/>`
+				}
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<name>${escapeXml(params.clinicName)}</name>
+			</representedOrganization>`}
+		</assignedEntity>
+	</dataEnterer>
 	<custodian>
 		<assignedCustodian>
 			<representedCustodianOrganization>
