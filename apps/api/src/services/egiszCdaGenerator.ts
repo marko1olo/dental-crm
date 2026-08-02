@@ -508,6 +508,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<guardianPerson>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #514: guardianPerson/administrativeGenderCode.
+							WAS: guardianPerson had only name NI — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1. SEMD validators often flag incomplete guardianPerson under recordTarget when relatedSubject SubjectPerson already emits gender. Form 043/u chart does not collect guardian sex; do not invent M/F codes.
+							NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+							DEFECT #515: guardianPerson/birthTime.
+							WAS: guardianPerson had name/gender only — no birthTime. HL7 CDA R2 Person has birthTime 0..1. SEMD often flags missing birthTime under guardianPerson when patient and relatedSubject emit it.
+							NOW: birthTime nullFlavor NI; do not invent guardian DOB.
+						-->
+						<birthTime nullFlavor="NI"/>
 					</guardianPerson>
 				</guardian>
 
@@ -535,6 +547,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						-->
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
+					<!--
+
+						DEFECT #543: birthplace/place/telecom.
+
+						WAS: birthplace/place had name/addr only — no telecom. HL7 CDA R2 Place may carry telecom. SEMD often flags incomplete place under recordTarget birthplace when addr is present without contact slot.
+
+						NOW: telecom nullFlavor NI; do not invent birth-facility phone.
+
+					-->
+
+					<telecom nullFlavor="NI"/>
+
 					</place>
 				</birthplace>
 
@@ -1630,6 +1654,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<specimenPlayingEntity>
 						<code nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #496: specimenPlayingEntity/desc.
+							WAS: specimenPlayingEntity had code/name NI only — no desc. HL7 CDA R2 Entity has desc 0..1. SEMD validators often flag bare playing entity under specimen when material description cannot be joined. Form 043/u chart does not collect specimen material narrative; do not invent desc text.
+							NOW: desc nullFlavor NI until chart field exists.
+						-->
+						<desc nullFlavor="NI"/>
+						<!--
+							DEFECT #497: specimenPlayingEntity/quantity.
+							WAS: specimenPlayingEntity had code/name/desc only — no quantity. HL7 CDA R2 ManufacturedMaterial/Entity may carry quantity. SEMD often flags missing quantity under specimen playing entity.
+							NOW: quantity nullFlavor NI; do not invent PQ amounts.
+						-->
+						<quantity nullFlavor="NI"/>
 					</specimenPlayingEntity>
 </specimenRole>
 			</specimen>
@@ -1649,6 +1685,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<manufacturedMaterial>
 						<code nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #516: manufacturedMaterial/lotNumberText.
+							WAS: manufacturedMaterial had code/name NI only — no lotNumberText. Tray product already emits lot (#388). HL7 CDA R2 Material has lotNumberText 0..1. SEMD often flags bare material under consumable without lot slot.
+							NOW: lotNumberText nullFlavor NI; do not invent lot strings.
+						-->
+						<lotNumberText nullFlavor="NI"/>
+						<!--
+							DEFECT #517: manufacturedMaterial/desc.
+							WAS: manufacturedMaterial had code/name/lot only — no desc. Tray already emits desc (#389). SEMD often flags missing material description under consumable.
+							NOW: desc nullFlavor NI; do not invent device prose.
+						-->
+						<desc nullFlavor="NI"/>
+						<!--
+							DEFECT #518: manufacturedMaterial/expirationTime.
+							WAS: manufacturedMaterial had code/name/lot/desc only — no expirationTime. Tray already emits expirationTime. HL7 CDA R2 Material has expirationTime 0..1.
+							NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
+						-->
+						<expirationTime nullFlavor="NI"/>
 					</manufacturedMaterial>
 				</manufacturedProduct>
 			</consumable>
@@ -2572,6 +2626,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<specimenPlayingEntity>
 						<code nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #498: specimenPlayingEntity/desc.
+							WAS: specimenPlayingEntity had code/name NI only — no desc. HL7 CDA R2 Entity has desc 0..1. SEMD validators often flag bare playing entity under specimen when material description cannot be joined. Form 043/u chart does not collect specimen material narrative; do not invent desc text.
+							NOW: desc nullFlavor NI until chart field exists.
+						-->
+						<desc nullFlavor="NI"/>
+						<!--
+							DEFECT #499: specimenPlayingEntity/quantity.
+							WAS: specimenPlayingEntity had code/name/desc only — no quantity. HL7 CDA R2 ManufacturedMaterial/Entity may carry quantity. SEMD often flags missing quantity under specimen playing entity.
+							NOW: quantity nullFlavor NI; do not invent PQ amounts.
+						-->
+						<quantity nullFlavor="NI"/>
 					</specimenPlayingEntity>
 </specimenRole>
 			</specimen>
@@ -2591,6 +2657,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<manufacturedMaterial>
 						<code nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
+						<!--
+							DEFECT #519: manufacturedMaterial/lotNumberText.
+							WAS: manufacturedMaterial had code/name NI only — no lotNumberText. Tray product already emits lot (#388). HL7 CDA R2 Material has lotNumberText 0..1. SEMD often flags bare material under consumable without lot slot.
+							NOW: lotNumberText nullFlavor NI; do not invent lot strings.
+						-->
+						<lotNumberText nullFlavor="NI"/>
+						<!--
+							DEFECT #520: manufacturedMaterial/desc.
+							WAS: manufacturedMaterial had code/name/lot only — no desc. Tray already emits desc (#389). SEMD often flags missing material description under consumable.
+							NOW: desc nullFlavor NI; do not invent device prose.
+						-->
+						<desc nullFlavor="NI"/>
+						<!--
+							DEFECT #521: manufacturedMaterial/expirationTime.
+							WAS: manufacturedMaterial had code/name/lot/desc only — no expirationTime. Tray already emits expirationTime. HL7 CDA R2 Material has expirationTime 0..1.
+							NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
+						-->
+						<expirationTime nullFlavor="NI"/>
 					</manufacturedMaterial>
 				</manufacturedProduct>
 			</consumable>
@@ -3141,6 +3225,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<specimenPlayingEntity>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
+										<!--
+											DEFECT #500: specimenPlayingEntity/desc.
+											WAS: specimenPlayingEntity had code/name NI only — no desc. HL7 CDA R2 Entity has desc 0..1. SEMD validators often flag bare playing entity under specimen when material description cannot be joined. Form 043/u chart does not collect specimen material narrative; do not invent desc text.
+											NOW: desc nullFlavor NI until chart field exists.
+										-->
+										<desc nullFlavor="NI"/>
+										<!--
+											DEFECT #501: specimenPlayingEntity/quantity.
+											WAS: specimenPlayingEntity had code/name/desc only — no quantity. HL7 CDA R2 ManufacturedMaterial/Entity may carry quantity. SEMD often flags missing quantity under specimen playing entity.
+											NOW: quantity nullFlavor NI; do not invent PQ amounts.
+										-->
+										<quantity nullFlavor="NI"/>
 									</specimenPlayingEntity>
 </specimenRole>
 							</specimen>
@@ -3204,6 +3300,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<manufacturedMaterial>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
+										<!--
+											DEFECT #522: manufacturedMaterial/lotNumberText.
+											WAS: manufacturedMaterial had code/name NI only — no lotNumberText. Tray product already emits lot (#388). HL7 CDA R2 Material has lotNumberText 0..1. SEMD often flags bare material under consumable without lot slot.
+											NOW: lotNumberText nullFlavor NI; do not invent lot strings.
+										-->
+										<lotNumberText nullFlavor="NI"/>
+										<!--
+											DEFECT #523: manufacturedMaterial/desc.
+											WAS: manufacturedMaterial had code/name/lot only — no desc. Tray already emits desc (#389). SEMD often flags missing material description under consumable.
+											NOW: desc nullFlavor NI; do not invent device prose.
+										-->
+										<desc nullFlavor="NI"/>
+										<!--
+											DEFECT #524: manufacturedMaterial/expirationTime.
+											WAS: manufacturedMaterial had code/name/lot/desc only — no expirationTime. Tray already emits expirationTime. HL7 CDA R2 Material has expirationTime 0..1.
+											NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
+										-->
+										<expirationTime nullFlavor="NI"/>
 									</manufacturedMaterial>
 								</manufacturedProduct>
 							</consumable>
@@ -3220,7 +3334,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<referenceRange>
 								<observationRange>
+									<!--
+										DEFECT #481: observationRange/code.
+										WAS: observationRange had only value CD NI — no code. HL7 CDA R2 ObservationRange has code 0..1 (what range kind). SEMD validators often flag bare observationRange under clinical OBS. Form 043/u ambulatory dental findings have no lab reference-range catalog; do not invent range type codes.
+										NOW: code nullFlavor NI until chart field exists.
+									-->
+									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #482: observationRange/text.
+										WAS: observationRange had no text. HL7 CDA R2 ObservationRange has text 0..1 (ED). SEMD often flags missing narrative under referenceRange when value is NI-only.
+										NOW: text nullFlavor NI; do not invent range prose.
+									-->
+									<text nullFlavor="NI"/>
 									<value xsi:type="CD" nullFlavor="NI"/>
+									<!--
+										DEFECT #483: observationRange/interpretationCode.
+										WAS: observationRange had value only — no interpretationCode. HL7 CDA R2 ObservationRange has interpretationCode 0..*. SEMD often flags missing interpretation under referenceRange for clinical OBS.
+										NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L codes.
+									-->
+									<interpretationCode nullFlavor="NI"/>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -3685,6 +3817,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<specimenPlayingEntity>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
+										<!--
+											DEFECT #502: specimenPlayingEntity/desc.
+											WAS: specimenPlayingEntity had code/name NI only — no desc. HL7 CDA R2 Entity has desc 0..1. SEMD validators often flag bare playing entity under specimen when material description cannot be joined. Form 043/u chart does not collect specimen material narrative; do not invent desc text.
+											NOW: desc nullFlavor NI until chart field exists.
+										-->
+										<desc nullFlavor="NI"/>
+										<!--
+											DEFECT #503: specimenPlayingEntity/quantity.
+											WAS: specimenPlayingEntity had code/name/desc only — no quantity. HL7 CDA R2 ManufacturedMaterial/Entity may carry quantity. SEMD often flags missing quantity under specimen playing entity.
+											NOW: quantity nullFlavor NI; do not invent PQ amounts.
+										-->
+										<quantity nullFlavor="NI"/>
 									</specimenPlayingEntity>
 </specimenRole>
 							</specimen>
@@ -3748,6 +3892,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<manufacturedMaterial>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
+										<!--
+											DEFECT #525: manufacturedMaterial/lotNumberText.
+											WAS: manufacturedMaterial had code/name NI only — no lotNumberText. Tray product already emits lot (#388). HL7 CDA R2 Material has lotNumberText 0..1. SEMD often flags bare material under consumable without lot slot.
+											NOW: lotNumberText nullFlavor NI; do not invent lot strings.
+										-->
+										<lotNumberText nullFlavor="NI"/>
+										<!--
+											DEFECT #526: manufacturedMaterial/desc.
+											WAS: manufacturedMaterial had code/name/lot only — no desc. Tray already emits desc (#389). SEMD often flags missing material description under consumable.
+											NOW: desc nullFlavor NI; do not invent device prose.
+										-->
+										<desc nullFlavor="NI"/>
+										<!--
+											DEFECT #527: manufacturedMaterial/expirationTime.
+											WAS: manufacturedMaterial had code/name/lot/desc only — no expirationTime. Tray already emits expirationTime. HL7 CDA R2 Material has expirationTime 0..1.
+											NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
+										-->
+										<expirationTime nullFlavor="NI"/>
 									</manufacturedMaterial>
 								</manufacturedProduct>
 							</consumable>
@@ -3764,7 +3926,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<referenceRange>
 								<observationRange>
+									<!--
+										DEFECT #484: observationRange/code.
+										WAS: observationRange had only value CD NI — no code. HL7 CDA R2 ObservationRange has code 0..1 (what range kind). SEMD validators often flag bare observationRange under clinical OBS. Form 043/u ambulatory dental findings have no lab reference-range catalog; do not invent range type codes.
+										NOW: code nullFlavor NI until chart field exists.
+									-->
+									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #485: observationRange/text.
+										WAS: observationRange had no text. HL7 CDA R2 ObservationRange has text 0..1 (ED). SEMD often flags missing narrative under referenceRange when value is NI-only.
+										NOW: text nullFlavor NI; do not invent range prose.
+									-->
+									<text nullFlavor="NI"/>
 									<value xsi:type="CD" nullFlavor="NI"/>
+									<!--
+										DEFECT #486: observationRange/interpretationCode.
+										WAS: observationRange had value only — no interpretationCode. HL7 CDA R2 ObservationRange has interpretationCode 0..*. SEMD often flags missing interpretation under referenceRange for clinical OBS.
+										NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L codes.
+									-->
+									<interpretationCode nullFlavor="NI"/>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -4243,6 +4423,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<specimenPlayingEntity>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
+										<!--
+											DEFECT #504: specimenPlayingEntity/desc.
+											WAS: specimenPlayingEntity had code/name NI only — no desc. HL7 CDA R2 Entity has desc 0..1. SEMD validators often flag bare playing entity under specimen when material description cannot be joined. Form 043/u chart does not collect specimen material narrative; do not invent desc text.
+											NOW: desc nullFlavor NI until chart field exists.
+										-->
+										<desc nullFlavor="NI"/>
+										<!--
+											DEFECT #505: specimenPlayingEntity/quantity.
+											WAS: specimenPlayingEntity had code/name/desc only — no quantity. HL7 CDA R2 ManufacturedMaterial/Entity may carry quantity. SEMD often flags missing quantity under specimen playing entity.
+											NOW: quantity nullFlavor NI; do not invent PQ amounts.
+										-->
+										<quantity nullFlavor="NI"/>
 									</specimenPlayingEntity>
 </specimenRole>
 							</specimen>
@@ -4306,6 +4498,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<manufacturedMaterial>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
+										<!--
+											DEFECT #528: manufacturedMaterial/lotNumberText.
+											WAS: manufacturedMaterial had code/name NI only — no lotNumberText. Tray product already emits lot (#388). HL7 CDA R2 Material has lotNumberText 0..1. SEMD often flags bare material under consumable without lot slot.
+											NOW: lotNumberText nullFlavor NI; do not invent lot strings.
+										-->
+										<lotNumberText nullFlavor="NI"/>
+										<!--
+											DEFECT #529: manufacturedMaterial/desc.
+											WAS: manufacturedMaterial had code/name/lot only — no desc. Tray already emits desc (#389). SEMD often flags missing material description under consumable.
+											NOW: desc nullFlavor NI; do not invent device prose.
+										-->
+										<desc nullFlavor="NI"/>
+										<!--
+											DEFECT #530: manufacturedMaterial/expirationTime.
+											WAS: manufacturedMaterial had code/name/lot/desc only — no expirationTime. Tray already emits expirationTime. HL7 CDA R2 Material has expirationTime 0..1.
+											NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
+										-->
+										<expirationTime nullFlavor="NI"/>
 									</manufacturedMaterial>
 								</manufacturedProduct>
 							</consumable>
@@ -4322,7 +4532,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<referenceRange>
 								<observationRange>
+									<!--
+										DEFECT #487: observationRange/code.
+										WAS: observationRange had only value CD NI — no code. HL7 CDA R2 ObservationRange has code 0..1 (what range kind). SEMD validators often flag bare observationRange under clinical OBS. Form 043/u ambulatory dental findings have no lab reference-range catalog; do not invent range type codes.
+										NOW: code nullFlavor NI until chart field exists.
+									-->
+									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #488: observationRange/text.
+										WAS: observationRange had no text. HL7 CDA R2 ObservationRange has text 0..1 (ED). SEMD often flags missing narrative under referenceRange when value is NI-only.
+										NOW: text nullFlavor NI; do not invent range prose.
+									-->
+									<text nullFlavor="NI"/>
 									<value xsi:type="CD" nullFlavor="NI"/>
+									<!--
+										DEFECT #489: observationRange/interpretationCode.
+										WAS: observationRange had value only — no interpretationCode. HL7 CDA R2 ObservationRange has interpretationCode 0..*. SEMD often flags missing interpretation under referenceRange for clinical OBS.
+										NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L codes.
+									-->
+									<interpretationCode nullFlavor="NI"/>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -4785,6 +5013,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<manufacturedMaterial>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
+										<!--
+											DEFECT #531: manufacturedMaterial/lotNumberText.
+											WAS: manufacturedMaterial had code/name NI only — no lotNumberText. Tray product already emits lot (#388). HL7 CDA R2 Material has lotNumberText 0..1. SEMD often flags bare material under consumable without lot slot.
+											NOW: lotNumberText nullFlavor NI; do not invent lot strings.
+										-->
+										<lotNumberText nullFlavor="NI"/>
+										<!--
+											DEFECT #532: manufacturedMaterial/desc.
+											WAS: manufacturedMaterial had code/name/lot only — no desc. Tray already emits desc (#389). SEMD often flags missing material description under consumable.
+											NOW: desc nullFlavor NI; do not invent device prose.
+										-->
+										<desc nullFlavor="NI"/>
+										<!--
+											DEFECT #533: manufacturedMaterial/expirationTime.
+											WAS: manufacturedMaterial had code/name/lot/desc only — no expirationTime. Tray already emits expirationTime. HL7 CDA R2 Material has expirationTime 0..1.
+											NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
+										-->
+										<expirationTime nullFlavor="NI"/>
 									</manufacturedMaterial>
 								</manufacturedProduct>
 							</consumable>
@@ -4816,6 +5062,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<specimenPlayingEntity>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
+										<!--
+											DEFECT #506: specimenPlayingEntity/desc.
+											WAS: specimenPlayingEntity had code/name NI only — no desc. HL7 CDA R2 Entity has desc 0..1. SEMD validators often flag bare playing entity under specimen when material description cannot be joined. Form 043/u chart does not collect specimen material narrative; do not invent desc text.
+											NOW: desc nullFlavor NI until chart field exists.
+										-->
+										<desc nullFlavor="NI"/>
+										<!--
+											DEFECT #507: specimenPlayingEntity/quantity.
+											WAS: specimenPlayingEntity had code/name/desc only — no quantity. HL7 CDA R2 ManufacturedMaterial/Entity may carry quantity. SEMD often flags missing quantity under specimen playing entity.
+											NOW: quantity nullFlavor NI; do not invent PQ amounts.
+										-->
+										<quantity nullFlavor="NI"/>
 									</specimenPlayingEntity>
 </specimenRole>
 							</specimen>
@@ -5328,6 +5586,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<specimenPlayingEntity>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
+										<!--
+											DEFECT #508: specimenPlayingEntity/desc.
+											WAS: specimenPlayingEntity had code/name NI only — no desc. HL7 CDA R2 Entity has desc 0..1. SEMD validators often flag bare playing entity under specimen when material description cannot be joined. Form 043/u chart does not collect specimen material narrative; do not invent desc text.
+											NOW: desc nullFlavor NI until chart field exists.
+										-->
+										<desc nullFlavor="NI"/>
+										<!--
+											DEFECT #509: specimenPlayingEntity/quantity.
+											WAS: specimenPlayingEntity had code/name/desc only — no quantity. HL7 CDA R2 ManufacturedMaterial/Entity may carry quantity. SEMD often flags missing quantity under specimen playing entity.
+											NOW: quantity nullFlavor NI; do not invent PQ amounts.
+										-->
+										<quantity nullFlavor="NI"/>
 									</specimenPlayingEntity>
 </specimenRole>
 							</specimen>
@@ -5391,6 +5661,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<manufacturedMaterial>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
+										<!--
+											DEFECT #534: manufacturedMaterial/lotNumberText.
+											WAS: manufacturedMaterial had code/name NI only — no lotNumberText. Tray product already emits lot (#388). HL7 CDA R2 Material has lotNumberText 0..1. SEMD often flags bare material under consumable without lot slot.
+											NOW: lotNumberText nullFlavor NI; do not invent lot strings.
+										-->
+										<lotNumberText nullFlavor="NI"/>
+										<!--
+											DEFECT #535: manufacturedMaterial/desc.
+											WAS: manufacturedMaterial had code/name/lot only — no desc. Tray already emits desc (#389). SEMD often flags missing material description under consumable.
+											NOW: desc nullFlavor NI; do not invent device prose.
+										-->
+										<desc nullFlavor="NI"/>
+										<!--
+											DEFECT #536: manufacturedMaterial/expirationTime.
+											WAS: manufacturedMaterial had code/name/lot/desc only — no expirationTime. Tray already emits expirationTime. HL7 CDA R2 Material has expirationTime 0..1.
+											NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
+										-->
+										<expirationTime nullFlavor="NI"/>
 									</manufacturedMaterial>
 								</manufacturedProduct>
 							</consumable>
@@ -5407,7 +5695,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<referenceRange>
 								<observationRange>
+									<!--
+										DEFECT #490: observationRange/code.
+										WAS: observationRange had only value CD NI — no code. HL7 CDA R2 ObservationRange has code 0..1 (what range kind). SEMD validators often flag bare observationRange under clinical OBS. Form 043/u ambulatory dental findings have no lab reference-range catalog; do not invent range type codes.
+										NOW: code nullFlavor NI until chart field exists.
+									-->
+									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #491: observationRange/text.
+										WAS: observationRange had no text. HL7 CDA R2 ObservationRange has text 0..1 (ED). SEMD often flags missing narrative under referenceRange when value is NI-only.
+										NOW: text nullFlavor NI; do not invent range prose.
+									-->
+									<text nullFlavor="NI"/>
 									<value xsi:type="CD" nullFlavor="NI"/>
+									<!--
+										DEFECT #492: observationRange/interpretationCode.
+										WAS: observationRange had value only — no interpretationCode. HL7 CDA R2 ObservationRange has interpretationCode 0..*. SEMD often flags missing interpretation under referenceRange for clinical OBS.
+										NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L codes.
+									-->
+									<interpretationCode nullFlavor="NI"/>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -5885,6 +6191,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<specimenPlayingEntity>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
+										<!--
+											DEFECT #510: specimenPlayingEntity/desc.
+											WAS: specimenPlayingEntity had code/name NI only — no desc. HL7 CDA R2 Entity has desc 0..1. SEMD validators often flag bare playing entity under specimen when material description cannot be joined. Form 043/u chart does not collect specimen material narrative; do not invent desc text.
+											NOW: desc nullFlavor NI until chart field exists.
+										-->
+										<desc nullFlavor="NI"/>
+										<!--
+											DEFECT #511: specimenPlayingEntity/quantity.
+											WAS: specimenPlayingEntity had code/name/desc only — no quantity. HL7 CDA R2 ManufacturedMaterial/Entity may carry quantity. SEMD often flags missing quantity under specimen playing entity.
+											NOW: quantity nullFlavor NI; do not invent PQ amounts.
+										-->
+										<quantity nullFlavor="NI"/>
 									</specimenPlayingEntity>
 </specimenRole>
 							</specimen>
@@ -5948,6 +6266,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<manufacturedMaterial>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
+										<!--
+											DEFECT #537: manufacturedMaterial/lotNumberText.
+											WAS: manufacturedMaterial had code/name NI only — no lotNumberText. Tray product already emits lot (#388). HL7 CDA R2 Material has lotNumberText 0..1. SEMD often flags bare material under consumable without lot slot.
+											NOW: lotNumberText nullFlavor NI; do not invent lot strings.
+										-->
+										<lotNumberText nullFlavor="NI"/>
+										<!--
+											DEFECT #538: manufacturedMaterial/desc.
+											WAS: manufacturedMaterial had code/name/lot only — no desc. Tray already emits desc (#389). SEMD often flags missing material description under consumable.
+											NOW: desc nullFlavor NI; do not invent device prose.
+										-->
+										<desc nullFlavor="NI"/>
+										<!--
+											DEFECT #539: manufacturedMaterial/expirationTime.
+											WAS: manufacturedMaterial had code/name/lot/desc only — no expirationTime. Tray already emits expirationTime. HL7 CDA R2 Material has expirationTime 0..1.
+											NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
+										-->
+										<expirationTime nullFlavor="NI"/>
 									</manufacturedMaterial>
 								</manufacturedProduct>
 							</consumable>
@@ -5964,7 +6300,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<referenceRange>
 								<observationRange>
+									<!--
+										DEFECT #493: observationRange/code.
+										WAS: observationRange had only value CD NI — no code. HL7 CDA R2 ObservationRange has code 0..1 (what range kind). SEMD validators often flag bare observationRange under clinical OBS. Form 043/u ambulatory dental findings have no lab reference-range catalog; do not invent range type codes.
+										NOW: code nullFlavor NI until chart field exists.
+									-->
+									<code nullFlavor="NI"/>
+									<!--
+										DEFECT #494: observationRange/text.
+										WAS: observationRange had no text. HL7 CDA R2 ObservationRange has text 0..1 (ED). SEMD often flags missing narrative under referenceRange when value is NI-only.
+										NOW: text nullFlavor NI; do not invent range prose.
+									-->
+									<text nullFlavor="NI"/>
 									<value xsi:type="CD" nullFlavor="NI"/>
+									<!--
+										DEFECT #495: observationRange/interpretationCode.
+										WAS: observationRange had value only — no interpretationCode. HL7 CDA R2 ObservationRange has interpretationCode 0..*. SEMD often flags missing interpretation under referenceRange for clinical OBS.
+										NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L codes.
+									-->
+									<interpretationCode nullFlavor="NI"/>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -6510,6 +6864,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<manufacturedMaterial>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
+										<!--
+											DEFECT #540: manufacturedMaterial/lotNumberText.
+											WAS: manufacturedMaterial had code/name NI only — no lotNumberText. Tray product already emits lot (#388). HL7 CDA R2 Material has lotNumberText 0..1. SEMD often flags bare material under consumable without lot slot.
+											NOW: lotNumberText nullFlavor NI; do not invent lot strings.
+										-->
+										<lotNumberText nullFlavor="NI"/>
+										<!--
+											DEFECT #541: manufacturedMaterial/desc.
+											WAS: manufacturedMaterial had code/name/lot only — no desc. Tray already emits desc (#389). SEMD often flags missing material description under consumable.
+											NOW: desc nullFlavor NI; do not invent device prose.
+										-->
+										<desc nullFlavor="NI"/>
+										<!--
+											DEFECT #542: manufacturedMaterial/expirationTime.
+											WAS: manufacturedMaterial had code/name/lot/desc only — no expirationTime. Tray already emits expirationTime. HL7 CDA R2 Material has expirationTime 0..1.
+											NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
+										-->
+										<expirationTime nullFlavor="NI"/>
 									</manufacturedMaterial>
 								</manufacturedProduct>
 							</consumable>
@@ -6541,6 +6913,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<specimenPlayingEntity>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
+										<!--
+											DEFECT #512: specimenPlayingEntity/desc.
+											WAS: specimenPlayingEntity had code/name NI only — no desc. HL7 CDA R2 Entity has desc 0..1. SEMD validators often flag bare playing entity under specimen when material description cannot be joined. Form 043/u chart does not collect specimen material narrative; do not invent desc text.
+											NOW: desc nullFlavor NI until chart field exists.
+										-->
+										<desc nullFlavor="NI"/>
+										<!--
+											DEFECT #513: specimenPlayingEntity/quantity.
+											WAS: specimenPlayingEntity had code/name/desc only — no quantity. HL7 CDA R2 ManufacturedMaterial/Entity may carry quantity. SEMD often flags missing quantity under specimen playing entity.
+											NOW: quantity nullFlavor NI; do not invent PQ amounts.
+										-->
+										<quantity nullFlavor="NI"/>
 									</specimenPlayingEntity>
 </specimenRole>
 							</specimen>
