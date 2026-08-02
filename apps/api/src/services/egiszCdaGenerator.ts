@@ -1773,7 +1773,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: text = diagnosisText until a richer narrative is needed.
 							-->
 							<text>${escapeXml(params.diagnosisText)}</text>
+							<!--
+								DEFECT #260: diagnosis observation/languageCode.
+								WAS: diagnosis OBS had id/code/text then jumped to statusCode —
+								no entry-level languageCode. ClinicalDocument already declares
+								languageCode ru-RU. HL7 CDA R2 Observation has languageCode
+								0..1. SEMD validators often flag missing language under
+								diagnosis OBS when document language is set but entry acts
+								omit it. Form 043/u ambulatory dental is always RU narrative.
+								NOW: languageCode code=ru-RU matching ClinicalDocument.
+							-->
+							<languageCode code="ru-RU"/>
 							<!-- DEFECT #143: observation statusCode completed (mirror act/supply) -->
+
 
 							<statusCode code="completed"/>
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
@@ -1986,8 +1998,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: text = anamnesis (default Bez osobennostey).
 							-->
 							<text>${escapeXml(params.anamnesis || "Без особенностей")}</text>
+							<!--
+								DEFECT #261: anamnesis observation/languageCode.
+								WAS: anamnesis OBS had id/code/text then jumped to statusCode —
+								no entry-level languageCode. Diagnosis OBS (#260) already
+								carries languageCode ru-RU. HL7 CDA R2 Observation has
+								languageCode 0..1. SEMD validators often flag missing
+								language under history OBS. Form 043/u anamnesis is RU.
+								NOW: languageCode code=ru-RU matching ClinicalDocument.
+							-->
+							<languageCode code="ru-RU"/>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
+
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
 							<!--
@@ -2180,8 +2203,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: text = objectiveStatus (default Bez osobennostey).
 							-->
 							<text>${escapeXml(params.objectiveStatus || "Без особенностей")}</text>
+							<!--
+								DEFECT #262: objective-status observation/languageCode.
+								WAS: objective OBS had id/code/text then jumped to statusCode —
+								no entry-level languageCode. Diagnosis (#260) and anamnesis
+								(#261) already carry languageCode ru-RU. HL7 CDA R2 Observation
+								has languageCode 0..1. SEMD validators often flag missing
+								language under status-localis OBS. Form 043/u objective is RU.
+								NOW: languageCode code=ru-RU matching ClinicalDocument.
+							-->
+							<languageCode code="ru-RU"/>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
+
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
 							<!--
@@ -2361,7 +2395,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-treatment"/>
 							<code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Проведенное лечение"/>
 							<text>${escapeXml(params.treatmentDescription || "Осмотр и консультация")}</text>
+							<!--
+								DEFECT #265: treatment act/languageCode.
+								WAS: treatment ACT had id/code/text then jumped to statusCode —
+								no entry-level languageCode. Body OBS entries (#260-#264)
+								already carry languageCode ru-RU. HL7 CDA R2 Act has
+								languageCode 0..1. SEMD validators often flag missing
+								language under procedure ACT. Form 043/u treatment is RU.
+								NOW: languageCode code=ru-RU matching ClinicalDocument.
+							-->
+							<languageCode code="ru-RU"/>
 							<statusCode code="completed"/>
+
 							<!-- DEFECT #145: act effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
 							<!--
@@ -2546,8 +2591,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: text = complications (default Ne otmecheny).
 							-->
 							<text>${escapeXml(params.complications || "Не отмечены")}</text>
+							<!--
+								DEFECT #263: complications observation/languageCode.
+								WAS: complications OBS had id/code/text then jumped to statusCode —
+								no entry-level languageCode. Diagnosis (#260) through objective
+								(#262) already carry languageCode ru-RU. HL7 CDA R2 Observation
+								has languageCode 0..1. SEMD validators often flag missing
+								language under complications OBS. Form 043/u complications is RU.
+								NOW: languageCode code=ru-RU matching ClinicalDocument.
+							-->
+							<languageCode code="ru-RU"/>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
+
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
 							<!--
@@ -2739,8 +2795,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: text = comorbidities (default Ne otmecheny).
 							-->
 							<text>${escapeXml(params.comorbidities || "Не отмечены")}</text>
+							<!--
+								DEFECT #264: comorbidities observation/languageCode.
+								WAS: comorbidities OBS had id/code/text then jumped to statusCode —
+								no entry-level languageCode. Diagnosis (#260) through complications
+								(#263) already carry languageCode ru-RU. HL7 CDA R2 Observation has
+								languageCode 0..1. SEMD validators often flag missing language under
+								comorbidities OBS. Form 043/u comorbidities is RU.
+								NOW: languageCode code=ru-RU matching ClinicalDocument.
+							-->
+							<languageCode code="ru-RU"/>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
+
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
 							<!--
@@ -2924,7 +2991,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-tray"/>
 							<code code="69764-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Инструментальный лоток"/>
 							<text>${escapeXml(params.instrumentTrayBarcode || "") || "—"}</text>
+							<!--
+								DEFECT #266: instrument-tray supply/languageCode.
+								WAS: supply had id/code/text then jumped to statusCode —
+								no entry-level languageCode. Body OBS (#260-#264) and
+								treatment ACT (#265) already carry languageCode ru-RU.
+								HL7 CDA R2 Supply has languageCode 0..1. SEMD validators
+								often flag missing language under sterilization tray
+								supply. Form 043/u tray section is RU.
+								NOW: languageCode code=ru-RU matching ClinicalDocument.
+							-->
+							<languageCode code="ru-RU"/>
 							<statusCode code="completed"/>
+
 							<!-- DEFECT #145: supply effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
 							<!--
