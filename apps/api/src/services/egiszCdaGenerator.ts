@@ -789,7 +789,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<documentationOf>
 		<serviceEvent classCode="PCPR">
 			<!--
+				DEFECT #161: documentationOf/serviceEvent/id (care event join key).
+				WAS: serviceEvent had classCode/code/status/effectiveTime/performer
+				only — no Act.id. Body entries now carry id (#153); encompassingEncounter
+				has id (#86/#87). HL7 CDA R2 Act.id is the REMD join key for the
+				documented care event itself (distinct from ClinicalDocument/id and
+				encounter id). NOW: id under clinicOid root (or default MO root) with
+				encounterExtension (same visit key as componentOf / inFulfillmentOf).
+				No invented extension="unknown".
+			-->
+			<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(encounterExtension)}"/>
+			<!--
 				DEFECT #124: documentationOf/serviceEvent/code (care event type).
+
 				БЫЛО (#55/#65/#93): serviceEvent had classCode=PCPR + effectiveTime
 				+ performer only — no code. HL7 CDA R2 / EGISZ SEMD expect the
 				type of care event under documentationOf (what was performed),
