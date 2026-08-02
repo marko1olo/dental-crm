@@ -487,7 +487,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	-->
 	<dataEnterer>
 		<time value="${effectiveTime}"/>
+		<!--
+			DEFECT #167: ClinicalDocument/dataEnterer/functionCode.
+			WAS: dataEnterer had time + assignedEntity only — no functionCode.
+			author and serviceEvent/performer already emit functionCode (#166).
+			HL7 CDA R2 DataEnterer has functionCode 0..1 (participation function
+			for who typed the chart). SEMD expects the same participation-level
+			function slot under dataEnterer so REMD can distinguish entry role
+			from assignedEntity/code specialty (#142).
+			NOW: functionCode NI+displayName when doctorPosition known;
+			bare nullFlavor NI when blank. No invented NSI function code.
+		-->
+		${params.doctorPosition && params.doctorPosition.trim()
+			? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+			: `<functionCode nullFlavor="NI"/>`}
 		<assignedEntity>
+
 			${/*
 			 * Same id rule as assignedAuthor (#77): SNILS when present,
 			 * else nullFlavor NI. Do not invent extension="unknown".
