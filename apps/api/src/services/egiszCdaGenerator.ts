@@ -1503,7 +1503,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<repeatNumber nullFlavor="NI"/>
 			<!--
+				DEFECT #220: encompassingEncounter/independentInd.
+				WAS: encounter had methodCode/uncertaintyCode/repeatNumber only
+				— no independentInd. serviceEvent (#216) and treatment ACT
+				(#211) already carry independentInd NI. HL7 CDA R2 Act has
+				independentInd 0..1 on the encounter. SEMD validators often
+				flag missing independentInd under componentOf. Form 043/u
+				chart has no independent-act flag — do not invent true/false.
+				NOW: independentInd nullFlavor NI until chart field exists.
+			-->
+			<independentInd nullFlavor="NI"/>
+			<!--
 				DEFECT #181: encompassingEncounter/encounterParticipant.
+
 
 
 
