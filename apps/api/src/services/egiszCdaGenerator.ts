@@ -941,6 +941,15 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-consent"/>
 			<code nullFlavor="NI"/>
 			<statusCode code="completed"/>
+			<!--
+				DEFECT #148: authorization/consent effectiveTime.
+				WAS: consent had id + code NI + statusCode completed only — no
+				effectiveTime. HL7 CDA R2 Consent Act expects when the consent
+				was effective. Form 043/u SEMD export stamps consent at document
+				sign/lock (documentClock), same clock as author/legalAuthenticator.
+				NOW: effectiveTime value=effectiveTime (documentClock / lockedAt).
+			-->
+			<effectiveTime value="${effectiveTime}"/>
 		</consent>
 	</authorization>
 
