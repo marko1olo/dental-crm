@@ -69,6 +69,7 @@ export const documentKindSchema = z.enum([
   "installment_payment_schedule",
   "post_visit_recommendations",
   "outpatient_medical_card_025u",
+  "dental_medical_card_043u",
   "medical_record_extract",
   "medical_record_copy_request",
   "medical_document_release_receipt",
@@ -290,6 +291,15 @@ const documentKindBaseMetadata = {
     title: "Медицинская карта пациента, получающего медицинскую помощь в амбулаторных условиях (форма N 025/у)",
     label: "Карта 025/у",
     actionLabel: "Карта 025/у",
+    group: "legal",
+    amountSource: "none",
+    requiresVisit: false,
+    requiresPaidRecord: false
+  },
+  dental_medical_card_043u: {
+    title: "Медицинская карта стоматологического больного (форма N 043/у)",
+    label: "Карта 043/у",
+    actionLabel: "Карта 043/у",
     group: "legal",
     amountSource: "none",
     requiresVisit: false,
@@ -547,6 +557,14 @@ export const documentKindSourceMetadata = {
       "DENTE заполняет структуру формы 025/у только из карточки пациента, профиля клиники и подписанных визитов. Неизвестные разделы остаются явно пустыми; юридически значимый электронный обмен требует отдельного контура УКЭП/МИС/ЕГИСЗ.",
     sourceCheckedAt: documentSourceCheckedAt
   },
+  dental_medical_card_043u: {
+    sourceStatus: "official_form",
+    sourceAuthority: "Минздрав России",
+    sourceReference: "Приказ Минздрава России от 15.12.2014 N 834н (учетные формы), форма N 043/у",
+    sourceNote:
+      "DENTE заполняет структуру формы 043/у из дневника приёма (visit_diaries), карточки пациента и профиля клиники. Неизвестные разделы остаются явно пустыми; юридически значимый электронный обмен требует отдельного контура УКЭП/МИС/ЕГИСЗ.",
+    sourceCheckedAt: documentSourceCheckedAt
+  },
   medical_record_extract: {
     sourceStatus: "official_workflow",
     sourceAuthority: "Минздрав России",
@@ -675,6 +693,7 @@ export const documentKindSourceUrls = {
   installment_payment_schedule: [],
   post_visit_recommendations: [],
   outpatient_medical_card_025u: [minzdravAmbulatoryFormsSourceUrl],
+  dental_medical_card_043u: [minzdravAmbulatoryFormsSourceUrl],
   medical_record_extract: [minzdravMedicalDocumentReleaseSourceUrl, minzdravAmbulatoryFormsSourceUrl],
   medical_record_copy_request: [minzdravMedicalDocumentReleaseSourceUrl],
   medical_document_release_receipt: [minzdravMedicalDocumentReleaseSourceUrl],
@@ -744,6 +763,7 @@ export const documentFactoryGroups = [
       "photo_video_consent",
       "medical_intervention_refusal",
       "outpatient_medical_card_025u",
+      "dental_medical_card_043u",
       "medical_record_extract",
       "medical_record_copy_request",
       "medical_document_release_receipt",
@@ -3775,6 +3795,89 @@ export const outpatientMedicalCard025uPayloadSchema = z.object({
 });
 export type OutpatientMedicalCard025uPayload = z.infer<typeof outpatientMedicalCard025uPayloadSchema>;
 
+/** Structured clinical anamnesis facts (additive; free-text narrative remains supported). */
+export const structuredAnamnesisSchema = z.object({
+  narrative: z.string().trim().max(4000).nullable().optional(),
+  allergyStatus: z.string().trim().max(500).nullable().optional(),
+  currentMedications: z.string().trim().max(1000).nullable().optional(),
+  chronicDiseases: z.string().trim().max(1000).nullable().optional(),
+  anticoagulants: z.string().trim().max(500).nullable().optional(),
+  infectiousDiseases: z.string().trim().max(500).nullable().optional(),
+  pregnancyStatus: z.string().trim().max(240).nullable().optional(),
+  pastDentalHistory: z.string().trim().max(2000).nullable().optional(),
+  generalHealthNotes: z.string().trim().max(2000).nullable().optional()
+});
+export type StructuredAnamnesis = z.infer<typeof structuredAnamnesisSchema>;
+
+export const dentalMedicalCard043uOrganizationSchema = z.object({
+  fullName: z.string().trim().min(1).max(240),
+  shortName: z.string().trim().max(160).nullable(),
+  address: z.string().trim().max(240).nullable(),
+  phone: z.string().trim().max(64).nullable(),
+  ogrn: z.string().trim().max(32).nullable(),
+  inn: z.string().trim().max(16).nullable(),
+  licenseNumber: z.string().trim().max(64).nullable(),
+  licenseIssueDate: z.string().trim().max(32).nullable(),
+  licenseAuthority: z.string().trim().max(240).nullable()
+});
+export type DentalMedicalCard043uOrganization = z.infer<typeof dentalMedicalCard043uOrganizationSchema>;
+
+export const dentalMedicalCard043uPatientSchema = z.object({
+  fullName: z.string().trim().min(1).max(160),
+  birthDate: z.string().trim().max(32).nullable(),
+  sex: z.string().trim().max(32).nullable(),
+  phone: z.string().trim().max(64).nullable(),
+  address: z.string().trim().max(240).nullable(),
+  documentSeriesNumber: z.string().trim().max(64).nullable(),
+  snils: z.string().trim().max(32).nullable(),
+  medicalCardNumber: z.string().trim().max(64).nullable()
+});
+export type DentalMedicalCard043uPatient = z.infer<typeof dentalMedicalCard043uPatientSchema>;
+
+export const dentalMedicalCard043uDoctorSchema = z.object({
+  fullName: z.string().trim().min(1).max(160),
+  specialty: z.string().trim().max(120).nullable(),
+  position: z.string().trim().max(120).nullable()
+});
+export type DentalMedicalCard043uDoctor = z.infer<typeof dentalMedicalCard043uDoctorSchema>;
+
+/**
+ * Payload for form N 043/u (dental outpatient medical card / visit diary print).
+ * Mirrors visit_diaries SOAP fields + optional structured anamnesis.
+ */
+export const dentalMedicalCard043uPayloadSchema = z.object({
+  formNumber: z.literal("043/у"),
+  organization: dentalMedicalCard043uOrganizationSchema,
+  patient: dentalMedicalCard043uPatientSchema,
+  doctor: dentalMedicalCard043uDoctorSchema,
+  visitDate: z.string().trim().min(1).max(32),
+  visitId: z.string().uuid().nullable().optional(),
+  diaryId: z.string().uuid().nullable().optional(),
+  complaint: z.string().trim().max(4000).nullable().optional(),
+  /** Free-text anamnesis (backward-compatible diary field). */
+  anamnesis: z.string().trim().max(4000).nullable().optional(),
+  /** Structured anamnesis facts when collected. */
+  structuredAnamnesis: structuredAnamnesisSchema.nullable().optional(),
+  statusLocalis: z.string().trim().max(4000).nullable().optional(),
+  objectiveStatus: z.string().trim().max(4000).nullable().optional(),
+  diagnosisIcd10: z.string().trim().max(64).nullable().optional(),
+  diagnosisTooth: z.string().trim().max(64).nullable().optional(),
+  diagnosisText: z.string().trim().max(2000).nullable().optional(),
+  treatmentDescription: z.string().trim().max(8000).nullable().optional(),
+  treatmentPlan: z.string().trim().max(4000).nullable().optional(),
+  complications: z.string().trim().max(2000).nullable().optional(),
+  comorbidities: z.string().trim().max(2000).nullable().optional(),
+  instrumentTrayBarcode: z.string().trim().max(128).nullable().optional(),
+  clinicalToothRows: clinicalToothRowsSchema.optional(),
+  recommendations: z.string().trim().max(4000).nullable().optional(),
+  nextVisitPlan: z.string().trim().max(2000).nullable().optional(),
+  content: z.string().trim().max(16000).nullable().optional(),
+  lockedAt: z.string().trim().max(64).nullable().optional(),
+  contentHash: z.string().trim().max(128).nullable().optional()
+});
+export type DentalMedicalCard043uPayload = z.infer<typeof dentalMedicalCard043uPayloadSchema>;
+
+
 export const medicalRecordCopyRequestFormatSchema = z.enum(["paper", "pdf", "dicom_archive", "secure_link", "physical_media", "other"]);
 export type MedicalRecordCopyRequestFormat = z.infer<typeof medicalRecordCopyRequestFormatSchema>;
 
@@ -4059,6 +4162,7 @@ export const documentPayloadSchema = z
     xrayCbctReferral: xrayCbctReferralPayloadSchema.optional(),
     medicalDocumentReleaseReceipt: medicalDocumentReleaseReceiptPayloadSchema.optional(),
     outpatientMedicalCard025u: outpatientMedicalCard025uPayloadSchema.optional(),
+    dentalMedicalCard043u: dentalMedicalCard043uPayloadSchema.optional(),
     medicalRecordExtract: medicalRecordExtractPayloadSchema.optional(),
     medicalRecordCopyRequest: medicalRecordCopyRequestPayloadSchema.optional(),
     postVisitRecommendations: postVisitRecommendationsPayloadSchema.optional(),
@@ -4110,6 +4214,7 @@ export const documentPayloadKeysByKind: Partial<Record<DocumentKind, readonly Do
   xray_cbct_referral: ["xrayCbctReferral"],
   medical_document_release_receipt: ["medicalDocumentReleaseReceipt"],
   outpatient_medical_card_025u: ["outpatientMedicalCard025u"],
+  dental_medical_card_043u: ["dentalMedicalCard043u"],
   medical_record_extract: ["medicalRecordExtract"],
   medical_record_copy_request: ["medicalRecordCopyRequest"],
   post_visit_recommendations: ["postVisitRecommendations"],
@@ -6244,6 +6349,7 @@ export type VisitNoteDraftQuality = z.infer<typeof visitNoteDraftQualitySchema>;
 export const visitNoteDraftSchema = z.object({
   complaint: z.string().nullable(),
   anamnesis: z.string().nullable(),
+  structuredAnamnesis: structuredAnamnesisSchema.nullable().optional(),
   objectiveStatus: z.string().nullable(),
   diagnosis: z.string().nullable(),
   treatmentPlan: z.string().nullable(),

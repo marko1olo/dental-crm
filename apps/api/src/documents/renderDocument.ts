@@ -3949,6 +3949,41 @@ export function taxFiscalDocumentBlockReason(
   return reason ? repairMojibakeText(reason) : null;
 }
 
+
+function dentalMedicalCard043u(document: GeneratedDocument, patient: Patient): string {
+  const payload = document.payload?.dentalMedicalCard043u;
+  const title = "Медицинская карта стоматологического больного (форма 043/у)";
+  if (!payload) {
+    return `<section><h2>${escapeHtml(title)}</h2><p>Данные формы 043/у не заполнены.</p></section>`;
+  }
+  const rows: Array<[string, string | null | undefined]> = [
+    ["Дата приёма", payload.visitDate],
+    ["Пациент", payload.patient?.fullName ?? patient.fullName],
+    ["Жалобы", payload.complaint],
+    ["Анамнез", payload.anamnesis],
+    ["Status localis", payload.statusLocalis ?? payload.objectiveStatus],
+    ["Диагноз (МКБ-10)", payload.diagnosisIcd10],
+    ["Зуб", payload.diagnosisTooth],
+    ["Диагноз", payload.diagnosisText],
+    ["Лечение", payload.treatmentDescription ?? payload.treatmentPlan],
+    ["Осложнения", payload.complications],
+    ["Сопутствующие", payload.comorbidities],
+    ["Лоток", payload.instrumentTrayBarcode],
+    ["Рекомендации", payload.recommendations],
+    ["План следующего визита", payload.nextVisitPlan]
+  ];
+  const body = rows
+    .filter(([, v]) => typeof v === "string" && v.trim().length > 0)
+    .map(([k, v]) => `<p><strong>${escapeHtml(k)}:</strong> ${escapeHtml(String(v))}</p>`)
+    .join("");
+  const doctor = payload.doctor?.fullName
+    ? `<p><strong>Врач:</strong> ${escapeHtml(payload.doctor.fullName)}${
+        payload.doctor.specialty ? ` (${escapeHtml(payload.doctor.specialty)})` : ""
+      }</p>`
+    : "";
+  return `<section><h2>${escapeHtml(title)}</h2>${doctor}${body}</section>`;
+}
+
 export function renderDocumentHtml(document: GeneratedDocument, patient: Patient, context: DocumentRenderContext = {}) {
   const bodyByKind: Record<DocumentKind, string> = {
     paid_medical_services_contract: paidMedicalServicesContract(document, context),
@@ -3971,6 +4006,7 @@ export function renderDocumentHtml(document: GeneratedDocument, patient: Patient
     post_visit_recommendations: postVisitRecommendations(document),
     medical_record_extract: medicalRecordExtract(document, patient),
     outpatient_medical_card_025u: outpatientMedicalCard025u(document, patient),
+dental_medical_card_043u: dentalMedicalCard043u(document, patient),
     medical_record_copy_request: structuredMedicalRecordCopyRequest(document, patient),
     medical_document_release_receipt: medicalDocumentReleaseReceipt(document, patient),
     xray_cbct_referral: xrayCbctReferral(document),

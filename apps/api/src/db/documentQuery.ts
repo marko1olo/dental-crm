@@ -109,6 +109,7 @@ export async function getDocumentById(organizationId: string, id: string): Promi
 const documentTitles: Record<string, string> = {
   medical_record_extract: "Выписка из медицинской карты",
   outpatient_medical_card_025u: "Медицинская карта 025/у",
+  dental_medical_card_043u: "Медицинская карта 043/у",
   medical_document_release_receipt: "Расписка о получении",
   medical_record_copy_request: "Заявление о выдаче копии",
   tax_deduction_application: "Заявление на вычет",
