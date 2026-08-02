@@ -1704,6 +1704,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						-->
 						<expirationTime nullFlavor="NI"/>
 					</manufacturedMaterial>
+				<!--
+
+					DEFECT #551: manufacturedProduct/manufacturerOrganization.
+
+					WAS: manufacturedProduct had material only — no manufacturerOrganization. Tray product already emits manufacturerOrganization. HL7 CDA R2 ManufacturedProduct has manufacturerOrganization 0..1. SEMD often flags bare product under consumable without org shell.
+
+					NOW: manufacturerOrganization with id/name/addr/telecom NI; do not invent org identity.
+
+				-->
+
+				<manufacturerOrganization>
+
+					<id nullFlavor="NI"/>
+
+					<!--
+
+						DEFECT #552: manufacturerOrganization/name.
+
+						WAS: manufacturerOrganization id only path.
+
+						NOW: name nullFlavor NI.
+
+					-->
+
+					<name nullFlavor="NI"/>
+
+					<!--
+
+						DEFECT #553: manufacturerOrganization/addr.
+
+						NOW: addr nullFlavor NI; do not invent streetAddressLine.
+
+					-->
+
+					<addr nullFlavor="NI"/>
+
+					<!--
+
+						DEFECT #554: manufacturerOrganization/telecom.
+
+						NOW: telecom nullFlavor NI; do not invent phone.
+
+					-->
+
+					<telecom nullFlavor="NI"/>
+
+				</manufacturerOrganization>
+
 				</manufacturedProduct>
 			</consumable>
 <!--
@@ -2676,6 +2724,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						-->
 						<expirationTime nullFlavor="NI"/>
 					</manufacturedMaterial>
+				<!--
+
+					DEFECT #555: manufacturedProduct/manufacturerOrganization.
+
+					WAS: manufacturedProduct had material only — no manufacturerOrganization. Tray product already emits manufacturerOrganization. HL7 CDA R2 ManufacturedProduct has manufacturerOrganization 0..1. SEMD often flags bare product under consumable without org shell.
+
+					NOW: manufacturerOrganization with id/name/addr/telecom NI; do not invent org identity.
+
+				-->
+
+				<manufacturerOrganization>
+
+					<id nullFlavor="NI"/>
+
+					<!--
+
+						DEFECT #556: manufacturerOrganization/name.
+
+						WAS: manufacturerOrganization id only path.
+
+						NOW: name nullFlavor NI.
+
+					-->
+
+					<name nullFlavor="NI"/>
+
+					<!--
+
+						DEFECT #557: manufacturerOrganization/addr.
+
+						NOW: addr nullFlavor NI; do not invent streetAddressLine.
+
+					-->
+
+					<addr nullFlavor="NI"/>
+
+					<!--
+
+						DEFECT #558: manufacturerOrganization/telecom.
+
+						NOW: telecom nullFlavor NI; do not invent phone.
+
+					-->
+
+					<telecom nullFlavor="NI"/>
+
+				</manufacturerOrganization>
+
 				</manufacturedProduct>
 			</consumable>
 <!--
@@ -2791,7 +2887,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						declares ru-RU but narrative sections omit it.
 						NOW: languageCode code=ru-RU matching ClinicalDocument.
 					-->
-					<languageCode code="ru-RU"/><entry>
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #544: section/subject (related subject shell).
+						WAS: section had id/code/title/text/confidentialityCode/languageCode then entry — no subject. HL7 CDA R2 Section has subject 0..1 (related subject when section subject differs from recordTarget). Body entries already carry subject SBJ; SEMD validators often flag missing section-level subject shell. Form 043/u sections are about the same patient — no alternate section subject on chart; do not invent related person demographics.
+						NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and NI demographics (mirror entry-level relatedSubject).
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject classCode="PRS">
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<entry>
 						<!--
 							DEFECT #351: diagnosis observation/@negationInd.
 							WAS: open had classCode/moodCode only — no negationInd.
@@ -3319,6 +3433,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										-->
 										<expirationTime nullFlavor="NI"/>
 									</manufacturedMaterial>
+								<!--
+
+									DEFECT #559: manufacturedProduct/manufacturerOrganization.
+
+									WAS: manufacturedProduct had material only — no manufacturerOrganization. Tray product already emits manufacturerOrganization. HL7 CDA R2 ManufacturedProduct has manufacturerOrganization 0..1. SEMD often flags bare product under consumable without org shell.
+
+									NOW: manufacturerOrganization with id/name/addr/telecom NI; do not invent org identity.
+
+								-->
+
+								<manufacturerOrganization>
+
+									<id nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #560: manufacturerOrganization/name.
+
+										WAS: manufacturerOrganization id only path.
+
+										NOW: name nullFlavor NI.
+
+									-->
+
+									<name nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #561: manufacturerOrganization/addr.
+
+										NOW: addr nullFlavor NI; do not invent streetAddressLine.
+
+									-->
+
+									<addr nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #562: manufacturerOrganization/telecom.
+
+										NOW: telecom nullFlavor NI; do not invent phone.
+
+									-->
+
+									<telecom nullFlavor="NI"/>
+
+								</manufacturerOrganization>
+
 								</manufacturedProduct>
 							</consumable>
 <!--
@@ -3432,7 +3594,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: languageCode code=ru-RU matching ClinicalDocument.
 					-->
 					<languageCode code="ru-RU"/>
-<entry>
+					<!--
+						DEFECT #545: section/subject (related subject shell).
+						WAS: section had id/code/title/text/confidentialityCode/languageCode then entry — no subject. HL7 CDA R2 Section has subject 0..1 (related subject when section subject differs from recordTarget). Body entries already carry subject SBJ; SEMD validators often flag missing section-level subject shell. Form 043/u sections are about the same patient — no alternate section subject on chart; do not invent related person demographics.
+						NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and NI demographics (mirror entry-level relatedSubject).
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject classCode="PRS">
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<entry>
 						<!--
 							DEFECT #352: anamnesis observation/@negationInd.
 							WAS: open had classCode/moodCode only — no negationInd.
@@ -3911,6 +4090,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										-->
 										<expirationTime nullFlavor="NI"/>
 									</manufacturedMaterial>
+								<!--
+
+									DEFECT #563: manufacturedProduct/manufacturerOrganization.
+
+									WAS: manufacturedProduct had material only — no manufacturerOrganization. Tray product already emits manufacturerOrganization. HL7 CDA R2 ManufacturedProduct has manufacturerOrganization 0..1. SEMD often flags bare product under consumable without org shell.
+
+									NOW: manufacturerOrganization with id/name/addr/telecom NI; do not invent org identity.
+
+								-->
+
+								<manufacturerOrganization>
+
+									<id nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #564: manufacturerOrganization/name.
+
+										WAS: manufacturerOrganization id only path.
+
+										NOW: name nullFlavor NI.
+
+									-->
+
+									<name nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #565: manufacturerOrganization/addr.
+
+										NOW: addr nullFlavor NI; do not invent streetAddressLine.
+
+									-->
+
+									<addr nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #566: manufacturerOrganization/telecom.
+
+										NOW: telecom nullFlavor NI; do not invent phone.
+
+									-->
+
+									<telecom nullFlavor="NI"/>
+
+								</manufacturerOrganization>
+
 								</manufacturedProduct>
 							</consumable>
 <!--
@@ -4035,7 +4262,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: languageCode code=ru-RU matching ClinicalDocument.
 					-->
 					<languageCode code="ru-RU"/>
-<entry>
+					<!--
+						DEFECT #546: section/subject (related subject shell).
+						WAS: section had id/code/title/text/confidentialityCode/languageCode then entry — no subject. HL7 CDA R2 Section has subject 0..1 (related subject when section subject differs from recordTarget). Body entries already carry subject SBJ; SEMD validators often flag missing section-level subject shell. Form 043/u sections are about the same patient — no alternate section subject on chart; do not invent related person demographics.
+						NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and NI demographics (mirror entry-level relatedSubject).
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject classCode="PRS">
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<entry>
 						<!--
 							DEFECT #353: objective-status observation/@negationInd.
 							WAS: open had classCode/moodCode only — no negationInd.
@@ -4517,6 +4761,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										-->
 										<expirationTime nullFlavor="NI"/>
 									</manufacturedMaterial>
+								<!--
+
+									DEFECT #567: manufacturedProduct/manufacturerOrganization.
+
+									WAS: manufacturedProduct had material only — no manufacturerOrganization. Tray product already emits manufacturerOrganization. HL7 CDA R2 ManufacturedProduct has manufacturerOrganization 0..1. SEMD often flags bare product under consumable without org shell.
+
+									NOW: manufacturerOrganization with id/name/addr/telecom NI; do not invent org identity.
+
+								-->
+
+								<manufacturerOrganization>
+
+									<id nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #568: manufacturerOrganization/name.
+
+										WAS: manufacturerOrganization id only path.
+
+										NOW: name nullFlavor NI.
+
+									-->
+
+									<name nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #569: manufacturerOrganization/addr.
+
+										NOW: addr nullFlavor NI; do not invent streetAddressLine.
+
+									-->
+
+									<addr nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #570: manufacturerOrganization/telecom.
+
+										NOW: telecom nullFlavor NI; do not invent phone.
+
+									-->
+
+									<telecom nullFlavor="NI"/>
+
+								</manufacturerOrganization>
+
 								</manufacturedProduct>
 							</consumable>
 <!--
@@ -4636,7 +4928,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: languageCode code=ru-RU matching ClinicalDocument.
 					-->
 					<languageCode code="ru-RU"/>
-<entry>
+					<!--
+						DEFECT #547: section/subject (related subject shell).
+						WAS: section had id/code/title/text/confidentialityCode/languageCode then entry — no subject. HL7 CDA R2 Section has subject 0..1 (related subject when section subject differs from recordTarget). Body entries already carry subject SBJ; SEMD validators often flag missing section-level subject shell. Form 043/u sections are about the same patient — no alternate section subject on chart; do not invent related person demographics.
+						NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and NI demographics (mirror entry-level relatedSubject).
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject classCode="PRS">
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<entry>
 						<!--
 							DEFECT #356: treatment act/@negationInd.
 							WAS: open had classCode/moodCode only — no negationInd.
@@ -5032,6 +5341,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										-->
 										<expirationTime nullFlavor="NI"/>
 									</manufacturedMaterial>
+								<!--
+
+									DEFECT #571: manufacturedProduct/manufacturerOrganization.
+
+									WAS: manufacturedProduct had material only — no manufacturerOrganization. Tray product already emits manufacturerOrganization. HL7 CDA R2 ManufacturedProduct has manufacturerOrganization 0..1. SEMD often flags bare product under consumable without org shell.
+
+									NOW: manufacturerOrganization with id/name/addr/telecom NI; do not invent org identity.
+
+								-->
+
+								<manufacturerOrganization>
+
+									<id nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #572: manufacturerOrganization/name.
+
+										WAS: manufacturerOrganization id only path.
+
+										NOW: name nullFlavor NI.
+
+									-->
+
+									<name nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #573: manufacturerOrganization/addr.
+
+										NOW: addr nullFlavor NI; do not invent streetAddressLine.
+
+									-->
+
+									<addr nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #574: manufacturerOrganization/telecom.
+
+										NOW: telecom nullFlavor NI; do not invent phone.
+
+									-->
+
+									<telecom nullFlavor="NI"/>
+
+								</manufacturerOrganization>
+
 								</manufacturedProduct>
 							</consumable>
 <!--
@@ -5194,7 +5551,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: languageCode code=ru-RU matching ClinicalDocument.
 					-->
 					<languageCode code="ru-RU"/>
-<entry>
+					<!--
+						DEFECT #548: section/subject (related subject shell).
+						WAS: section had id/code/title/text/confidentialityCode/languageCode then entry — no subject. HL7 CDA R2 Section has subject 0..1 (related subject when section subject differs from recordTarget). Body entries already carry subject SBJ; SEMD validators often flag missing section-level subject shell. Form 043/u sections are about the same patient — no alternate section subject on chart; do not invent related person demographics.
+						NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and NI demographics (mirror entry-level relatedSubject).
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject classCode="PRS">
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<entry>
 						<!--
 							DEFECT #354: complications observation/@negationInd.
 							WAS: open had classCode/moodCode only — no negationInd.
@@ -5680,6 +6054,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										-->
 										<expirationTime nullFlavor="NI"/>
 									</manufacturedMaterial>
+								<!--
+
+									DEFECT #575: manufacturedProduct/manufacturerOrganization.
+
+									WAS: manufacturedProduct had material only — no manufacturerOrganization. Tray product already emits manufacturerOrganization. HL7 CDA R2 ManufacturedProduct has manufacturerOrganization 0..1. SEMD often flags bare product under consumable without org shell.
+
+									NOW: manufacturerOrganization with id/name/addr/telecom NI; do not invent org identity.
+
+								-->
+
+								<manufacturerOrganization>
+
+									<id nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #576: manufacturerOrganization/name.
+
+										WAS: manufacturerOrganization id only path.
+
+										NOW: name nullFlavor NI.
+
+									-->
+
+									<name nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #577: manufacturerOrganization/addr.
+
+										NOW: addr nullFlavor NI; do not invent streetAddressLine.
+
+									-->
+
+									<addr nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #578: manufacturerOrganization/telecom.
+
+										NOW: telecom nullFlavor NI; do not invent phone.
+
+									-->
+
+									<telecom nullFlavor="NI"/>
+
+								</manufacturerOrganization>
+
 								</manufacturedProduct>
 							</consumable>
 <!--
@@ -5795,7 +6217,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: languageCode code=ru-RU matching ClinicalDocument.
 					-->
 					<languageCode code="ru-RU"/>
-<entry>
+					<!--
+						DEFECT #549: section/subject (related subject shell).
+						WAS: section had id/code/title/text/confidentialityCode/languageCode then entry — no subject. HL7 CDA R2 Section has subject 0..1 (related subject when section subject differs from recordTarget). Body entries already carry subject SBJ; SEMD validators often flag missing section-level subject shell. Form 043/u sections are about the same patient — no alternate section subject on chart; do not invent related person demographics.
+						NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and NI demographics (mirror entry-level relatedSubject).
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject classCode="PRS">
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<entry>
 						<!--
 							DEFECT #355: comorbidities observation/@negationInd.
 							WAS: open had classCode/moodCode only — no negationInd.
@@ -6285,6 +6724,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										-->
 										<expirationTime nullFlavor="NI"/>
 									</manufacturedMaterial>
+								<!--
+
+									DEFECT #579: manufacturedProduct/manufacturerOrganization.
+
+									WAS: manufacturedProduct had material only — no manufacturerOrganization. Tray product already emits manufacturerOrganization. HL7 CDA R2 ManufacturedProduct has manufacturerOrganization 0..1. SEMD often flags bare product under consumable without org shell.
+
+									NOW: manufacturerOrganization with id/name/addr/telecom NI; do not invent org identity.
+
+								-->
+
+								<manufacturerOrganization>
+
+									<id nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #580: manufacturerOrganization/name.
+
+										WAS: manufacturerOrganization id only path.
+
+										NOW: name nullFlavor NI.
+
+									-->
+
+									<name nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #581: manufacturerOrganization/addr.
+
+										NOW: addr nullFlavor NI; do not invent streetAddressLine.
+
+									-->
+
+									<addr nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #582: manufacturerOrganization/telecom.
+
+										NOW: telecom nullFlavor NI; do not invent phone.
+
+									-->
+
+									<telecom nullFlavor="NI"/>
+
+								</manufacturerOrganization>
+
 								</manufacturedProduct>
 							</consumable>
 <!--
@@ -6401,7 +6888,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: languageCode code=ru-RU matching ClinicalDocument.
 					-->
 					<languageCode code="ru-RU"/>
-<entry>
+					<!--
+						DEFECT #550: section/subject (related subject shell).
+						WAS: section had id/code/title/text/confidentialityCode/languageCode then entry — no subject. HL7 CDA R2 Section has subject 0..1 (related subject when section subject differs from recordTarget). Body entries already carry subject SBJ; SEMD validators often flag missing section-level subject shell. Form 043/u sections are about the same patient — no alternate section subject on chart; do not invent related person demographics.
+						NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and NI demographics (mirror entry-level relatedSubject).
+					-->
+					<subject typeCode="SBJ">
+						<relatedSubject classCode="PRS">
+							<code nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<subject>
+								<name nullFlavor="NI"/>
+								<administrativeGenderCode nullFlavor="NI"/>
+								<birthTime nullFlavor="NI"/>
+							</subject>
+						</relatedSubject>
+					</subject>
+					<entry>
 						<!--
 							DEFECT #357: instrument-tray supply/@negationInd.
 							WAS: open had classCode/moodCode only — no negationInd.
@@ -6883,6 +7387,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										-->
 										<expirationTime nullFlavor="NI"/>
 									</manufacturedMaterial>
+								<!--
+
+									DEFECT #583: manufacturedProduct/manufacturerOrganization.
+
+									WAS: manufacturedProduct had material only — no manufacturerOrganization. Tray product already emits manufacturerOrganization. HL7 CDA R2 ManufacturedProduct has manufacturerOrganization 0..1. SEMD often flags bare product under consumable without org shell.
+
+									NOW: manufacturerOrganization with id/name/addr/telecom NI; do not invent org identity.
+
+								-->
+
+								<manufacturerOrganization>
+
+									<id nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #584: manufacturerOrganization/name.
+
+										WAS: manufacturerOrganization id only path.
+
+										NOW: name nullFlavor NI.
+
+									-->
+
+									<name nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #585: manufacturerOrganization/addr.
+
+										NOW: addr nullFlavor NI; do not invent streetAddressLine.
+
+									-->
+
+									<addr nullFlavor="NI"/>
+
+									<!--
+
+										DEFECT #586: manufacturerOrganization/telecom.
+
+										NOW: telecom nullFlavor NI; do not invent phone.
+
+									-->
+
+									<telecom nullFlavor="NI"/>
+
+								</manufacturerOrganization>
+
 								</manufacturedProduct>
 							</consumable>
 <!--
