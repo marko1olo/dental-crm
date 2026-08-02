@@ -521,7 +521,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						-->
 						<birthTime nullFlavor="NI"/>
 					</guardianPerson>
-				</guardian>
+				
+					<!--
+						DEFECT #852: patient/guardian/guardianOrganization.
+						WAS: guardian had id/code/addr/telecom/guardianPerson — no guardianOrganization. HL7 CDA R2 Guardian may carry guardianOrganization. SEMD often flags incomplete guardian under recordTarget when only person stub is present. Form 043/u chart does not collect guardian org — do not invent org name/OID.
+						NOW: guardianOrganization id/name/addr/telecom NI.
+					-->
+					<guardianOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</guardianOrganization>
+</guardian>
 
 				<!--
 					DEFECT #176: patient/birthplace.
@@ -1709,6 +1721,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: effectiveTime nullFlavor NI until chart field exists.
 					-->
 					<effectiveTime nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #804: reference/externalAct/priorityCode.
+						WAS: externalAct had id/code/text/status/effectiveTime — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under reference externalAct when body acts emit it. Do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #805: reference/externalAct/languageCode.
+						WAS: externalAct had no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under reference externalAct.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #806: reference/externalAct/confidentialityCode.
+						WAS: externalAct had no confidentialityCode. ClinicalDocument declares N; SEMD often flags missing confidentiality under reference externalAct.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 				</externalAct>
 			</reference>
 									<!--
@@ -1979,6 +2010,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+
+					<!--
+						DEFECT #841: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had method/target/uncertainty — no interpretationCode. Parent body OBS emit interpretationCode. SEMD often flags missing interpretation under nested entryRelationship acts.
+						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+					-->
+					<interpretationCode nullFlavor="NI"/>
 </act>
 			</entryRelationship>
 
@@ -2077,6 +2115,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: uncertaintyCode nullFlavor NI until chart field exists.
 			-->
 			<uncertaintyCode nullFlavor="NI"/>
+
+			<!--
+				DEFECT #853: inFulfillmentOf/order/author.
+				WAS: order had method/target/uncertainty — no author. HL7 CDA R2 Order (Act) has author 0..*. SEMD often flags missing order author under inFulfillmentOf when body acts emit author.
+				NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name NI; do not invent.
+			-->
+			<author typeCode="AUT">
+				<time nullFlavor="NI"/>
+				<assignedAuthor>
+
+					<!--
+						DEFECT #854: order/author/assignedAuthor demographics.
+						WAS: author shell needs assignedAuthor children.
+						NOW: id/addr/telecom NI + assignedPerson/name NI; do not invent.
+					-->
+					<id nullFlavor="NI"/>
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<assignedPerson>
+						<name nullFlavor="NI"/>
+					</assignedPerson>
+				</assignedAuthor>
+			</author>
 </order>
 	</inFulfillmentOf>
 	<!--
@@ -2301,6 +2362,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				</assignedPerson>
 			</assignedAuthor>
 		</author>
+
+		<!--
+			DEFECT #850: authorization/consent/participant (WIT).
+			WAS: consent had performer/author — no participant witness. HL7 CDA R2 Consent Act has participant 0..*. SEMD validators often flag missing consent witness when legalAuthenticator is present but consent has no WIT participant.
+			NOW: participant typeCode=WIT with associatedEntity id/code/addr/telecom/associatedPerson name NI; do not invent witness identity.
+		-->
+		<participant typeCode="WIT">
+			<associatedEntity classCode="PRS">
+
+				<!--
+					DEFECT #851: consent/participant/associatedEntity demographics.
+					WAS: WIT associatedEntity shell needs children.
+					NOW: id/code/addr/telecom NI + associatedPerson/name NI; do not invent.
+				-->
+				<id nullFlavor="NI"/>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<associatedPerson>
+					<name nullFlavor="NI"/>
+				</associatedPerson>
+			</associatedEntity>
+		</participant>
 </consent>
 	</authorization>
 
@@ -2971,6 +3055,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: effectiveTime nullFlavor NI until chart field exists.
 					-->
 					<effectiveTime nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #807: reference/externalAct/priorityCode.
+						WAS: externalAct had id/code/text/status/effectiveTime — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under reference externalAct when body acts emit it. Do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #808: reference/externalAct/languageCode.
+						WAS: externalAct had no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under reference externalAct.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #809: reference/externalAct/confidentialityCode.
+						WAS: externalAct had no confidentialityCode. ClinicalDocument declares N; SEMD often flags missing confidentiality under reference externalAct.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 				</externalAct>
 			</reference>
 									<!--
@@ -3216,6 +3319,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+
+					<!--
+						DEFECT #842: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had method/target/uncertainty — no interpretationCode. Parent body OBS emit interpretationCode. SEMD often flags missing interpretation under nested entryRelationship acts.
+						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+					-->
+					<interpretationCode nullFlavor="NI"/>
 </act>
 			</entryRelationship>
 
@@ -3777,6 +3887,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: effectiveTime nullFlavor NI until chart field exists.
 					-->
 					<effectiveTime nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #810: reference/externalAct/priorityCode.
+						WAS: externalAct had id/code/text/status/effectiveTime — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under reference externalAct when body acts emit it. Do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #811: reference/externalAct/languageCode.
+						WAS: externalAct had no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under reference externalAct.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #812: reference/externalAct/confidentialityCode.
+						WAS: externalAct had no confidentialityCode. ClinicalDocument declares N; SEMD often flags missing confidentiality under reference externalAct.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 				</externalAct>
 							</reference>
 							<!--
@@ -3990,6 +4119,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L codes.
 									-->
 									<interpretationCode nullFlavor="NI"/>
+								
+									<!--
+										DEFECT #831: referenceRange/observationRange/statusCode.
+										WAS: observationRange had code/text/value/interpretationCode — no statusCode. SEMD often flags bare observationRange under clinical OBS when sibling acts carry statusCode completed.
+										NOW: statusCode completed.
+									-->
+									<statusCode code="completed"/>
+									<!--
+										DEFECT #832: referenceRange/observationRange/effectiveTime.
+										WAS: observationRange had no effectiveTime. SEMD often flags missing effectiveTime under referenceRange. Form 043/u ambulatory findings have no lab range validity window — do not invent.
+										NOW: effectiveTime nullFlavor NI until chart field exists.
+									-->
+									<effectiveTime nullFlavor="NI"/>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -4059,6 +4201,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+
+					<!--
+						DEFECT #843: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had method/target/uncertainty — no interpretationCode. Parent body OBS emit interpretationCode. SEMD often flags missing interpretation under nested entryRelationship acts.
+						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+					-->
+					<interpretationCode nullFlavor="NI"/>
 </act>
 							</entryRelationship>
 
@@ -4575,6 +4724,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: effectiveTime nullFlavor NI until chart field exists.
 					-->
 					<effectiveTime nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #813: reference/externalAct/priorityCode.
+						WAS: externalAct had id/code/text/status/effectiveTime — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under reference externalAct when body acts emit it. Do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #814: reference/externalAct/languageCode.
+						WAS: externalAct had no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under reference externalAct.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #815: reference/externalAct/confidentialityCode.
+						WAS: externalAct had no confidentialityCode. ClinicalDocument declares N; SEMD often flags missing confidentiality under reference externalAct.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 				</externalAct>
 							</reference>
 							<!--
@@ -4788,6 +4956,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L codes.
 									-->
 									<interpretationCode nullFlavor="NI"/>
+								
+									<!--
+										DEFECT #833: referenceRange/observationRange/statusCode.
+										WAS: observationRange had code/text/value/interpretationCode — no statusCode. SEMD often flags bare observationRange under clinical OBS when sibling acts carry statusCode completed.
+										NOW: statusCode completed.
+									-->
+									<statusCode code="completed"/>
+									<!--
+										DEFECT #834: referenceRange/observationRange/effectiveTime.
+										WAS: observationRange had no effectiveTime. SEMD often flags missing effectiveTime under referenceRange. Form 043/u ambulatory findings have no lab range validity window — do not invent.
+										NOW: effectiveTime nullFlavor NI until chart field exists.
+									-->
+									<effectiveTime nullFlavor="NI"/>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -4857,6 +5038,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+
+					<!--
+						DEFECT #844: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had method/target/uncertainty — no interpretationCode. Parent body OBS emit interpretationCode. SEMD often flags missing interpretation under nested entryRelationship acts.
+						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+					-->
+					<interpretationCode nullFlavor="NI"/>
 </act>
 							</entryRelationship>
 
@@ -5387,6 +5575,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: effectiveTime nullFlavor NI until chart field exists.
 					-->
 					<effectiveTime nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #816: reference/externalAct/priorityCode.
+						WAS: externalAct had id/code/text/status/effectiveTime — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under reference externalAct when body acts emit it. Do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #817: reference/externalAct/languageCode.
+						WAS: externalAct had no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under reference externalAct.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #818: reference/externalAct/confidentialityCode.
+						WAS: externalAct had no confidentialityCode. ClinicalDocument declares N; SEMD often flags missing confidentiality under reference externalAct.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 				</externalAct>
 							</reference>
 							<!--
@@ -5600,6 +5807,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L codes.
 									-->
 									<interpretationCode nullFlavor="NI"/>
+								
+									<!--
+										DEFECT #835: referenceRange/observationRange/statusCode.
+										WAS: observationRange had code/text/value/interpretationCode — no statusCode. SEMD often flags bare observationRange under clinical OBS when sibling acts carry statusCode completed.
+										NOW: statusCode completed.
+									-->
+									<statusCode code="completed"/>
+									<!--
+										DEFECT #836: referenceRange/observationRange/effectiveTime.
+										WAS: observationRange had no effectiveTime. SEMD often flags missing effectiveTime under referenceRange. Form 043/u ambulatory findings have no lab range validity window — do not invent.
+										NOW: effectiveTime nullFlavor NI until chart field exists.
+									-->
+									<effectiveTime nullFlavor="NI"/>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -5669,6 +5889,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+
+					<!--
+						DEFECT #845: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had method/target/uncertainty — no interpretationCode. Parent body OBS emit interpretationCode. SEMD often flags missing interpretation under nested entryRelationship acts.
+						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+					-->
+					<interpretationCode nullFlavor="NI"/>
 </act>
 							</entryRelationship>
 
@@ -6193,6 +6420,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: effectiveTime nullFlavor NI until chart field exists.
 					-->
 					<effectiveTime nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #819: reference/externalAct/priorityCode.
+						WAS: externalAct had id/code/text/status/effectiveTime — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under reference externalAct when body acts emit it. Do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #820: reference/externalAct/languageCode.
+						WAS: externalAct had no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under reference externalAct.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #821: reference/externalAct/confidentialityCode.
+						WAS: externalAct had no confidentialityCode. ClinicalDocument declares N; SEMD often flags missing confidentiality under reference externalAct.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 				</externalAct>
 							</reference>
 							
@@ -6440,6 +6686,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+
+					<!--
+						DEFECT #846: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had method/target/uncertainty — no interpretationCode. Parent body OBS emit interpretationCode. SEMD often flags missing interpretation under nested entryRelationship acts.
+						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+					-->
+					<interpretationCode nullFlavor="NI"/>
 </act>
 							</entryRelationship>
 
@@ -6962,6 +7215,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: effectiveTime nullFlavor NI until chart field exists.
 					-->
 					<effectiveTime nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #822: reference/externalAct/priorityCode.
+						WAS: externalAct had id/code/text/status/effectiveTime — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under reference externalAct when body acts emit it. Do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #823: reference/externalAct/languageCode.
+						WAS: externalAct had no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under reference externalAct.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #824: reference/externalAct/confidentialityCode.
+						WAS: externalAct had no confidentialityCode. ClinicalDocument declares N; SEMD often flags missing confidentiality under reference externalAct.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 				</externalAct>
 							</reference>
 							<!--
@@ -7175,6 +7447,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L codes.
 									-->
 									<interpretationCode nullFlavor="NI"/>
+								
+									<!--
+										DEFECT #837: referenceRange/observationRange/statusCode.
+										WAS: observationRange had code/text/value/interpretationCode — no statusCode. SEMD often flags bare observationRange under clinical OBS when sibling acts carry statusCode completed.
+										NOW: statusCode completed.
+									-->
+									<statusCode code="completed"/>
+									<!--
+										DEFECT #838: referenceRange/observationRange/effectiveTime.
+										WAS: observationRange had no effectiveTime. SEMD often flags missing effectiveTime under referenceRange. Form 043/u ambulatory findings have no lab range validity window — do not invent.
+										NOW: effectiveTime nullFlavor NI until chart field exists.
+									-->
+									<effectiveTime nullFlavor="NI"/>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -7244,6 +7529,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+
+					<!--
+						DEFECT #847: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had method/target/uncertainty — no interpretationCode. Parent body OBS emit interpretationCode. SEMD often flags missing interpretation under nested entryRelationship acts.
+						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+					-->
+					<interpretationCode nullFlavor="NI"/>
 </act>
 							</entryRelationship>
 
@@ -7773,6 +8065,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: effectiveTime nullFlavor NI until chart field exists.
 					-->
 					<effectiveTime nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #825: reference/externalAct/priorityCode.
+						WAS: externalAct had id/code/text/status/effectiveTime — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under reference externalAct when body acts emit it. Do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #826: reference/externalAct/languageCode.
+						WAS: externalAct had no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under reference externalAct.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #827: reference/externalAct/confidentialityCode.
+						WAS: externalAct had no confidentialityCode. ClinicalDocument declares N; SEMD often flags missing confidentiality under reference externalAct.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 				</externalAct>
 							</reference>
 							<!--
@@ -7986,6 +8297,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L codes.
 									-->
 									<interpretationCode nullFlavor="NI"/>
+								
+									<!--
+										DEFECT #839: referenceRange/observationRange/statusCode.
+										WAS: observationRange had code/text/value/interpretationCode — no statusCode. SEMD often flags bare observationRange under clinical OBS when sibling acts carry statusCode completed.
+										NOW: statusCode completed.
+									-->
+									<statusCode code="completed"/>
+									<!--
+										DEFECT #840: referenceRange/observationRange/effectiveTime.
+										WAS: observationRange had no effectiveTime. SEMD often flags missing effectiveTime under referenceRange. Form 043/u ambulatory findings have no lab range validity window — do not invent.
+										NOW: effectiveTime nullFlavor NI until chart field exists.
+									-->
+									<effectiveTime nullFlavor="NI"/>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -8055,6 +8379,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+
+					<!--
+						DEFECT #848: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had method/target/uncertainty — no interpretationCode. Parent body OBS emit interpretationCode. SEMD often flags missing interpretation under nested entryRelationship acts.
+						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+					-->
+					<interpretationCode nullFlavor="NI"/>
 </act>
 							</entryRelationship>
 
@@ -8661,6 +8992,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: effectiveTime nullFlavor NI until chart field exists.
 					-->
 					<effectiveTime nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #828: reference/externalAct/priorityCode.
+						WAS: externalAct had id/code/text/status/effectiveTime — no priorityCode. HL7 CDA R2 Act has priorityCode 0..1. SEMD often flags missing priority under reference externalAct when body acts emit it. Do not invent ActPriority.
+						NOW: priorityCode nullFlavor NI until chart field exists.
+					-->
+					<priorityCode nullFlavor="NI"/>
+					<!--
+						DEFECT #829: reference/externalAct/languageCode.
+						WAS: externalAct had no languageCode. ClinicalDocument declares ru-RU; SEMD often flags missing language under reference externalAct.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #830: reference/externalAct/confidentialityCode.
+						WAS: externalAct had no confidentialityCode. ClinicalDocument declares N; SEMD often flags missing confidentiality under reference externalAct.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 				</externalAct>
 							</reference>
 							
@@ -8909,6 +9259,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: uncertaintyCode nullFlavor NI; do not invent U/N.
 					-->
 					<uncertaintyCode nullFlavor="NI"/>
+
+					<!--
+						DEFECT #849: entryRelationship/act/interpretationCode.
+						WAS: nested COMP act had method/target/uncertainty — no interpretationCode. Parent body OBS emit interpretationCode. SEMD often flags missing interpretation under nested entryRelationship acts.
+						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
+					-->
+					<interpretationCode nullFlavor="NI"/>
 </act>
 							</entryRelationship>
 
