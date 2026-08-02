@@ -457,9 +457,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<birthplace>
 					<place>
+						<!--
+							DEFECT #178: patient/birthplace/place/name.
+							WAS: birthplace/place had only addr NI (#176) — no
+							name. HL7 CDA R2 Place may carry name (locality /
+							facility label) before addr. SEMD validators often
+							flag bare place without the name slot under
+							recordTarget birthplace. Form 043/u chart does not
+							collect birth place name yet — do not invent a
+							fake city/region string.
+							NOW: name nullFlavor NI before addr.
+						-->
+						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 					</place>
 				</birthplace>
+
 
 			</patient>
 
