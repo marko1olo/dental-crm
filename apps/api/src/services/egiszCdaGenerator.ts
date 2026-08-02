@@ -2009,7 +2009,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: uncertaintyCode nullFlavor NI until chart field exists.
 							-->
 							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #226: objective-status observation/approachSiteCode.
+								WAS: objective OBS had methodCode/interpretationCode/
+								uncertaintyCode only — no approachSiteCode. Diagnosis (#224)
+								and anamnesis (#225) already carry approachSiteCode NI.
+								HL7 CDA R2 Observation has approachSiteCode 0..*. SEMD
+								validators often flag missing approach under status-localis
+								OBS. Form 043/u objective status is free-text exam note —
+								do not invent ISO 3950.
+								NOW: approachSiteCode nullFlavor NI until chart field exists.
+							-->
+							<approachSiteCode nullFlavor="NI"/>
 						</observation>
+
 					</entry></section>
 			</component>
 			<!-- Оказанные услуги / Лечение -->
