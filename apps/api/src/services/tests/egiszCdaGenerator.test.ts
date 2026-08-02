@@ -2061,6 +2061,57 @@ describe("egiszCdaGenerator", () => {
 	});
 
 
+	test("DEFECT #105: encompassingEncounter responsibleParty assignedEntity addr and telecom nullFlavor NI", () => {
+		const params: EgiszCdaParams = {
+			patientId: "pat-105",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.105",
+			clinicName: "ООО Клиника Responsible Contact",
+			doctorName: { first: "Петр", last: "Петров" },
+			doctorSnils: "987-654-321 00",
+			doctorPosition: "Врач-стоматолог",
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate: new Date("2025-07-01T10:00:00.000Z"),
+			documentId: "doc-105",
+			encounterId: "enc-105",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		const rpEnd = "</responsibleParty>";
+		const rpStart = xml.indexOf("<responsibleParty>");
+		const rp = xml.slice(rpStart, xml.indexOf(rpEnd, rpStart) + rpEnd.length);
+		assert.ok(rpStart >= 0, "encompassingEncounter must include responsibleParty");
+		assert.ok(
+			rp.includes('<addr nullFlavor="NI"/>'),
+			"responsibleParty assignedEntity must emit addr nullFlavor=NI when contact unknown",
+		);
+		assert.ok(
+			rp.includes('<telecom nullFlavor="NI"/>'),
+			"responsibleParty assignedEntity must emit telecom nullFlavor=NI when contact unknown",
+		);
+		assert.ok(!rp.includes("<streetAddressLine"));
+		assert.ok(!rp.includes("tel:"));
+		/* order: id → (optional code) → addr → telecom → assignedPerson */
+		const idIdx = rp.indexOf("<id ");
+		const addrIdx = rp.indexOf("<addr ");
+		const telIdx = rp.indexOf("<telecom ");
+		const personIdx = rp.indexOf("<assignedPerson>");
+		assert.ok(
+			idIdx >= 0 &&
+				addrIdx > idIdx &&
+				telIdx > addrIdx &&
+				personIdx > telIdx,
+			"responsibleParty assignedEntity order: id → addr → telecom → assignedPerson",
+		);
+		assert.ok(rp.includes("<family>Петров</family>"));
+		assert.ok(rp.includes("<name>ООО Клиника Responsible Contact</name>"));
+	});
+
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
 
 
