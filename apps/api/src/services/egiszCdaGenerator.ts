@@ -2034,7 +2034,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: approachSiteCode nullFlavor NI until chart field exists.
 							-->
 							<approachSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #230: objective-status observation/targetSiteCode.
+								WAS: objective OBS had approachSiteCode NI (#226) but no
+								targetSiteCode. Diagnosis (#223) and anamnesis (#229)
+								already emit targetSiteCode. HL7 CDA R2 Observation has
+								targetSiteCode 0..*. SEMD validators often flag missing
+								target site under status-localis OBS. Form 043/u objective
+								status is free-text exam note — do not invent ISO 3950.
+								NOW: targetSiteCode nullFlavor NI until chart field exists.
+							-->
+							<targetSiteCode nullFlavor="NI"/>
 						</observation>
+
 
 					</entry></section>
 			</component>
