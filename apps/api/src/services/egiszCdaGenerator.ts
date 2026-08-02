@@ -1400,6 +1400,53 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</representedOrganization>
 				</assignedEntity>
 			</informant>
+			<!--
+				DEFECT #308: documentationOf/serviceEvent/participant.
+				WAS: serviceEvent had performer/author/informant then closed — no entry-level participant. Body entries (#301-#307) already carry participant REF.
+				Document-level participant REF (#152/#169/#147) already attributes
+				the referring/related provider on ClinicalDocument. HL7 CDA R2
+				Act/Observation/Supply has participant 0..* (related parties for
+				the act). SEMD validators often flag missing participant under
+				body entries so REMD cannot attach REF/related-provider at entry
+				level. Form 043/u treating dentist is the related provider for
+				the chart entry (same person as document REF participant).
+				NOW: participant typeCode=REF with time=visitTime, functionCode
+				NI+displayName when doctorPosition known (else bare NI),
+				associatedEntity PROV mirroring document REF (SNILS or NI, code,
+				person, scopingOrganization MO). No invented extension.
+			-->
+			<participant typeCode="REF">
+				<time value="${visitTime}"/>
+				${params.doctorPosition && params.doctorPosition.trim()
+					? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+					: `<functionCode nullFlavor="NI"/>`}
+				<associatedEntity classCode="PROV">
+					${params.doctorSnils && String(params.doctorSnils).trim()
+						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+						: `<id nullFlavor="NI"/>`}
+					${params.doctorPosition && params.doctorPosition.trim()
+						? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+						: `<code nullFlavor="NI"/>`}
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<associatedPerson>
+						<name>
+							<family>${escapeXml(params.doctorName.last)}</family>
+							<given>${escapeXml(params.doctorName.first)}</given>
+							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+						</name>
+					</associatedPerson>
+					<scopingOrganization>
+						${params.clinicOid && String(params.clinicOid).trim()
+							? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+							: `<id nullFlavor="NI"/>`}
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<name>${escapeXml(params.clinicName)}</name>
+					</scopingOrganization>
+				</associatedEntity>
+			</participant>
+
 
 
 		</serviceEvent>
@@ -2014,6 +2061,53 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</representedOrganization>
 				</assignedEntity>
 			</informant>
+			<!--
+				DEFECT #309: encompassingEncounter/participant.
+				WAS: encompassingEncounter had author/informant then closed — no entry-level participant. serviceEvent (#308) and body entries (#301-#307) already carry participant REF.
+				Document-level participant REF (#152/#169/#147) already attributes
+				the referring/related provider on ClinicalDocument. HL7 CDA R2
+				Act/Observation/Supply has participant 0..* (related parties for
+				the act). SEMD validators often flag missing participant under
+				body entries so REMD cannot attach REF/related-provider at entry
+				level. Form 043/u treating dentist is the related provider for
+				the chart entry (same person as document REF participant).
+				NOW: participant typeCode=REF with time=visitTime, functionCode
+				NI+displayName when doctorPosition known (else bare NI),
+				associatedEntity PROV mirroring document REF (SNILS or NI, code,
+				person, scopingOrganization MO). No invented extension.
+			-->
+			<participant typeCode="REF">
+				<time value="${visitTime}"/>
+				${params.doctorPosition && params.doctorPosition.trim()
+					? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+					: `<functionCode nullFlavor="NI"/>`}
+				<associatedEntity classCode="PROV">
+					${params.doctorSnils && String(params.doctorSnils).trim()
+						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+						: `<id nullFlavor="NI"/>`}
+					${params.doctorPosition && params.doctorPosition.trim()
+						? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+						: `<code nullFlavor="NI"/>`}
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<associatedPerson>
+						<name>
+							<family>${escapeXml(params.doctorName.last)}</family>
+							<given>${escapeXml(params.doctorName.first)}</given>
+							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+						</name>
+					</associatedPerson>
+					<scopingOrganization>
+						${params.clinicOid && String(params.clinicOid).trim()
+							? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+							: `<id nullFlavor="NI"/>`}
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<name>${escapeXml(params.clinicName)}</name>
+					</scopingOrganization>
+				</associatedEntity>
+			</participant>
+
 
 </encompassingEncounter>
 	</componentOf>
@@ -2345,6 +2439,53 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedEntity>
 							</informant>
+							<!--
+								DEFECT #301: diagnosis observation/participant.
+								WAS: diagnosis OBS had performer (#233) + author (#283) + informant (#292) then closed — no entry-level participant.
+								Document-level participant REF (#152/#169/#147) already attributes
+								the referring/related provider on ClinicalDocument. HL7 CDA R2
+								Act/Observation/Supply has participant 0..* (related parties for
+								the act). SEMD validators often flag missing participant under
+								body entries so REMD cannot attach REF/related-provider at entry
+								level. Form 043/u treating dentist is the related provider for
+								the chart entry (same person as document REF participant).
+								NOW: participant typeCode=REF with time=visitTime, functionCode
+								NI+displayName when doctorPosition known (else bare NI),
+								associatedEntity PROV mirroring document REF (SNILS or NI, code,
+								person, scopingOrganization MO). No invented extension.
+							-->
+							<participant typeCode="REF">
+								<time value="${visitTime}"/>
+								${params.doctorPosition && params.doctorPosition.trim()
+									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+									: `<functionCode nullFlavor="NI"/>`}
+								<associatedEntity classCode="PROV">
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<associatedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</associatedPerson>
+									<scopingOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</scopingOrganization>
+								</associatedEntity>
+							</participant>
+
 
 
 						</observation>
@@ -2630,6 +2771,53 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedEntity>
 							</informant>
+							<!--
+								DEFECT #302: anamnesis observation/participant.
+								WAS: anamnesis OBS had performer/author/informant then closed — no entry-level participant. Diagnosis OBS (#301) already carries participant REF.
+								Document-level participant REF (#152/#169/#147) already attributes
+								the referring/related provider on ClinicalDocument. HL7 CDA R2
+								Act/Observation/Supply has participant 0..* (related parties for
+								the act). SEMD validators often flag missing participant under
+								body entries so REMD cannot attach REF/related-provider at entry
+								level. Form 043/u treating dentist is the related provider for
+								the chart entry (same person as document REF participant).
+								NOW: participant typeCode=REF with time=visitTime, functionCode
+								NI+displayName when doctorPosition known (else bare NI),
+								associatedEntity PROV mirroring document REF (SNILS or NI, code,
+								person, scopingOrganization MO). No invented extension.
+							-->
+							<participant typeCode="REF">
+								<time value="${visitTime}"/>
+								${params.doctorPosition && params.doctorPosition.trim()
+									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+									: `<functionCode nullFlavor="NI"/>`}
+								<associatedEntity classCode="PROV">
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<associatedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</associatedPerson>
+									<scopingOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</scopingOrganization>
+								</associatedEntity>
+							</participant>
+
 
 
 						</observation>
@@ -2929,6 +3117,53 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedEntity>
 							</informant>
+							<!--
+								DEFECT #303: objective-status observation/participant.
+								WAS: objective OBS had performer/author/informant then closed — no entry-level participant. Diagnosis (#301) and anamnesis (#302) already carry participant REF.
+								Document-level participant REF (#152/#169/#147) already attributes
+								the referring/related provider on ClinicalDocument. HL7 CDA R2
+								Act/Observation/Supply has participant 0..* (related parties for
+								the act). SEMD validators often flag missing participant under
+								body entries so REMD cannot attach REF/related-provider at entry
+								level. Form 043/u treating dentist is the related provider for
+								the chart entry (same person as document REF participant).
+								NOW: participant typeCode=REF with time=visitTime, functionCode
+								NI+displayName when doctorPosition known (else bare NI),
+								associatedEntity PROV mirroring document REF (SNILS or NI, code,
+								person, scopingOrganization MO). No invented extension.
+							-->
+							<participant typeCode="REF">
+								<time value="${visitTime}"/>
+								${params.doctorPosition && params.doctorPosition.trim()
+									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+									: `<functionCode nullFlavor="NI"/>`}
+								<associatedEntity classCode="PROV">
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<associatedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</associatedPerson>
+									<scopingOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</scopingOrganization>
+								</associatedEntity>
+							</participant>
+
 
 
 						</observation>
@@ -3222,6 +3457,53 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedEntity>
 							</informant>
+							<!--
+								DEFECT #306: treatment act/participant.
+								WAS: treatment ACT had performer/author/informant then closed — no entry-level participant. Body OBS (#301-#305) already carry participant REF.
+								Document-level participant REF (#152/#169/#147) already attributes
+								the referring/related provider on ClinicalDocument. HL7 CDA R2
+								Act/Observation/Supply has participant 0..* (related parties for
+								the act). SEMD validators often flag missing participant under
+								body entries so REMD cannot attach REF/related-provider at entry
+								level. Form 043/u treating dentist is the related provider for
+								the chart entry (same person as document REF participant).
+								NOW: participant typeCode=REF with time=visitTime, functionCode
+								NI+displayName when doctorPosition known (else bare NI),
+								associatedEntity PROV mirroring document REF (SNILS or NI, code,
+								person, scopingOrganization MO). No invented extension.
+							-->
+							<participant typeCode="REF">
+								<time value="${visitTime}"/>
+								${params.doctorPosition && params.doctorPosition.trim()
+									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+									: `<functionCode nullFlavor="NI"/>`}
+								<associatedEntity classCode="PROV">
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<associatedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</associatedPerson>
+									<scopingOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</scopingOrganization>
+								</associatedEntity>
+							</participant>
+
 
 
 						</act>
@@ -3514,6 +3796,53 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedEntity>
 							</informant>
+							<!--
+								DEFECT #304: complications observation/participant.
+								WAS: complications OBS had performer/author/informant then closed — no entry-level participant. Diagnosis (#301) through objective (#303) already carry participant REF.
+								Document-level participant REF (#152/#169/#147) already attributes
+								the referring/related provider on ClinicalDocument. HL7 CDA R2
+								Act/Observation/Supply has participant 0..* (related parties for
+								the act). SEMD validators often flag missing participant under
+								body entries so REMD cannot attach REF/related-provider at entry
+								level. Form 043/u treating dentist is the related provider for
+								the chart entry (same person as document REF participant).
+								NOW: participant typeCode=REF with time=visitTime, functionCode
+								NI+displayName when doctorPosition known (else bare NI),
+								associatedEntity PROV mirroring document REF (SNILS or NI, code,
+								person, scopingOrganization MO). No invented extension.
+							-->
+							<participant typeCode="REF">
+								<time value="${visitTime}"/>
+								${params.doctorPosition && params.doctorPosition.trim()
+									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+									: `<functionCode nullFlavor="NI"/>`}
+								<associatedEntity classCode="PROV">
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<associatedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</associatedPerson>
+									<scopingOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</scopingOrganization>
+								</associatedEntity>
+							</participant>
+
 
 
 						</observation>
@@ -3812,6 +4141,53 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedEntity>
 							</informant>
+							<!--
+								DEFECT #305: comorbidities observation/participant.
+								WAS: comorbidities OBS had performer/author/informant then closed — no entry-level participant. Diagnosis (#301) through complications (#304) already carry participant REF.
+								Document-level participant REF (#152/#169/#147) already attributes
+								the referring/related provider on ClinicalDocument. HL7 CDA R2
+								Act/Observation/Supply has participant 0..* (related parties for
+								the act). SEMD validators often flag missing participant under
+								body entries so REMD cannot attach REF/related-provider at entry
+								level. Form 043/u treating dentist is the related provider for
+								the chart entry (same person as document REF participant).
+								NOW: participant typeCode=REF with time=visitTime, functionCode
+								NI+displayName when doctorPosition known (else bare NI),
+								associatedEntity PROV mirroring document REF (SNILS or NI, code,
+								person, scopingOrganization MO). No invented extension.
+							-->
+							<participant typeCode="REF">
+								<time value="${visitTime}"/>
+								${params.doctorPosition && params.doctorPosition.trim()
+									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+									: `<functionCode nullFlavor="NI"/>`}
+								<associatedEntity classCode="PROV">
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<associatedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</associatedPerson>
+									<scopingOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</scopingOrganization>
+								</associatedEntity>
+							</participant>
+
 
 
 						</observation>
@@ -4141,6 +4517,53 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedEntity>
 							</informant>
+							<!--
+								DEFECT #307: instrument-tray supply/participant.
+								WAS: supply had performer/author/informant then closed — no entry-level participant. Body OBS (#301-#305) and treatment ACT (#306) already carry participant REF.
+								Document-level participant REF (#152/#169/#147) already attributes
+								the referring/related provider on ClinicalDocument. HL7 CDA R2
+								Act/Observation/Supply has participant 0..* (related parties for
+								the act). SEMD validators often flag missing participant under
+								body entries so REMD cannot attach REF/related-provider at entry
+								level. Form 043/u treating dentist is the related provider for
+								the chart entry (same person as document REF participant).
+								NOW: participant typeCode=REF with time=visitTime, functionCode
+								NI+displayName when doctorPosition known (else bare NI),
+								associatedEntity PROV mirroring document REF (SNILS or NI, code,
+								person, scopingOrganization MO). No invented extension.
+							-->
+							<participant typeCode="REF">
+								<time value="${visitTime}"/>
+								${params.doctorPosition && params.doctorPosition.trim()
+									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+									: `<functionCode nullFlavor="NI"/>`}
+								<associatedEntity classCode="PROV">
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<associatedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</associatedPerson>
+									<scopingOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</scopingOrganization>
+								</associatedEntity>
+							</participant>
+
 
 
 						</supply>
