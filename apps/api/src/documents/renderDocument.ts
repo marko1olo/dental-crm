@@ -3966,20 +3966,32 @@ function dentalMedicalCard043u(document: GeneratedDocument, patient: Patient): s
     return `<section><h2>${escapeHtml(title)}</h2><p>Данные формы 043/у не заполнены.</p></section>`;
   }
   const rows: Array<[string, string | null | undefined]> = [
+    ["Организация", payload.organization?.name],
+    ["Адрес организации", payload.organization?.address],
+    ["Номер карты", payload.medicalCardNumber],
     ["Дата приёма", payload.visitDate],
     ["Пациент", payload.patient?.fullName ?? patient.fullName],
-    ["Жалобы", payload.complaint],
-    ["Анамнез", payload.anamnesis],
-    ["Status localis", payload.statusLocalis ?? payload.objectiveStatus],
-    ["Диагноз (МКБ-10)", payload.diagnosisIcd10],
-    ["Зуб", payload.diagnosisTooth],
-    ["Диагноз", payload.diagnosisText],
-    ["Лечение", payload.treatmentDescription ?? payload.treatmentPlan],
-    ["Осложнения", payload.complications],
-    ["Сопутствующие", payload.comorbidities],
+    ["Дата рождения", payload.patient?.birthDate],
+    ["Жалобы", payload.anamnesis?.complaints],
+    ["Анамнез заболевания", payload.anamnesis?.diseaseAnamnesis],
+    ["Анамнез жизни", payload.anamnesis?.lifeAnamnesis],
+    ["Аллергии", payload.anamnesis?.allergies],
+    ["Сопутствующие заболевания", payload.anamnesis?.concomitantDiseases],
+    ["Внешний осмотр", payload.examination?.externalInspection],
+    ["Полость рта / status localis", payload.examination?.oralCavity],
+    ["Прикус", payload.examination?.bite],
+    ["Гигиена полости рта", payload.examination?.oralHygiene],
+    ["Рентген-данные", payload.examination?.xrayData],
+    ["Лабораторные данные", payload.examination?.labData],
+    ["Диагноз", payload.diagnosis?.primaryText],
+    ["Диагноз (МКБ-10)", payload.diagnosis?.primaryIcd10],
+    ["Зуб", payload.diagnosis?.diagnosisTooth],
+    ["Сопутствующий диагноз", payload.diagnosis?.comorbidText],
+    ["План лечения", payload.treatment?.plan],
+    ["Проведённое лечение", payload.treatment?.performed],
+    ["Рекомендации", payload.treatment?.recommendations],
+    ["План следующего визита", payload.treatment?.nextVisitPlan],
     ["Лоток", payload.instrumentTrayBarcode],
-    ["Рекомендации", payload.recommendations],
-    ["План следующего визита", payload.nextVisitPlan]
   ];
   const body = rows
     .filter(([, v]) => typeof v === "string" && v.trim().length > 0)
@@ -3990,7 +4002,34 @@ function dentalMedicalCard043u(document: GeneratedDocument, patient: Patient): s
         payload.doctor.specialty ? ` (${escapeHtml(payload.doctor.specialty)})` : ""
       }</p>`
     : "";
-  return `<section><h2>${escapeHtml(title)}</h2>${doctor}${body}</section>`;
+  const toothRows = Array.isArray(payload.clinicalToothRows)
+    ? payload.clinicalToothRows
+        .map((row) => {
+          const surfaces = Array.isArray(row.surfaces)
+            ? row.surfaces.filter((part) => typeof part === "string" && part.trim().length > 0).join(", ")
+            : typeof row.surfaces === "string"
+              ? row.surfaces
+              : "";
+          const parts = [
+            row.toothOrArea,
+            surfaces,
+            row.status,
+            row.diagnosisOrFinding,
+            row.indication,
+            row.plannedAction,
+          ]
+            .filter((part) => typeof part === "string" && part.trim().length > 0)
+            .map((part) => String(part).trim());
+          return parts.length ? `<li>${escapeHtml(parts.join(" — "))}</li>` : "";
+        })
+        .filter(Boolean)
+        .join("")
+    : "";
+
+  const toothSection = toothRows
+    ? `<p><strong>Клинические строки по зубам:</strong></p><ul>${toothRows}</ul>`
+    : "";
+  return `<section><h2>${escapeHtml(title)}</h2>${doctor}${body}${toothSection}</section>`;
 }
 
 export function renderDocumentHtml(document: GeneratedDocument, patient: Patient, context: DocumentRenderContext = {}) {
@@ -4015,7 +4054,7 @@ export function renderDocumentHtml(document: GeneratedDocument, patient: Patient
     post_visit_recommendations: postVisitRecommendations(document),
     medical_record_extract: medicalRecordExtract(document, patient),
     outpatient_medical_card_025u: outpatientMedicalCard025u(document, patient),
-dental_medical_card_043u: dentalMedicalCard043u(document, patient),
+    dental_medical_card_043u: dentalMedicalCard043u(document, patient),
     medical_record_copy_request: structuredMedicalRecordCopyRequest(document, patient),
     medical_document_release_receipt: medicalDocumentReleaseReceipt(document, patient),
     xray_cbct_referral: xrayCbctReferral(document),

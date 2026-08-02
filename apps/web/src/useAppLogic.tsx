@@ -11909,18 +11909,14 @@ export function useAppLogic(): any {
 		const doctor = outpatient025uDoctorValue();
 		const sourceVisitIds = outpatient025uSourceVisitIdsValue();
 		const visitDate = outpatient025uVisitDateValue();
-		const issuedAt = new Date().toISOString();
-		const patient = documentPatient;
-		const admin = patient?.administrativeProfile;
-		const identity = admin?.identityDocument;
+		const patientProfile = documentPatient?.administrativeProfile;
+		const complaintsAndAnamnesis = recordExtractComplaintAndAnamnesisValue();
 		const complaintText =
 			visitNoteForm.complaint.trim() ||
-			recordExtractComplaintAndAnamnesisValue().split(/\n{2,}/)[0]?.trim() ||
+			complaintsAndAnamnesis.split(/\n{2,}/)[0]?.trim() ||
 			"";
 		const anamnesisText =
-			visitNoteForm.anamnesis.trim() ||
-			recordExtractComplaintAndAnamnesisValue() ||
-			"";
+			visitNoteForm.anamnesis.trim() || complaintsAndAnamnesis || "";
 		const objectiveText =
 			visitNoteForm.objectiveStatus.trim() ||
 			recordExtractObjectiveStatusValue() ||
@@ -11931,85 +11927,101 @@ export function useAppLogic(): any {
 			visitNoteForm.treatmentPlan.trim() ||
 			recordExtractTreatmentProvidedValue() ||
 			"";
-		const toothRows = clinicalToothRowsValue();
-		const orgName =
-			clinicProfileDraft.clinicName.trim() ||
-			dashboard?.clinic?.name?.trim() ||
-			"Стоматологическая клиника";
-		const orgAddress =
-			[
-				clinicProfileDraft.addressLine?.trim(),
-				clinicProfileDraft.city?.trim(),
-			]
-				.filter(Boolean)
-				.join(", ") ||
-			dashboard?.clinic?.address?.trim() ||
-			"";
-		const sexRaw = (patient?.sex ?? admin?.sex ?? "").toString().toLowerCase();
+		const sexRaw = (
+			documentPatient?.sex ??
+			patientProfile?.sex ??
+			""
+		)
+			.toString()
+			.toLowerCase();
 		const sex =
-			sexRaw === "female" || sexRaw === "f" || sexRaw === "жен" || sexRaw === "женский"
+			sexRaw === "female" ||
+			sexRaw === "f" ||
+			sexRaw === "жен" ||
+			sexRaw === "женский"
 				? ("female" as const)
-				: sexRaw === "male" || sexRaw === "m" || sexRaw === "муж" || sexRaw === "мужской"
+				: sexRaw === "male" ||
+					  sexRaw === "m" ||
+					  sexRaw === "муж" ||
+					  sexRaw === "мужской"
 					? ("male" as const)
 					: ("unknown" as const);
 		const birthDate =
-			toDateInputValue(patient?.birthDate) ||
-			toDateInputValue(admin?.birthDate) ||
-			"";
+			toDateInputValue(documentPatient?.birthDate) ||
+			toDateInputValue(patientProfile?.birthDate) ||
+			"1970-01-01";
 
 		return {
 			formCode: "043/у",
 			formTitle: "Медицинская карта стоматологического больного",
-			medicalOrganizationName: orgName,
-			medicalOrganizationAddress: orgAddress || "—",
-			medicalOrganizationOgrn: clinicProfileDraft.ogrn?.trim() || null,
-			medicalOrganizationLicense: outpatient025uLicenseValue(),
+			organization: {
+				name:
+					clinicProfileDraft.legalName.trim() ||
+					clinicProfileDraft.clinicName.trim() ||
+					"Стоматологическая клиника",
+				address: clinicProfileDraft.address.trim() || "—",
+				ogrn: clinicProfileDraft.ogrn.trim() || null,
+				license: outpatient025uLicenseValue(),
+			},
 			medicalCardNumber: outpatient025uMedicalCardNumberValue(),
 			patient: {
-				fullName: patientFullName(patient) || "—",
-				birthDate: birthDate || "1970-01-01",
+				fullName: documentPatient?.fullName?.trim() || "—",
+				birthDate,
 				sex,
-				phone: patient?.phone?.trim() || admin?.phone?.trim() || null,
-				email: patient?.email?.trim() || admin?.email?.trim() || null,
-				address:
-					admin?.registrationAddress?.trim() ||
-					admin?.residentialAddress?.trim() ||
-					patient?.address?.trim() ||
+				phone:
+					documentPatient?.phone?.trim() ||
+					patientProfile?.phone?.trim() ||
 					null,
-				snils: admin?.snils?.trim() || patient?.snils?.trim() || null,
-				omsPolicy: admin?.omsPolicyNumber?.trim() || null,
-				identityDocumentType: identity?.type?.trim() || null,
-				identityDocumentSeries: identity?.series?.trim() || null,
-				identityDocumentNumber: identity?.number?.trim() || null,
-				identityDocumentIssuedBy: identity?.issuedBy?.trim() || null,
-				identityDocumentIssuedAt: toDateInputValue(identity?.issuedAt) || null,
+				address:
+					patientProfile?.registrationAddress?.trim() ||
+					patientProfile?.residentialAddress?.trim() ||
+					documentPatient?.address?.trim() ||
+					null,
+				snils:
+					patientProfile?.snils?.trim() ||
+					documentPatient?.snils?.trim() ||
+					null,
+				omsPolicy: patientProfile?.omsPolicyNumber?.trim() || null,
+				identityDocument: patientProfile?.identityDocument?.trim() || null,
+				identityDocumentSeries: null,
+				identityDocumentNumber: null,
 			},
 			visitDate,
-			complaint: complaintText || "—",
-			anamnesis: anamnesisText || "—",
-			allergies: null,
-			chronicDiseases: null,
-			developmentAnamnesis: null,
-			externalInspection: null,
-			oralHygiene: null,
-			bite: null,
-			objectiveStatus: objectiveText || "—",
-			xrayData: null,
-			laboratoryData: null,
-			diagnosisText: diagnosisText || "—",
-			diagnosisIcd10: null,
-			comorbidDiagnosisText: null,
-			clinicalToothRows: toothRows,
-			treatmentDescription: treatmentText || "—",
-			treatmentPlan: treatmentText || null,
-			recommendations: null,
-			nextVisitPlan: null,
+			anamnesis: {
+				complaints: complaintText || "—",
+				diseaseAnamnesis: anamnesisText || "—",
+				lifeAnamnesis: null,
+				allergies: null,
+				concomitantDiseases: null,
+			},
+			examination: {
+				externalInspection: null,
+				oralCavity: objectiveText || "—",
+				bite: null,
+				oralHygiene: null,
+				xrayData: null,
+				labData: null,
+			},
+			diagnosis: {
+				primaryText: diagnosisText || "—",
+				primaryIcd10: null,
+				comorbidText: null,
+				diagnosisTooth: null,
+			},
+			clinicalToothRows: clinicalToothRowsValue(),
+			treatment: {
+				plan: treatmentText || null,
+				performed: treatmentText || "—",
+				recommendations: null,
+				nextVisitPlan: null,
+			},
 			instrumentTrayBarcode: null,
-			doctorFullName: doctor.fullName || activeDoctor?.fullName || "—",
-			doctorPosition: doctor.position,
-			doctorSpecialty: doctor.specialty,
-			doctorSignature: null,
-			issuedAt,
+			doctor: {
+				fullName: doctor.fullName || activeDoctor?.fullName || "—",
+				position: doctor.position,
+				specialty: doctor.specialty,
+			},
+			issuedAt: new Date().toISOString(),
 			sourceVisitIds,
 			contentHash: null,
 			lockedAt: null,
