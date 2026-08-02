@@ -1496,6 +1496,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<id nullFlavor="NI"/>
 				</externalAct>
 			</reference>
+			<!--
+				DEFECT #349: documentationOf/serviceEvent/entryRelationship.
+				WAS: serviceEvent had performer/author/informant/participant/precondition/reference then closed — no entryRelationship. Body entries (#342-#348) already carry entryRelationship COMP.
+				HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
+				(related nested acts). SEMD validators often flag missing
+				entryRelationship under body entries when sibling acts cannot
+				be linked. Form 043/u chart does not collect discrete nested
+				related-act graphs for these entries — do not invent nested
+				codes or extensions.
+				NOW: entryRelationship typeCode=COMP with nested act
+				classCode=ACT moodCode=EVN and id/code/statusCode nullFlavor
+				NI / completed shell until chart field exists.
+			-->
+			<entryRelationship typeCode="COMP">
+				<act classCode="ACT" moodCode="EVN">
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode code="completed"/>
+				</act>
+			</entryRelationship>
+
 
 
 
@@ -2209,6 +2230,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<id nullFlavor="NI"/>
 				</externalAct>
 			</reference>
+			<!--
+				DEFECT #350: encompassingEncounter/entryRelationship.
+				WAS: encompassingEncounter had author/informant/participant/precondition/reference then closed — no entryRelationship. serviceEvent (#349) and body entries (#342-#348) already carry entryRelationship COMP.
+				HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
+				(related nested acts). SEMD validators often flag missing
+				entryRelationship under body entries when sibling acts cannot
+				be linked. Form 043/u chart does not collect discrete nested
+				related-act graphs for these entries — do not invent nested
+				codes or extensions.
+				NOW: entryRelationship typeCode=COMP with nested act
+				classCode=ACT moodCode=EVN and id/code/statusCode nullFlavor
+				NI / completed shell until chart field exists.
+			-->
+			<entryRelationship typeCode="COMP">
+				<act classCode="ACT" moodCode="EVN">
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode code="completed"/>
+				</act>
+			</entryRelationship>
+
 
 
 
@@ -2639,6 +2681,44 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</externalAct>
 							</reference>
+							<!--
+								DEFECT #337: diagnosis observation/specimen.
+								WAS: diagnosis OBS had performer/author/informant/participant/precondition/reference then closed — no specimen.
+								HL7 CDA R2 Observation has specimen 0..* (material used for
+								the observation). SEMD validators often flag missing specimen
+								under clinical OBS entries. Form 043/u ambulatory dental chart
+								does not collect discrete specimen identity for these findings
+								— do not invent specimen type codes or IDs.
+								NOW: specimen typeCode=SPC with specimenRole id nullFlavor NI
+								until chart field exists.
+							-->
+							<specimen typeCode="SPC">
+								<specimenRole>
+									<id nullFlavor="NI"/>
+								</specimenRole>
+							</specimen>
+							<!--
+								DEFECT #342: diagnosis observation/entryRelationship.
+								WAS: diagnosis OBS had specimen (#337) then closed — no entryRelationship.
+								HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
+								(related nested acts). SEMD validators often flag missing
+								entryRelationship under body entries when sibling acts cannot
+								be linked. Form 043/u chart does not collect discrete nested
+								related-act graphs for these entries — do not invent nested
+								codes or extensions.
+								NOW: entryRelationship typeCode=COMP with nested act
+								classCode=ACT moodCode=EVN and id/code/statusCode nullFlavor
+								NI / completed shell until chart field exists.
+							-->
+							<entryRelationship typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode code="completed"/>
+								</act>
+							</entryRelationship>
+
+
 
 
 
@@ -3023,6 +3103,44 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</externalAct>
 							</reference>
+							<!--
+								DEFECT #338: anamnesis observation/specimen.
+								WAS: anamnesis OBS had performer/author/informant/participant/precondition/reference then closed — no specimen. Diagnosis OBS (#337) already carries specimen SPC.
+								HL7 CDA R2 Observation has specimen 0..* (material used for
+								the observation). SEMD validators often flag missing specimen
+								under clinical OBS entries. Form 043/u ambulatory dental chart
+								does not collect discrete specimen identity for these findings
+								— do not invent specimen type codes or IDs.
+								NOW: specimen typeCode=SPC with specimenRole id nullFlavor NI
+								until chart field exists.
+							-->
+							<specimen typeCode="SPC">
+								<specimenRole>
+									<id nullFlavor="NI"/>
+								</specimenRole>
+							</specimen>
+							<!--
+								DEFECT #343: anamnesis observation/entryRelationship.
+								WAS: anamnesis OBS had specimen (#338) then closed — no entryRelationship. Diagnosis OBS (#342) already carries entryRelationship COMP.
+								HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
+								(related nested acts). SEMD validators often flag missing
+								entryRelationship under body entries when sibling acts cannot
+								be linked. Form 043/u chart does not collect discrete nested
+								related-act graphs for these entries — do not invent nested
+								codes or extensions.
+								NOW: entryRelationship typeCode=COMP with nested act
+								classCode=ACT moodCode=EVN and id/code/statusCode nullFlavor
+								NI / completed shell until chart field exists.
+							-->
+							<entryRelationship typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode code="completed"/>
+								</act>
+							</entryRelationship>
+
+
 
 
 
@@ -3421,6 +3539,44 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</externalAct>
 							</reference>
+							<!--
+								DEFECT #339: objective-status observation/specimen.
+								WAS: objective OBS had performer/author/informant/participant/precondition/reference then closed — no specimen. Diagnosis (#337) and anamnesis (#338) already carry specimen SPC.
+								HL7 CDA R2 Observation has specimen 0..* (material used for
+								the observation). SEMD validators often flag missing specimen
+								under clinical OBS entries. Form 043/u ambulatory dental chart
+								does not collect discrete specimen identity for these findings
+								— do not invent specimen type codes or IDs.
+								NOW: specimen typeCode=SPC with specimenRole id nullFlavor NI
+								until chart field exists.
+							-->
+							<specimen typeCode="SPC">
+								<specimenRole>
+									<id nullFlavor="NI"/>
+								</specimenRole>
+							</specimen>
+							<!--
+								DEFECT #344: objective-status observation/entryRelationship.
+								WAS: objective OBS had specimen (#339) then closed — no entryRelationship. Diagnosis (#342) and anamnesis (#343) already carry entryRelationship COMP.
+								HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
+								(related nested acts). SEMD validators often flag missing
+								entryRelationship under body entries when sibling acts cannot
+								be linked. Form 043/u chart does not collect discrete nested
+								related-act graphs for these entries — do not invent nested
+								codes or extensions.
+								NOW: entryRelationship typeCode=COMP with nested act
+								classCode=ACT moodCode=EVN and id/code/statusCode nullFlavor
+								NI / completed shell until chart field exists.
+							-->
+							<entryRelationship typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode code="completed"/>
+								</act>
+							</entryRelationship>
+
+
 
 
 
@@ -3813,6 +3969,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</externalAct>
 							</reference>
+							<!--
+								DEFECT #347: treatment act/entryRelationship.
+								WAS: treatment ACT had performer/author/informant/participant/precondition/reference then closed — no entryRelationship. Body OBS (#342-#346) already carry entryRelationship COMP.
+								HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
+								(related nested acts). SEMD validators often flag missing
+								entryRelationship under body entries when sibling acts cannot
+								be linked. Form 043/u chart does not collect discrete nested
+								related-act graphs for these entries — do not invent nested
+								codes or extensions.
+								NOW: entryRelationship typeCode=COMP with nested act
+								classCode=ACT moodCode=EVN and id/code/statusCode nullFlavor
+								NI / completed shell until chart field exists.
+							-->
+							<entryRelationship typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode code="completed"/>
+								</act>
+							</entryRelationship>
+
 
 
 
@@ -4204,6 +4381,44 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</externalAct>
 							</reference>
+							<!--
+								DEFECT #340: complications observation/specimen.
+								WAS: complications OBS had performer/author/informant/participant/precondition/reference then closed — no specimen. Diagnosis (#337) through objective (#339) already carry specimen SPC.
+								HL7 CDA R2 Observation has specimen 0..* (material used for
+								the observation). SEMD validators often flag missing specimen
+								under clinical OBS entries. Form 043/u ambulatory dental chart
+								does not collect discrete specimen identity for these findings
+								— do not invent specimen type codes or IDs.
+								NOW: specimen typeCode=SPC with specimenRole id nullFlavor NI
+								until chart field exists.
+							-->
+							<specimen typeCode="SPC">
+								<specimenRole>
+									<id nullFlavor="NI"/>
+								</specimenRole>
+							</specimen>
+							<!--
+								DEFECT #345: complications observation/entryRelationship.
+								WAS: complications OBS had specimen (#340) then closed — no entryRelationship. Diagnosis (#342) through objective (#344) already carry entryRelationship COMP.
+								HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
+								(related nested acts). SEMD validators often flag missing
+								entryRelationship under body entries when sibling acts cannot
+								be linked. Form 043/u chart does not collect discrete nested
+								related-act graphs for these entries — do not invent nested
+								codes or extensions.
+								NOW: entryRelationship typeCode=COMP with nested act
+								classCode=ACT moodCode=EVN and id/code/statusCode nullFlavor
+								NI / completed shell until chart field exists.
+							-->
+							<entryRelationship typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode code="completed"/>
+								</act>
+							</entryRelationship>
+
+
 
 
 
@@ -4601,6 +4816,44 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</externalAct>
 							</reference>
+							<!--
+								DEFECT #341: comorbidities observation/specimen.
+								WAS: comorbidities OBS had performer/author/informant/participant/precondition/reference then closed — no specimen. Diagnosis (#337) through complications (#340) already carry specimen SPC.
+								HL7 CDA R2 Observation has specimen 0..* (material used for
+								the observation). SEMD validators often flag missing specimen
+								under clinical OBS entries. Form 043/u ambulatory dental chart
+								does not collect discrete specimen identity for these findings
+								— do not invent specimen type codes or IDs.
+								NOW: specimen typeCode=SPC with specimenRole id nullFlavor NI
+								until chart field exists.
+							-->
+							<specimen typeCode="SPC">
+								<specimenRole>
+									<id nullFlavor="NI"/>
+								</specimenRole>
+							</specimen>
+							<!--
+								DEFECT #346: comorbidities observation/entryRelationship.
+								WAS: comorbidities OBS had specimen (#341) then closed — no entryRelationship. Diagnosis (#342) through complications (#345) already carry entryRelationship COMP.
+								HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
+								(related nested acts). SEMD validators often flag missing
+								entryRelationship under body entries when sibling acts cannot
+								be linked. Form 043/u chart does not collect discrete nested
+								related-act graphs for these entries — do not invent nested
+								codes or extensions.
+								NOW: entryRelationship typeCode=COMP with nested act
+								classCode=ACT moodCode=EVN and id/code/statusCode nullFlavor
+								NI / completed shell until chart field exists.
+							-->
+							<entryRelationship typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode code="completed"/>
+								</act>
+							</entryRelationship>
+
+
 
 
 
@@ -5029,6 +5282,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<id nullFlavor="NI"/>
 								</externalAct>
 							</reference>
+							<!--
+								DEFECT #348: instrument-tray supply/entryRelationship.
+								WAS: supply had performer/author/informant/participant/precondition/reference then closed — no entryRelationship. Body OBS (#342-#346) and treatment ACT (#347) already carry entryRelationship COMP.
+								HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
+								(related nested acts). SEMD validators often flag missing
+								entryRelationship under body entries when sibling acts cannot
+								be linked. Form 043/u chart does not collect discrete nested
+								related-act graphs for these entries — do not invent nested
+								codes or extensions.
+								NOW: entryRelationship typeCode=COMP with nested act
+								classCode=ACT moodCode=EVN and id/code/statusCode nullFlavor
+								NI / completed shell until chart field exists.
+							-->
+							<entryRelationship typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode code="completed"/>
+								</act>
+							</entryRelationship>
+
 
 
 
