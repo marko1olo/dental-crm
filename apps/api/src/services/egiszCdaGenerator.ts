@@ -1527,7 +1527,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<specimen typeCode="SPC">
 				<specimenRole>
 					<id nullFlavor="NI"/>
-				</specimenRole>
+				
+					<!--
+						DEFECT #400: serviceEvent/specimen/specimenRole/specimenPlayingEntity.
+						WAS: specimenRole had id NI only — no specimenPlayingEntity.
+						HL7 CDA R2 SpecimenRole has specimenPlayingEntity 0..1 (the material
+						entity). SEMD validators often flag empty specimenRole under clinical
+						entries when playing entity code/name cannot be joined. Form 043/u
+						chart does not collect discrete specimen entity codes — do not invent
+						SNOMED/NSI specimen type codes.
+						NOW: specimenPlayingEntity with code/name nullFlavor NI until chart
+						field exists.
+					-->
+					<specimenPlayingEntity>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</specimenPlayingEntity>
+</specimenRole>
 			</specimen>
 			<!--
 				DEFECT #386: documentationOf/serviceEvent/consumable.
@@ -2315,7 +2331,58 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<id nullFlavor="NI"/>
 				</externalAct>
 			</reference>
-						<!--
+									<!--
+				DEFECT #391: componentOf/encompassingEncounter/specimen.
+				WAS: encompassingEncounter had reference/subject then entryRelationship — no specimen.
+				Body entries and serviceEvent (#385) already carry specimen SPC.
+				HL7 CDA R2 Encounter (Act) has specimen 0..*. SEMD validators often
+				flag missing specimen under componentOf/encompassingEncounter.
+				Form 043/u ambulatory encounter does not collect discrete specimen
+				identity — do not invent specimen type codes or IDs.
+				NOW: specimen typeCode=SPC with specimenRole id nullFlavor NI until
+				chart field exists.
+			-->
+			<specimen typeCode="SPC">
+				<specimenRole>
+					<id nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #401: encompassingEncounter/specimen/specimenRole/specimenPlayingEntity.
+						WAS: specimenRole had id NI only — no specimenPlayingEntity.
+						HL7 CDA R2 SpecimenRole has specimenPlayingEntity 0..1 (the material
+						entity). SEMD validators often flag empty specimenRole under clinical
+						entries when playing entity code/name cannot be joined. Form 043/u
+						chart does not collect discrete specimen entity codes — do not invent
+						SNOMED/NSI specimen type codes.
+						NOW: specimenPlayingEntity with code/name nullFlavor NI until chart
+						field exists.
+					-->
+					<specimenPlayingEntity>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</specimenPlayingEntity>
+</specimenRole>
+			</specimen>
+			<!--
+				DEFECT #392: componentOf/encompassingEncounter/consumable.
+				WAS: encompassingEncounter had specimen/subject then entryRelationship — no consumable.
+				Body entries and serviceEvent (#386) already carry consumable CSM.
+				HL7 CDA R2 Encounter (Act) has consumable 0..*. SEMD validators often
+				flag missing consumable under componentOf/encompassingEncounter.
+				Form 043/u chart does not collect discrete encounter-level consumable
+				NSI codes — do not invent material codes or barcodes.
+				NOW: consumable typeCode=CSM with manufacturedProduct classCode=MANU
+				and manufacturedMaterial code/name nullFlavor NI until chart field exists.
+			-->
+			<consumable typeCode="CSM">
+				<manufacturedProduct classCode="MANU">
+					<manufacturedMaterial>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</manufacturedMaterial>
+				</manufacturedProduct>
+			</consumable>
+<!--
 				DEFECT #372: componentOf/encompassingEncounter/subject.
 				WAS: encompassingEncounter had reference then entryRelationship — no subject.
 				Body entries (#364-#370) and serviceEvent (#371) already carry subject SBJ.
@@ -2803,7 +2870,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<specimen typeCode="SPC">
 								<specimenRole>
 									<id nullFlavor="NI"/>
-								</specimenRole>
+								
+									<!--
+										DEFECT #393: diagnosis observation/specimen/specimenRole/specimenPlayingEntity.
+										WAS: specimenRole had id NI only — no specimenPlayingEntity.
+										HL7 CDA R2 SpecimenRole has specimenPlayingEntity 0..1 (the material
+										entity). SEMD validators often flag empty specimenRole under clinical
+										entries when playing entity code/name cannot be joined. Form 043/u
+										chart does not collect discrete specimen entity codes — do not invent
+										SNOMED/NSI specimen type codes.
+										NOW: specimenPlayingEntity with code/name nullFlavor NI until chart
+										field exists.
+									-->
+									<specimenPlayingEntity>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+									</specimenPlayingEntity>
+</specimenRole>
 							</specimen>
 							
 							<!--
@@ -3286,7 +3369,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<specimen typeCode="SPC">
 								<specimenRole>
 									<id nullFlavor="NI"/>
-								</specimenRole>
+								
+									<!--
+										DEFECT #394: anamnesis observation/specimen/specimenRole/specimenPlayingEntity.
+										WAS: specimenRole had id NI only — no specimenPlayingEntity.
+										HL7 CDA R2 SpecimenRole has specimenPlayingEntity 0..1 (the material
+										entity). SEMD validators often flag empty specimenRole under clinical
+										entries when playing entity code/name cannot be joined. Form 043/u
+										chart does not collect discrete specimen entity codes — do not invent
+										SNOMED/NSI specimen type codes.
+										NOW: specimenPlayingEntity with code/name nullFlavor NI until chart
+										field exists.
+									-->
+									<specimenPlayingEntity>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+									</specimenPlayingEntity>
+</specimenRole>
 							</specimen>
 							
 							<!--
@@ -3783,7 +3882,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<specimen typeCode="SPC">
 								<specimenRole>
 									<id nullFlavor="NI"/>
-								</specimenRole>
+								
+									<!--
+										DEFECT #395: objective-status observation/specimen/specimenRole/specimenPlayingEntity.
+										WAS: specimenRole had id NI only — no specimenPlayingEntity.
+										HL7 CDA R2 SpecimenRole has specimenPlayingEntity 0..1 (the material
+										entity). SEMD validators often flag empty specimenRole under clinical
+										entries when playing entity code/name cannot be joined. Form 043/u
+										chart does not collect discrete specimen entity codes — do not invent
+										SNOMED/NSI specimen type codes.
+										NOW: specimenPlayingEntity with code/name nullFlavor NI until chart
+										field exists.
+									-->
+									<specimenPlayingEntity>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+									</specimenPlayingEntity>
+</specimenRole>
 							</specimen>
 							
 							<!--
@@ -4295,7 +4410,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<specimen typeCode="SPC">
 								<specimenRole>
 									<id nullFlavor="NI"/>
-								</specimenRole>
+								
+									<!--
+										DEFECT #398: treatment act/specimen/specimenRole/specimenPlayingEntity.
+										WAS: specimenRole had id NI only — no specimenPlayingEntity.
+										HL7 CDA R2 SpecimenRole has specimenPlayingEntity 0..1 (the material
+										entity). SEMD validators often flag empty specimenRole under clinical
+										entries when playing entity code/name cannot be joined. Form 043/u
+										chart does not collect discrete specimen entity codes — do not invent
+										SNOMED/NSI specimen type codes.
+										NOW: specimenPlayingEntity with code/name nullFlavor NI until chart
+										field exists.
+									-->
+									<specimenPlayingEntity>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+									</specimenPlayingEntity>
+</specimenRole>
 							</specimen>
 
 							<!--
@@ -4746,7 +4877,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<specimen typeCode="SPC">
 								<specimenRole>
 									<id nullFlavor="NI"/>
-								</specimenRole>
+								
+									<!--
+										DEFECT #396: complications observation/specimen/specimenRole/specimenPlayingEntity.
+										WAS: specimenRole had id NI only — no specimenPlayingEntity.
+										HL7 CDA R2 SpecimenRole has specimenPlayingEntity 0..1 (the material
+										entity). SEMD validators often flag empty specimenRole under clinical
+										entries when playing entity code/name cannot be joined. Form 043/u
+										chart does not collect discrete specimen entity codes — do not invent
+										SNOMED/NSI specimen type codes.
+										NOW: specimenPlayingEntity with code/name nullFlavor NI until chart
+										field exists.
+									-->
+									<specimenPlayingEntity>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+									</specimenPlayingEntity>
+</specimenRole>
 							</specimen>
 							
 							<!--
@@ -5242,7 +5389,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<specimen typeCode="SPC">
 								<specimenRole>
 									<id nullFlavor="NI"/>
-								</specimenRole>
+								
+									<!--
+										DEFECT #397: comorbidities observation/specimen/specimenRole/specimenPlayingEntity.
+										WAS: specimenRole had id NI only — no specimenPlayingEntity.
+										HL7 CDA R2 SpecimenRole has specimenPlayingEntity 0..1 (the material
+										entity). SEMD validators often flag empty specimenRole under clinical
+										entries when playing entity code/name cannot be joined. Form 043/u
+										chart does not collect discrete specimen entity codes — do not invent
+										SNOMED/NSI specimen type codes.
+										NOW: specimenPlayingEntity with code/name nullFlavor NI until chart
+										field exists.
+									-->
+									<specimenPlayingEntity>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+									</specimenPlayingEntity>
+</specimenRole>
 							</specimen>
 							
 							<!--
@@ -5837,7 +6000,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<specimen typeCode="SPC">
 								<specimenRole>
 									<id nullFlavor="NI"/>
-								</specimenRole>
+								
+									<!--
+										DEFECT #399: instrument-tray supply/specimen/specimenRole/specimenPlayingEntity.
+										WAS: specimenRole had id NI only — no specimenPlayingEntity.
+										HL7 CDA R2 SpecimenRole has specimenPlayingEntity 0..1 (the material
+										entity). SEMD validators often flag empty specimenRole under clinical
+										entries when playing entity code/name cannot be joined. Form 043/u
+										chart does not collect discrete specimen entity codes — do not invent
+										SNOMED/NSI specimen type codes.
+										NOW: specimenPlayingEntity with code/name nullFlavor NI until chart
+										field exists.
+									-->
+									<specimenPlayingEntity>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+									</specimenPlayingEntity>
+</specimenRole>
 							</specimen>
 
 							<!--
