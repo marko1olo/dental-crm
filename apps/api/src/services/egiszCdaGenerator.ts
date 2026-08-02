@@ -1312,6 +1312,48 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</representedOrganization>
 				</assignedEntity>
 			</performer>
+			<!--
+				DEFECT #290: documentationOf/serviceEvent/author.
+				WAS: serviceEvent had performer then closed — no entry-level author. Body entries (#283-#289) already carry author.
+				Body entries (#283-#289) already carry entry-level author.
+				HL7 CDA R2 Act has author 0..* (who recorded the act). SEMD
+				validators often flag missing author under documentationOf /
+				componentOf so REMD cannot separate recorder from performer
+				at the care-event / encounter shell. Form 043/u treating
+				dentist authors the ambulatory visit record.
+				NOW: author with time=visitTime and assignedAuthor mirroring
+				document author (SNILS or NI, code with position or bare NI,
+				person, MO org). No invented extension or street/phone.
+			-->
+			<author>
+				<time value="${visitTime}"/>
+				<assignedAuthor>
+					${params.doctorSnils && String(params.doctorSnils).trim()
+						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+						: `<id nullFlavor="NI"/>`}
+					${params.doctorPosition && params.doctorPosition.trim()
+						? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+						: `<code nullFlavor="NI"/>`}
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<assignedPerson>
+						<name>
+							<family>${escapeXml(params.doctorName.last)}</family>
+							<given>${escapeXml(params.doctorName.first)}</given>
+							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+						</name>
+					</assignedPerson>
+					<representedOrganization>
+						${params.clinicOid && String(params.clinicOid).trim()
+							? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+							: `<id nullFlavor="NI"/>`}
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<name>${escapeXml(params.clinicName)}</name>
+					</representedOrganization>
+				</assignedAuthor>
+			</author>
+
 		</serviceEvent>
 	</documentationOf>
 	<!--
@@ -1836,7 +1878,48 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 				</healthCareFacility>
 			</location>
-		</encompassingEncounter>
+					<!--
+				DEFECT #291: encompassingEncounter/author.
+				WAS: encompassingEncounter had encounterParticipant/responsibleParty/location then closed — no entry-level author. serviceEvent (#290) and body entries (#283-#289) already carry author.
+				Body entries (#283-#289) already carry entry-level author.
+				HL7 CDA R2 Act has author 0..* (who recorded the act). SEMD
+				validators often flag missing author under documentationOf /
+				componentOf so REMD cannot separate recorder from performer
+				at the care-event / encounter shell. Form 043/u treating
+				dentist authors the ambulatory visit record.
+				NOW: author with time=visitTime and assignedAuthor mirroring
+				document author (SNILS or NI, code with position or bare NI,
+				person, MO org). No invented extension or street/phone.
+			-->
+			<author>
+				<time value="${visitTime}"/>
+				<assignedAuthor>
+					${params.doctorSnils && String(params.doctorSnils).trim()
+						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+						: `<id nullFlavor="NI"/>`}
+					${params.doctorPosition && params.doctorPosition.trim()
+						? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+						: `<code nullFlavor="NI"/>`}
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<assignedPerson>
+						<name>
+							<family>${escapeXml(params.doctorName.last)}</family>
+							<given>${escapeXml(params.doctorName.first)}</given>
+							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+						</name>
+					</assignedPerson>
+					<representedOrganization>
+						${params.clinicOid && String(params.clinicOid).trim()
+							? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+							: `<id nullFlavor="NI"/>`}
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<name>${escapeXml(params.clinicName)}</name>
+					</representedOrganization>
+				</assignedAuthor>
+			</author>
+</encompassingEncounter>
 	</componentOf>
 
 
