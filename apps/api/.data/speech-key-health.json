@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "savedAt": "2026-08-01T18:01:53.731Z",
+  "savedAt": "2026-08-01T21:15:13.177Z",
   "health": {
     "google_speech:26987e457b44": {
       "cooldownUntil": 0,
       "failures": 0,
-      "successes": 274,
-      "lastUsedAt": 1785607313731,
+      "successes": 275,
+      "lastUsedAt": 1785618913177,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -17,14 +17,6 @@
       "lastUsedAt": 1783088934642,
       "lastStatusCode": null,
       "lastError": null
-    },
-    "google_speech:401c79dc50d5": {
-      "cooldownUntil": 0,
-      "failures": 1,
-      "successes": 265,
-      "lastUsedAt": 1783017566085,
-      "lastStatusCode": null,
-      "lastError": "GEMINI 400: [{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Unable to process input image. Please retry or report in https://developers.generativeai.google/guide/troubleshooting\",\n    \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n]"
     },
     "google_speech:5cdeb7e487c0": {
       "cooldownUntil": 1785499372964,
