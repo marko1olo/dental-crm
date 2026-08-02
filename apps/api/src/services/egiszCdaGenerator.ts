@@ -768,6 +768,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			</performer>
 		</serviceEvent>
 	</documentationOf>
+	<!--
+		DEFECT #129: ClinicalDocument/inFulfillmentOf (HL7 CDA R2 / EGISZ SEMD).
+		WAS: header had documentationOf then jumped to componentOf with no
+		inFulfillmentOf. SEMD validators expect the Order this protocol
+		fulfills (ambulatory visit / appointment slot) so REMD can join the
+		SEMD to the scheduled care request, distinct from encompassingEncounter
+		(the visit act itself) and from ClinicalDocument/id (the document).
+		NOW: inFulfillmentOf/order/id uses the same encounterExtension as
+		componentOf (#87) under clinicOid root (or default MO root). No
+		invented extension="unknown" - encounterExtension always resolves
+		to a real visit/document key upstream.
+	-->
+	<inFulfillmentOf>
+		<order>
+			<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(encounterExtension)}"/>
+		</order>
+	</inFulfillmentOf>
 
 
 	<!--
