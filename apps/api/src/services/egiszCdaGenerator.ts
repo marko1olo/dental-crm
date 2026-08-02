@@ -1921,7 +1921,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: methodCode nullFlavor NI until chart field exists.
 							-->
 							<methodCode nullFlavor="NI"/>
+							<!--
+								DEFECT #209: treatment act/uncertaintyCode.
+								WAS: treatment ACT had id/code/text/statusCode/effectiveTime/
+								priorityCode/methodCode only — no uncertaintyCode. Body OBS
+								entries already carry uncertaintyCode NI (#188/#197-#200).
+								HL7 CDA R2 Act has uncertaintyCode 0..1 (U/N from
+								ActUncertainty). SEMD validators often flag missing
+								uncertainty under procedure/treatment ACT. Form 043/u
+								treatment is free-text completed care — do not invent U/N.
+								NOW: uncertaintyCode nullFlavor NI until chart field exists.
+							-->
+							<uncertaintyCode nullFlavor="NI"/>
 						</act>
+
 
 					</entry></section>
 			</component>
