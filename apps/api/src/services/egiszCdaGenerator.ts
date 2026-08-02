@@ -734,7 +734,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<location>
 				<healthCareFacility>
-					<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "unknown"}"/>
+					${/*
+					 * DEFECT #120: healthCareFacility/id must not invent extension="unknown".
+					 * БЫЛО: when clinicOid absent, id emitted root=MO-registry +
+					 * extension="unknown" — a fake II.extension (same class as
+					 * custodian empty-extension #78). SEMD validators and REMD
+					 * join treat "unknown" as a real facility key.
+					 * СТАЛО: real OID as extension when present (root = MO
+					 * registry); else <id nullFlavor="NI"/>. Mirror of org ids
+					 * #114-#119 / custodian #78.
+					 */
+					params.clinicOid && String(params.clinicOid).trim()
+						? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+						: `<id nullFlavor="NI"/>`}
 					<location>
 						<!--
 							DEFECT #112: healthCareFacility/location addr
