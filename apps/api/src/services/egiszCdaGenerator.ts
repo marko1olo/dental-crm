@@ -1192,6 +1192,15 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</text>
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
+							<!--
+								DEFECT #153: structuredBody entry Act/id.
+								WAS: diagnosis observation had code/status/time/value
+								only — no id. HL7 CDA R2 Act.id is the REMD join key
+								for the structured finding within the SEMD instance.
+								NOW: id under docIdRoot with documentId-dx extension
+								(unique per document version; no invented "unknown").
+							-->
+							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-dx"/>
 							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" displayName="Диагноз"/>
 							<!-- DEFECT #143: observation statusCode completed (mirror act/supply) -->
 							<statusCode code="completed"/>
@@ -1226,6 +1235,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
+							<!-- DEFECT #153: entry Act/id (anamnesis) -->
+							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-anamnesis"/>
 							<code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Анамнез"/>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
@@ -1266,6 +1277,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
+							<!-- DEFECT #153: entry Act/id (objective status) -->
+							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-objective"/>
 							<code code="29545-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Объективный статус"/>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
@@ -1302,6 +1315,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<entry>
 						<act classCode="ACT" moodCode="EVN">
+							<!-- DEFECT #153: entry Act/id (treatment) -->
+							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-treatment"/>
 							<code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Проведенное лечение"/>
 							<text>${escapeXml(params.treatmentDescription || "Осмотр и консультация")}</text>
 							<statusCode code="completed"/>
@@ -1329,6 +1344,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
+							<!-- DEFECT #153: entry Act/id (complications) -->
+							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-complications"/>
 							<code code="55109-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Осложнения"/>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
@@ -1361,6 +1378,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
+							<!-- DEFECT #153: entry Act/id (comorbidities) -->
+							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-comorbidities"/>
 							<code code="75326-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Сопутствующие заболевания"/>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
@@ -1394,6 +1413,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<entry>
 						<supply classCode="SPLY" moodCode="EVN">
+							<!-- DEFECT #153: entry Act/id (instrument tray) -->
+							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-tray"/>
 							<code code="69764-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Инструментальный лоток"/>
 							<text>${escapeXml(params.instrumentTrayBarcode || "") || "—"}</text>
 							<statusCode code="completed"/>
