@@ -2116,7 +2116,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: quantity nullFlavor NI until chart field exists.
 							-->
 							<quantity nullFlavor="NI"/>
+							<!--
+								DEFECT #204: instrument-tray supply/repeatNumber.
+								WAS: supply had id/code/text/statusCode/effectiveTime/priorityCode/
+								quantity only — no repeatNumber. HL7 CDA R2 Supply has
+								repeatNumber 0..1 (how many times the supply act is intended
+								to occur). SEMD validators often flag missing repeatNumber
+								under sterilization tray supply. Form 043/u tray barcode is
+								a single-use visit link — no discrete repeat field and do not
+								invent a fake INT count.
+								NOW: repeatNumber nullFlavor NI until chart field exists.
+							-->
+							<repeatNumber nullFlavor="NI"/>
 						</supply>
+
 
 					</entry></section>
 			</component>`
