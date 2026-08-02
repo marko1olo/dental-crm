@@ -3018,7 +3018,34 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<priorityCode nullFlavor="NI"/>
 							<!--
+								DEFECT #267: instrument-tray supply/methodCode.
+								WAS: supply had priorityCode (#202) then jumped to quantity
+								(#203) — no methodCode. Treatment ACT (#208), serviceEvent
+								(#213), encompassingEncounter (#217) and body OBS already
+								carry methodCode NI. HL7 CDA R2 Supply has methodCode 0..*
+								(how the supply act was performed). SEMD validators often
+								flag missing method under sterilization tray supply.
+								Form 043/u tray barcode has no discrete method field —
+								do not invent a fake NSI method OID.
+								NOW: methodCode nullFlavor NI until chart field exists.
+							-->
+							<methodCode nullFlavor="NI"/>
+							<!--
+								DEFECT #268: instrument-tray supply/uncertaintyCode.
+								WAS: supply had priorityCode/methodCode only — no
+								uncertaintyCode. Treatment ACT (#209), serviceEvent (#214),
+								encompassingEncounter (#218) and body OBS already carry
+								uncertaintyCode NI. HL7 CDA R2 Supply has uncertaintyCode
+								0..1 (U/N from ActUncertainty). SEMD validators often flag
+								missing uncertainty under sterilization tray supply.
+								Form 043/u tray barcode is a completed visit link — do not
+								invent U/N.
+								NOW: uncertaintyCode nullFlavor NI until chart field exists.
+							-->
+							<uncertaintyCode nullFlavor="NI"/>
+							<!--
 								DEFECT #203: instrument-tray supply/quantity.
+
 								WAS: supply had id/code/text/statusCode/effectiveTime/priorityCode
 								only — no quantity. HL7 CDA R2 Supply has quantity 0..1 (how
 								many units supplied). SEMD validators often flag missing
