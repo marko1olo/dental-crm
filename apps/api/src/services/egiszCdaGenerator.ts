@@ -1127,6 +1127,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" displayName="Диагноз"/>
 							<!-- DEFECT #143: observation statusCode completed (mirror act/supply) -->
 							<statusCode code="completed"/>
+							<!-- DEFECT #145: observation effectiveTime = visit clock -->
+							<effectiveTime value="${visitTime}"/>
 							<value xsi:type="CD" code="${escapeXml(params.icd10Code)}" codeSystem="1.2.643.5.1.13.13.11.1005" displayName="${escapeXml(params.diagnosisText)}"/>${params.diagnosisTooth && String(params.diagnosisTooth).trim()
 								? `
 							<!-- DEFECT #74: ISO 3950 tooth from visit_diaries.diagnosis_tooth -->
@@ -1159,6 +1161,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Анамнез"/>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
+							<!-- DEFECT #145: observation effectiveTime = visit clock -->
+							<effectiveTime value="${visitTime}"/>
 							<value xsi:type="ST">${escapeXml(params.anamnesis || "Без особенностей")}</value>
 						</observation>
 					</entry>
@@ -1197,6 +1201,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<code code="29545-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Объективный статус"/>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
+							<!-- DEFECT #145: observation effectiveTime = visit clock -->
+							<effectiveTime value="${visitTime}"/>
 							<value xsi:type="ST">${escapeXml(params.objectiveStatus || "Без особенностей")}</value>
 						</observation>
 					</entry></section>
@@ -1223,6 +1229,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Проведенное лечение"/>
 							<text>${escapeXml(params.treatmentDescription || "Осмотр и консультация")}</text>
 							<statusCode code="completed"/>
+							<!-- DEFECT #145: act effectiveTime = visit clock -->
+							<effectiveTime value="${visitTime}"/>
 						</act>
 					</entry></section>
 			</component>
@@ -1248,6 +1256,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<code code="55109-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Осложнения"/>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
+							<!-- DEFECT #145: observation effectiveTime = visit clock -->
+							<effectiveTime value="${visitTime}"/>
 							<value xsi:type="ST">${escapeXml(params.complications || "Не отмечены")}</value>
 						</observation>
 					</entry></section>
@@ -1271,6 +1281,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<code code="75326-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Сопутствующие заболевания"/>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
+							<!-- DEFECT #145: observation effectiveTime = visit clock -->
+							<effectiveTime value="${visitTime}"/>
 							<value xsi:type="ST">${escapeXml(params.comorbidities || "Не отмечены")}</value>
 						</observation>
 					</entry></section>
@@ -1295,6 +1307,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<code code="69764-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Инструментальный лоток"/>
 							<text>${escapeXml(params.instrumentTrayBarcode || "") || "—"}</text>
 							<statusCode code="completed"/>
+							<!-- DEFECT #145: supply effectiveTime = visit clock -->
+							<effectiveTime value="${visitTime}"/>
 						</supply>
 					</entry></section>
 			</component>`
