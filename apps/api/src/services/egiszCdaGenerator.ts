@@ -566,9 +566,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			params.doctorSnils && String(params.doctorSnils).trim()
 				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 				: `<id nullFlavor="NI"/>`}
-			${params.doctorPosition && params.doctorPosition.trim()
+			${/*
+			 * DEFECT #139: legalAuthenticator assignedEntity/code always present.
+			 * WAS: same optional code as assignedAuthor pre-#138 — omitted when
+			 * doctorPosition blank. SEMD validators expect the specialty slot
+			 * under legal signer assignedEntity the same way.
+			 * NOW: always emit code (mirror #138). Position -> NI+displayName;
+			 * blank -> bare nullFlavor NI. No invented NSI specialty code.
+			 */
+			params.doctorPosition && params.doctorPosition.trim()
 				? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
-				: ""}
+				: `<code nullFlavor="NI"/>`}
 			<!--
 				DEFECT #100: legalAuthenticator assignedEntity addr + telecom.
 				БЫЛО: legalAuthenticator had id/code/person/org only — no
