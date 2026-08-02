@@ -1760,6 +1760,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: codeSystemName="LOINC" on diagnosis observation code.
 							-->
 							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Диагноз"/>
+							<!--
+								DEFECT #255: diagnosis observation/text.
+								WAS: diagnosis OBS had id/code then jumped to statusCode —
+								no entry-level text. Treatment ACT (#146) and instrument-tray
+								supply already carry <text> with the human-readable payload.
+								HL7 CDA R2 Observation has text 0..1 (ED) as the narrative
+								form of the finding; SEMD validators often flag missing text
+								when sibling Act/Supply entries emit it. Form 043/u chart
+								already stores diagnosisText — mirror it here (ICD stays on
+								value/@code).
+								NOW: text = diagnosisText until a richer narrative is needed.
+							-->
+							<text>${escapeXml(params.diagnosisText)}</text>
 							<!-- DEFECT #143: observation statusCode completed (mirror act/supply) -->
 
 							<statusCode code="completed"/>
@@ -1961,6 +1974,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<!-- DEFECT #153: entry Act/id (anamnesis) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-anamnesis"/>
 							<code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Анамнез"/>
+							<!--
+								DEFECT #256: anamnesis observation/text.
+								WAS: anamnesis OBS had id/code then jumped to statusCode —
+								no entry-level text. Diagnosis OBS (#255) and treatment ACT
+								already carry <text>. HL7 CDA R2 Observation has text 0..1.
+								SEMD validators often flag missing text under history OBS
+								when sibling entries emit it. Form 043/u chart already stores
+								anamnesis — mirror it here (ST value stays the structured
+								payload).
+								NOW: text = anamnesis (default Bez osobennostey).
+							-->
+							<text>${escapeXml(params.anamnesis || "Без особенностей")}</text>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
@@ -2143,6 +2168,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<!-- DEFECT #153: entry Act/id (objective status) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-objective"/>
 							<code code="29545-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Объективный статус"/>
+							<!--
+								DEFECT #257: objective-status observation/text.
+								WAS: objective OBS had id/code then jumped to statusCode —
+								no entry-level text. Diagnosis (#255) and anamnesis (#256)
+								already carry <text>. HL7 CDA R2 Observation has text 0..1.
+								SEMD validators often flag missing text under status-localis
+								OBS when sibling entries emit it. Form 043/u chart already
+								stores objectiveStatus — mirror it here (ST value stays the
+								structured payload).
+								NOW: text = objectiveStatus (default Bez osobennostey).
+							-->
+							<text>${escapeXml(params.objectiveStatus || "Без особенностей")}</text>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
@@ -2497,6 +2534,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<!-- DEFECT #153: entry Act/id (complications) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-complications"/>
 							<code code="55109-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Осложнения"/>
+							<!--
+								DEFECT #258: complications observation/text.
+								WAS: complications OBS had id/code then jumped to statusCode —
+								no entry-level text. Diagnosis (#255), anamnesis (#256) and
+								objective (#257) already carry <text>. HL7 CDA R2 Observation
+								has text 0..1. SEMD validators often flag missing text under
+								complications OBS when sibling entries emit it. Form 043/u
+								chart already stores complications — mirror it here (ST value
+								stays the structured payload).
+								NOW: text = complications (default Ne otmecheny).
+							-->
+							<text>${escapeXml(params.complications || "Не отмечены")}</text>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
@@ -2677,6 +2726,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<!-- DEFECT #153: entry Act/id (comorbidities) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-comorbidities"/>
 							<code code="75326-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Сопутствующие заболевания"/>
+							<!--
+								DEFECT #259: comorbidities observation/text.
+								WAS: comorbidities OBS had id/code then jumped to statusCode —
+								no entry-level text. Diagnosis (#255), anamnesis (#256),
+								objective (#257) and complications (#258) already carry
+								<text>. HL7 CDA R2 Observation has text 0..1. SEMD
+								validators often flag missing text under comorbidities OBS
+								when sibling entries emit it. Form 043/u chart already
+								stores comorbidities — mirror it here (ST value stays the
+								structured payload).
+								NOW: text = comorbidities (default Ne otmecheny).
+							-->
+							<text>${escapeXml(params.comorbidities || "Не отмечены")}</text>
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
