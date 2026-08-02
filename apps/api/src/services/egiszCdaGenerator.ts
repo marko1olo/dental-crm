@@ -1761,11 +1761,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: interpretationCode nullFlavor NI until chart field exists.
 							-->
 							<interpretationCode nullFlavor="NI"/>
+							<!--
+								DEFECT #197: anamnesis observation/uncertaintyCode.
+								WAS: anamnesis OBS gained methodCode (#189) and
+								interpretationCode (#193) but still had no uncertaintyCode.
+								Diagnosis OBS already carries uncertaintyCode NI (#188).
+								HL7 CDA R2 Observation has uncertaintyCode 0..1 (U/N from
+								ActUncertainty). SEMD validators often flag missing
+								uncertainty under history OBS. Form 043/u anamnesis is
+								free-text interview — do not invent U/N.
+								NOW: uncertaintyCode nullFlavor NI until chart field exists.
+							-->
+							<uncertaintyCode nullFlavor="NI"/>
 						</observation>
 					</entry>
 				</section>
 			</component>
 			<!-- Объективный статус / Status localis (043 O-block) -->
+
 
 
 			<component>
