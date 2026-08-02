@@ -1920,6 +1920,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
+				<!--
+					DEFECT #1037: reference/externalAct/reference.
+					WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+					NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+				-->
+				<reference typeCode="REFR">
+					<externalDocument classCode="DOC" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<setId nullFlavor="NI"/>
+						<versionNumber nullFlavor="NI"/>
+					</externalDocument>
+				</reference>
 				</externalAct>
 			</reference>
 									<!--
@@ -2417,6 +2431,48 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				</associatedPerson>
 			</associatedEntity>
 		</participant>
+		<!--
+			DEFECT #1072: inFulfillmentOf/order/entryRelationship.
+			WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+			NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI.
+		-->
+		<entryRelationship typeCode="COMP">
+			<act classCode="ACT" moodCode="EVN">
+				<id nullFlavor="NI"/>
+				<code nullFlavor="NI"/>
+				<text nullFlavor="NI"/>
+				<statusCode code="completed"/>
+				<priorityCode nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+			</act>
+		</entryRelationship>
+		<!--
+			DEFECT #1073: inFulfillmentOf/order/reference.
+			WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+			NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+		-->
+		<reference typeCode="REFR">
+			<externalDocument classCode="DOC" moodCode="EVN">
+				<id nullFlavor="NI"/>
+				<code nullFlavor="NI"/>
+				<text nullFlavor="NI"/>
+				<setId nullFlavor="NI"/>
+				<versionNumber nullFlavor="NI"/>
+			</externalDocument>
+		</reference>
+		<!--
+			DEFECT #1074: inFulfillmentOf/order/precondition.
+			WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+			NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+		-->
+		<precondition typeCode="PRCN">
+			<criterion classCode="OBS" moodCode="EVN">
+				<code nullFlavor="NI"/>
+				<text nullFlavor="NI"/>
+				<statusCode code="completed"/>
+				<value xsi:type="CD" nullFlavor="NI"/>
+			</criterion>
+		</precondition>
 		</order>
 	</inFulfillmentOf>
 	<!--
@@ -2768,6 +2824,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<value xsi:type="CD" nullFlavor="NI"/>
 			</criterion>
 		</precondition>
+		<!--
+			DEFECT #1071: authorization/consent/reference.
+			WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+			NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+		-->
+		<reference typeCode="REFR">
+			<externalDocument classCode="DOC" moodCode="EVN">
+				<id nullFlavor="NI"/>
+				<code nullFlavor="NI"/>
+				<text nullFlavor="NI"/>
+				<setId nullFlavor="NI"/>
+				<versionNumber nullFlavor="NI"/>
+			</externalDocument>
+		</reference>
 		</consent>
 	</authorization>
 
@@ -3613,6 +3683,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
+				<!--
+					DEFECT #1038: reference/externalAct/reference.
+					WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+					NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+				-->
+				<reference typeCode="REFR">
+					<externalDocument classCode="DOC" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<setId nullFlavor="NI"/>
+						<versionNumber nullFlavor="NI"/>
+					</externalDocument>
+				</reference>
 				</externalAct>
 			</reference>
 									<!--
@@ -4601,6 +4685,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
+				<!--
+					DEFECT #1039: reference/externalAct/reference.
+					WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+					NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+				-->
+				<reference typeCode="REFR">
+					<externalDocument classCode="DOC" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<setId nullFlavor="NI"/>
+						<versionNumber nullFlavor="NI"/>
+					</externalDocument>
+				</reference>
 				</externalAct>
 							</reference>
 							<!--
@@ -4940,6 +5038,81 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										</representedOrganization>
 									</assignedAuthor>
 								</author>
+								<!--
+									DEFECT #1046: referenceRange/observationRange/informant.
+									WAS: parent had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing INF when consent/header emit informant. Form 043/u has no discrete informant here; do not invent.
+									NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+								-->
+								<informant typeCode="INF">
+									<assignedEntity>
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<assignedPerson>
+											<name nullFlavor="NI"/>
+										</assignedPerson>
+									</assignedEntity>
+								</informant>
+								<!--
+									DEFECT #1051: referenceRange/observationRange/participant.
+									WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
+									NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+								-->
+								<participant typeCode="IND">
+									<time nullFlavor="NI"/>
+									<associatedEntity classCode="PRS">
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<associatedPerson>
+											<name nullFlavor="NI"/>
+										</associatedPerson>
+									</associatedEntity>
+								</participant>
+								<!--
+									DEFECT #1056: referenceRange/observationRange/entryRelationship.
+									WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+									NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI.
+								-->
+								<entryRelationship typeCode="COMP">
+									<act classCode="ACT" moodCode="EVN">
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<text nullFlavor="NI"/>
+										<statusCode code="completed"/>
+										<priorityCode nullFlavor="NI"/>
+										<effectiveTime nullFlavor="NI"/>
+									</act>
+								</entryRelationship>
+								<!--
+									DEFECT #1061: referenceRange/observationRange/reference.
+									WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+									NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+								-->
+								<reference typeCode="REFR">
+									<externalDocument classCode="DOC" moodCode="EVN">
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<text nullFlavor="NI"/>
+										<setId nullFlavor="NI"/>
+										<versionNumber nullFlavor="NI"/>
+									</externalDocument>
+								</reference>
+								<!--
+									DEFECT #1066: referenceRange/observationRange/precondition.
+									WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+									NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+								-->
+								<precondition typeCode="PRCN">
+									<criterion classCode="OBS" moodCode="EVN">
+										<code nullFlavor="NI"/>
+										<text nullFlavor="NI"/>
+										<statusCode code="completed"/>
+										<value xsi:type="CD" nullFlavor="NI"/>
+									</criterion>
+								</precondition>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -5707,6 +5880,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
+				<!--
+					DEFECT #1040: reference/externalAct/reference.
+					WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+					NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+				-->
+				<reference typeCode="REFR">
+					<externalDocument classCode="DOC" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<setId nullFlavor="NI"/>
+						<versionNumber nullFlavor="NI"/>
+					</externalDocument>
+				</reference>
 				</externalAct>
 							</reference>
 							<!--
@@ -6046,6 +6233,81 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										</representedOrganization>
 									</assignedAuthor>
 								</author>
+								<!--
+									DEFECT #1047: referenceRange/observationRange/informant.
+									WAS: parent had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing INF when consent/header emit informant. Form 043/u has no discrete informant here; do not invent.
+									NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+								-->
+								<informant typeCode="INF">
+									<assignedEntity>
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<assignedPerson>
+											<name nullFlavor="NI"/>
+										</assignedPerson>
+									</assignedEntity>
+								</informant>
+								<!--
+									DEFECT #1052: referenceRange/observationRange/participant.
+									WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
+									NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+								-->
+								<participant typeCode="IND">
+									<time nullFlavor="NI"/>
+									<associatedEntity classCode="PRS">
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<associatedPerson>
+											<name nullFlavor="NI"/>
+										</associatedPerson>
+									</associatedEntity>
+								</participant>
+								<!--
+									DEFECT #1057: referenceRange/observationRange/entryRelationship.
+									WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+									NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI.
+								-->
+								<entryRelationship typeCode="COMP">
+									<act classCode="ACT" moodCode="EVN">
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<text nullFlavor="NI"/>
+										<statusCode code="completed"/>
+										<priorityCode nullFlavor="NI"/>
+										<effectiveTime nullFlavor="NI"/>
+									</act>
+								</entryRelationship>
+								<!--
+									DEFECT #1062: referenceRange/observationRange/reference.
+									WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+									NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+								-->
+								<reference typeCode="REFR">
+									<externalDocument classCode="DOC" moodCode="EVN">
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<text nullFlavor="NI"/>
+										<setId nullFlavor="NI"/>
+										<versionNumber nullFlavor="NI"/>
+									</externalDocument>
+								</reference>
+								<!--
+									DEFECT #1067: referenceRange/observationRange/precondition.
+									WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+									NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+								-->
+								<precondition typeCode="PRCN">
+									<criterion classCode="OBS" moodCode="EVN">
+										<code nullFlavor="NI"/>
+										<text nullFlavor="NI"/>
+										<statusCode code="completed"/>
+										<value xsi:type="CD" nullFlavor="NI"/>
+									</criterion>
+								</precondition>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -6827,6 +7089,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
+				<!--
+					DEFECT #1041: reference/externalAct/reference.
+					WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+					NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+				-->
+				<reference typeCode="REFR">
+					<externalDocument classCode="DOC" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<setId nullFlavor="NI"/>
+						<versionNumber nullFlavor="NI"/>
+					</externalDocument>
+				</reference>
 				</externalAct>
 							</reference>
 							<!--
@@ -7166,6 +7442,81 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										</representedOrganization>
 									</assignedAuthor>
 								</author>
+								<!--
+									DEFECT #1048: referenceRange/observationRange/informant.
+									WAS: parent had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing INF when consent/header emit informant. Form 043/u has no discrete informant here; do not invent.
+									NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+								-->
+								<informant typeCode="INF">
+									<assignedEntity>
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<assignedPerson>
+											<name nullFlavor="NI"/>
+										</assignedPerson>
+									</assignedEntity>
+								</informant>
+								<!--
+									DEFECT #1053: referenceRange/observationRange/participant.
+									WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
+									NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+								-->
+								<participant typeCode="IND">
+									<time nullFlavor="NI"/>
+									<associatedEntity classCode="PRS">
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<associatedPerson>
+											<name nullFlavor="NI"/>
+										</associatedPerson>
+									</associatedEntity>
+								</participant>
+								<!--
+									DEFECT #1058: referenceRange/observationRange/entryRelationship.
+									WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+									NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI.
+								-->
+								<entryRelationship typeCode="COMP">
+									<act classCode="ACT" moodCode="EVN">
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<text nullFlavor="NI"/>
+										<statusCode code="completed"/>
+										<priorityCode nullFlavor="NI"/>
+										<effectiveTime nullFlavor="NI"/>
+									</act>
+								</entryRelationship>
+								<!--
+									DEFECT #1063: referenceRange/observationRange/reference.
+									WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+									NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+								-->
+								<reference typeCode="REFR">
+									<externalDocument classCode="DOC" moodCode="EVN">
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<text nullFlavor="NI"/>
+										<setId nullFlavor="NI"/>
+										<versionNumber nullFlavor="NI"/>
+									</externalDocument>
+								</reference>
+								<!--
+									DEFECT #1068: referenceRange/observationRange/precondition.
+									WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+									NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+								-->
+								<precondition typeCode="PRCN">
+									<criterion classCode="OBS" moodCode="EVN">
+										<code nullFlavor="NI"/>
+										<text nullFlavor="NI"/>
+										<statusCode code="completed"/>
+										<value xsi:type="CD" nullFlavor="NI"/>
+									</criterion>
+								</precondition>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -7941,6 +8292,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
+				<!--
+					DEFECT #1042: reference/externalAct/reference.
+					WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+					NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+				-->
+				<reference typeCode="REFR">
+					<externalDocument classCode="DOC" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<setId nullFlavor="NI"/>
+						<versionNumber nullFlavor="NI"/>
+					</externalDocument>
+				</reference>
 				</externalAct>
 							</reference>
 							
@@ -8892,6 +9257,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
+				<!--
+					DEFECT #1043: reference/externalAct/reference.
+					WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+					NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+				-->
+				<reference typeCode="REFR">
+					<externalDocument classCode="DOC" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<setId nullFlavor="NI"/>
+						<versionNumber nullFlavor="NI"/>
+					</externalDocument>
+				</reference>
 				</externalAct>
 							</reference>
 							<!--
@@ -9231,6 +9610,81 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										</representedOrganization>
 									</assignedAuthor>
 								</author>
+								<!--
+									DEFECT #1049: referenceRange/observationRange/informant.
+									WAS: parent had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing INF when consent/header emit informant. Form 043/u has no discrete informant here; do not invent.
+									NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+								-->
+								<informant typeCode="INF">
+									<assignedEntity>
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<assignedPerson>
+											<name nullFlavor="NI"/>
+										</assignedPerson>
+									</assignedEntity>
+								</informant>
+								<!--
+									DEFECT #1054: referenceRange/observationRange/participant.
+									WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
+									NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+								-->
+								<participant typeCode="IND">
+									<time nullFlavor="NI"/>
+									<associatedEntity classCode="PRS">
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<associatedPerson>
+											<name nullFlavor="NI"/>
+										</associatedPerson>
+									</associatedEntity>
+								</participant>
+								<!--
+									DEFECT #1059: referenceRange/observationRange/entryRelationship.
+									WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+									NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI.
+								-->
+								<entryRelationship typeCode="COMP">
+									<act classCode="ACT" moodCode="EVN">
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<text nullFlavor="NI"/>
+										<statusCode code="completed"/>
+										<priorityCode nullFlavor="NI"/>
+										<effectiveTime nullFlavor="NI"/>
+									</act>
+								</entryRelationship>
+								<!--
+									DEFECT #1064: referenceRange/observationRange/reference.
+									WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+									NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+								-->
+								<reference typeCode="REFR">
+									<externalDocument classCode="DOC" moodCode="EVN">
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<text nullFlavor="NI"/>
+										<setId nullFlavor="NI"/>
+										<versionNumber nullFlavor="NI"/>
+									</externalDocument>
+								</reference>
+								<!--
+									DEFECT #1069: referenceRange/observationRange/precondition.
+									WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+									NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+								-->
+								<precondition typeCode="PRCN">
+									<criterion classCode="OBS" moodCode="EVN">
+										<code nullFlavor="NI"/>
+										<text nullFlavor="NI"/>
+										<statusCode code="completed"/>
+										<value xsi:type="CD" nullFlavor="NI"/>
+									</criterion>
+								</precondition>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -10011,6 +10465,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
+				<!--
+					DEFECT #1044: reference/externalAct/reference.
+					WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+					NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+				-->
+				<reference typeCode="REFR">
+					<externalDocument classCode="DOC" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<setId nullFlavor="NI"/>
+						<versionNumber nullFlavor="NI"/>
+					</externalDocument>
+				</reference>
 				</externalAct>
 							</reference>
 							<!--
@@ -10350,6 +10818,81 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										</representedOrganization>
 									</assignedAuthor>
 								</author>
+								<!--
+									DEFECT #1050: referenceRange/observationRange/informant.
+									WAS: parent had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing INF when consent/header emit informant. Form 043/u has no discrete informant here; do not invent.
+									NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+								-->
+								<informant typeCode="INF">
+									<assignedEntity>
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<assignedPerson>
+											<name nullFlavor="NI"/>
+										</assignedPerson>
+									</assignedEntity>
+								</informant>
+								<!--
+									DEFECT #1055: referenceRange/observationRange/participant.
+									WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
+									NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+								-->
+								<participant typeCode="IND">
+									<time nullFlavor="NI"/>
+									<associatedEntity classCode="PRS">
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<associatedPerson>
+											<name nullFlavor="NI"/>
+										</associatedPerson>
+									</associatedEntity>
+								</participant>
+								<!--
+									DEFECT #1060: referenceRange/observationRange/entryRelationship.
+									WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+									NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI.
+								-->
+								<entryRelationship typeCode="COMP">
+									<act classCode="ACT" moodCode="EVN">
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<text nullFlavor="NI"/>
+										<statusCode code="completed"/>
+										<priorityCode nullFlavor="NI"/>
+										<effectiveTime nullFlavor="NI"/>
+									</act>
+								</entryRelationship>
+								<!--
+									DEFECT #1065: referenceRange/observationRange/reference.
+									WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+									NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+								-->
+								<reference typeCode="REFR">
+									<externalDocument classCode="DOC" moodCode="EVN">
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<text nullFlavor="NI"/>
+										<setId nullFlavor="NI"/>
+										<versionNumber nullFlavor="NI"/>
+									</externalDocument>
+								</reference>
+								<!--
+									DEFECT #1070: referenceRange/observationRange/precondition.
+									WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+									NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+								-->
+								<precondition typeCode="PRCN">
+									<criterion classCode="OBS" moodCode="EVN">
+										<code nullFlavor="NI"/>
+										<text nullFlavor="NI"/>
+										<statusCode code="completed"/>
+										<value xsi:type="CD" nullFlavor="NI"/>
+									</criterion>
+								</precondition>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -11207,6 +11750,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<value xsi:type="CD" nullFlavor="NI"/>
 					</criterion>
 				</precondition>
+				<!--
+					DEFECT #1045: reference/externalAct/reference.
+					WAS: parent had no nested reference. HL7 CDA R2 Act has reference 0..* to external acts/documents. SEMD often flags missing reference under clinical acts when siblings emit REFR. Form 043/u has no discrete nested external document here; do not invent OIDs.
+					NOW: reference typeCode=REFR with externalDocument id/code/text/setId/versionNumber NI shells.
+				-->
+				<reference typeCode="REFR">
+					<externalDocument classCode="DOC" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<setId nullFlavor="NI"/>
+						<versionNumber nullFlavor="NI"/>
+					</externalDocument>
+				</reference>
 				</externalAct>
 							</reference>
 							
