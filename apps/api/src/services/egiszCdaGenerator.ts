@@ -1096,7 +1096,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<priorityCode nullFlavor="NI"/>
 			<!--
+				DEFECT #213: documentationOf/serviceEvent/methodCode.
+				WAS: serviceEvent had id/code/statusCode/priorityCode/effectiveTime/
+				performer only — no methodCode. Treatment ACT (#208) and body OBS
+				entries already carry methodCode NI. HL7 CDA R2 Act has methodCode
+				0..* on the care event (how the service was performed). SEMD
+				validators often flag missing method under documentationOf.
+				Form 043/u care event is free-text dental exam — do not invent a
+				fake NSI method OID.
+				NOW: methodCode nullFlavor NI until chart field exists.
+			-->
+			<methodCode nullFlavor="NI"/>
+			<!--
 				DEFECT #144: documentationOf/serviceEvent/effectiveTime as IVL_TS.
+
 				WAS: single-value TS effectiveTime value=visitTime. HL7 CDA R2 /
 				EGISZ SEMD expect Act effectiveTime as IVL_TS (interval) on the
 				care event so REMD can join slot start (and later end). Plain TS
