@@ -218,8 +218,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Протокол стоматологического осмотра"/>
 	<title>Протокол стоматологического осмотра</title>
 	<effectiveTime value="${effectiveTime}"/>
-	<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25"/>
+	<!--
+		DEFECT #158: ClinicalDocument/confidentialityCode codeSystemName + displayName.
+		WAS: confidentialityCode had code=N + codeSystem only — no codeSystemName
+		or displayName. LOINC/ICD-10/gender/AMB CEs already label the dictionary
+		(#155/#156/#157/#91). SEMD validators expect the HL7 Confidentiality
+		dictionary name so REMD can render "Normal" without OID lookup.
+		NOW: codeSystemName + RU displayName on confidentialityCode N (normal).
+	-->
+	<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 	<languageCode code="ru-RU"/>
+
 	<!-- DEFECT #88: setId = document SET (stable); id above = this version -->
 	<setId root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(setIdExtension)}"/>
 
