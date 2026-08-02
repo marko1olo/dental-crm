@@ -1353,6 +1353,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</representedOrganization>
 				</assignedAuthor>
 			</author>
+			<!--
+				DEFECT #299: documentationOf/serviceEvent/informant.
+				WAS: serviceEvent had performer + author (#290) then closed — no entry-level informant. Body entries (#292-#298) already carry informant.
+				Document-level informant already attributes the clinical
+				source of the ClinicalDocument. HL7 CDA R2 Act/Observation/
+				Supply has informant 0..* (who supplied the facts for the
+				act). SEMD validators often flag missing informant under body
+				entries so REMD cannot separate clinical source from author/
+				performer at entry level. Form 043/u treating dentist is the
+				clinical source of the chart entry (same person as document
+				informant).
+				NOW: informant with time=visitTime, functionCode NI+displayName
+				when doctorPosition known (else bare NI), assignedEntity
+				mirroring document informant (SNILS or NI, code, person, MO).
+				No invented extension or street/phone.
+			-->
+			<informant>
+				<time value="${visitTime}"/>
+				${params.doctorPosition && params.doctorPosition.trim()
+					? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+					: `<functionCode nullFlavor="NI"/>`}
+				<assignedEntity>
+					${params.doctorSnils && String(params.doctorSnils).trim()
+						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+						: `<id nullFlavor="NI"/>`}
+					${params.doctorPosition && params.doctorPosition.trim()
+						? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+						: `<code nullFlavor="NI"/>`}
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<assignedPerson>
+						<name>
+							<family>${escapeXml(params.doctorName.last)}</family>
+							<given>${escapeXml(params.doctorName.first)}</given>
+							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+						</name>
+					</assignedPerson>
+					<representedOrganization>
+						${params.clinicOid && String(params.clinicOid).trim()
+							? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+							: `<id nullFlavor="NI"/>`}
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<name>${escapeXml(params.clinicName)}</name>
+					</representedOrganization>
+				</assignedEntity>
+			</informant>
+
 
 		</serviceEvent>
 	</documentationOf>
@@ -1919,6 +1967,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</representedOrganization>
 				</assignedAuthor>
 			</author>
+			<!--
+				DEFECT #300: encompassingEncounter/informant.
+				WAS: encompassingEncounter had author (#291) then closed — no entry-level informant. serviceEvent (#299) and body entries (#292-#298) already carry informant.
+				Document-level informant already attributes the clinical
+				source of the ClinicalDocument. HL7 CDA R2 Act/Observation/
+				Supply has informant 0..* (who supplied the facts for the
+				act). SEMD validators often flag missing informant under body
+				entries so REMD cannot separate clinical source from author/
+				performer at entry level. Form 043/u treating dentist is the
+				clinical source of the chart entry (same person as document
+				informant).
+				NOW: informant with time=visitTime, functionCode NI+displayName
+				when doctorPosition known (else bare NI), assignedEntity
+				mirroring document informant (SNILS or NI, code, person, MO).
+				No invented extension or street/phone.
+			-->
+			<informant>
+				<time value="${visitTime}"/>
+				${params.doctorPosition && params.doctorPosition.trim()
+					? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+					: `<functionCode nullFlavor="NI"/>`}
+				<assignedEntity>
+					${params.doctorSnils && String(params.doctorSnils).trim()
+						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+						: `<id nullFlavor="NI"/>`}
+					${params.doctorPosition && params.doctorPosition.trim()
+						? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+						: `<code nullFlavor="NI"/>`}
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<assignedPerson>
+						<name>
+							<family>${escapeXml(params.doctorName.last)}</family>
+							<given>${escapeXml(params.doctorName.first)}</given>
+							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+						</name>
+					</assignedPerson>
+					<representedOrganization>
+						${params.clinicOid && String(params.clinicOid).trim()
+							? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+							: `<id nullFlavor="NI"/>`}
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<name>${escapeXml(params.clinicName)}</name>
+					</representedOrganization>
+				</assignedEntity>
+			</informant>
+
 </encompassingEncounter>
 	</componentOf>
 
@@ -2202,6 +2298,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedAuthor>
 							</author>
+							<!--
+								DEFECT #292: diagnosis observation/informant.
+								WAS: diagnosis OBS had performer (#233) + author (#283) then closed — no entry-level informant.
+								Document-level informant already attributes the clinical
+								source of the ClinicalDocument. HL7 CDA R2 Act/Observation/
+								Supply has informant 0..* (who supplied the facts for the
+								act). SEMD validators often flag missing informant under body
+								entries so REMD cannot separate clinical source from author/
+								performer at entry level. Form 043/u treating dentist is the
+								clinical source of the chart entry (same person as document
+								informant).
+								NOW: informant with time=visitTime, functionCode NI+displayName
+								when doctorPosition known (else bare NI), assignedEntity
+								mirroring document informant (SNILS or NI, code, person, MO).
+								No invented extension or street/phone.
+							-->
+							<informant>
+								<time value="${visitTime}"/>
+								${params.doctorPosition && params.doctorPosition.trim()
+									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+									: `<functionCode nullFlavor="NI"/>`}
+								<assignedEntity>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedEntity>
+							</informant>
+
 
 						</observation>
 
@@ -2439,6 +2583,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedAuthor>
 							</author>
+							<!--
+								DEFECT #293: anamnesis observation/informant.
+								WAS: anamnesis OBS had performer (#234) + author (#284) then closed — no entry-level informant. Diagnosis OBS (#292) already carries informant.
+								Document-level informant already attributes the clinical
+								source of the ClinicalDocument. HL7 CDA R2 Act/Observation/
+								Supply has informant 0..* (who supplied the facts for the
+								act). SEMD validators often flag missing informant under body
+								entries so REMD cannot separate clinical source from author/
+								performer at entry level. Form 043/u treating dentist is the
+								clinical source of the chart entry (same person as document
+								informant).
+								NOW: informant with time=visitTime, functionCode NI+displayName
+								when doctorPosition known (else bare NI), assignedEntity
+								mirroring document informant (SNILS or NI, code, person, MO).
+								No invented extension or street/phone.
+							-->
+							<informant>
+								<time value="${visitTime}"/>
+								${params.doctorPosition && params.doctorPosition.trim()
+									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+									: `<functionCode nullFlavor="NI"/>`}
+								<assignedEntity>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedEntity>
+							</informant>
+
 
 						</observation>
 
@@ -2690,6 +2882,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedAuthor>
 							</author>
+							<!--
+								DEFECT #294: objective-status observation/informant.
+								WAS: objective OBS had performer (#235) + author (#285) then closed — no entry-level informant. Diagnosis (#292) and anamnesis (#293) already carry informant.
+								Document-level informant already attributes the clinical
+								source of the ClinicalDocument. HL7 CDA R2 Act/Observation/
+								Supply has informant 0..* (who supplied the facts for the
+								act). SEMD validators often flag missing informant under body
+								entries so REMD cannot separate clinical source from author/
+								performer at entry level. Form 043/u treating dentist is the
+								clinical source of the chart entry (same person as document
+								informant).
+								NOW: informant with time=visitTime, functionCode NI+displayName
+								when doctorPosition known (else bare NI), assignedEntity
+								mirroring document informant (SNILS or NI, code, person, MO).
+								No invented extension or street/phone.
+							-->
+							<informant>
+								<time value="${visitTime}"/>
+								${params.doctorPosition && params.doctorPosition.trim()
+									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+									: `<functionCode nullFlavor="NI"/>`}
+								<assignedEntity>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedEntity>
+							</informant>
+
 
 						</observation>
 
@@ -2935,6 +3175,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedAuthor>
 							</author>
+							<!--
+								DEFECT #297: treatment act/informant.
+								WAS: treatment ACT had performer (#238) + author (#288) then closed — no entry-level informant. Body OBS (#292-#296) already carry informant.
+								Document-level informant already attributes the clinical
+								source of the ClinicalDocument. HL7 CDA R2 Act/Observation/
+								Supply has informant 0..* (who supplied the facts for the
+								act). SEMD validators often flag missing informant under body
+								entries so REMD cannot separate clinical source from author/
+								performer at entry level. Form 043/u treating dentist is the
+								clinical source of the chart entry (same person as document
+								informant).
+								NOW: informant with time=visitTime, functionCode NI+displayName
+								when doctorPosition known (else bare NI), assignedEntity
+								mirroring document informant (SNILS or NI, code, person, MO).
+								No invented extension or street/phone.
+							-->
+							<informant>
+								<time value="${visitTime}"/>
+								${params.doctorPosition && params.doctorPosition.trim()
+									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+									: `<functionCode nullFlavor="NI"/>`}
+								<assignedEntity>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedEntity>
+							</informant>
+
 
 						</act>
 
@@ -3179,6 +3467,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedAuthor>
 							</author>
+							<!--
+								DEFECT #295: complications observation/informant.
+								WAS: complications OBS had performer (#236) + author (#286) then closed — no entry-level informant. Diagnosis (#292) through objective (#294) already carry informant.
+								Document-level informant already attributes the clinical
+								source of the ClinicalDocument. HL7 CDA R2 Act/Observation/
+								Supply has informant 0..* (who supplied the facts for the
+								act). SEMD validators often flag missing informant under body
+								entries so REMD cannot separate clinical source from author/
+								performer at entry level. Form 043/u treating dentist is the
+								clinical source of the chart entry (same person as document
+								informant).
+								NOW: informant with time=visitTime, functionCode NI+displayName
+								when doctorPosition known (else bare NI), assignedEntity
+								mirroring document informant (SNILS or NI, code, person, MO).
+								No invented extension or street/phone.
+							-->
+							<informant>
+								<time value="${visitTime}"/>
+								${params.doctorPosition && params.doctorPosition.trim()
+									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+									: `<functionCode nullFlavor="NI"/>`}
+								<assignedEntity>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedEntity>
+							</informant>
+
 
 						</observation>
 
@@ -3429,6 +3765,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedAuthor>
 							</author>
+							<!--
+								DEFECT #296: comorbidities observation/informant.
+								WAS: comorbidities OBS had performer (#237) + author (#287) then closed — no entry-level informant. Diagnosis (#292) through complications (#295) already carry informant.
+								Document-level informant already attributes the clinical
+								source of the ClinicalDocument. HL7 CDA R2 Act/Observation/
+								Supply has informant 0..* (who supplied the facts for the
+								act). SEMD validators often flag missing informant under body
+								entries so REMD cannot separate clinical source from author/
+								performer at entry level. Form 043/u treating dentist is the
+								clinical source of the chart entry (same person as document
+								informant).
+								NOW: informant with time=visitTime, functionCode NI+displayName
+								when doctorPosition known (else bare NI), assignedEntity
+								mirroring document informant (SNILS or NI, code, person, MO).
+								No invented extension or street/phone.
+							-->
+							<informant>
+								<time value="${visitTime}"/>
+								${params.doctorPosition && params.doctorPosition.trim()
+									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+									: `<functionCode nullFlavor="NI"/>`}
+								<assignedEntity>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedEntity>
+							</informant>
+
 
 						</observation>
 
@@ -3710,6 +4094,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedAuthor>
 							</author>
+							<!--
+								DEFECT #298: instrument-tray supply/informant.
+								WAS: supply had performer (#239) + author (#289) then closed — no entry-level informant. Body OBS (#292-#296) and treatment ACT (#297) already carry informant.
+								Document-level informant already attributes the clinical
+								source of the ClinicalDocument. HL7 CDA R2 Act/Observation/
+								Supply has informant 0..* (who supplied the facts for the
+								act). SEMD validators often flag missing informant under body
+								entries so REMD cannot separate clinical source from author/
+								performer at entry level. Form 043/u treating dentist is the
+								clinical source of the chart entry (same person as document
+								informant).
+								NOW: informant with time=visitTime, functionCode NI+displayName
+								when doctorPosition known (else bare NI), assignedEntity
+								mirroring document informant (SNILS or NI, code, person, MO).
+								No invented extension or street/phone.
+							-->
+							<informant>
+								<time value="${visitTime}"/>
+								${params.doctorPosition && params.doctorPosition.trim()
+									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+									: `<functionCode nullFlavor="NI"/>`}
+								<assignedEntity>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedEntity>
+							</informant>
+
 
 						</supply>
 
