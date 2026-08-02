@@ -958,7 +958,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			NOW: codeSystem + codeSystemName + RU displayName on code S.
 		-->
 		<signatureCode code="S" codeSystem="2.16.840.1.113883.5.89" codeSystemName="ParticipationSignature" displayName="Подписано"/>
+		<!--
+			DEFECT #185: authenticator/signatureText.
+			WAS: authenticator had time + functionCode + signatureCode +
+			assignedEntity only — no signatureText. legalAuthenticator already
+			has signatureText NI (#184). HL7 CDA R2 Authenticator has
+			signatureText 0..1 (ED blob of the attestation signature).
+			SEMD validators expect the same ED slot under content attestation.
+			Form 043/u pipeline does not yet attach a detached CMS/PKCS#7 blob
+			at CDA build time — do not invent a fake base64 signature.
+			NOW: signatureText nullFlavor NI until e-sign blob is wired.
+		-->
+		<signatureText nullFlavor="NI"/>
 		<assignedEntity>
+
 
 			${params.doctorSnils && String(params.doctorSnils).trim()
 				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
