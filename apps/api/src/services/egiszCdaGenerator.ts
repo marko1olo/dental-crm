@@ -344,7 +344,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			 * СТАЛО: mirror clinicName (XML-escaped) as in legalAuthenticator.
 			 */
 			`<representedOrganization>
-				
+				${/*
+				 * DEFECT #114: assignedAuthor representedOrganization/id
+				 * (HL7 CDA R2 / EGISZ SEMD).
+				 * БЫЛО: representedOrganization had addr/telecom/name only —
+				 * no id. custodian (#78) and informationRecipient already
+				 * emit org id (clinicOid or nullFlavor NI). SEMD validators
+				 * expect MO identity under author org the same way.
+				 * СТАЛО: real OID as extension when present; else
+				 * <id nullFlavor="NI"/>. root = MO registry OID.
+				 */
+				params.clinicOid && String(params.clinicOid).trim()
+					? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+					: `<id nullFlavor="NI"/>`}
 				<!--
 					DEFECT #106: assignedAuthor representedOrganization
 					addr + telecom (HL7 CDA R2 / EGISZ SEMD).
