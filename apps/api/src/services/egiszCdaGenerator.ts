@@ -220,6 +220,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				blob at CDA build time; do not invent prior document prose.
 				NOW: text nullFlavor NI until prior SEMD text is wired.
 			-->
+			<!--
+				DEFECT #480: relatedDocument/parentDocument/title.
+				WAS: parentDocument had id/code/text/setId/versionNumber — no title. HL7 CDA R2 ParentDocument may carry title (ST) as the replaced SEMD display name. Form 043/u replacement pipeline does not store prior title at build; do not invent prior document title text.
+				NOW: title nullFlavor NI until prior SEMD title is wired.
+				
+			-->
+			<title nullFlavor="NI"/>
 			<text nullFlavor="NI"/>
 			<setId root="${docIdRoot}" extension="${escapeXml(setIdExtension)}"/>
 			<versionNumber value="${Math.max(1, Math.floor(Number(params.documentVersion) || 1) - 1)}"/>
@@ -393,6 +400,41 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					NOW: ethnicGroupCode nullFlavor NI until chart field exists.
 				-->
 				<ethnicGroupCode nullFlavor="NI"/>
+				<!--
+				DEFECT #473: patient/deceasedInd.
+				WAS: patient demographics had ethnicGroupCode (#174) but no deceasedInd. HL7 CDA R2 Patient has deceasedInd 0..1. SEMD validators often flag missing deceased indicator under recordTarget. Form 043/u ambulatory chart is for living patients at visit time; do not invent true without a chart field.
+				NOW: deceasedInd nullFlavor NI until chart field exists.
+				
+			-->
+				<deceasedInd nullFlavor="NI"/>
+				<!--
+				DEFECT #474: patient/deceasedTime.
+				WAS: patient had no deceasedTime. HL7 CDA R2 Patient has deceasedTime 0..1 (when deceasedInd applies). Form 043/u does not collect death datetime on dental chart; do not invent dates.
+				NOW: deceasedTime nullFlavor NI.
+				
+			-->
+				<deceasedTime nullFlavor="NI"/>
+				<!--
+				DEFECT #475: patient/multipleBirthInd.
+				WAS: patient had no multipleBirthInd. HL7 CDA R2 Patient has multipleBirthInd 0..1. Form 043/u chart does not collect multiple-birth flag; do not invent true/false without data.
+				NOW: multipleBirthInd nullFlavor NI.
+				
+			-->
+				<multipleBirthInd nullFlavor="NI"/>
+				<!--
+				DEFECT #476: patient/multipleBirthOrderNumber.
+				WAS: patient had no multipleBirthOrderNumber. HL7 CDA R2 Patient has multipleBirthOrderNumber 0..1. Form 043/u does not collect birth order; do not invent integers.
+				NOW: multipleBirthOrderNumber nullFlavor NI.
+				
+			-->
+				<multipleBirthOrderNumber nullFlavor="NI"/>
+				<!--
+				DEFECT #477: patient/organDonorInd.
+				WAS: patient had no organDonorInd. HL7 CDA R2 Patient has organDonorInd 0..1. Form 043/u dental chart does not collect organ-donor status; do not invent true/false.
+				NOW: organDonorInd nullFlavor NI.
+				
+			-->
+				<organDonorInd nullFlavor="NI"/>
 				<!--
 					DEFECT #97: patient/languageCommunication (preferred language).
 
@@ -826,6 +868,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: id nullFlavor NI on intendedRecipient.
 			-->
 			<id nullFlavor="NI"/>
+			<!--
+				DEFECT #470: informationRecipient/intendedRecipient/addr.
+				WAS: intendedRecipient had id + receivedOrganization only — no addr. HL7 CDA R2 IntendedRecipient has addr 0..*. SEMD validators often flag missing recipient contact when organization carries addr but the recipient role does not. Form 043/u has no separate recipient postal address; do not invent streetAddressLine.
+				NOW: addr nullFlavor NI on intendedRecipient.
+				
+			-->
+			<addr nullFlavor="NI"/>
+			<!--
+				DEFECT #471: informationRecipient/intendedRecipient/telecom.
+				WAS: intendedRecipient had id/addr but no telecom. HL7 CDA R2 IntendedRecipient has telecom 0..*. Form 043/u has no recipient phone; do not invent numbers.
+				NOW: telecom nullFlavor NI on intendedRecipient.
+				
+			-->
+			<telecom nullFlavor="NI"/>
+			<!--
+				DEFECT #472: informationRecipient/intendedRecipient/informationRecipient (person).
+				WAS: intendedRecipient had organization only — no informationRecipient person. HL7 CDA R2 IntendedRecipient may carry informationRecipient (Person) with name. SEMD validators often flag missing person stub under informationRecipient when only receivedOrganization is present. Form 043/u routes SEMD to the MO org, not a named person; do not invent FIO.
+				NOW: informationRecipient/name nullFlavor NI.
+				
+			-->
+			<informationRecipient>
+				<name nullFlavor="NI"/>
+			</informationRecipient>
 			<receivedOrganization>
 				${params.clinicOid && String(params.clinicOid).trim()
 					? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
@@ -1727,6 +1792,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: effectiveTime value=effectiveTime (documentClock).
 			-->
 			<effectiveTime value="${effectiveTime}"/>
+		
+			<!--
+				DEFECT #466: inFulfillmentOf/order/text.
+				WAS: order had id/code/status/priority/effectiveTime only — no text. HL7 CDA R2 Order (Act) has text 0..1 (ED). SEMD validators often flag missing order text when sibling acts emit <text>. Form 043/u has no separate order narrative on chart; do not invent order prose.
+				NOW: text nullFlavor NI until order narrative is wired.
+				
+			-->
+			<text nullFlavor="NI"/>
+		
+			<!--
+				DEFECT #478: inFulfillmentOf/order/languageCode.
+				WAS: order had no languageCode. HL7 CDA R2 Act has languageCode 0..1. SEMD often flags missing language under inFulfillmentOf when ClinicalDocument declares ru-RU.
+				NOW: languageCode code=ru-RU matching ClinicalDocument.
+				
+			-->
+			<languageCode code="ru-RU"/>
+			<!--
+				DEFECT #479: inFulfillmentOf/order/confidentialityCode.
+				WAS: order had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. SEMD often flags missing confidentiality under inFulfillmentOf when document sets N.
+				NOW: confidentialityCode N matching ClinicalDocument (#158).
+				
+			-->
+			<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
 		</order>
 	</inFulfillmentOf>
 	<!--
@@ -1847,7 +1935,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				text consent blob at CDA build; do not invent consent prose.
 				NOW: text nullFlavor NI until consent narrative is wired.
 			-->
-			<text nullFlavor="NI"/></consent>
+			<text nullFlavor="NI"/>
+			<!--
+				DEFECT #467: authorization/consent/priorityCode.
+				WAS: consent had id/code/status/effectiveTime/text only — no priorityCode. HL7 CDA R2 Consent Act has priorityCode 0..1. SEMD validators often flag missing priority under authorization when body acts emit it. Form 043/u has no consent priority; do not invent ActPriority code.
+				NOW: priorityCode nullFlavor NI.
+				
+			-->
+			<priorityCode nullFlavor="NI"/>
+			<!--
+				DEFECT #468: authorization/consent/languageCode.
+				WAS: consent had no languageCode. HL7 CDA R2 Act has languageCode 0..1. ClinicalDocument and sections declare ru-RU; SEMD often flags missing language under authorization/consent.
+				NOW: languageCode code=ru-RU matching ClinicalDocument.
+				
+			-->
+			<languageCode code="ru-RU"/>
+			<!--
+				DEFECT #469: authorization/consent/confidentialityCode.
+				WAS: consent had no confidentialityCode. HL7 CDA R2 Act has confidentialityCode 0..1. ClinicalDocument sets N; SEMD often flags missing confidentiality under authorization/consent.
+				NOW: confidentialityCode N matching ClinicalDocument (#158).
+				
+			-->
+			<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+		</consent>
 	</authorization>
 
 
