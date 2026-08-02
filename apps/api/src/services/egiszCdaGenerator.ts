@@ -1352,7 +1352,52 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: dischargeDispositionCode nullFlavor NI until chart field exists.
 			-->
 			<dischargeDispositionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #181: encompassingEncounter/encounterParticipant.
+				WAS: encounter had id/code/status/effectiveTime/dischargeDisposition/
+				responsibleParty/location only — no encounterParticipant. HL7 CDA R2
+				EncompassingEncounter has encounterParticipant 0..* (ATND/ADM/CON/…)
+				for clinicians participating in the visit act itself, distinct from
+				documentationOf/serviceEvent/performer (care-event performer) and
+				from responsibleParty (encounter responsible clinician).
+				Form 043/u treating dentist is the attending (ATND) for the ambulatory
+				slot. SEMD validators often flag missing encounterParticipant under
+				componentOf.
+				NOW: encounterParticipant typeCode=ATND with time=visitTime and
+				assignedEntity mirroring responsibleParty (SNILS or NI, code with
+				position displayName or bare NI, person, MO org). No invented
+				extension="unknown" or street/phone.
+			-->
+			<encounterParticipant typeCode="ATND">
+				<time value="${visitTime}"/>
+				<assignedEntity>
+					${params.doctorSnils && String(params.doctorSnils).trim()
+						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+						: `<id nullFlavor="NI"/>`}
+					${params.doctorPosition && params.doctorPosition.trim()
+						? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+						: `<code nullFlavor="NI"/>`}
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<assignedPerson>
+						<name>
+							<family>${escapeXml(params.doctorName.last)}</family>
+							<given>${escapeXml(params.doctorName.first)}</given>
+							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+						</name>
+					</assignedPerson>
+					<representedOrganization>
+						${params.clinicOid && String(params.clinicOid).trim()
+							? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+							: `<id nullFlavor="NI"/>`}
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<name>${escapeXml(params.clinicName)}</name>
+					</representedOrganization>
+				</assignedEntity>
+			</encounterParticipant>
 			<responsibleParty>
+
 				<assignedEntity>
 					${params.doctorSnils && String(params.doctorSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
