@@ -1281,6 +1281,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						indexes one concept (mirror #149 treatment/comorbidities/tray).
 						NOW: section code 29308-4 + RU displayName matching title/obs.
 					-->
+					<!-- DEFECT #165: section/id REMD join key (diagnosis) -->
+					<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-sec-dx"/>
 					<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Диагноз"/>
 					<title>Диагноз</title>
 
@@ -1338,6 +1340,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<!-- Анамнез -->
 			<component>
 				<section>
+					<!-- DEFECT #165: section/id REMD join key (anamnesis) -->
+					<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-sec-anamnesis"/>
 					<code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Анамнез"/>
 
 					<title>Анамнез</title>
@@ -1381,6 +1385,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						СТАЛО: displayName mirrors Russian <title> text
 						(LOINC code/codeSystem unchanged).
 					-->
+					<!-- DEFECT #165: section/id REMD join key (objective) -->
+					<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-sec-objective"/>
 					<code code="29545-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Объективный статус"/>
 					<title>Объективный статус</title>
 					<text>
@@ -1419,6 +1425,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						structured entry LOINC so REMD indexes one concept.
 						NOW: section code 18776-5 + RU displayName matching title/act.
 					-->
+					<!-- DEFECT #165: section/id REMD join key (treatment) -->
+					<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-sec-treatment"/>
 					<code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Проведенное лечение"/>
 					<title>Проведенное лечение</title>
 					<text>
@@ -1448,6 +1456,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<!-- Осложнения (043) -->
 			<component>
 				<section>
+					<!-- DEFECT #165: section/id REMD join key (complications) -->
+					<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-sec-complications"/>
 					<code code="55109-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Осложнения"/>
 					<title>Осложнения</title>
 					<text>
@@ -1485,6 +1495,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						the structured entry LOINC.
 						NOW: section code 75326-9 + RU displayName matching title/obs.
 					-->
+					<!-- DEFECT #165: section/id REMD join key (comorbidities) -->
+					<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-sec-comorbidities"/>
 					<code code="75326-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Сопутствующие заболевания"/>
 					<title>Сопутствующие заболевания</title>
 					<text>
@@ -1520,6 +1532,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						match the structured entry LOINC.
 						NOW: section code 69764-9 + RU displayName matching title/supply.
 					-->
+					<!-- DEFECT #165: section/id REMD join key (instrument tray) -->
+					<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-sec-tray"/>
 					<code code="69764-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Инструментальный лоток"/>
 					<title>Инструментальный лоток</title>
 					<text>
