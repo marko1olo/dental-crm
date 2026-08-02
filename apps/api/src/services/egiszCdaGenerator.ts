@@ -1074,6 +1074,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Протокол стоматологического осмотра"/>
 			<!--
+				DEFECT #276: documentationOf/serviceEvent/text.
+				WAS: serviceEvent had id/code then jumped to statusCode — no
+				entry-level text. Body OBS (#255-#259), treatment ACT and tray
+				supply already carry <text>. HL7 CDA R2 Act has text 0..1 (ED)
+				as the narrative form of the care event. SEMD validators often
+				flag missing text under documentationOf when body entries emit it.
+				Form 043/u chart already stores treatmentDescription — mirror it
+				here (LOINC stays on code).
+				NOW: text = treatmentDescription (default Osmotr i konsultaciya).
+			-->
+			<text>${escapeXml(params.treatmentDescription || "Осмотр и консультация")}</text>
+			<!--
+				DEFECT #277: documentationOf/serviceEvent/languageCode.
+				WAS: serviceEvent had id/code/text then jumped to statusCode —
+				no entry-level languageCode. Body entries (#260-#266) already
+				carry languageCode ru-RU. HL7 CDA R2 Act has languageCode 0..1.
+				SEMD validators often flag missing language under documentationOf
+				when ClinicalDocument declares ru-RU but the care event omits it.
+				Form 043/u ambulatory dental is always RU narrative.
+				NOW: languageCode code=ru-RU matching ClinicalDocument.
+			-->
+			<languageCode code="ru-RU"/>
+			<!--
 				DEFECT #126: documentationOf/serviceEvent/statusCode.
 				БЫЛО (#124): serviceEvent had code + effectiveTime + performer
 				but no statusCode. encompassingEncounter already emits
@@ -1085,6 +1108,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<statusCode code="completed"/>
 			<!--
 				DEFECT #212: documentationOf/serviceEvent/priorityCode.
+
 				WAS: serviceEvent had id/code/statusCode/effectiveTime/performer
 				only — no priorityCode. encompassingEncounter (#183) and treatment
 				ACT (#201) already carry priorityCode NI. HL7 CDA R2 Act has
@@ -1168,7 +1192,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<targetSiteCode nullFlavor="NI"/>
 							<!--
+								DEFECT #281: documentationOf/serviceEvent/interpretationCode.
+								WAS: serviceEvent had approach/targetSite then jumped to
+								effectiveTime — no interpretationCode. Treatment ACT (#280),
+								body OBS and tray supply (#271) already carry
+								interpretationCode NI. HL7 CDA R2 Act has interpretationCode
+								0..* on the care event. SEMD validators often flag missing
+								interpretation under documentationOf. Form 043/u care event
+								is completed dental exam — do not invent N/A/H.
+								NOW: interpretationCode nullFlavor NI until chart field exists.
+							-->
+							<interpretationCode nullFlavor="NI"/>
+							<!--
 								DEFECT #144: documentationOf/serviceEvent/effectiveTime as IVL_TS.
+
 
 
 
@@ -1437,6 +1474,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(encounterExtension)}"/>
 			<code code="AMB" codeSystem="1.2.643.5.1.13.13.11.1461" codeSystemName="Виды медицинской помощи" displayName="Амбулаторная помощь"/>
 			<!--
+				DEFECT #278: encompassingEncounter/text.
+				WAS: encounter had id/code then jumped to statusCode — no
+				entry-level text. serviceEvent (#276) and body entries already
+				carry <text>. HL7 CDA R2 Act has text 0..1 (ED) as the narrative
+				form of the ambulatory visit. SEMD validators often flag missing
+				text under componentOf when documentationOf emits it. Form 043/u
+				chart already stores treatmentDescription — mirror it here (AMB
+				stays on code).
+				NOW: text = treatmentDescription (default Osmotr i konsultaciya).
+			-->
+			<text>${escapeXml(params.treatmentDescription || "Осмотр и консультация")}</text>
+			<!--
+				DEFECT #279: encompassingEncounter/languageCode.
+				WAS: encounter had id/code/text then jumped to statusCode —
+				no entry-level languageCode. serviceEvent (#277) and body
+				entries (#260-#266) already carry languageCode ru-RU. HL7 CDA R2
+				Act has languageCode 0..1. SEMD validators often flag missing
+				language under componentOf when ClinicalDocument declares ru-RU
+				but the encounter omits it. Form 043/u ambulatory dental is
+				always RU narrative.
+				NOW: languageCode code=ru-RU matching ClinicalDocument.
+			-->
+			<languageCode code="ru-RU"/>
+			<!--
 				DEFECT #125: encompassingEncounter/statusCode.
 				БЫЛО (#86/#91): encounter had id + AMB code + effectiveTime +
 				responsibleParty + location — no statusCode. HL7 CDA R2 Act
@@ -1447,6 +1508,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				СТАЛО: statusCode code="completed" (normal ambulatory close).
 			-->
 			<statusCode code="completed"/>
+
 			<!--
 				DEFECT #144: encompassingEncounter/effectiveTime as IVL_TS.
 				WAS: single-value TS effectiveTime value=visitTime (same class as
@@ -1563,7 +1625,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<targetSiteCode nullFlavor="NI"/>
 			<!--
+				DEFECT #282: encompassingEncounter/interpretationCode.
+				WAS: encounter had approach/targetSite then jumped to
+				encounterParticipant (#181) — no interpretationCode. Treatment
+				ACT (#280), serviceEvent (#281), body OBS and tray supply (#271)
+				already carry interpretationCode NI. HL7 CDA R2 Act has
+				interpretationCode 0..* on the ambulatory visit. SEMD validators
+				often flag missing interpretation under componentOf. Form 043/u
+				ambulatory visit is completed dental care — do not invent N/A/H.
+				NOW: interpretationCode nullFlavor NI until chart field exists.
+			-->
+			<interpretationCode nullFlavor="NI"/>
+			<!--
 				DEFECT #181: encompassingEncounter/encounterParticipant.
+
 
 
 
@@ -2551,9 +2626,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							${params.diagnosisTooth && String(params.diagnosisTooth).trim()
 								? `<targetSiteCode code="${escapeXml(String(params.diagnosisTooth).trim())}" codeSystem="1.2.643.5.1.13.13.11.1466" codeSystemName="Зубы" displayName="Зуб ${escapeXml(String(params.diagnosisTooth).trim())}"/>`
 								: `<targetSiteCode nullFlavor="NI"/>`}
-						
+							<!--
+								DEFECT #280: treatment act/interpretationCode.
+								WAS: treatment ACT had approach/targetSite then jumped to
+								performer (#238) — no interpretationCode. Body OBS and tray
+								supply (#271) already carry interpretationCode NI. HL7 CDA R2
+								Act has interpretationCode 0..*. SEMD validators often flag
+								missing interpretation under procedure ACT. Form 043/u
+								treatment is free-text completed care — do not invent N/A/H.
+								NOW: interpretationCode nullFlavor NI until chart field exists.
+							-->
+							<interpretationCode nullFlavor="NI"/>
 							<!--
 								DEFECT #238: treatment act/performer.
+
 								WAS: treatment ACT had approach/targetSite only - no
 								performer. Body OBS entries (diagnosis #233 through
 								comorbidities #237) already carry performer PRF.
