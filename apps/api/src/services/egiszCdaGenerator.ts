@@ -644,10 +644,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						</name>
 					</assignedPerson>
 					<representedOrganization>
+						<!--
+							DEFECT #110: encompassingEncounter/responsibleParty
+							representedOrganization addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+							БЫЛО: representedOrganization had only name child — no
+							addr/telecom. SEMD validators expect MO contact under
+							responsibleParty org (mirror of performer org #109).
+							We do not invent clinic street or phone.
+							СТАЛО: emit addr and telecom with nullFlavor="NI".
+						-->
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
 						<name>${escapeXml(params.clinicName)}</name>
 					</representedOrganization>
 				</assignedEntity>
 			</responsibleParty>
+
 			<!--
 				DEFECT #92: encompassingEncounter/location (healthCareFacility).
 				БЫЛО (#91): encounter had id + AMB code + responsibleParty but
