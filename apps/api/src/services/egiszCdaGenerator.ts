@@ -361,7 +361,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<raceCode nullFlavor="NI"/>
 				<!--
+					DEFECT #174: patient/ethnicGroupCode.
+					WAS: patient demographics had raceCode (#173) but no
+					ethnicGroupCode. HL7 CDA R2 Patient has ethnicGroupCode 0..1;
+					some EGISZ SEMD profiles flag missing ethnicity under
+					recordTarget. Form 043/u chart does not collect ethnicity —
+					do not invent a fake HL7/NSI ethnicity code.
+					NOW: ethnicGroupCode nullFlavor NI until chart field exists.
+				-->
+				<ethnicGroupCode nullFlavor="NI"/>
+				<!--
 					DEFECT #97: patient/languageCommunication (preferred language).
+
 
 
 
