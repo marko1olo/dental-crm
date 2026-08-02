@@ -366,13 +366,38 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		documentationOf (yyyyMMddHHmmss).
 		DEFECT #87: extension is encounterExtension (visit.id preferred),
 		not ClinicalDocument documentId — separate REMD join key.
+		DEFECT #91: encounter code (AMB ambulatory) + responsibleParty
+		(treating physician) — bare id+time is incomplete for SEMD validators
+		that require encounter class and responsible clinician.
 	-->
 	<componentOf>
 		<encompassingEncounter>
 			<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(encounterExtension)}"/>
+			<code code="AMB" codeSystem="1.2.643.5.1.13.13.11.1461" codeSystemName="Виды медицинской помощи" displayName="Амбулаторная помощь"/>
 			<effectiveTime value="${visitTime}"/>
+			<responsibleParty>
+				<assignedEntity>
+					${params.doctorSnils && String(params.doctorSnils).trim()
+						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+						: `<id nullFlavor="NI"/>`}
+					${params.doctorPosition && params.doctorPosition.trim()
+						? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+						: ""}
+					<assignedPerson>
+						<name>
+							<family>${escapeXml(params.doctorName.last)}</family>
+							<given>${escapeXml(params.doctorName.first)}</given>
+							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+						</name>
+					</assignedPerson>
+					<representedOrganization>
+						<name>${escapeXml(params.clinicName)}</name>
+					</representedOrganization>
+				</assignedEntity>
+			</responsibleParty>
 		</encompassingEncounter>
 	</componentOf>
+
 
 	<component>
 

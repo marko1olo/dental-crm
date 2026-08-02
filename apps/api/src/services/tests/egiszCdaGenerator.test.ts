@@ -1213,7 +1213,86 @@ describe("egiszCdaGenerator", () => {
 		);
 	});
 
+	test("DEFECT #91: encompassingEncounter has AMB code and responsibleParty (doctor)", () => {
+		const visitDate = new Date("2024-09-01T10:00:00.000Z");
+		const params: EgiszCdaParams = {
+			patientId: "pat-91",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.111",
+			clinicName: "ООО Стоматология Тест",
+			doctorName: { first: "Петр", last: "Петров", middle: "Сергеевич" },
+			doctorSnils: "111-222-333 44",
+			doctorPosition: "Врач-стоматолог",
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate,
+			documentId: "doc-91",
+			encounterId: "visit-91",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		const encStart = xml.indexOf("<encompassingEncounter>");
+		const encEnd = xml.indexOf("</encompassingEncounter>");
+		assert.ok(encStart > 0 && encEnd > encStart);
+		const enc = xml.slice(encStart, encEnd);
+
+		assert.ok(
+			enc.includes(
+				'code="AMB" codeSystem="1.2.643.5.1.13.13.11.1461"',
+			),
+			"encompassingEncounter must declare AMB ambulatory encounter code",
+		);
+		assert.ok(
+			enc.includes('displayName="Амбулаторная помощь"'),
+			"AMB displayName must be present",
+		);
+		assert.ok(
+			enc.includes("<responsibleParty>"),
+			"encompassingEncounter must include responsibleParty",
+		);
+		assert.ok(enc.includes("<assignedEntity>"));
+		assert.ok(
+			enc.includes('root="1.2.643.100.3" extension="111-222-333 44"'),
+			"responsibleParty assignedEntity id must carry doctor SNILS",
+		);
+		assert.ok(
+			enc.includes("<family>Петров</family>"),
+			"responsibleParty must include treating physician family name",
+		);
+		assert.ok(enc.includes("<given>Петр</given>"));
+		assert.ok(enc.includes("<given>Сергеевич</given>"));
+		assert.ok(
+			enc.includes('displayName="Врач-стоматолог"'),
+			"responsibleParty should surface doctorPosition when provided",
+		);
+		assert.ok(
+			enc.includes("<name>ООО Стоматология Тест</name>"),
+			"responsibleParty representedOrganization uses clinicName",
+		);
+
+		/* without doctorSnils → id nullFlavor NI (same pattern as assignedAuthor) */
+		const noSnils = generateDentalCdaXml({
+			...params,
+			doctorSnils: undefined,
+			doctorPosition: undefined,
+			doctorName: { first: "Анна", last: "Сидорова" },
+		});
+		const nsEnc = noSnils.slice(
+			noSnils.indexOf("<encompassingEncounter>"),
+			noSnils.indexOf("</encompassingEncounter>"),
+		);
+		assert.ok(nsEnc.includes('<id nullFlavor="NI"/>'));
+		assert.ok(nsEnc.includes("<family>Сидорова</family>"));
+		assert.ok(nsEnc.includes("<given>Анна</given>"));
+		assert.ok(nsEnc.includes('code="AMB"'));
+		assert.ok(nsEnc.includes("<responsibleParty>"));
+	});
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 
 
 
