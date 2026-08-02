@@ -1878,10 +1878,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
 							<value xsi:type="ST">${escapeXml(params.complications || "Не отмечены")}</value>
+							<!--
+								DEFECT #191: complications observation/methodCode.
+								WAS: complications OBS had id/code/statusCode/effectiveTime/value
+								only — no methodCode. Diagnosis (#186), anamnesis (#189) and
+								objective (#190) already carry methodCode NI. HL7 CDA R2
+								Observation has methodCode 0..*. SEMD validators often flag
+								missing method under complications OBS. Form 043/u
+								complications is free-text note — do not invent a fake NSI
+								method OID.
+								NOW: methodCode nullFlavor NI until chart field exists.
+							-->
+							<methodCode nullFlavor="NI"/>
 						</observation>
 					</entry></section>
 			</component>
 			<!-- Сопутствующие заболевания (043) -->
+
 			<component>
 				<section>
 					<!--
