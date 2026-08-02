@@ -1812,12 +1812,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								uncertainty flag for the ICD-10 finding — do not invent U/N.
 								NOW: uncertaintyCode nullFlavor NI until chart field exists.
 							-->
-							<uncertaintyCode nullFlavor="NI"/>${params.diagnosisTooth && String(params.diagnosisTooth).trim()
-								? `
-							<!-- DEFECT #74: ISO 3950 tooth from visit_diaries.diagnosis_tooth -->
-							<targetSiteCode code="${escapeXml(String(params.diagnosisTooth).trim())}" codeSystem="1.2.643.5.1.13.13.11.1466" codeSystemName="Зубы" displayName="Зуб ${escapeXml(String(params.diagnosisTooth).trim())}"/>`
-								: ""}
+							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #74: ISO 3950 tooth from visit_diaries.diagnosis_tooth
+								when known (targetSiteCode CE).
+								DEFECT #223: diagnosis observation/targetSiteCode always present.
+								WAS (#74): targetSiteCode emitted only when diagnosisTooth
+								non-empty — when tooth blank the entire element was omitted.
+								Treatment ACT (#222) always emits targetSiteCode (tooth CE or
+								NI). HL7 CDA R2 Observation has targetSiteCode 0..*; SEMD
+								validators often flag missing target site under diagnosis OBS
+								even when the finding is whole-mouth / no single tooth.
+								NOW: always emit targetSiteCode — ISO 3950 tooth CE when
+								diagnosisTooth present; else nullFlavor NI (do not invent a tooth).
+							-->
+							${params.diagnosisTooth && String(params.diagnosisTooth).trim()
+								? `<targetSiteCode code="${escapeXml(String(params.diagnosisTooth).trim())}" codeSystem="1.2.643.5.1.13.13.11.1466" codeSystemName="Зубы" displayName="Зуб ${escapeXml(String(params.diagnosisTooth).trim())}"/>`
+								: `<targetSiteCode nullFlavor="NI"/>`}
 						</observation>
+
 
 
 
