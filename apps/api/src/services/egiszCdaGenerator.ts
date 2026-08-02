@@ -2370,7 +2370,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: approachSiteCode nullFlavor NI until chart field exists.
 							-->
 							<approachSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #232: comorbidities observation/targetSiteCode.
+								WAS: comorbidities OBS had approachSiteCode NI (#228) but no
+								targetSiteCode. Diagnosis (#223), anamnesis (#229), objective
+								(#230) and complications (#231) already emit targetSiteCode.
+								HL7 CDA R2 Observation has targetSiteCode 0..*. SEMD validators
+								often flag missing target site under comorbidities OBS.
+								Form 043/u comorbidities is free-text note — do not invent
+								ISO 3950.
+								NOW: targetSiteCode nullFlavor NI until chart field exists.
+							-->
+							<targetSiteCode nullFlavor="NI"/>
 						</observation>
+
 
 					</entry></section>
 			</component>
