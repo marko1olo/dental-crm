@@ -2105,7 +2105,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: priorityCode nullFlavor NI until chart field exists.
 							-->
 							<priorityCode nullFlavor="NI"/>
+							<!--
+								DEFECT #203: instrument-tray supply/quantity.
+								WAS: supply had id/code/text/statusCode/effectiveTime/priorityCode
+								only — no quantity. HL7 CDA R2 Supply has quantity 0..1 (how
+								many units supplied). SEMD validators often flag missing
+								quantity under sterilization tray supply. Form 043/u carries
+								tray barcode only (one tray per visit) — no discrete qty field
+								and do not invent a fake PQ unit.
+								NOW: quantity nullFlavor NI until chart field exists.
+							-->
+							<quantity nullFlavor="NI"/>
 						</supply>
+
 					</entry></section>
 			</component>`
 				: ""}
