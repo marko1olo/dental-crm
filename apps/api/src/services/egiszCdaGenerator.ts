@@ -1097,6 +1097,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<languageCode code="ru-RU"/>
 			<!--
+				DEFECT #317: documentationOf/serviceEvent/confidentialityCode.
+				WAS: serviceEvent had languageCode (#277) then jumped to statusCode — no entry-level confidentialityCode. Body entries (#310-#316) already carry confidentialityCode N.
+				ClinicalDocument already declares confidentialityCode N (#158).
+				HL7 CDA R2 Act/Observation/Supply has confidentialityCode 0..1
+				(sensitivity of the act). SEMD validators often flag missing
+				confidentiality under body entries when the document sets N but
+				entry acts omit it. Form 043/u ambulatory dental chart entries
+				are normal confidentiality (same as ClinicalDocument).
+				NOW: confidentialityCode N + codeSystemName + RU displayName
+				matching ClinicalDocument (#158). No invented restricted code.
+			-->
+			<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+
+			<!--
 				DEFECT #126: documentationOf/serviceEvent/statusCode.
 				БЫЛО (#124): serviceEvent had code + effectiveTime + performer
 				but no statusCode. encompassingEncounter already emits
@@ -1634,6 +1648,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: languageCode code=ru-RU matching ClinicalDocument.
 			-->
 			<languageCode code="ru-RU"/>
+			<!--
+				DEFECT #318: encompassingEncounter/confidentialityCode.
+				WAS: encompassingEncounter had languageCode (#279) then jumped to statusCode — no entry-level confidentialityCode. serviceEvent (#317) and body entries (#310-#316) already carry confidentialityCode N.
+				ClinicalDocument already declares confidentialityCode N (#158).
+				HL7 CDA R2 Act/Observation/Supply has confidentialityCode 0..1
+				(sensitivity of the act). SEMD validators often flag missing
+				confidentiality under body entries when the document sets N but
+				entry acts omit it. Form 043/u ambulatory dental chart entries
+				are normal confidentiality (same as ClinicalDocument).
+				NOW: confidentialityCode N + codeSystemName + RU displayName
+				matching ClinicalDocument (#158). No invented restricted code.
+			-->
+			<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+
 			<!--
 				DEFECT #125: encompassingEncounter/statusCode.
 				БЫЛО (#86/#91): encounter had id + AMB code + effectiveTime +
@@ -2182,6 +2210,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: languageCode code=ru-RU matching ClinicalDocument.
 							-->
 							<languageCode code="ru-RU"/>
+							<!--
+								DEFECT #310: diagnosis observation/confidentialityCode.
+								WAS: diagnosis OBS had languageCode (#260) then jumped to statusCode — no entry-level confidentialityCode.
+								ClinicalDocument already declares confidentialityCode N (#158).
+								HL7 CDA R2 Act/Observation/Supply has confidentialityCode 0..1
+								(sensitivity of the act). SEMD validators often flag missing
+								confidentiality under body entries when the document sets N but
+								entry acts omit it. Form 043/u ambulatory dental chart entries
+								are normal confidentiality (same as ClinicalDocument).
+								NOW: confidentialityCode N + codeSystemName + RU displayName
+								matching ClinicalDocument (#158). No invented restricted code.
+							-->
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+
 							<!-- DEFECT #143: observation statusCode completed (mirror act/supply) -->
 
 
@@ -2544,6 +2586,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: languageCode code=ru-RU matching ClinicalDocument.
 							-->
 							<languageCode code="ru-RU"/>
+							<!--
+								DEFECT #311: anamnesis observation/confidentialityCode.
+								WAS: anamnesis OBS had languageCode (#261) then jumped to statusCode — no entry-level confidentialityCode. Diagnosis OBS (#310) already carries confidentialityCode N.
+								ClinicalDocument already declares confidentialityCode N (#158).
+								HL7 CDA R2 Act/Observation/Supply has confidentialityCode 0..1
+								(sensitivity of the act). SEMD validators often flag missing
+								confidentiality under body entries when the document sets N but
+								entry acts omit it. Form 043/u ambulatory dental chart entries
+								are normal confidentiality (same as ClinicalDocument).
+								NOW: confidentialityCode N + codeSystemName + RU displayName
+								matching ClinicalDocument (#158). No invented restricted code.
+							-->
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
 
@@ -2887,6 +2943,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: languageCode code=ru-RU matching ClinicalDocument.
 							-->
 							<languageCode code="ru-RU"/>
+							<!--
+								DEFECT #312: objective-status observation/confidentialityCode.
+								WAS: objective OBS had languageCode (#262) then jumped to statusCode — no entry-level confidentialityCode. Diagnosis (#310) and anamnesis (#311) already carry confidentialityCode N.
+								ClinicalDocument already declares confidentialityCode N (#158).
+								HL7 CDA R2 Act/Observation/Supply has confidentialityCode 0..1
+								(sensitivity of the act). SEMD validators often flag missing
+								confidentiality under body entries when the document sets N but
+								entry acts omit it. Form 043/u ambulatory dental chart entries
+								are normal confidentiality (same as ClinicalDocument).
+								NOW: confidentialityCode N + codeSystemName + RU displayName
+								matching ClinicalDocument (#158). No invented restricted code.
+							-->
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
 
@@ -3217,6 +3287,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: languageCode code=ru-RU matching ClinicalDocument.
 							-->
 							<languageCode code="ru-RU"/>
+							<!--
+								DEFECT #315: treatment act/confidentialityCode.
+								WAS: treatment ACT had languageCode (#265) then jumped to statusCode — no entry-level confidentialityCode. Body OBS (#310-#314) already carry confidentialityCode N.
+								ClinicalDocument already declares confidentialityCode N (#158).
+								HL7 CDA R2 Act/Observation/Supply has confidentialityCode 0..1
+								(sensitivity of the act). SEMD validators often flag missing
+								confidentiality under body entries when the document sets N but
+								entry acts omit it. Form 043/u ambulatory dental chart entries
+								are normal confidentiality (same as ClinicalDocument).
+								NOW: confidentialityCode N + codeSystemName + RU displayName
+								matching ClinicalDocument (#158). No invented restricted code.
+							-->
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+
 							<statusCode code="completed"/>
 
 							<!-- DEFECT #145: act effectiveTime = visit clock -->
@@ -3562,6 +3646,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: languageCode code=ru-RU matching ClinicalDocument.
 							-->
 							<languageCode code="ru-RU"/>
+							<!--
+								DEFECT #313: complications observation/confidentialityCode.
+								WAS: complications OBS had languageCode (#263) then jumped to statusCode — no entry-level confidentialityCode. Diagnosis (#310) through objective (#312) already carry confidentialityCode N.
+								ClinicalDocument already declares confidentialityCode N (#158).
+								HL7 CDA R2 Act/Observation/Supply has confidentialityCode 0..1
+								(sensitivity of the act). SEMD validators often flag missing
+								confidentiality under body entries when the document sets N but
+								entry acts omit it. Form 043/u ambulatory dental chart entries
+								are normal confidentiality (same as ClinicalDocument).
+								NOW: confidentialityCode N + codeSystemName + RU displayName
+								matching ClinicalDocument (#158). No invented restricted code.
+							-->
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
 
@@ -3904,6 +4002,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: languageCode code=ru-RU matching ClinicalDocument.
 							-->
 							<languageCode code="ru-RU"/>
+							<!--
+								DEFECT #314: comorbidities observation/confidentialityCode.
+								WAS: comorbidities OBS had languageCode (#264) then jumped to statusCode — no entry-level confidentialityCode. Diagnosis (#310) through complications (#313) already carry confidentialityCode N.
+								ClinicalDocument already declares confidentialityCode N (#158).
+								HL7 CDA R2 Act/Observation/Supply has confidentialityCode 0..1
+								(sensitivity of the act). SEMD validators often flag missing
+								confidentiality under body entries when the document sets N but
+								entry acts omit it. Form 043/u ambulatory dental chart entries
+								are normal confidentiality (same as ClinicalDocument).
+								NOW: confidentialityCode N + codeSystemName + RU displayName
+								matching ClinicalDocument (#158). No invented restricted code.
+							-->
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+
 							<!-- DEFECT #143: observation statusCode completed -->
 							<statusCode code="completed"/>
 
@@ -4239,6 +4351,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: languageCode code=ru-RU matching ClinicalDocument.
 							-->
 							<languageCode code="ru-RU"/>
+							<!--
+								DEFECT #316: instrument-tray supply/confidentialityCode.
+								WAS: supply had languageCode (#266) then jumped to statusCode — no entry-level confidentialityCode. Body OBS (#310-#314) and treatment ACT (#315) already carry confidentialityCode N.
+								ClinicalDocument already declares confidentialityCode N (#158).
+								HL7 CDA R2 Act/Observation/Supply has confidentialityCode 0..1
+								(sensitivity of the act). SEMD validators often flag missing
+								confidentiality under body entries when the document sets N but
+								entry acts omit it. Form 043/u ambulatory dental chart entries
+								are normal confidentiality (same as ClinicalDocument).
+								NOW: confidentialityCode N + codeSystemName + RU displayName
+								matching ClinicalDocument (#158). No invented restricted code.
+							-->
+							<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+
 							<statusCode code="completed"/>
 
 							<!-- DEFECT #145: supply effectiveTime = visit clock -->
