@@ -1047,7 +1047,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		+ clinic), same identity scheme as assignedAuthor / responsibleParty.
 	-->
 	<documentationOf>
-		<serviceEvent classCode="PCPR">
+		<!--
+			DEFECT #358: documentationOf/serviceEvent/@negationInd.
+			WAS: open had classCode/attributes only — no negationInd.
+			HL7 CDA R2 Act has negationInd 0..1. SEMD often requires explicit false on asserted acts.
+			Form 043/u care event/encounter is asserted (not negated). NOW: negationInd=false on open tag.
+		-->
+		<serviceEvent classCode="PCPR" negationInd="false">
 			<!--
 				DEFECT #161: documentationOf/serviceEvent/id (care event join key).
 				WAS: serviceEvent had classCode/code/status/effectiveTime/performer
@@ -1680,7 +1686,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		that require encounter class and responsible clinician.
 	-->
 	<componentOf>
-		<encompassingEncounter>
+		<!--
+			DEFECT #359: componentOf/encompassingEncounter/@negationInd.
+			WAS: open had classCode/attributes only — no negationInd.
+			HL7 CDA R2 Act has negationInd 0..1. SEMD often requires explicit false on asserted acts.
+			Form 043/u care event/encounter is asserted (not negated). NOW: negationInd=false on open tag.
+		-->
+		<encompassingEncounter negationInd="false">
 			<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(encounterExtension)}"/>
 			<code code="AMB" codeSystem="1.2.643.5.1.13.13.11.1461" codeSystemName="Виды медицинской помощи" displayName="Амбулаторная помощь"/>
 			<!--
