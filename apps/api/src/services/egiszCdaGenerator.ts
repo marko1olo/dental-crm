@@ -269,8 +269,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					? `<birthTime value="${birthTimeValue}"/>`
 					: `<!-- DEFECT #80: unknown DOB — nullFlavor UNK (never invent a fake date) -->
 				<birthTime nullFlavor="UNK"/>`}
+				<!--
+					DEFECT #97: patient/languageCommunication (preferred language).
+					БЫЛО: patient had name + gender + birthTime only. HL7 CDA R2
+					and EGISZ SEMD expect languageCommunication so the record
+					declares the language of care/communication (ru-RU for RF
+					ambulatory dentistry). Without it validators flag incomplete
+					patient demographics and REMD cannot route interpreter needs.
+					СТАЛО: languageCode ru-RU + preferenceInd true (primary).
+				-->
+				<languageCommunication>
+					<languageCode code="ru-RU"/>
+					<preferenceInd value="true"/>
+				</languageCommunication>
 
 			</patient>
+
 
 		</patientRole>
 	</recordTarget>

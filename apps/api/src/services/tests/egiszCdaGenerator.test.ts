@@ -1675,7 +1675,47 @@ describe("egiszCdaGenerator", () => {
 		);
 	});
 
+	test("DEFECT #97: patient languageCommunication ru-RU with preferenceInd", () => {
+		const params: EgiszCdaParams = {
+			patientId: "pat-97",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.777",
+			clinicName: "ООО Клиника Lang",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate: new Date("2025-01-10T10:00:00.000Z"),
+			documentId: "doc-97",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		const patientBlock = xml.slice(
+			xml.indexOf("<patient>"),
+			xml.indexOf("</patient>"),
+		);
+		assert.ok(
+			patientBlock.includes("<languageCommunication>"),
+			"patient must include languageCommunication",
+		);
+		assert.ok(
+			patientBlock.includes('<languageCode code="ru-RU"/>'),
+			"languageCode must be ru-RU for RF ambulatory dentistry",
+		);
+		assert.ok(
+			patientBlock.includes('<preferenceInd value="true"/>'),
+			"preferenceInd true marks primary communication language",
+		);
+		/* after birthTime */
+		const birthIdx = patientBlock.indexOf("<birthTime");
+		const langIdx = patientBlock.indexOf("<languageCommunication>");
+		assert.ok(birthIdx >= 0 && langIdx > birthIdx);
+	});
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 
 
 
