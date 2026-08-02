@@ -197,11 +197,40 @@ describe("egiszCdaGenerator", () => {
 	});
 
 	/**
+	 * DEFECT #76: realmCode RU is required by HL7 CDA R2 / EGISZ SEMD header.
+	 * Without it validators reject the document before body checks run.
+	 */
+	test("DEFECT #76: realmCode RU present in ClinicalDocument header", () => {
+		const xml = generateDentalCdaXml({
+			patientId: "pat-76",
+			patientName: { first: "A", last: "B" },
+			patientSnils: "000",
+			patientBirthDate: "1990-01-01",
+			patientGender: "male",
+			clinicName: "C",
+			doctorName: { first: "D", last: "E" },
+			icd10Code: "K02.1",
+			diagnosisText: "x",
+			visitDate: new Date("2024-06-01T10:00:00.000Z"),
+			documentId: "doc-76",
+		});
+		assert.ok(
+			xml.includes('<realmCode code="RU"/>'),
+			"ClinicalDocument must carry realmCode RU",
+		);
+		// realmCode must appear before typeId (HL7 CDA R2 header order)
+		const realmIdx = xml.indexOf('<realmCode code="RU"/>');
+		const typeIdIdx = xml.indexOf("<typeId ");
+		assert.ok(realmIdx > 0 && typeIdIdx > realmIdx, "realmCode before typeId");
+	});
+
+	/**
 	 * DEFECT #75: legalAuthenticator (signer of Form 043/у) is required by
 	 * EGISZ REMD / SEMD validators. CDA previously had author + custodian only.
 	 * Signature party must mirror doctorName and use documentClock (lockedAt).
 	 */
 	test("DEFECT #75: legalAuthenticator present with doctor name and document time", () => {
+
 		const lockedAt = new Date("2024-06-01T12:30:00.000Z");
 		const xml = generateDentalCdaXml({
 			patientId: "pat-75",

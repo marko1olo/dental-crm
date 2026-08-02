@@ -491,7 +491,15 @@ async function runDiarySigningCeremony(
 	const lockedAt = new Date();
 
 	// 1. Замок и печать
-	await tx
+	/*
+	 * DEFECT #76: lock UPDATE must only transition unlocked → locked.
+	 * БЫЛО: WHERE id+org only. Concurrent double POST /lock (two tabs /
+	 * two sessions that both passed the pre-check) could both set
+	 * is_locked=true, overwrite lockedAt/lockedByUserId/diaryHash/PKCS7
+	 * and double-run stock deductions + treatment completion below.
+	 * СТАЛО: WHERE is_locked=false + returning; zero rows → AlreadyLocked.
+	 */
+	const lockedRows = await tx
 		.update(visitDiaries)
 		.set({
 			isLocked: true,
@@ -517,8 +525,17 @@ async function runDiarySigningCeremony(
 			and(
 				eq(visitDiaries.id, diaryId),
 				eq(visitDiaries.organizationId, organizationId),
+				eq(visitDiaries.isLocked, false),
 			),
+		)
+		.returning({ id: visitDiaries.id });
+	if (lockedRows.length === 0) {
+		throw new DiarySigningError(
+			"AlreadyLocked",
+			"Дневник подписан и заблокирован.",
 		);
+	}
+
 
 	// 2. Закрыть услуги визита и списать расходники.
 	// Все чтения ограничены организацией дневника. БЫЛО: правила материалов

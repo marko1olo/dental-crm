@@ -99,6 +99,8 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<!-- DEFECT #76: realmCode required by HL7 CDA R2 / EGISZ SEMD header profile (RU) -->
+	<realmCode code="RU"/>
 	<typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
 	<templateId root="1.2.643.5.1.13.13.11.1527"/>
 	<id root="${params.clinicOid || "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(params.documentId)}"/>
