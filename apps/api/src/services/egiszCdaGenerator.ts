@@ -341,7 +341,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<maritalStatusCode nullFlavor="NI"/>
 				<!--
+					DEFECT #172: patient/religiousAffiliationCode.
+					WAS: patient demographics had maritalStatusCode (#171) but no
+					religiousAffiliationCode. HL7 CDA R2 Patient has
+					religiousAffiliationCode 0..1; some EGISZ SEMD profiles flag
+					missing religion under recordTarget. Form 043/u chart does not
+					collect religion — do not invent a fake HL7/NSI code.
+					NOW: religiousAffiliationCode nullFlavor NI until chart field exists.
+				-->
+				<religiousAffiliationCode nullFlavor="NI"/>
+				<!--
 					DEFECT #97: patient/languageCommunication (preferred language).
+
 
 					БЫЛО: patient had name + gender + birthTime only. HL7 CDA R2
 					and EGISZ SEMD expect languageCommunication so the record
