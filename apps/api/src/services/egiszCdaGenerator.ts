@@ -1479,6 +1479,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<value xsi:type="CD" nullFlavor="NI"/>
 				</criterion>
 			</precondition>
+			<!--
+				DEFECT #335: documentationOf/serviceEvent/reference.
+				WAS: serviceEvent had performer/author/informant/participant/precondition then closed — no reference. Body entries (#328-#334) already carry reference REFR.
+				HL7 CDA R2 Act/Observation/Supply has reference 0..*
+				(link to external acts/documents). SEMD validators often
+				flag missing reference under body entries when the care
+				event cannot point to a related external act. Form 043/u
+				chart does not collect discrete external-act references for
+				these entries — do not invent root/extension or URLs.
+				NOW: reference typeCode=REFR with externalAct classCode=ACT
+				moodCode=EVN and id nullFlavor NI until chart field exists.
+			-->
+			<reference typeCode="REFR">
+				<externalAct classCode="ACT" moodCode="EVN">
+					<id nullFlavor="NI"/>
+				</externalAct>
+			</reference>
+
 
 
 
@@ -2174,6 +2192,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<value xsi:type="CD" nullFlavor="NI"/>
 				</criterion>
 			</precondition>
+			<!--
+				DEFECT #336: encompassingEncounter/reference.
+				WAS: encompassingEncounter had author/informant/participant/precondition then closed — no reference. serviceEvent (#335) and body entries (#328-#334) already carry reference REFR.
+				HL7 CDA R2 Act/Observation/Supply has reference 0..*
+				(link to external acts/documents). SEMD validators often
+				flag missing reference under body entries when the care
+				event cannot point to a related external act. Form 043/u
+				chart does not collect discrete external-act references for
+				these entries — do not invent root/extension or URLs.
+				NOW: reference typeCode=REFR with externalAct classCode=ACT
+				moodCode=EVN and id nullFlavor NI until chart field exists.
+			-->
+			<reference typeCode="REFR">
+				<externalAct classCode="ACT" moodCode="EVN">
+					<id nullFlavor="NI"/>
+				</externalAct>
+			</reference>
+
 
 
 
@@ -2586,6 +2622,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<value xsi:type="CD" nullFlavor="NI"/>
 								</criterion>
 							</precondition>
+							<!--
+								DEFECT #328: diagnosis observation/reference.
+								WAS: diagnosis OBS had performer/author/informant/participant/precondition then closed — no reference.
+								HL7 CDA R2 Act/Observation/Supply has reference 0..*
+								(link to external acts/documents). SEMD validators often
+								flag missing reference under body entries when the care
+								event cannot point to a related external act. Form 043/u
+								chart does not collect discrete external-act references for
+								these entries — do not invent root/extension or URLs.
+								NOW: reference typeCode=REFR with externalAct classCode=ACT
+								moodCode=EVN and id nullFlavor NI until chart field exists.
+							-->
+							<reference typeCode="REFR">
+								<externalAct classCode="ACT" moodCode="EVN">
+									<id nullFlavor="NI"/>
+								</externalAct>
+							</reference>
+
 
 
 
@@ -2952,6 +3006,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<value xsi:type="CD" nullFlavor="NI"/>
 								</criterion>
 							</precondition>
+							<!--
+								DEFECT #329: anamnesis observation/reference.
+								WAS: anamnesis OBS had performer/author/informant/participant/precondition then closed — no reference. Diagnosis OBS (#328) already carries reference REFR.
+								HL7 CDA R2 Act/Observation/Supply has reference 0..*
+								(link to external acts/documents). SEMD validators often
+								flag missing reference under body entries when the care
+								event cannot point to a related external act. Form 043/u
+								chart does not collect discrete external-act references for
+								these entries — do not invent root/extension or URLs.
+								NOW: reference typeCode=REFR with externalAct classCode=ACT
+								moodCode=EVN and id nullFlavor NI until chart field exists.
+							-->
+							<reference typeCode="REFR">
+								<externalAct classCode="ACT" moodCode="EVN">
+									<id nullFlavor="NI"/>
+								</externalAct>
+							</reference>
+
 
 
 
@@ -3332,6 +3404,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<value xsi:type="CD" nullFlavor="NI"/>
 								</criterion>
 							</precondition>
+							<!--
+								DEFECT #330: objective-status observation/reference.
+								WAS: objective OBS had performer/author/informant/participant/precondition then closed — no reference. Diagnosis (#328) and anamnesis (#329) already carry reference REFR.
+								HL7 CDA R2 Act/Observation/Supply has reference 0..*
+								(link to external acts/documents). SEMD validators often
+								flag missing reference under body entries when the care
+								event cannot point to a related external act. Form 043/u
+								chart does not collect discrete external-act references for
+								these entries — do not invent root/extension or URLs.
+								NOW: reference typeCode=REFR with externalAct classCode=ACT
+								moodCode=EVN and id nullFlavor NI until chart field exists.
+							-->
+							<reference typeCode="REFR">
+								<externalAct classCode="ACT" moodCode="EVN">
+									<id nullFlavor="NI"/>
+								</externalAct>
+							</reference>
+
 
 
 
@@ -3706,6 +3796,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<value xsi:type="CD" nullFlavor="NI"/>
 								</criterion>
 							</precondition>
+							<!--
+								DEFECT #333: treatment act/reference.
+								WAS: treatment ACT had performer/author/informant/participant/precondition then closed — no reference. Body OBS (#328-#332) already carry reference REFR.
+								HL7 CDA R2 Act/Observation/Supply has reference 0..*
+								(link to external acts/documents). SEMD validators often
+								flag missing reference under body entries when the care
+								event cannot point to a related external act. Form 043/u
+								chart does not collect discrete external-act references for
+								these entries — do not invent root/extension or URLs.
+								NOW: reference typeCode=REFR with externalAct classCode=ACT
+								moodCode=EVN and id nullFlavor NI until chart field exists.
+							-->
+							<reference typeCode="REFR">
+								<externalAct classCode="ACT" moodCode="EVN">
+									<id nullFlavor="NI"/>
+								</externalAct>
+							</reference>
+
 
 
 
@@ -4079,6 +4187,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<value xsi:type="CD" nullFlavor="NI"/>
 								</criterion>
 							</precondition>
+							<!--
+								DEFECT #331: complications observation/reference.
+								WAS: complications OBS had performer/author/informant/participant/precondition then closed — no reference. Diagnosis (#328) through objective (#330) already carry reference REFR.
+								HL7 CDA R2 Act/Observation/Supply has reference 0..*
+								(link to external acts/documents). SEMD validators often
+								flag missing reference under body entries when the care
+								event cannot point to a related external act. Form 043/u
+								chart does not collect discrete external-act references for
+								these entries — do not invent root/extension or URLs.
+								NOW: reference typeCode=REFR with externalAct classCode=ACT
+								moodCode=EVN and id nullFlavor NI until chart field exists.
+							-->
+							<reference typeCode="REFR">
+								<externalAct classCode="ACT" moodCode="EVN">
+									<id nullFlavor="NI"/>
+								</externalAct>
+							</reference>
+
 
 
 
@@ -4458,6 +4584,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<value xsi:type="CD" nullFlavor="NI"/>
 								</criterion>
 							</precondition>
+							<!--
+								DEFECT #332: comorbidities observation/reference.
+								WAS: comorbidities OBS had performer/author/informant/participant/precondition then closed — no reference. Diagnosis (#328) through complications (#331) already carry reference REFR.
+								HL7 CDA R2 Act/Observation/Supply has reference 0..*
+								(link to external acts/documents). SEMD validators often
+								flag missing reference under body entries when the care
+								event cannot point to a related external act. Form 043/u
+								chart does not collect discrete external-act references for
+								these entries — do not invent root/extension or URLs.
+								NOW: reference typeCode=REFR with externalAct classCode=ACT
+								moodCode=EVN and id nullFlavor NI until chart field exists.
+							-->
+							<reference typeCode="REFR">
+								<externalAct classCode="ACT" moodCode="EVN">
+									<id nullFlavor="NI"/>
+								</externalAct>
+							</reference>
+
 
 
 
@@ -4868,6 +5012,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<value xsi:type="CD" nullFlavor="NI"/>
 								</criterion>
 							</precondition>
+							<!--
+								DEFECT #334: instrument-tray supply/reference.
+								WAS: supply had performer/author/informant/participant/precondition then closed — no reference. Body OBS (#328-#332) and treatment ACT (#333) already carry reference REFR.
+								HL7 CDA R2 Act/Observation/Supply has reference 0..*
+								(link to external acts/documents). SEMD validators often
+								flag missing reference under body entries when the care
+								event cannot point to a related external act. Form 043/u
+								chart does not collect discrete external-act references for
+								these entries — do not invent root/extension or URLs.
+								NOW: reference typeCode=REFR with externalAct classCode=ACT
+								moodCode=EVN and id nullFlavor NI until chart field exists.
+							-->
+							<reference typeCode="REFR">
+								<externalAct classCode="ACT" moodCode="EVN">
+									<id nullFlavor="NI"/>
+								</externalAct>
+							</reference>
+
 
 
 
