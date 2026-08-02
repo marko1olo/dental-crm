@@ -475,12 +475,31 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 
 			</patient>
-
-
-
-
+			<!--
+				DEFECT #180: patientRole/providerOrganization.
+				WAS: patientRole had id/addr/telecom/patient only — no
+				providerOrganization. HL7 CDA R2 PatientRole has
+				providerOrganization 0..1 (the MO that maintains the
+				patient chart). SEMD validators expect the registering
+				clinic under recordTarget so REMD can join the patient
+				to the MO site, distinct from custodian/author org and
+				from encompassingEncounter location.
+				Form 043/u patient is always registered at this clinic —
+				emit MO id (clinicOid or NI) + name; no invented street/phone.
+				NOW: providerOrganization after patient, before close of
+				patientRole (mirror custodian / assignedAuthor org scheme).
+			-->
+			<providerOrganization>
+				${params.clinicOid && String(params.clinicOid).trim()
+					? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+					: `<id nullFlavor="NI"/>`}
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<name>${escapeXml(params.clinicName)}</name>
+			</providerOrganization>
 		</patientRole>
 	</recordTarget>
+
 	<author>
 		<time value="${effectiveTime}"/>
 		<!--
