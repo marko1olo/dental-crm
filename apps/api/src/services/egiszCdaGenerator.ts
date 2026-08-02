@@ -1468,7 +1468,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<priorityCode nullFlavor="NI"/>
 			<!--
+				DEFECT #217: encompassingEncounter/methodCode.
+				WAS: encounter had priorityCode NI (#183) but no methodCode.
+				serviceEvent (#213) and treatment ACT (#208) already carry
+				methodCode NI. HL7 CDA R2 Act has methodCode 0..* on the
+				encounter. SEMD validators often flag missing method under
+				componentOf/encompassingEncounter. Form 043/u ambulatory
+				dental visit has no discrete encounter method code — do not
+				invent a fake NSI method OID.
+				NOW: methodCode nullFlavor NI until chart field exists.
+			-->
+			<methodCode nullFlavor="NI"/>
+			<!--
 				DEFECT #181: encompassingEncounter/encounterParticipant.
+
 
 
 				WAS: encounter had id/code/status/effectiveTime/dischargeDisposition/
