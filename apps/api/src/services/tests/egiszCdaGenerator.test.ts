@@ -197,10 +197,93 @@ describe("egiszCdaGenerator", () => {
 	});
 
 	/**
+	 * DEFECT #78: custodian organization id must not emit empty extension=""
+	 * when clinicOid is absent; clinicOid must be XML-escaped when present.
+	 */
+	test("DEFECT #78: custodian id nullFlavor NI without clinicOid; escaped when present", () => {
+		const base = {
+			patientId: "pat-78",
+			patientName: { first: "A", last: "B" },
+			patientSnils: "000",
+			patientBirthDate: "1990-01-01",
+			patientGender: "male" as const,
+			clinicName: "Clinic & Co",
+			doctorName: { first: "D", last: "E" },
+			icd10Code: "K02.1",
+			diagnosisText: "x",
+			visitDate: new Date("2024-06-01T10:00:00.000Z"),
+			documentId: "doc-78",
+		};
+
+		const withoutOid = generateDentalCdaXml(base);
+		const custodianBlock = withoutOid.slice(
+			withoutOid.indexOf("<custodian>"),
+			withoutOid.indexOf("</custodian>") + "</custodian>".length,
+		);
+		assert.ok(
+			custodianBlock.includes('<id nullFlavor="NI"/>'),
+			"custodian must emit id nullFlavor=NI when clinicOid absent",
+		);
+		assert.ok(
+			!custodianBlock.includes('extension=""'),
+			"custodian must not emit empty extension attribute",
+		);
+		const amp = "&" + "amp;";
+		const lt = "&" + "lt;";
+		const quot = "&" + "quot;";
+		assert.ok(
+			custodianBlock.includes("Clinic " + amp + " Co"),
+			"custodian name must XML-escape clinicName",
+		);
+
+		const withOid = generateDentalCdaXml({
+			...base,
+			clinicOid: "1.2.643.5.1.13.13.12.2.77.1",
+		});
+		const custWith = withOid.slice(
+			withOid.indexOf("<custodian>"),
+			withOid.indexOf("</custodian>") + "</custodian>".length,
+		);
+		assert.ok(
+			custWith.includes(
+				'root="1.2.643.5.1.13.13.12.2" extension="1.2.643.5.1.13.13.12.2.77.1"',
+			),
+			"custodian must emit MO registry root + clinicOid extension when present",
+		);
+		assert.ok(
+			!custWith.includes('<id nullFlavor="NI"/>'),
+			"custodian must not use nullFlavor when clinicOid present",
+		);
+
+		// Evil OID must be escaped in custodian extension and document id/setId roots
+		const evilOid =
+			"1.2" + String.fromCharCode(60) + String.fromCharCode(34) + "x";
+		const evil = generateDentalCdaXml({
+			...base,
+			clinicOid: evilOid,
+		});
+		const escapedEvil = "1.2" + lt + quot + "x";
+		assert.ok(
+			evil.includes('extension="' + escapedEvil + '"'),
+			"clinicOid must be XML-escaped in custodian extension",
+		);
+		assert.ok(
+			evil.includes('root="' + escapedEvil + '"'),
+			"clinicOid must be XML-escaped in ClinicalDocument id/setId root",
+		);
+		assert.ok(
+			!evil.includes('extension=""'),
+			"evil clinicOid path must not leave empty extension",
+		);
+	});
+
+
+	/**
 	 * DEFECT #76: realmCode RU is required by HL7 CDA R2 / EGISZ SEMD header.
 	 * Without it validators reject the document before body checks run.
 	 */
 	test("DEFECT #76: realmCode RU present in ClinicalDocument header", () => {
+
 		const xml = generateDentalCdaXml({
 			patientId: "pat-76",
 			patientName: { first: "A", last: "B" },

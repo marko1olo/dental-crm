@@ -103,13 +103,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<realmCode code="RU"/>
 	<typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
 	<templateId root="1.2.643.5.1.13.13.11.1527"/>
-	<id root="${params.clinicOid || "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(params.documentId)}"/>
+	<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(params.documentId)}"/>
 	<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Протокол стоматологического осмотра"/>
 	<title>Протокол стоматологического осмотра</title>
 	<effectiveTime value="${effectiveTime}"/>
 	<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25"/>
 	<languageCode code="ru-RU"/>
-	<setId root="${params.clinicOid || "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(params.documentId)}"/>
+	<setId root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(params.documentId)}"/>
+
 	<versionNumber value="${Math.max(1, Math.floor(Number(params.documentVersion) || 1))}"/>
 	<recordTarget>
 		<patientRole>
@@ -154,11 +155,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<custodian>
 		<assignedCustodian>
 			<representedCustodianOrganization>
-				<id root="1.2.643.5.1.13.13.12.2" extension="${params.clinicOid || ""}"/>
+				${/*
+				 * DEFECT #78: custodian organization id must not emit empty extension.
+				 * БЫЛО: extension="${params.clinicOid || ""}" → extension="" when
+				 * clinicOid absent (common — orgs.oid often unset). Empty II.extension
+				 * is schema-invalid; clinicOid also was not XML-escaped.
+				 * СТАЛО: real OID as extension when present; else <id nullFlavor="NI"/>.
+				 * root stays the MO registry OID (1.2.643.5.1.13.13.12.2).
+				 */
+				params.clinicOid && String(params.clinicOid).trim()
+					? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+					: `<id nullFlavor="NI"/>`}
 				<name>${escapeXml(params.clinicName)}</name>
 			</representedCustodianOrganization>
 		</assignedCustodian>
 	</custodian>
+
 	<!--
 		DEFECT #75: legalAuthenticator (who signed / locks Form 043/у).
 		БЫЛО: CDA had author + custodian only — no legalAuthenticator.
