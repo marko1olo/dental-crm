@@ -1513,7 +1513,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<id nullFlavor="NI"/>
 				</externalAct>
 			</reference>
-			<!--
+						<!--
+				DEFECT #371: documentationOf/serviceEvent/subject.
+				WAS: serviceEvent had reference then entryRelationship — no subject.
+				Body entries (#364-#370) already carry subject SBJ.
+				HL7 CDA R2 Act has subject 0..1 (related subject when different
+				from recordTarget). SEMD validators often flag missing subject
+				under documentationOf/serviceEvent. Form 043/u patient is already
+				recordTarget — care-event related subject is not collected
+				separately; do not invent relationship codes or ids.
+				NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and
+				code nullFlavor NI until chart field exists.
+			-->
+			<subject typeCode="SBJ">
+				<relatedSubject classCode="PRS">
+					<code nullFlavor="NI"/>
+				</relatedSubject>
+			</subject>
+<!--
 				DEFECT #349: documentationOf/serviceEvent/entryRelationship.
 				WAS: serviceEvent had performer/author/informant/participant/precondition/reference then closed — no entryRelationship. Body entries (#342-#348) already carry entryRelationship COMP.
 				HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
@@ -2263,7 +2280,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<id nullFlavor="NI"/>
 				</externalAct>
 			</reference>
-			<!--
+						<!--
+				DEFECT #372: componentOf/encompassingEncounter/subject.
+				WAS: encompassingEncounter had reference then entryRelationship — no subject.
+				Body entries (#364-#370) and serviceEvent (#371) already carry subject SBJ.
+				HL7 CDA R2 Encounter has subject 0..1 (related subject when different
+				from recordTarget). SEMD validators often flag missing subject under
+				componentOf/encompassingEncounter. Form 043/u patient is already
+				recordTarget — encounter related subject is not collected separately;
+				do not invent relationship codes or ids.
+				NOW: subject typeCode=SBJ with relatedSubject classCode=PRS and
+				code nullFlavor NI until chart field exists.
+			-->
+			<subject typeCode="SBJ">
+				<relatedSubject classCode="PRS">
+					<code nullFlavor="NI"/>
+				</relatedSubject>
+			</subject>
+<!--
 				DEFECT #350: encompassingEncounter/entryRelationship.
 				WAS: encompassingEncounter had author/informant/participant/precondition/reference then closed — no entryRelationship. serviceEvent (#349) and body entries (#342-#348) already carry entryRelationship COMP.
 				HL7 CDA R2 Act/Observation/Supply has entryRelationship 0..*
@@ -4078,7 +4112,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</externalAct>
 							</reference>
 							
+							
 							<!--
+								DEFECT #373: treatment act/consumable.
+								WAS: treatment act had performer/author/.../reference then specimen
+								— no consumable. Instrument-tray supply already carries product
+								(manufacturedProduct). HL7 CDA R2 Act has consumable 0..* (materials
+								used by the act). SEMD validators often flag missing consumable under
+								treatment ACT when dental materials cannot be joined as manufactured
+								product roles. Form 043/u chart does not collect discrete consumable
+								NSI codes for treatment — do not invent material codes or barcodes.
+								NOW: consumable typeCode=CSM with manufacturedProduct classCode=MANU
+								and manufacturedMaterial code/name nullFlavor NI until chart field exists.
+							-->
+							<consumable typeCode="CSM">
+								<manufacturedProduct classCode="MANU">
+									<manufacturedMaterial>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+									</manufacturedMaterial>
+								</manufacturedProduct>
+							</consumable>
+<!--
 								DEFECT #362: treatment act/specimen.
 								WAS: treatment act had reference/precondition then entryRelationship — no specimen.
 								HL7 CDA R2 Act/Observation/Supply has specimen 0..* (material).
@@ -5476,7 +5531,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</externalAct>
 							</reference>
 							
+							
 							<!--
+								DEFECT #374: instrument-tray supply/consumable.
+								WAS: supply had product (tray device) then performer/.../specimen —
+								no consumable participation. Treatment ACT (#373) already carries
+								consumable CSM. HL7 CDA R2 Supply has consumable 0..* (materials
+								consumed with the supply event, distinct from product). SEMD
+								validators often flag missing consumable under sterilization tray
+								supply when single-use materials cannot be joined. Form 043/u chart
+								does not collect discrete consumable NSI codes for tray issuance —
+								do not invent material codes.
+								NOW: consumable typeCode=CSM with manufacturedProduct classCode=MANU
+								and manufacturedMaterial code/name nullFlavor NI until chart field exists.
+							-->
+							<consumable typeCode="CSM">
+								<manufacturedProduct classCode="MANU">
+									<manufacturedMaterial>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+									</manufacturedMaterial>
+								</manufacturedProduct>
+							</consumable>
+<!--
 								DEFECT #363: instrument-tray supply/specimen.
 								WAS: instrument-tray supply had reference/precondition then entryRelationship — no specimen.
 								HL7 CDA R2 Act/Observation/Supply has specimen 0..* (material).
