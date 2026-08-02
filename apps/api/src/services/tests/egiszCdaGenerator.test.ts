@@ -2388,8 +2388,53 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(spo.includes("<name>ООО Клиника Provider Org Contact</name>"));
 	});
 
+	test("DEFECT #112: healthCareFacility location addr nullFlavor NI", () => {
+		const params: EgiszCdaParams = {
+			patientId: "pat-112",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.112",
+			clinicName: "ООО Клиника Facility Location",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate: new Date("2025-07-01T10:00:00.000Z"),
+			documentId: "doc-112",
+			encounterId: "enc-112",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		const hcfEnd = "</healthCareFacility>";
+		const hcfStart = xml.indexOf("<healthCareFacility>");
+		assert.ok(hcfStart >= 0, "encompassingEncounter must include healthCareFacility");
+		const hcf = xml.slice(hcfStart, xml.indexOf(hcfEnd, hcfStart) + hcfEnd.length);
+		/* inner place location (not outer encompassingEncounter/location) */
+		const placeOpen = hcf.indexOf("<location>");
+		const placeClose = "</location>";
+		assert.ok(placeOpen >= 0, "healthCareFacility must include place location");
+		const place = hcf.slice(placeOpen, hcf.indexOf(placeClose, placeOpen) + placeClose.length);
+		assert.ok(
+			place.includes('<addr nullFlavor="NI"/>'),
+			"facility location must emit addr nullFlavor=NI when street unknown",
+		);
+		assert.ok(!place.includes("<streetAddressLine"));
+		assert.ok(!place.includes("tel:"));
+		/* order: addr → name (ignore XML comments) */
+		const placeNoComments = place.replace(/<!--[\s\S]*?-->/g, "");
+		const addrIdx = placeNoComments.indexOf("<addr ");
+		const nameIdx = placeNoComments.indexOf("<name>");
+		assert.ok(
+			addrIdx >= 0 && nameIdx > addrIdx,
+			"facility location order: addr → name",
+		);
+		assert.ok(place.includes("<name>ООО Клиника Facility Location</name>"));
+	});
+
 
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 
 
 

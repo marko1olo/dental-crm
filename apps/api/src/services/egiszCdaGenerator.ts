@@ -673,8 +673,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<healthCareFacility>
 					<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "unknown"}"/>
 					<location>
+						<!--
+							DEFECT #112: healthCareFacility/location addr
+							(HL7 CDA R2 / EGISZ SEMD).
+							БЫЛО: location had only name child — no addr.
+							SEMD validators expect facility place addr under
+							encompassingEncounter location (mirror of
+							serviceProviderOrganization #111). We do not invent
+							clinic street.
+							СТАЛО: emit addr with nullFlavor="NI" before name child.
+						-->
+						<addr nullFlavor="NI"/>
 						<name>${escapeXml(params.clinicName)}</name>
 					</location>
+
 					<serviceProviderOrganization>
 						<!--
 							DEFECT #111: healthCareFacility serviceProviderOrganization
