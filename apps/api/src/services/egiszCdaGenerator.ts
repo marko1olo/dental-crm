@@ -1933,7 +1933,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: uncertaintyCode nullFlavor NI until chart field exists.
 							-->
 							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #210: treatment act/repeatNumber.
+								WAS: treatment ACT had id/code/text/statusCode/effectiveTime/
+								priorityCode/methodCode/uncertaintyCode only — no
+								repeatNumber. Instrument-tray supply already carries
+								repeatNumber NI (#204). HL7 CDA R2 Act has repeatNumber
+								0..1 (how many times the act is intended to occur). SEMD
+								validators often flag missing repeatNumber under treatment
+								ACT. Form 043/u treatment is a single completed visit act —
+								no discrete repeat field and do not invent a fake INT count.
+								NOW: repeatNumber nullFlavor NI until chart field exists.
+							-->
+							<repeatNumber nullFlavor="NI"/>
 						</act>
+
 
 
 					</entry></section>
