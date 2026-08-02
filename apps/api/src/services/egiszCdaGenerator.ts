@@ -694,7 +694,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						</name>
 					</assignedPerson>
 					<representedOrganization>
-						<!--
+	${/*
+	 * DEFECT #118: encompassingEncounter/responsibleParty
+	 * representedOrganization/id (HL7 CDA R2 / EGISZ SEMD).
+	 * БЫЛО: representedOrganization had addr/telecom/name only —
+	 * no id. performer org (#117) already emits clinicOid or
+	 * nullFlavor NI. SEMD validators expect MO identity under
+	 * responsibleParty org the same way.
+	 * СТАЛО: real OID as extension when present; else
+	 * <id nullFlavor="NI"/>. root = MO registry OID.
+	 */
+	params.clinicOid && String(params.clinicOid).trim()
+		? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+		: `<id nullFlavor="NI"/>`}
+	<!--
 							DEFECT #110: encompassingEncounter/responsibleParty
 							representedOrganization addr + telecom (HL7 CDA R2 / EGISZ SEMD).
 							БЫЛО: representedOrganization had only name child — no
