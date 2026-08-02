@@ -24,6 +24,7 @@ export const telegramDocumentRequestTaskDocumentKinds: Record<
 	"Пациент запросил медицинские документы": [
 		"medical_record_copy_request",
 		"outpatient_medical_card_025u",
+		"dental_medical_card_043u",
 		"medical_record_extract",
 		"medical_document_release_receipt",
 		"visit_attendance_certificate",
@@ -77,6 +78,7 @@ export const telegramDocumentRequestWorkflowDocumentKinds: Partial<
 	telegram_medical_document_request: [
 		"medical_record_copy_request",
 		"outpatient_medical_card_025u",
+		"dental_medical_card_043u",
 		"medical_record_extract",
 		"medical_document_release_receipt",
 		"visit_attendance_certificate",
@@ -115,6 +117,7 @@ export const communicationDocumentTaskActionLabels: Partial<
 	legacy_tax_deduction_certificate: "Справка 2021-2023",
 	tax_deduction_registry: "Реестр",
 	outpatient_medical_card_025u: "Карта 025/у",
+	dental_medical_card_043u: "Карта 043/у",
 	medical_record_extract: "Выписка",
 	medical_record_copy_request: "Копии карты",
 	medical_document_release_receipt: "Расписка выдачи",

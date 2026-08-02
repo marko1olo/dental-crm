@@ -1982,7 +1982,47 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: targetSiteCode nullFlavor NI until chart field exists.
 							-->
 							<targetSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #234: anamnesis observation/performer.
+								WAS: anamnesis OBS had method/interpretation/uncertainty/
+								approach/targetSite only — no performer. Diagnosis OBS
+								already carries performer PRF (#233). HL7 CDA R2 Observation
+								has performer 0..*. SEMD validators often flag missing
+								performer under history OBS so REMD cannot attribute the
+								anamnesis interview to the treating dentist at entry level.
+								NOW: performer typeCode=PRF with time=visitTime and
+								assignedEntity mirroring diagnosis OBS performer.
+							-->
+							<performer typeCode="PRF">
+								<time value="${visitTime}"/>
+								<assignedEntity>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
 						</observation>
+
 
 
 					</entry>

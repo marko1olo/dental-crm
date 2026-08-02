@@ -1333,6 +1333,99 @@ export function validateOutpatientMedicalCard025U(
   );
 }
 
+export function validateDentalMedicalCard043U(
+  state: DocumentState,
+): string[] | string | null {
+  const {
+    activeDoctor,
+    clinicalToothRowsValue,
+    recordExtractPeriodEnd,
+    recordExtractComplaintAndAnamnesisValue,
+    recordExtractObjectiveStatusValue,
+    recordExtractDiagnosisValue,
+    recordExtractTreatmentProvidedValue,
+    recordExtractDoctorFullName,
+    documentPatient,
+    clinicProfileDraft,
+    requiredDocumentField,
+    outpatient025uMedicalCardNumberValue,
+    outpatient025uSourceVisitIdsValue,
+    dentalMedicalCard043uPayloadValue,
+  } = state as DocumentState & {
+    dentalMedicalCard043uPayloadValue?: () => {
+      visitDate?: string;
+      complaint?: string;
+      anamnesis?: string;
+      objectiveStatus?: string;
+      diagnosisText?: string;
+      treatmentDescription?: string;
+      doctorFullName?: string;
+      medicalOrganizationName?: string;
+      medicalCardNumber?: string;
+      clinicalToothRows?: unknown[];
+      sourceVisitIds?: string[];
+    };
+  };
+
+  const payload = dentalMedicalCard043uPayloadValue?.();
+  const orgName =
+    payload?.medicalOrganizationName?.trim() ||
+    clinicProfileDraft.legalName.trim() ||
+    clinicProfileDraft.clinicName.trim();
+  const cardNumber =
+    payload?.medicalCardNumber?.trim() ||
+    outpatient025uMedicalCardNumberValue();
+  const visitDate = payload?.visitDate?.trim() || recordExtractPeriodEnd;
+  const complaint =
+    payload?.complaint?.trim() ||
+    recordExtractComplaintAndAnamnesisValue().split(/\n{2,}/)[0]?.trim() ||
+    "";
+  const anamnesis =
+    payload?.anamnesis?.trim() || recordExtractComplaintAndAnamnesisValue();
+  const objective =
+    payload?.objectiveStatus?.trim() || recordExtractObjectiveStatusValue();
+  const diagnosis =
+    payload?.diagnosisText?.trim() || recordExtractDiagnosisValue();
+  const treatment =
+    payload?.treatmentDescription?.trim() ||
+    recordExtractTreatmentProvidedValue();
+  const doctorName =
+    payload?.doctorFullName?.trim() ||
+    recordExtractDoctorFullName.trim() ||
+    activeDoctor?.fullName ||
+    "";
+  const toothRows =
+    payload?.clinicalToothRows?.length
+      ? payload.clinicalToothRows
+      : clinicalToothRowsValue();
+  const sourceVisitIds =
+    payload?.sourceVisitIds?.length
+      ? payload.sourceVisitIds
+      : outpatient025uSourceVisitIdsValue();
+
+  return (
+    requiredDocumentField(orgName, "карта 043/у, медорганизация") ??
+    requiredDocumentField(cardNumber, "карта 043/у, номер медицинской карты") ??
+    requiredDocumentField(visitDate, "карта 043/у, дата приема") ??
+    (sourceVisitIds.length
+      ? null
+      : "Добавьте источник подписанной медицинской записи для карты 043/у.") ??
+    requiredDocumentField(
+      documentPatient?.fullName ?? "",
+      "карта 043/у, пациент",
+    ) ??
+    requiredDocumentField(complaint, "карта 043/у, жалобы") ??
+    requiredDocumentField(anamnesis, "карта 043/у, анамнез") ??
+    requiredDocumentField(objective, "карта 043/у, объективный статус") ??
+    requiredDocumentField(diagnosis, "карта 043/у, диагноз") ??
+    (toothRows.length
+      ? null
+      : "Добавьте клинические строки по зубам или сегментам для карты 043/у.") ??
+    requiredDocumentField(treatment, "карта 043/у, проведенное лечение") ??
+    requiredDocumentField(doctorName, "карта 043/у, врач")
+  );
+}
+
 export function validateMedicalRecordExtract(
   state: DocumentState,
 ): string[] | string | null {
@@ -1728,6 +1821,7 @@ export const documentPayloadValidators: Record<
   photo_video_consent: validatePhotoVideoConsent,
   xray_cbct_referral: validateXrayCbctReferral,
   outpatient_medical_card_025u: validateOutpatientMedicalCard025U,
+  dental_medical_card_043u: validateDentalMedicalCard043U,
   medical_record_extract: validateMedicalRecordExtract,
   medical_record_copy_request: validateMedicalRecordCopyRequest,
   visit_attendance_certificate: validateVisitAttendanceCertificate,

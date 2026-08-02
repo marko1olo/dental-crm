@@ -403,6 +403,7 @@ export function documentPayloadForKind(
     xrayRecipientClinic,
     xrayDueDate,
     outpatient025uPayloadValue,
+    dentalMedicalCard043uPayloadValue,
     recordExtractSourceVisitIds,
     recordExtractPeriodStart,
     recordExtractPeriodEnd,
@@ -1121,6 +1122,11 @@ export function documentPayloadForKind(
   if (kind === "outpatient_medical_card_025u") {
     return {
       outpatientMedicalCard025u: outpatient025uPayloadValue(),
+    };
+  }
+  if (kind === "dental_medical_card_043u") {
+    return {
+      dentalMedicalCard043u: dentalMedicalCard043uPayloadValue(),
     };
   }
   if (kind === "medical_record_extract") {

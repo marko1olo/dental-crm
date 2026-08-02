@@ -467,6 +467,15 @@ function documentPayloadBlockReason(document: GeneratedDocument): string | null 
   ) {
     return "Для выдачи медицинской карты 025/у нужны клинические строки по зубам или сегментам хотя бы в одной записи врача.";
   }
+  if (document.kind === "dental_medical_card_043u" && !document.payload?.dentalMedicalCard043u) {
+    return "Для выдачи медицинской карты 043/у нужны структурированные данные: организация, пациент, номер карты, дата приема, жалобы, анамнез, объективный статус, диагноз, стоматологические строки, лечение и врач.";
+  }
+  if (
+    document.kind === "dental_medical_card_043u" &&
+    !hasClinicalToothRows(document.payload?.dentalMedicalCard043u)
+  ) {
+    return "Для выдачи медицинской карты 043/у нужны клинические строки по зубам или сегментам: зуб/область, поверхности, статус, диагноз/находка, показание и действие.";
+  }
   if (document.kind === "medical_record_copy_request" && !document.payload?.medicalRecordCopyRequest) {
     return "Для выдачи запроса копий медицинской документации нужны структурированные данные: состав документов, период, формат, получатель, документ получателя, полномочия, контакт выдачи и проверка лишних данных третьих лиц.";
   }

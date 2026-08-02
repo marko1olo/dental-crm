@@ -92,6 +92,7 @@ import {
 	type MigrationLocalSourceProbeResponse,
 	type MigrationLocalSourceWorkupResponse,
 	normalizeDentalSpeechTranscript,
+	type DentalMedicalCard043uPayload,
 	type OutpatientMedicalCard025uPayload,
 	type Patient,
 	type PatientAdministrativeProfile,
@@ -11904,6 +11905,117 @@ export function useAppLogic(): any {
 		);
 	}
 
+	function dentalMedicalCard043uPayloadValue(): DentalMedicalCard043uPayload {
+		const doctor = outpatient025uDoctorValue();
+		const sourceVisitIds = outpatient025uSourceVisitIdsValue();
+		const visitDate = outpatient025uVisitDateValue();
+		const issuedAt = new Date().toISOString();
+		const patient = documentPatient;
+		const admin = patient?.administrativeProfile;
+		const identity = admin?.identityDocument;
+		const complaintText =
+			visitNoteForm.complaint.trim() ||
+			recordExtractComplaintAndAnamnesisValue().split(/\n{2,}/)[0]?.trim() ||
+			"";
+		const anamnesisText =
+			visitNoteForm.anamnesis.trim() ||
+			recordExtractComplaintAndAnamnesisValue() ||
+			"";
+		const objectiveText =
+			visitNoteForm.objectiveStatus.trim() ||
+			recordExtractObjectiveStatusValue() ||
+			"";
+		const diagnosisText =
+			visitNoteForm.diagnosis.trim() || recordExtractDiagnosisValue() || "";
+		const treatmentText =
+			visitNoteForm.treatmentPlan.trim() ||
+			recordExtractTreatmentProvidedValue() ||
+			"";
+		const toothRows = clinicalToothRowsValue();
+		const orgName =
+			clinicProfileDraft.clinicName.trim() ||
+			dashboard?.clinic?.name?.trim() ||
+			"Стоматологическая клиника";
+		const orgAddress =
+			[
+				clinicProfileDraft.addressLine?.trim(),
+				clinicProfileDraft.city?.trim(),
+			]
+				.filter(Boolean)
+				.join(", ") ||
+			dashboard?.clinic?.address?.trim() ||
+			"";
+		const sexRaw = (patient?.sex ?? admin?.sex ?? "").toString().toLowerCase();
+		const sex =
+			sexRaw === "female" || sexRaw === "f" || sexRaw === "жен" || sexRaw === "женский"
+				? ("female" as const)
+				: sexRaw === "male" || sexRaw === "m" || sexRaw === "муж" || sexRaw === "мужской"
+					? ("male" as const)
+					: ("unknown" as const);
+		const birthDate =
+			toDateInputValue(patient?.birthDate) ||
+			toDateInputValue(admin?.birthDate) ||
+			"";
+
+		return {
+			formCode: "043/у",
+			formTitle: "Медицинская карта стоматологического больного",
+			medicalOrganizationName: orgName,
+			medicalOrganizationAddress: orgAddress || "—",
+			medicalOrganizationOgrn: clinicProfileDraft.ogrn?.trim() || null,
+			medicalOrganizationLicense: outpatient025uLicenseValue(),
+			medicalCardNumber: outpatient025uMedicalCardNumberValue(),
+			patient: {
+				fullName: patientFullName(patient) || "—",
+				birthDate: birthDate || "1970-01-01",
+				sex,
+				phone: patient?.phone?.trim() || admin?.phone?.trim() || null,
+				email: patient?.email?.trim() || admin?.email?.trim() || null,
+				address:
+					admin?.registrationAddress?.trim() ||
+					admin?.residentialAddress?.trim() ||
+					patient?.address?.trim() ||
+					null,
+				snils: admin?.snils?.trim() || patient?.snils?.trim() || null,
+				omsPolicy: admin?.omsPolicyNumber?.trim() || null,
+				identityDocumentType: identity?.type?.trim() || null,
+				identityDocumentSeries: identity?.series?.trim() || null,
+				identityDocumentNumber: identity?.number?.trim() || null,
+				identityDocumentIssuedBy: identity?.issuedBy?.trim() || null,
+				identityDocumentIssuedAt: toDateInputValue(identity?.issuedAt) || null,
+			},
+			visitDate,
+			complaint: complaintText || "—",
+			anamnesis: anamnesisText || "—",
+			allergies: null,
+			chronicDiseases: null,
+			developmentAnamnesis: null,
+			externalInspection: null,
+			oralHygiene: null,
+			bite: null,
+			objectiveStatus: objectiveText || "—",
+			xrayData: null,
+			laboratoryData: null,
+			diagnosisText: diagnosisText || "—",
+			diagnosisIcd10: null,
+			comorbidDiagnosisText: null,
+			clinicalToothRows: toothRows,
+			treatmentDescription: treatmentText || "—",
+			treatmentPlan: treatmentText || null,
+			recommendations: null,
+			nextVisitPlan: null,
+			instrumentTrayBarcode: null,
+			doctorFullName: doctor.fullName || activeDoctor?.fullName || "—",
+			doctorPosition: doctor.position,
+			doctorSpecialty: doctor.specialty,
+			doctorSignature: null,
+			issuedAt,
+			sourceVisitIds,
+			contentHash: null,
+			lockedAt: null,
+		};
+	}
+
 	function outpatient025uPayloadValue(): OutpatientMedicalCard025uPayload {
 		const patientProfile = documentPatient?.administrativeProfile;
 		const doctor = outpatient025uDoctorValue();
@@ -12156,6 +12268,7 @@ export function useAppLogic(): any {
 			minorRepresentativeRelationshipValue,
 			outpatient025uMedicalCardNumberValue,
 			outpatient025uPayloadValue,
+			dentalMedicalCard043uPayloadValue,
 			outpatient025uSourceVisitIdsValue,
 			paidContractCareReasonValue,
 			paidContractCustomerFullNameValue,

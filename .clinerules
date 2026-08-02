@@ -19,3 +19,10 @@
 4. PRODUCT INTEGRITY & REAL WORK ONLY:
    - Write 100% production-ready, clean C++ / C# / TypeScript code according to project Bibles.
    - Stage, commit, and verify clean compilation on every completed module.
+
+5. TOOL FAILURE PROTOCOL (WHAT TO DO WHEN CORNERED):
+   - AI agents often write Python scripts because native tools fail (e.g., `read_file` truncates output, or `replace_in_file` fails to match due to Cyrillic encoding/indentation).
+   - DO NOT PANIC AND DO NOT FALLBACK TO PYTHON SCRIPTS. This is strictly illegal.
+   - If `read_file` truncates, use the `start_line` and `end_line` parameters to paginate.
+   - If `replace_in_file` fails, use `read_file` to fetch the EXACT text again, ensuring indentation and encoding match perfectly.
+   - If a tool fails 3 times, STOP. Report `TOOL_BLOCKER` to the user. Breaking the Python ban to solve a tool failure is WORSE than failing the task. Failing the task is ALLOWED if tools are broken. Writing crutch scripts is NEVER allowed.
