@@ -1,6 +1,7 @@
 import assert from "node:assert";
 import { test, describe } from "node:test";
-import { generateDentalCdaXml, type EgiszCdaParams } from "../egiszCdaGenerator.js";
+import { generateDentalCdaXml } from "../egiszCdaGenerator.js";
+import type { EgiszCdaParams } from "../egiszCdaGenerator.js";
 
 describe("egiszCdaGenerator", () => {
 	test("generateDentalCdaXml with full parameter set", (t) => {
