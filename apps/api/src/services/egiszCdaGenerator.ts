@@ -1859,6 +1859,67 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
+				<!--
+					DEFECT #972: reference/externalAct/informant.
+					WAS: parent had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete informant identity here; do not invent.
+					NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<informant typeCode="INF">
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</informant>
+				<!--
+					DEFECT #981: reference/externalAct/participant.
+					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
+					NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+				-->
+				<participant typeCode="IND">
+					<time nullFlavor="NI"/>
+					<associatedEntity classCode="PRS">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<associatedPerson>
+							<name nullFlavor="NI"/>
+						</associatedPerson>
+					</associatedEntity>
+				</participant>
+				<!--
+					DEFECT #990: reference/externalAct/entryRelationship.
+					WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries already emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
+				-->
+				<entryRelationship typeCode="COMP">
+					<act classCode="ACT" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<priorityCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</act>
+				</entryRelationship>
+				<!--
+					DEFECT #999: reference/externalAct/precondition.
+					WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+					NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+				-->
+				<precondition typeCode="PRCN">
+					<criterion classCode="OBS" moodCode="EVN">
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<value xsi:type="CD" nullFlavor="NI"/>
+					</criterion>
+				</precondition>
 				</externalAct>
 			</reference>
 									<!--
@@ -2274,6 +2335,88 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			NOW: interpretationCode nullFlavor NI; do not invent.
 		-->
 		<interpretationCode nullFlavor="NI"/>
+		<!--
+			DEFECT #1032: inFulfillmentOf/order/subject.
+			WAS: parent had no subject. HL7 CDA R2 Act has subject 0..1. Body acts emit SBJ relatedSubject shells. Form 043/u has no discrete related-party here; do not invent.
+			NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+		-->
+		<subject typeCode="SBJ">
+			<relatedSubject>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<subject>
+					<name nullFlavor="NI"/>
+				</subject>
+			</relatedSubject>
+		</subject>
+		<!--
+			DEFECT #1033: inFulfillmentOf/order/specimen.
+			WAS: parent had no specimen. HL7 CDA R2 Act has specimen 0..*. Body/serviceEvent emit SPC shells. Form 043/u has no specimen identity here; do not invent type codes.
+			NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+		-->
+		<specimen typeCode="SPC">
+			<specimenRole>
+				<id nullFlavor="NI"/>
+				<specimenPlayingEntity>
+					<code nullFlavor="NI"/>
+					<name nullFlavor="NI"/>
+					<desc nullFlavor="NI"/>
+					<quantity nullFlavor="NI"/>
+				</specimenPlayingEntity>
+			</specimenRole>
+		</specimen>
+		<!--
+			DEFECT #1034: inFulfillmentOf/order/performer.
+			WAS: parent had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing PRF when serviceEvent emits performer. Form 043/u has no performer identity here; do not invent SNILS/FIO.
+			NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+		-->
+		<performer typeCode="PRF">
+			<functionCode nullFlavor="NI"/>
+			<time nullFlavor="NI"/>
+			<assignedEntity>
+				<id nullFlavor="NI"/>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<assignedPerson>
+					<name nullFlavor="NI"/>
+				</assignedPerson>
+			</assignedEntity>
+		</performer>
+		<!--
+			DEFECT #1035: inFulfillmentOf/order/informant.
+			WAS: parent had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete informant identity here; do not invent.
+			NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+		-->
+		<informant typeCode="INF">
+			<assignedEntity>
+				<id nullFlavor="NI"/>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<assignedPerson>
+					<name nullFlavor="NI"/>
+				</assignedPerson>
+			</assignedEntity>
+		</informant>
+		<!--
+			DEFECT #1036: inFulfillmentOf/order/participant.
+			WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
+			NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+		-->
+		<participant typeCode="IND">
+			<time nullFlavor="NI"/>
+			<associatedEntity classCode="PRS">
+				<id nullFlavor="NI"/>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<associatedPerson>
+					<name nullFlavor="NI"/>
+				</associatedPerson>
+			</associatedEntity>
+		</participant>
 		</order>
 	</inFulfillmentOf>
 	<!--
@@ -2566,6 +2709,65 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			NOW: interpretationCode nullFlavor NI.
 		-->
 		<interpretationCode nullFlavor="NI"/>
+		<!--
+			DEFECT #1028: authorization/consent/subject.
+			WAS: parent had no subject. HL7 CDA R2 Act has subject 0..1. Body acts emit SBJ relatedSubject shells. Form 043/u has no discrete related-party here; do not invent.
+			NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+		-->
+		<subject typeCode="SBJ">
+			<relatedSubject>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<subject>
+					<name nullFlavor="NI"/>
+				</subject>
+			</relatedSubject>
+		</subject>
+		<!--
+			DEFECT #1029: authorization/consent/specimen.
+			WAS: parent had no specimen. HL7 CDA R2 Act has specimen 0..*. Body/serviceEvent emit SPC shells. Form 043/u has no specimen identity here; do not invent type codes.
+			NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+		-->
+		<specimen typeCode="SPC">
+			<specimenRole>
+				<id nullFlavor="NI"/>
+				<specimenPlayingEntity>
+					<code nullFlavor="NI"/>
+					<name nullFlavor="NI"/>
+					<desc nullFlavor="NI"/>
+					<quantity nullFlavor="NI"/>
+				</specimenPlayingEntity>
+			</specimenRole>
+		</specimen>
+		<!--
+			DEFECT #1030: authorization/consent/entryRelationship.
+			WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries already emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+			NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
+		-->
+		<entryRelationship typeCode="COMP">
+			<act classCode="ACT" moodCode="EVN">
+				<id nullFlavor="NI"/>
+				<code nullFlavor="NI"/>
+				<text nullFlavor="NI"/>
+				<statusCode code="completed"/>
+				<priorityCode nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+			</act>
+		</entryRelationship>
+		<!--
+			DEFECT #1031: authorization/consent/precondition.
+			WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+			NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+		-->
+		<precondition typeCode="PRCN">
+			<criterion classCode="OBS" moodCode="EVN">
+				<code nullFlavor="NI"/>
+				<text nullFlavor="NI"/>
+				<statusCode code="completed"/>
+				<value xsi:type="CD" nullFlavor="NI"/>
+			</criterion>
+		</precondition>
 		</consent>
 	</authorization>
 
@@ -3350,6 +3552,67 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
+				<!--
+					DEFECT #973: reference/externalAct/informant.
+					WAS: parent had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete informant identity here; do not invent.
+					NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<informant typeCode="INF">
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</informant>
+				<!--
+					DEFECT #982: reference/externalAct/participant.
+					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
+					NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+				-->
+				<participant typeCode="IND">
+					<time nullFlavor="NI"/>
+					<associatedEntity classCode="PRS">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<associatedPerson>
+							<name nullFlavor="NI"/>
+						</associatedPerson>
+					</associatedEntity>
+				</participant>
+				<!--
+					DEFECT #991: reference/externalAct/entryRelationship.
+					WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries already emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
+				-->
+				<entryRelationship typeCode="COMP">
+					<act classCode="ACT" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<priorityCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</act>
+				</entryRelationship>
+				<!--
+					DEFECT #1000: reference/externalAct/precondition.
+					WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+					NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+				-->
+				<precondition typeCode="PRCN">
+					<criterion classCode="OBS" moodCode="EVN">
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<value xsi:type="CD" nullFlavor="NI"/>
+					</criterion>
+				</precondition>
 				</externalAct>
 			</reference>
 									<!--
@@ -4277,6 +4540,67 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
+				<!--
+					DEFECT #974: reference/externalAct/informant.
+					WAS: parent had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete informant identity here; do not invent.
+					NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<informant typeCode="INF">
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</informant>
+				<!--
+					DEFECT #983: reference/externalAct/participant.
+					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
+					NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+				-->
+				<participant typeCode="IND">
+					<time nullFlavor="NI"/>
+					<associatedEntity classCode="PRS">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<associatedPerson>
+							<name nullFlavor="NI"/>
+						</associatedPerson>
+					</associatedEntity>
+				</participant>
+				<!--
+					DEFECT #992: reference/externalAct/entryRelationship.
+					WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries already emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
+				-->
+				<entryRelationship typeCode="COMP">
+					<act classCode="ACT" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<priorityCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</act>
+				</entryRelationship>
+				<!--
+					DEFECT #1001: reference/externalAct/precondition.
+					WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+					NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+				-->
+				<precondition typeCode="PRCN">
+					<criterion classCode="OBS" moodCode="EVN">
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<value xsi:type="CD" nullFlavor="NI"/>
+					</criterion>
+				</precondition>
 				</externalAct>
 							</reference>
 							<!--
@@ -4545,6 +4869,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: uncertaintyCode nullFlavor NI.
 								-->
 								<uncertaintyCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1008: referenceRange/observationRange/subject.
+									WAS: parent had no subject. HL7 CDA R2 Act has subject 0..1. Body acts emit SBJ relatedSubject shells. Form 043/u has no discrete related-party here; do not invent.
+									NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+								-->
+								<subject typeCode="SBJ">
+									<relatedSubject>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<subject>
+											<name nullFlavor="NI"/>
+										</subject>
+									</relatedSubject>
+								</subject>
+								<!--
+									DEFECT #1013: referenceRange/observationRange/specimen.
+									WAS: parent had no specimen. HL7 CDA R2 Act has specimen 0..*. Body/serviceEvent emit SPC shells. Form 043/u has no specimen identity here; do not invent type codes.
+									NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+								-->
+								<specimen typeCode="SPC">
+									<specimenRole>
+										<id nullFlavor="NI"/>
+										<specimenPlayingEntity>
+											<code nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<desc nullFlavor="NI"/>
+											<quantity nullFlavor="NI"/>
+										</specimenPlayingEntity>
+									</specimenRole>
+								</specimen>
+								<!--
+									DEFECT #1018: referenceRange/observationRange/performer.
+									WAS: parent had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing PRF when serviceEvent emits performer. Form 043/u has no performer identity here; do not invent SNILS/FIO.
+									NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+								-->
+								<performer typeCode="PRF">
+									<functionCode nullFlavor="NI"/>
+									<time nullFlavor="NI"/>
+									<assignedEntity>
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<assignedPerson>
+											<name nullFlavor="NI"/>
+										</assignedPerson>
+									</assignedEntity>
+								</performer>
+								<!--
+									DEFECT #1023: referenceRange/observationRange/author.
+									WAS: parent had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing AUT when body acts emit author. Form 043/u has no author identity here; do not invent.
+									NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+								-->
+								<author typeCode="AUT">
+									<time nullFlavor="NI"/>
+									<assignedAuthor>
+										<id nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<assignedPerson>
+											<name nullFlavor="NI"/>
+										</assignedPerson>
+										<representedOrganization>
+											<id nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+										</representedOrganization>
+									</assignedAuthor>
+								</author>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -5251,6 +5646,67 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
+				<!--
+					DEFECT #975: reference/externalAct/informant.
+					WAS: parent had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete informant identity here; do not invent.
+					NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<informant typeCode="INF">
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</informant>
+				<!--
+					DEFECT #984: reference/externalAct/participant.
+					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
+					NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+				-->
+				<participant typeCode="IND">
+					<time nullFlavor="NI"/>
+					<associatedEntity classCode="PRS">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<associatedPerson>
+							<name nullFlavor="NI"/>
+						</associatedPerson>
+					</associatedEntity>
+				</participant>
+				<!--
+					DEFECT #993: reference/externalAct/entryRelationship.
+					WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries already emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
+				-->
+				<entryRelationship typeCode="COMP">
+					<act classCode="ACT" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<priorityCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</act>
+				</entryRelationship>
+				<!--
+					DEFECT #1002: reference/externalAct/precondition.
+					WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+					NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+				-->
+				<precondition typeCode="PRCN">
+					<criterion classCode="OBS" moodCode="EVN">
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<value xsi:type="CD" nullFlavor="NI"/>
+					</criterion>
+				</precondition>
 				</externalAct>
 							</reference>
 							<!--
@@ -5519,6 +5975,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: uncertaintyCode nullFlavor NI.
 								-->
 								<uncertaintyCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1009: referenceRange/observationRange/subject.
+									WAS: parent had no subject. HL7 CDA R2 Act has subject 0..1. Body acts emit SBJ relatedSubject shells. Form 043/u has no discrete related-party here; do not invent.
+									NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+								-->
+								<subject typeCode="SBJ">
+									<relatedSubject>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<subject>
+											<name nullFlavor="NI"/>
+										</subject>
+									</relatedSubject>
+								</subject>
+								<!--
+									DEFECT #1014: referenceRange/observationRange/specimen.
+									WAS: parent had no specimen. HL7 CDA R2 Act has specimen 0..*. Body/serviceEvent emit SPC shells. Form 043/u has no specimen identity here; do not invent type codes.
+									NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+								-->
+								<specimen typeCode="SPC">
+									<specimenRole>
+										<id nullFlavor="NI"/>
+										<specimenPlayingEntity>
+											<code nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<desc nullFlavor="NI"/>
+											<quantity nullFlavor="NI"/>
+										</specimenPlayingEntity>
+									</specimenRole>
+								</specimen>
+								<!--
+									DEFECT #1019: referenceRange/observationRange/performer.
+									WAS: parent had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing PRF when serviceEvent emits performer. Form 043/u has no performer identity here; do not invent SNILS/FIO.
+									NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+								-->
+								<performer typeCode="PRF">
+									<functionCode nullFlavor="NI"/>
+									<time nullFlavor="NI"/>
+									<assignedEntity>
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<assignedPerson>
+											<name nullFlavor="NI"/>
+										</assignedPerson>
+									</assignedEntity>
+								</performer>
+								<!--
+									DEFECT #1024: referenceRange/observationRange/author.
+									WAS: parent had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing AUT when body acts emit author. Form 043/u has no author identity here; do not invent.
+									NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+								-->
+								<author typeCode="AUT">
+									<time nullFlavor="NI"/>
+									<assignedAuthor>
+										<id nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<assignedPerson>
+											<name nullFlavor="NI"/>
+										</assignedPerson>
+										<representedOrganization>
+											<id nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+										</representedOrganization>
+									</assignedAuthor>
+								</author>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -6239,6 +6766,67 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
+				<!--
+					DEFECT #976: reference/externalAct/informant.
+					WAS: parent had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete informant identity here; do not invent.
+					NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<informant typeCode="INF">
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</informant>
+				<!--
+					DEFECT #985: reference/externalAct/participant.
+					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
+					NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+				-->
+				<participant typeCode="IND">
+					<time nullFlavor="NI"/>
+					<associatedEntity classCode="PRS">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<associatedPerson>
+							<name nullFlavor="NI"/>
+						</associatedPerson>
+					</associatedEntity>
+				</participant>
+				<!--
+					DEFECT #994: reference/externalAct/entryRelationship.
+					WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries already emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
+				-->
+				<entryRelationship typeCode="COMP">
+					<act classCode="ACT" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<priorityCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</act>
+				</entryRelationship>
+				<!--
+					DEFECT #1003: reference/externalAct/precondition.
+					WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+					NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+				-->
+				<precondition typeCode="PRCN">
+					<criterion classCode="OBS" moodCode="EVN">
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<value xsi:type="CD" nullFlavor="NI"/>
+					</criterion>
+				</precondition>
 				</externalAct>
 							</reference>
 							<!--
@@ -6507,6 +7095,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: uncertaintyCode nullFlavor NI.
 								-->
 								<uncertaintyCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1010: referenceRange/observationRange/subject.
+									WAS: parent had no subject. HL7 CDA R2 Act has subject 0..1. Body acts emit SBJ relatedSubject shells. Form 043/u has no discrete related-party here; do not invent.
+									NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+								-->
+								<subject typeCode="SBJ">
+									<relatedSubject>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<subject>
+											<name nullFlavor="NI"/>
+										</subject>
+									</relatedSubject>
+								</subject>
+								<!--
+									DEFECT #1015: referenceRange/observationRange/specimen.
+									WAS: parent had no specimen. HL7 CDA R2 Act has specimen 0..*. Body/serviceEvent emit SPC shells. Form 043/u has no specimen identity here; do not invent type codes.
+									NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+								-->
+								<specimen typeCode="SPC">
+									<specimenRole>
+										<id nullFlavor="NI"/>
+										<specimenPlayingEntity>
+											<code nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<desc nullFlavor="NI"/>
+											<quantity nullFlavor="NI"/>
+										</specimenPlayingEntity>
+									</specimenRole>
+								</specimen>
+								<!--
+									DEFECT #1020: referenceRange/observationRange/performer.
+									WAS: parent had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing PRF when serviceEvent emits performer. Form 043/u has no performer identity here; do not invent SNILS/FIO.
+									NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+								-->
+								<performer typeCode="PRF">
+									<functionCode nullFlavor="NI"/>
+									<time nullFlavor="NI"/>
+									<assignedEntity>
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<assignedPerson>
+											<name nullFlavor="NI"/>
+										</assignedPerson>
+									</assignedEntity>
+								</performer>
+								<!--
+									DEFECT #1025: referenceRange/observationRange/author.
+									WAS: parent had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing AUT when body acts emit author. Form 043/u has no author identity here; do not invent.
+									NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+								-->
+								<author typeCode="AUT">
+									<time nullFlavor="NI"/>
+									<assignedAuthor>
+										<id nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<assignedPerson>
+											<name nullFlavor="NI"/>
+										</assignedPerson>
+										<representedOrganization>
+											<id nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+										</representedOrganization>
+									</assignedAuthor>
+								</author>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -7221,6 +7880,67 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
+				<!--
+					DEFECT #977: reference/externalAct/informant.
+					WAS: parent had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete informant identity here; do not invent.
+					NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<informant typeCode="INF">
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</informant>
+				<!--
+					DEFECT #986: reference/externalAct/participant.
+					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
+					NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+				-->
+				<participant typeCode="IND">
+					<time nullFlavor="NI"/>
+					<associatedEntity classCode="PRS">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<associatedPerson>
+							<name nullFlavor="NI"/>
+						</associatedPerson>
+					</associatedEntity>
+				</participant>
+				<!--
+					DEFECT #995: reference/externalAct/entryRelationship.
+					WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries already emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
+				-->
+				<entryRelationship typeCode="COMP">
+					<act classCode="ACT" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<priorityCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</act>
+				</entryRelationship>
+				<!--
+					DEFECT #1004: reference/externalAct/precondition.
+					WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+					NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+				-->
+				<precondition typeCode="PRCN">
+					<criterion classCode="OBS" moodCode="EVN">
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<value xsi:type="CD" nullFlavor="NI"/>
+					</criterion>
+				</precondition>
 				</externalAct>
 							</reference>
 							
@@ -8111,6 +8831,67 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
+				<!--
+					DEFECT #978: reference/externalAct/informant.
+					WAS: parent had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete informant identity here; do not invent.
+					NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<informant typeCode="INF">
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</informant>
+				<!--
+					DEFECT #987: reference/externalAct/participant.
+					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
+					NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+				-->
+				<participant typeCode="IND">
+					<time nullFlavor="NI"/>
+					<associatedEntity classCode="PRS">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<associatedPerson>
+							<name nullFlavor="NI"/>
+						</associatedPerson>
+					</associatedEntity>
+				</participant>
+				<!--
+					DEFECT #996: reference/externalAct/entryRelationship.
+					WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries already emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
+				-->
+				<entryRelationship typeCode="COMP">
+					<act classCode="ACT" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<priorityCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</act>
+				</entryRelationship>
+				<!--
+					DEFECT #1005: reference/externalAct/precondition.
+					WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+					NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+				-->
+				<precondition typeCode="PRCN">
+					<criterion classCode="OBS" moodCode="EVN">
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<value xsi:type="CD" nullFlavor="NI"/>
+					</criterion>
+				</precondition>
 				</externalAct>
 							</reference>
 							<!--
@@ -8379,6 +9160,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: uncertaintyCode nullFlavor NI.
 								-->
 								<uncertaintyCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1011: referenceRange/observationRange/subject.
+									WAS: parent had no subject. HL7 CDA R2 Act has subject 0..1. Body acts emit SBJ relatedSubject shells. Form 043/u has no discrete related-party here; do not invent.
+									NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+								-->
+								<subject typeCode="SBJ">
+									<relatedSubject>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<subject>
+											<name nullFlavor="NI"/>
+										</subject>
+									</relatedSubject>
+								</subject>
+								<!--
+									DEFECT #1016: referenceRange/observationRange/specimen.
+									WAS: parent had no specimen. HL7 CDA R2 Act has specimen 0..*. Body/serviceEvent emit SPC shells. Form 043/u has no specimen identity here; do not invent type codes.
+									NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+								-->
+								<specimen typeCode="SPC">
+									<specimenRole>
+										<id nullFlavor="NI"/>
+										<specimenPlayingEntity>
+											<code nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<desc nullFlavor="NI"/>
+											<quantity nullFlavor="NI"/>
+										</specimenPlayingEntity>
+									</specimenRole>
+								</specimen>
+								<!--
+									DEFECT #1021: referenceRange/observationRange/performer.
+									WAS: parent had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing PRF when serviceEvent emits performer. Form 043/u has no performer identity here; do not invent SNILS/FIO.
+									NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+								-->
+								<performer typeCode="PRF">
+									<functionCode nullFlavor="NI"/>
+									<time nullFlavor="NI"/>
+									<assignedEntity>
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<assignedPerson>
+											<name nullFlavor="NI"/>
+										</assignedPerson>
+									</assignedEntity>
+								</performer>
+								<!--
+									DEFECT #1026: referenceRange/observationRange/author.
+									WAS: parent had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing AUT when body acts emit author. Form 043/u has no author identity here; do not invent.
+									NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+								-->
+								<author typeCode="AUT">
+									<time nullFlavor="NI"/>
+									<assignedAuthor>
+										<id nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<assignedPerson>
+											<name nullFlavor="NI"/>
+										</assignedPerson>
+										<representedOrganization>
+											<id nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+										</representedOrganization>
+									</assignedAuthor>
+								</author>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -9098,6 +9950,67 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
+				<!--
+					DEFECT #979: reference/externalAct/informant.
+					WAS: parent had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete informant identity here; do not invent.
+					NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<informant typeCode="INF">
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</informant>
+				<!--
+					DEFECT #988: reference/externalAct/participant.
+					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
+					NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+				-->
+				<participant typeCode="IND">
+					<time nullFlavor="NI"/>
+					<associatedEntity classCode="PRS">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<associatedPerson>
+							<name nullFlavor="NI"/>
+						</associatedPerson>
+					</associatedEntity>
+				</participant>
+				<!--
+					DEFECT #997: reference/externalAct/entryRelationship.
+					WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries already emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
+				-->
+				<entryRelationship typeCode="COMP">
+					<act classCode="ACT" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<priorityCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</act>
+				</entryRelationship>
+				<!--
+					DEFECT #1006: reference/externalAct/precondition.
+					WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+					NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+				-->
+				<precondition typeCode="PRCN">
+					<criterion classCode="OBS" moodCode="EVN">
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<value xsi:type="CD" nullFlavor="NI"/>
+					</criterion>
+				</precondition>
 				</externalAct>
 							</reference>
 							<!--
@@ -9366,6 +10279,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: uncertaintyCode nullFlavor NI.
 								-->
 								<uncertaintyCode nullFlavor="NI"/>
+								<!--
+									DEFECT #1012: referenceRange/observationRange/subject.
+									WAS: parent had no subject. HL7 CDA R2 Act has subject 0..1. Body acts emit SBJ relatedSubject shells. Form 043/u has no discrete related-party here; do not invent.
+									NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+								-->
+								<subject typeCode="SBJ">
+									<relatedSubject>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<subject>
+											<name nullFlavor="NI"/>
+										</subject>
+									</relatedSubject>
+								</subject>
+								<!--
+									DEFECT #1017: referenceRange/observationRange/specimen.
+									WAS: parent had no specimen. HL7 CDA R2 Act has specimen 0..*. Body/serviceEvent emit SPC shells. Form 043/u has no specimen identity here; do not invent type codes.
+									NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+								-->
+								<specimen typeCode="SPC">
+									<specimenRole>
+										<id nullFlavor="NI"/>
+										<specimenPlayingEntity>
+											<code nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<desc nullFlavor="NI"/>
+											<quantity nullFlavor="NI"/>
+										</specimenPlayingEntity>
+									</specimenRole>
+								</specimen>
+								<!--
+									DEFECT #1022: referenceRange/observationRange/performer.
+									WAS: parent had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing PRF when serviceEvent emits performer. Form 043/u has no performer identity here; do not invent SNILS/FIO.
+									NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+								-->
+								<performer typeCode="PRF">
+									<functionCode nullFlavor="NI"/>
+									<time nullFlavor="NI"/>
+									<assignedEntity>
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<assignedPerson>
+											<name nullFlavor="NI"/>
+										</assignedPerson>
+									</assignedEntity>
+								</performer>
+								<!--
+									DEFECT #1027: referenceRange/observationRange/author.
+									WAS: parent had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing AUT when body acts emit author. Form 043/u has no author identity here; do not invent.
+									NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+								-->
+								<author typeCode="AUT">
+									<time nullFlavor="NI"/>
+									<assignedAuthor>
+										<id nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<assignedPerson>
+											<name nullFlavor="NI"/>
+										</assignedPerson>
+										<representedOrganization>
+											<id nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+										</representedOrganization>
+									</assignedAuthor>
+								</author>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -10162,6 +11146,67 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
+				<!--
+					DEFECT #980: reference/externalAct/informant.
+					WAS: parent had no informant. HL7 CDA R2 Act has informant 0..*. SEMD often flags missing informant when consent/header emit INF. Form 043/u has no discrete informant identity here; do not invent.
+					NOW: informant typeCode=INF with assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<informant typeCode="INF">
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</informant>
+				<!--
+					DEFECT #989: reference/externalAct/participant.
+					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
+					NOW: participant typeCode=IND with time NI + associatedEntity classCode=PRS id/code/addr/telecom + associatedPerson/name NI.
+				-->
+				<participant typeCode="IND">
+					<time nullFlavor="NI"/>
+					<associatedEntity classCode="PRS">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<associatedPerson>
+							<name nullFlavor="NI"/>
+						</associatedPerson>
+					</associatedEntity>
+				</participant>
+				<!--
+					DEFECT #998: reference/externalAct/entryRelationship.
+					WAS: parent had no entryRelationship. HL7 CDA R2 Act has entryRelationship 0..*. Body entries already emit COMP nested acts. Form 043/u has no nested related-act graph here; do not invent codes.
+					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
+				-->
+				<entryRelationship typeCode="COMP">
+					<act classCode="ACT" moodCode="EVN">
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<priorityCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</act>
+				</entryRelationship>
+				<!--
+					DEFECT #1007: reference/externalAct/precondition.
+					WAS: parent had no precondition. HL7 CDA R2 Act has precondition 0..*. SEMD often flags missing precondition under clinical acts. Form 043/u has no discrete precondition criterion; do not invent.
+					NOW: precondition typeCode=PRCN with criterion classCode=OBS moodCode=EVN code/text/statusCode/value NI.
+				-->
+				<precondition typeCode="PRCN">
+					<criterion classCode="OBS" moodCode="EVN">
+						<code nullFlavor="NI"/>
+						<text nullFlavor="NI"/>
+						<statusCode code="completed"/>
+						<value xsi:type="CD" nullFlavor="NI"/>
+					</criterion>
+				</precondition>
 				</externalAct>
 							</reference>
 							
