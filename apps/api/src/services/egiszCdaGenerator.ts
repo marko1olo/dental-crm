@@ -377,6 +377,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	</recordTarget>
 	<author>
 		<time value="${effectiveTime}"/>
+		<!--
+			DEFECT #166: ClinicalDocument/author/functionCode.
+			WAS: author had time + assignedAuthor only — no functionCode.
+			HL7 CDA R2 Author has functionCode 0..1 (participation function /
+			clinical role). assignedAuthor/code already carries specialty
+			displayName (#138); SEMD validators also expect the participation-
+			level function slot so REMD can distinguish authoring role from
+			entity specialty. Form 043/u author is the treating dentist.
+			NOW: functionCode with NI+displayName when doctorPosition known;
+			bare nullFlavor NI when blank. No invented NSI function code.
+		-->
+		${params.doctorPosition && params.doctorPosition.trim()
+			? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+			: `<functionCode nullFlavor="NI"/>`}
 		<assignedAuthor>
 			${/*
 			 * DEFECT #77: assignedAuthor/id is required (1..*) in CDA R2.
@@ -875,6 +889,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			</effectiveTime>
 			<performer typeCode="PRF">
 				<!--
+					DEFECT #166: documentationOf/serviceEvent/performer/functionCode.
+					WAS: performer had time (#150) + assignedEntity only — no
+					functionCode. HL7 CDA R2 Performer1.functionCode is the
+					participation function at the care event (distinct from
+					assignedEntity/code specialty #141). SEMD expects the same
+					function slot as author (#166).
+					NOW: functionCode NI+displayName when doctorPosition known;
+					bare nullFlavor NI when blank.
+				-->
+				${params.doctorPosition && params.doctorPosition.trim()
+					? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+					: `<functionCode nullFlavor="NI"/>`}
+				<!--
 					DEFECT #150: documentationOf/serviceEvent/performer/time.
 					WAS: performer typeCode=PRF had only assignedEntity — no
 					time. author/dataEnterer/legalAuthenticator/authenticator
@@ -886,6 +913,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<time value="${visitTime}"/>
 				<assignedEntity>
+
 					${params.doctorSnils && String(params.doctorSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 						: `<id nullFlavor="NI"/>`}
