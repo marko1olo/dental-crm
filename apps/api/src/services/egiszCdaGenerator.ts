@@ -641,9 +641,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			${params.doctorSnils && String(params.doctorSnils).trim()
 				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 				: `<id nullFlavor="NI"/>`}
-			${params.doctorPosition && params.doctorPosition.trim()
+			${/*
+			 * DEFECT #140: authenticator assignedEntity/code always present.
+			 * WAS: same optional code as assignedAuthor pre-#138 / legal
+			 * authenticator pre-#139 — omitted when doctorPosition blank.
+			 * SEMD validators expect the specialty slot under authenticator
+			 * assignedEntity the same way as author and legal signer.
+			 * NOW: always emit code (mirror #138/#139). Position ->
+			 * NI+displayName; blank -> bare nullFlavor NI.
+			 */
+			params.doctorPosition && params.doctorPosition.trim()
 				? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
-				: ""}
+				: `<code nullFlavor="NI"/>`}
 			<!--
 				DEFECT #101: authenticator assignedEntity addr + telecom.
 				БЫЛО: authenticator had id/code/person/org only — no addr/telecom.
