@@ -815,6 +815,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	-->
 	<informationRecipient>
 		<intendedRecipient>
+			<!--
+				DEFECT #430: informationRecipient/intendedRecipient/id.
+				WAS: intendedRecipient had only receivedOrganization — no id.
+				HL7 CDA R2 IntendedRecipient has id 0..*. SEMD validators often
+				flag missing recipient id under informationRecipient when the
+				organization carries id but the recipient role itself does not.
+				Form 043/u has no separate recipient person/org id beyond clinic
+				OID on receivedOrganization; do not invent extension="unknown".
+				NOW: id nullFlavor NI on intendedRecipient.
+			-->
+			<id nullFlavor="NI"/>
 			<receivedOrganization>
 				${params.clinicOid && String(params.clinicOid).trim()
 					? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
@@ -1620,6 +1631,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<subject>
 						<name nullFlavor="NI"/>
+						<!--
+						DEFECT #431: relatedSubject/subject/administrativeGenderCode (1/9).
+						WAS: SubjectPerson under relatedSubject had only name NI (#420-#428) —
+						no administrativeGenderCode. HL7 CDA R2 SubjectPerson has
+						administrativeGenderCode 0..1. SEMD validators often flag incomplete
+						person stub under Act/subject/relatedSubject.
+						Form 043/u does not collect related-party gender; do not invent 1/2.
+						NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+						DEFECT #432: relatedSubject/subject/birthTime (1/9).
+						WAS: SubjectPerson had name (+gender) only — no birthTime.
+						HL7 CDA R2 SubjectPerson has birthTime 0..1. Mirror patient demographics
+						slot under related-party person stub.
+						Form 043/u does not collect related-party DOB; do not invent dates.
+						NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
 					</subject>
 				</relatedSubject>
 			</subject>
@@ -1677,6 +1707,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<code nullFlavor="NI"/>
 			<statusCode code="completed"/>
+			<!--
+				DEFECT #433: inFulfillmentOf/order/priorityCode.
+				WAS: order had id + code NI + statusCode completed only — no
+				priorityCode. HL7 CDA R2 Order (Act) has priorityCode 0..1.
+				SEMD validators often flag missing order priority under
+				inFulfillmentOf when body acts emit priorityCode.
+				Form 043/u chart has no separate order priority; do not invent
+				a fake HL7 ActPriority code.
+				NOW: priorityCode nullFlavor NI.
+			-->
+			<priorityCode nullFlavor="NI"/>
+			<!--
+				DEFECT #434: inFulfillmentOf/order/effectiveTime.
+				WAS: order had id/code/status/priority only — no effectiveTime.
+				HL7 CDA R2 Order has effectiveTime 0..1 (when the order was
+				placed / is effective). Form 043/u export is post-slot; stamp
+				order clock = document effectiveTime (same as author/consent).
+				NOW: effectiveTime value=effectiveTime (documentClock).
+			-->
+			<effectiveTime value="${effectiveTime}"/>
 		</order>
 	</inFulfillmentOf>
 	<!--
@@ -1787,7 +1837,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: effectiveTime value=effectiveTime (documentClock / lockedAt).
 			-->
 			<effectiveTime value="${effectiveTime}"/>
-		</consent>
+		
+			<!--
+				DEFECT #435: authorization/consent/text.
+				WAS: consent had id + code NI + statusCode + effectiveTime only —
+				no text. HL7 CDA R2 Consent Act has text 0..1 (ED) narrative of
+				the consent. SEMD validators often flag missing consent text when
+				sibling acts emit <text>. Form 043/u chart does not store a free-
+				text consent blob at CDA build; do not invent consent prose.
+				NOW: text nullFlavor NI until consent narrative is wired.
+			-->
+			<text nullFlavor="NI"/></consent>
 	</authorization>
 
 
@@ -2443,6 +2503,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<subject>
 						<name nullFlavor="NI"/>
+						<!--
+						DEFECT #436: relatedSubject/subject/administrativeGenderCode (2/9).
+						WAS: SubjectPerson under relatedSubject had only name NI (#420-#428) —
+						no administrativeGenderCode. HL7 CDA R2 SubjectPerson has
+						administrativeGenderCode 0..1. SEMD validators often flag incomplete
+						person stub under Act/subject/relatedSubject.
+						Form 043/u does not collect related-party gender; do not invent 1/2.
+						NOW: administrativeGenderCode nullFlavor NI.
+						-->
+						<administrativeGenderCode nullFlavor="NI"/>
+						<!--
+						DEFECT #437: relatedSubject/subject/birthTime (2/9).
+						WAS: SubjectPerson had name (+gender) only — no birthTime.
+						HL7 CDA R2 SubjectPerson has birthTime 0..1. Mirror patient demographics
+						slot under related-party person stub.
+						Form 043/u does not collect related-party DOB; do not invent dates.
+						NOW: birthTime nullFlavor NI.
+						-->
+						<birthTime nullFlavor="NI"/>
 					</subject>
 				</relatedSubject>
 			</subject>
@@ -2498,7 +2577,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<text>
 						<paragraph>${escapeXml(params.diagnosisText)} (МКБ-10: ${escapeXml(params.icd10Code)})${params.diagnosisTooth && String(params.diagnosisTooth).trim() ? ` · зуб ${escapeXml(String(params.diagnosisTooth).trim())}` : ""}</paragraph>
 					</text>
-					<entry>
+					<!--
+						DEFECT #438: section/confidentialityCode (1/7).
+						WAS: section had id/code/title/text then entry — no section-level
+						confidentialityCode. Body entry acts already carry confidentialityCode N
+						(#310-#318). HL7 CDA R2 Section has confidentialityCode 0..1.
+						SEMD validators often flag missing section confidentiality when the
+						ClinicalDocument sets N but narrative sections omit it.
+						Form 043/u ambulatory dental sections are normal confidentiality.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #439: section/languageCode (1/7).
+						WAS: section had id/code/title/text (+confidentiality) then entry —
+						no section-level languageCode. Entry acts already carry languageCode
+						ru-RU (#260-#279). HL7 CDA R2 Section has languageCode 0..1.
+						SEMD validators often flag missing section language when the document
+						declares ru-RU but narrative sections omit it.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/><entry>
 						<!--
 							DEFECT #351: diagnosis observation/@negationInd.
 							WAS: open had classCode/moodCode only — no negationInd.
@@ -2954,6 +3053,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 									<subject>
 										<name nullFlavor="NI"/>
+										<!--
+										DEFECT #440: relatedSubject/subject/administrativeGenderCode (3/9).
+										WAS: SubjectPerson under relatedSubject had only name NI (#420-#428) —
+										no administrativeGenderCode. HL7 CDA R2 SubjectPerson has
+										administrativeGenderCode 0..1. SEMD validators often flag incomplete
+										person stub under Act/subject/relatedSubject.
+										Form 043/u does not collect related-party gender; do not invent 1/2.
+										NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+										DEFECT #441: relatedSubject/subject/birthTime (3/9).
+										WAS: SubjectPerson had name (+gender) only — no birthTime.
+										HL7 CDA R2 SubjectPerson has birthTime 0..1. Mirror patient demographics
+										slot under related-party person stub.
+										Form 043/u does not collect related-party DOB; do not invent dates.
+										NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
 									</subject>
 								</relatedSubject>
 							</subject>
@@ -3051,7 +3169,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: entry/observation EVN with LOINC 10164-2 and ST value
 						from params.anamnesis (default Bez osobennostey).
 					-->
-					<entry>
+										<!--
+						DEFECT #442: section/confidentialityCode.
+						WAS: section had id/code/title/text then entry — no section-level
+						confidentialityCode. Body entry acts already carry confidentialityCode N
+						(#310-#318). HL7 CDA R2 Section has confidentialityCode 0..1.
+						SEMD validators often flag missing section confidentiality when the
+						ClinicalDocument sets N but narrative sections omit it.
+						Form 043/u ambulatory dental sections are normal confidentiality.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #443: section/languageCode.
+						WAS: section had id/code/title/text (+confidentiality) then entry —
+						no section-level languageCode. Entry acts already carry languageCode
+						ru-RU (#260-#279). HL7 CDA R2 Section has languageCode 0..1.
+						SEMD validators often flag missing section language when the document
+						declares ru-RU but narrative sections omit it.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+<entry>
 						<!--
 							DEFECT #352: anamnesis observation/@negationInd.
 							WAS: open had classCode/moodCode only — no negationInd.
@@ -3458,6 +3597,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 									<subject>
 										<name nullFlavor="NI"/>
+										<!--
+										DEFECT #444: relatedSubject/subject/administrativeGenderCode (4/9).
+										WAS: SubjectPerson under relatedSubject had only name NI (#420-#428) —
+										no administrativeGenderCode. HL7 CDA R2 SubjectPerson has
+										administrativeGenderCode 0..1. SEMD validators often flag incomplete
+										person stub under Act/subject/relatedSubject.
+										Form 043/u does not collect related-party gender; do not invent 1/2.
+										NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+										DEFECT #445: relatedSubject/subject/birthTime (4/9).
+										WAS: SubjectPerson had name (+gender) only — no birthTime.
+										HL7 CDA R2 SubjectPerson has birthTime 0..1. Mirror patient demographics
+										slot under related-party person stub.
+										Form 043/u does not collect related-party DOB; do not invent dates.
+										NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
 									</subject>
 								</relatedSubject>
 							</subject>
@@ -3566,7 +3724,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: entry/observation EVN with LOINC 29545-1 and ST value
 						from params.objectiveStatus (default Bez osobennostey).
 					-->
-					<entry>
+										<!--
+						DEFECT #446: section/confidentialityCode.
+						WAS: section had id/code/title/text then entry — no section-level
+						confidentialityCode. Body entry acts already carry confidentialityCode N
+						(#310-#318). HL7 CDA R2 Section has confidentialityCode 0..1.
+						SEMD validators often flag missing section confidentiality when the
+						ClinicalDocument sets N but narrative sections omit it.
+						Form 043/u ambulatory dental sections are normal confidentiality.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #447: section/languageCode.
+						WAS: section had id/code/title/text (+confidentiality) then entry —
+						no section-level languageCode. Entry acts already carry languageCode
+						ru-RU (#260-#279). HL7 CDA R2 Section has languageCode 0..1.
+						SEMD validators often flag missing section language when the document
+						declares ru-RU but narrative sections omit it.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+<entry>
 						<!--
 							DEFECT #353: objective-status observation/@negationInd.
 							WAS: open had classCode/moodCode only — no negationInd.
@@ -3976,6 +4155,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 									<subject>
 										<name nullFlavor="NI"/>
+										<!--
+										DEFECT #448: relatedSubject/subject/administrativeGenderCode (5/9).
+										WAS: SubjectPerson under relatedSubject had only name NI (#420-#428) —
+										no administrativeGenderCode. HL7 CDA R2 SubjectPerson has
+										administrativeGenderCode 0..1. SEMD validators often flag incomplete
+										person stub under Act/subject/relatedSubject.
+										Form 043/u does not collect related-party gender; do not invent 1/2.
+										NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+										DEFECT #449: relatedSubject/subject/birthTime (5/9).
+										WAS: SubjectPerson had name (+gender) only — no birthTime.
+										HL7 CDA R2 SubjectPerson has birthTime 0..1. Mirror patient demographics
+										slot under related-party person stub.
+										Form 043/u does not collect related-party DOB; do not invent dates.
+										NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
 									</subject>
 								</relatedSubject>
 							</subject>
@@ -4079,7 +4277,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: entry/act EVN with LOINC 18776-5 and text from
 						params.treatmentDescription (default Osmotr i konsultatsiya).
 					-->
-					<entry>
+										<!--
+						DEFECT #450: section/confidentialityCode.
+						WAS: section had id/code/title/text then entry — no section-level
+						confidentialityCode. Body entry acts already carry confidentialityCode N
+						(#310-#318). HL7 CDA R2 Section has confidentialityCode 0..1.
+						SEMD validators often flag missing section confidentiality when the
+						ClinicalDocument sets N but narrative sections omit it.
+						Form 043/u ambulatory dental sections are normal confidentiality.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #451: section/languageCode.
+						WAS: section had id/code/title/text (+confidentiality) then entry —
+						no section-level languageCode. Entry acts already carry languageCode
+						ru-RU (#260-#279). HL7 CDA R2 Section has languageCode 0..1.
+						SEMD validators often flag missing section language when the document
+						declares ru-RU but narrative sections omit it.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+<entry>
 						<!--
 							DEFECT #356: treatment act/@negationInd.
 							WAS: open had classCode/moodCode only — no negationInd.
@@ -4509,6 +4728,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 									<subject>
 										<name nullFlavor="NI"/>
+										<!--
+										DEFECT #452: relatedSubject/subject/administrativeGenderCode (6/9).
+										WAS: SubjectPerson under relatedSubject had only name NI (#420-#428) —
+										no administrativeGenderCode. HL7 CDA R2 SubjectPerson has
+										administrativeGenderCode 0..1. SEMD validators often flag incomplete
+										person stub under Act/subject/relatedSubject.
+										Form 043/u does not collect related-party gender; do not invent 1/2.
+										NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+										DEFECT #453: relatedSubject/subject/birthTime (6/9).
+										WAS: SubjectPerson had name (+gender) only — no birthTime.
+										HL7 CDA R2 SubjectPerson has birthTime 0..1. Mirror patient demographics
+										slot under related-party person stub.
+										Form 043/u does not collect related-party DOB; do not invent dates.
+										NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
 									</subject>
 								</relatedSubject>
 							</subject>
@@ -4567,7 +4805,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: entry/observation EVN with LOINC 55109-3 and ST value
 						from params.complications (default Ne otmecheny).
 					-->
-					<entry>
+										<!--
+						DEFECT #454: section/confidentialityCode.
+						WAS: section had id/code/title/text then entry — no section-level
+						confidentialityCode. Body entry acts already carry confidentialityCode N
+						(#310-#318). HL7 CDA R2 Section has confidentialityCode 0..1.
+						SEMD validators often flag missing section confidentiality when the
+						ClinicalDocument sets N but narrative sections omit it.
+						Form 043/u ambulatory dental sections are normal confidentiality.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #455: section/languageCode.
+						WAS: section had id/code/title/text (+confidentiality) then entry —
+						no section-level languageCode. Entry acts already carry languageCode
+						ru-RU (#260-#279). HL7 CDA R2 Section has languageCode 0..1.
+						SEMD validators often flag missing section language when the document
+						declares ru-RU but narrative sections omit it.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+<entry>
 						<!--
 							DEFECT #354: complications observation/@negationInd.
 							WAS: open had classCode/moodCode only — no negationInd.
@@ -4981,6 +5240,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 									<subject>
 										<name nullFlavor="NI"/>
+										<!--
+										DEFECT #456: relatedSubject/subject/administrativeGenderCode (7/9).
+										WAS: SubjectPerson under relatedSubject had only name NI (#420-#428) —
+										no administrativeGenderCode. HL7 CDA R2 SubjectPerson has
+										administrativeGenderCode 0..1. SEMD validators often flag incomplete
+										person stub under Act/subject/relatedSubject.
+										Form 043/u does not collect related-party gender; do not invent 1/2.
+										NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+										DEFECT #457: relatedSubject/subject/birthTime (7/9).
+										WAS: SubjectPerson had name (+gender) only — no birthTime.
+										HL7 CDA R2 SubjectPerson has birthTime 0..1. Mirror patient demographics
+										slot under related-party person stub.
+										Form 043/u does not collect related-party DOB; do not invent dates.
+										NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
 									</subject>
 								</relatedSubject>
 							</subject>
@@ -5080,7 +5358,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						WAS: section 75326-9 had only narrative text - no entry.
 						NOW: structured entry so REMD can index the section.
 					-->
-					<entry>
+										<!--
+						DEFECT #458: section/confidentialityCode.
+						WAS: section had id/code/title/text then entry — no section-level
+						confidentialityCode. Body entry acts already carry confidentialityCode N
+						(#310-#318). HL7 CDA R2 Section has confidentialityCode 0..1.
+						SEMD validators often flag missing section confidentiality when the
+						ClinicalDocument sets N but narrative sections omit it.
+						Form 043/u ambulatory dental sections are normal confidentiality.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #459: section/languageCode.
+						WAS: section had id/code/title/text (+confidentiality) then entry —
+						no section-level languageCode. Entry acts already carry languageCode
+						ru-RU (#260-#279). HL7 CDA R2 Section has languageCode 0..1.
+						SEMD validators often flag missing section language when the document
+						declares ru-RU but narrative sections omit it.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+<entry>
 						<!--
 							DEFECT #355: comorbidities observation/@negationInd.
 							WAS: open had classCode/moodCode only — no negationInd.
@@ -5498,6 +5797,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 									<subject>
 										<name nullFlavor="NI"/>
+										<!--
+										DEFECT #460: relatedSubject/subject/administrativeGenderCode (8/9).
+										WAS: SubjectPerson under relatedSubject had only name NI (#420-#428) —
+										no administrativeGenderCode. HL7 CDA R2 SubjectPerson has
+										administrativeGenderCode 0..1. SEMD validators often flag incomplete
+										person stub under Act/subject/relatedSubject.
+										Form 043/u does not collect related-party gender; do not invent 1/2.
+										NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+										DEFECT #461: relatedSubject/subject/birthTime (8/9).
+										WAS: SubjectPerson had name (+gender) only — no birthTime.
+										HL7 CDA R2 SubjectPerson has birthTime 0..1. Mirror patient demographics
+										slot under related-party person stub.
+										Form 043/u does not collect related-party DOB; do not invent dates.
+										NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
 									</subject>
 								</relatedSubject>
 							</subject>
@@ -5598,7 +5916,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						WAS: section 69764-9 had only narrative text - no entry.
 						NOW: structured entry so REMD can index the section.
 					-->
-					<entry>
+										<!--
+						DEFECT #462: section/confidentialityCode.
+						WAS: section had id/code/title/text then entry — no section-level
+						confidentialityCode. Body entry acts already carry confidentialityCode N
+						(#310-#318). HL7 CDA R2 Section has confidentialityCode 0..1.
+						SEMD validators often flag missing section confidentiality when the
+						ClinicalDocument sets N but narrative sections omit it.
+						Form 043/u ambulatory dental sections are normal confidentiality.
+						NOW: confidentialityCode N matching ClinicalDocument (#158).
+					-->
+					<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+					<!--
+						DEFECT #463: section/languageCode.
+						WAS: section had id/code/title/text (+confidentiality) then entry —
+						no section-level languageCode. Entry acts already carry languageCode
+						ru-RU (#260-#279). HL7 CDA R2 Section has languageCode 0..1.
+						SEMD validators often flag missing section language when the document
+						declares ru-RU but narrative sections omit it.
+						NOW: languageCode code=ru-RU matching ClinicalDocument.
+					-->
+					<languageCode code="ru-RU"/>
+<entry>
 						<!--
 							DEFECT #357: instrument-tray supply/@negationInd.
 							WAS: open had classCode/moodCode only — no negationInd.
@@ -6114,6 +6453,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 									<subject>
 										<name nullFlavor="NI"/>
+										<!--
+										DEFECT #464: relatedSubject/subject/administrativeGenderCode (9/9).
+										WAS: SubjectPerson under relatedSubject had only name NI (#420-#428) —
+										no administrativeGenderCode. HL7 CDA R2 SubjectPerson has
+										administrativeGenderCode 0..1. SEMD validators often flag incomplete
+										person stub under Act/subject/relatedSubject.
+										Form 043/u does not collect related-party gender; do not invent 1/2.
+										NOW: administrativeGenderCode nullFlavor NI.
+										-->
+										<administrativeGenderCode nullFlavor="NI"/>
+										<!--
+										DEFECT #465: relatedSubject/subject/birthTime (9/9).
+										WAS: SubjectPerson had name (+gender) only — no birthTime.
+										HL7 CDA R2 SubjectPerson has birthTime 0..1. Mirror patient demographics
+										slot under related-party person stub.
+										Form 043/u does not collect related-party DOB; do not invent dates.
+										NOW: birthTime nullFlavor NI.
+										-->
+										<birthTime nullFlavor="NI"/>
 									</subject>
 								</relatedSubject>
 							</subject>
