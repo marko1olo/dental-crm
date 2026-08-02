@@ -1480,7 +1480,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<methodCode nullFlavor="NI"/>
 			<!--
+				DEFECT #218: encompassingEncounter/uncertaintyCode.
+				WAS: encounter had methodCode NI (#217) but no uncertaintyCode.
+				serviceEvent (#214) and treatment ACT (#209) already carry
+				uncertaintyCode NI. HL7 CDA R2 Act has uncertaintyCode 0..1
+				on the encounter. SEMD validators often flag missing
+				uncertainty under componentOf. Form 043/u ambulatory close
+				is a completed visit — do not invent U/N.
+				NOW: uncertaintyCode nullFlavor NI until chart field exists.
+			-->
+			<uncertaintyCode nullFlavor="NI"/>
+			<!--
 				DEFECT #181: encompassingEncounter/encounterParticipant.
+
 
 
 
