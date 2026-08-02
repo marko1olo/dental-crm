@@ -1685,12 +1685,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								finding — do not invent a fake N/A/H code.
 								NOW: interpretationCode nullFlavor NI until chart field exists.
 							-->
-							<interpretationCode nullFlavor="NI"/>${params.diagnosisTooth && String(params.diagnosisTooth).trim()
+							<interpretationCode nullFlavor="NI"/>
+							<!--
+								DEFECT #188: diagnosis observation/uncertaintyCode.
+								WAS: diagnosis OBS gained methodCode (#186) and
+								interpretationCode (#187) but still had no uncertaintyCode.
+								HL7 CDA R2 Observation has uncertaintyCode 0..1 (U/N from
+								ActUncertainty — whether the assertion is known uncertain).
+								SEMD validators often flag missing uncertainty under coded
+								diagnosis OBS. Form 043/u chart does not collect a discrete
+								uncertainty flag for the ICD-10 finding — do not invent U/N.
+								NOW: uncertaintyCode nullFlavor NI until chart field exists.
+							-->
+							<uncertaintyCode nullFlavor="NI"/>${params.diagnosisTooth && String(params.diagnosisTooth).trim()
 								? `
 							<!-- DEFECT #74: ISO 3950 tooth from visit_diaries.diagnosis_tooth -->
 							<targetSiteCode code="${escapeXml(String(params.diagnosisTooth).trim())}" codeSystem="1.2.643.5.1.13.13.11.1466" codeSystemName="Зубы" displayName="Зуб ${escapeXml(String(params.diagnosisTooth).trim())}"/>`
 								: ""}
 						</observation>
+
 
 
 					</entry>
