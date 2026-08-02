@@ -340,8 +340,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<languageCommunication>
 					<languageCode code="ru-RU"/>
+					<!--
+						DEFECT #163: patient/languageCommunication/modeCode.
+						WAS: languageCommunication had languageCode + preferenceInd
+						only — no modeCode. HL7 CDA R2 LanguageCommunication
+						expects how the language is used (spoken/written/signed).
+						SEMD validators flag incomplete patient communication
+						demographics without mode. Form 043/u ambulatory dental
+						is spoken RU primary care language.
+						NOW: modeCode SPK (spoken) from HL7 LanguageAbilityMode
+						2.16.840.1.113883.5.60 with dictionary label.
+					-->
+					<modeCode code="SPK" codeSystem="2.16.840.1.113883.5.60" codeSystemName="LanguageAbilityMode" displayName="Устная речь"/>
 					<preferenceInd value="true"/>
 				</languageCommunication>
+
 
 			</patient>
 
