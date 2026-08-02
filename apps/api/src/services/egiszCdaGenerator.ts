@@ -2094,6 +2094,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<statusCode code="completed"/>
 							<!-- DEFECT #145: supply effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
+							<!--
+								DEFECT #202: instrument-tray supply/priorityCode.
+								WAS: supply had id/code/text/statusCode/effectiveTime only —
+								no priorityCode. Treatment ACT already carries priorityCode NI
+								(#201); encompassingEncounter has priorityCode NI (#183).
+								HL7 CDA R2 Supply has priorityCode 0..1. SEMD validators often
+								flag missing priority under sterilization supply. Form 043/u
+								tray barcode has no priority field — do not invent ActPriority.
+								NOW: priorityCode nullFlavor NI until chart field exists.
+							-->
+							<priorityCode nullFlavor="NI"/>
 						</supply>
 					</entry></section>
 			</component>`
