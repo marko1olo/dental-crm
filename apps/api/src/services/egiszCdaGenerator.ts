@@ -775,6 +775,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<low value="${visitTime}"/>
 			</effectiveTime>
 			<performer typeCode="PRF">
+				<!--
+					DEFECT #150: documentationOf/serviceEvent/performer/time.
+					WAS: performer typeCode=PRF had only assignedEntity — no
+					time. author/dataEnterer/legalAuthenticator/authenticator
+					already stamp time. HL7 CDA R2 Performer1.time is when the
+					participation occurred; SEMD expects care-event performer
+					participation clock = slot start (visitTime), distinct from
+					documentClock (sign/lock).
+					NOW: time value=visitTime before assignedEntity.
+				-->
+				<time value="${visitTime}"/>
 				<assignedEntity>
 					${params.doctorSnils && String(params.doctorSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
