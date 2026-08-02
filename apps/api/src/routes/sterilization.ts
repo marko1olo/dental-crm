@@ -172,61 +172,77 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 		 * СТАЛО: SELECT → отказ если locked → UPDATE barcode + diary_hash
 		 * той же 8-сегментной формулой, что routes/diary.ts.
 		 */
-		const [existingDiary] = await db
-			.select()
-			.from(visitDiaries)
-			.where(
-				and(
-					eq(visitDiaries.visitId, visitId),
-					eq(visitDiaries.organizationId, organizationId),
-				),
-			)
-			.limit(1);
-		if (!existingDiary) {
+		/*
+		 * DEFECT #82: tray-link TOCTOU — same class as draft save (#73).
+		 * БЫЛО: SELECT without FOR UPDATE, then UPDATE WHERE is_locked=false.
+		 * Concurrent POST /lock could commit between read and write; the
+		 * is_locked=false WHERE still races under READ COMMITTED if lock
+		 * and tray-link interleave without row lock (hash recompute used
+		 * a stale unlocked snapshot). СТАЛО: single transaction with
+		 * FOR UPDATE, re-check isLocked, UPDATE is_locked=false.
+		 */
+		const diary = await db.transaction(async (tx) => {
+			const [existingDiary] = await tx
+				.select()
+				.from(visitDiaries)
+				.where(
+					and(
+						eq(visitDiaries.visitId, visitId),
+						eq(visitDiaries.organizationId, organizationId),
+					),
+				)
+				.limit(1)
+				.for("update");
+			if (!existingDiary) {
+				return { kind: "not_found" as const };
+			}
+			if (existingDiary.isLocked) {
+				return { kind: "locked" as const };
+			}
+
+			const nextHash = computeDiaryHashForTrayLink({
+				visitId: existingDiary.visitId,
+				patientId: existingDiary.patientId,
+				anamnesis: existingDiary.anamnesis,
+				statusLocalis: existingDiary.statusLocalis,
+				treatmentDescription: existingDiary.treatmentDescription,
+				diagnosisIcd10: existingDiary.diagnosisIcd10,
+				diagnosisTooth: existingDiary.diagnosisTooth,
+				complications: existingDiary.complications,
+				comorbidities: existingDiary.comorbidities,
+				instrumentTrayBarcode: barcode,
+			});
+
+			const [updated] = await tx
+				.update(visitDiaries)
+				.set({
+					instrumentTrayBarcode: barcode,
+					diaryHash: nextHash,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(visitDiaries.id, existingDiary.id),
+						eq(visitDiaries.organizationId, organizationId),
+						// Повторная защита от TOCTOU: между SELECT и UPDATE кто-то /lock.
+						eq(visitDiaries.isLocked, false),
+					),
+				)
+				.returning();
+			if (!updated) {
+				return { kind: "locked" as const };
+			}
+			return { kind: "ok" as const, diary: updated };
+		});
+
+		if (diary.kind === "not_found") {
 			return reply.code(404).send({
 				error: "VisitDiaryNotFound",
 				message:
 					"Дневник этого приёма ещё не сохранён, привязать лоток не к чему. Нажмите «Сохранить черновик», дождитесь отметки времени и повторите подписание.",
 			});
 		}
-		if (existingDiary.isLocked) {
-			return reply.code(409).send({
-				error: "DiaryLocked",
-				message:
-					"Дневник приёма уже подписан — сменить инструментальный лоток в 043/у нельзя. Если упаковка указана неверно, правку вносит администратор через ревизию дневника.",
-			});
-		}
-
-		const nextHash = computeDiaryHashForTrayLink({
-			visitId: existingDiary.visitId,
-			patientId: existingDiary.patientId,
-			anamnesis: existingDiary.anamnesis,
-			statusLocalis: existingDiary.statusLocalis,
-			treatmentDescription: existingDiary.treatmentDescription,
-			diagnosisIcd10: existingDiary.diagnosisIcd10,
-			diagnosisTooth: existingDiary.diagnosisTooth,
-			complications: existingDiary.complications,
-			comorbidities: existingDiary.comorbidities,
-			instrumentTrayBarcode: barcode,
-		});
-
-		const [diary] = await db
-			.update(visitDiaries)
-			.set({
-				instrumentTrayBarcode: barcode,
-				diaryHash: nextHash,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(visitDiaries.id, existingDiary.id),
-					eq(visitDiaries.organizationId, organizationId),
-					// Повторная защита от TOCTOU: между SELECT и UPDATE кто-то /lock.
-					eq(visitDiaries.isLocked, false),
-				),
-			)
-			.returning();
-		if (!diary) {
+		if (diary.kind === "locked") {
 			return reply.code(409).send({
 				error: "DiaryLocked",
 				message:
@@ -236,8 +252,9 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "VISIT_DIARY_UPDATED",
-			payload: diary,
+			payload: diary.diary,
 		});
-		return diary;
+		return diary.diary;
+
 	});
 }
