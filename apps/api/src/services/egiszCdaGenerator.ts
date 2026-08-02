@@ -209,6 +209,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				ClinicalDocument/code and serviceEvent/code.
 			-->
 			<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Протокол стоматологического осмотра"/>
+			<!--
+				DEFECT #429: relatedDocument/parentDocument/text.
+				WAS: parentDocument had id + code + setId + versionNumber only —
+				no text. HL7 CDA R2 ParentDocument (ClinicalDocument stub) has
+				text 0..1 (ED) as the narrative title/body excerpt of the replaced
+				SEMD. SEMD validators often flag missing text under RPLC parent
+				when the current ClinicalDocument carries title/text structure.
+				Form 043/u replacement pipeline does not store prior narrative
+				blob at CDA build time; do not invent prior document prose.
+				NOW: text nullFlavor NI until prior SEMD text is wired.
+			-->
+			<text nullFlavor="NI"/>
 			<setId root="${docIdRoot}" extension="${escapeXml(setIdExtension)}"/>
 			<versionNumber value="${Math.max(1, Math.floor(Number(params.documentVersion) || 1) - 1)}"/>
 		</parentDocument>
@@ -1577,8 +1589,38 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				code nullFlavor NI until chart field exists.
 			-->
 			<subject typeCode="SBJ">
-				<relatedSubject classCode="PRS">
+				<!--
+				DEFECT #402-#410: subject/relatedSubject/addr (9× SBJ: 5 OBS + ACT + SPLY + SE + EE).
+				WAS: relatedSubject had only code nullFlavor NI — no addr.
+				HL7 CDA R2 RelatedSubject (R_RelatedPartyUniversal) has addr 0..*.
+				SEMD validators often flag incomplete related-party contact under
+				Act/subject when code is present but postal address slot is absent.
+				Form 043/u does not collect care-event related-party street address
+				(patient is recordTarget); do not invent streetAddressLine.
+				NOW: addr nullFlavor NI on every relatedSubject.
+
+				DEFECT #411-#419: subject/relatedSubject/telecom (same 9×).
+				WAS: relatedSubject had code (+addr #402) only — no telecom.
+				HL7 CDA R2 RelatedSubject has telecom 0..*. SEMD expects the
+				telecom slot under related-party when addr is emitted.
+				Form 043/u has no related-party phone; do not invent numbers.
+				NOW: telecom nullFlavor NI on every relatedSubject.
+
+				DEFECT #420-#428: subject/relatedSubject/subject SubjectPerson/name (same 9×).
+				WAS: relatedSubject closed after code/addr/telecom — no subject person.
+				HL7 CDA R2 RelatedSubject.subject is SubjectPerson (name 0..*).
+				SEMD validators often require the person stub under relatedSubject
+				so REMD can attach a display name when relationship is known later.
+				Form 043/u does not collect related-party FIO; do not invent names.
+				NOW: subject/name nullFlavor NI under every relatedSubject.
+			-->
+			<relatedSubject classCode="PRS">
 					<code nullFlavor="NI"/>
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<subject>
+						<name nullFlavor="NI"/>
+					</subject>
 				</relatedSubject>
 			</subject>
 <!--
@@ -2397,6 +2439,11 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<subject typeCode="SBJ">
 				<relatedSubject classCode="PRS">
 					<code nullFlavor="NI"/>
+					<addr nullFlavor="NI"/>
+					<telecom nullFlavor="NI"/>
+					<subject>
+						<name nullFlavor="NI"/>
+					</subject>
 				</relatedSubject>
 			</subject>
 <!--
@@ -2903,6 +2950,11 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<subject typeCode="SBJ">
 								<relatedSubject classCode="PRS">
 									<code nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<subject>
+										<name nullFlavor="NI"/>
+									</subject>
 								</relatedSubject>
 							</subject>
 
@@ -3402,6 +3454,11 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<subject typeCode="SBJ">
 								<relatedSubject classCode="PRS">
 									<code nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<subject>
+										<name nullFlavor="NI"/>
+									</subject>
 								</relatedSubject>
 							</subject>
 
@@ -3915,6 +3972,11 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<subject typeCode="SBJ">
 								<relatedSubject classCode="PRS">
 									<code nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<subject>
+										<name nullFlavor="NI"/>
+									</subject>
 								</relatedSubject>
 							</subject>
 
@@ -4443,6 +4505,11 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<subject typeCode="SBJ">
 								<relatedSubject classCode="PRS">
 									<code nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<subject>
+										<name nullFlavor="NI"/>
+									</subject>
 								</relatedSubject>
 							</subject>
 <!--
@@ -4910,6 +4977,11 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<subject typeCode="SBJ">
 								<relatedSubject classCode="PRS">
 									<code nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<subject>
+										<name nullFlavor="NI"/>
+									</subject>
 								</relatedSubject>
 							</subject>
 
@@ -5422,6 +5494,11 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<subject typeCode="SBJ">
 								<relatedSubject classCode="PRS">
 									<code nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<subject>
+										<name nullFlavor="NI"/>
+									</subject>
 								</relatedSubject>
 							</subject>
 
@@ -6033,6 +6110,11 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<subject typeCode="SBJ">
 								<relatedSubject classCode="PRS">
 									<code nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<subject>
+										<name nullFlavor="NI"/>
+									</subject>
 								</relatedSubject>
 							</subject>
 <!--
