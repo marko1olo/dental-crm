@@ -903,11 +903,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		SNILS or nullFlavor NI; clinicOid or NI. No invented street/phone.
 	-->
 	<participant typeCode="REF">
+		<!--
+			DEFECT #152: ClinicalDocument/participant REF/time.
+			WAS: participant typeCode=REF had only associatedEntity — no time.
+			author/dataEnterer/legal/authenticator/informant (#151) and
+			serviceEvent/performer (#150) already stamp time. HL7 CDA R2
+			Participant1.time is when the participation occurred; SEMD
+			expects REF participation clock = documentClock (sign/lock),
+			same as other document-level participants.
+			NOW: time value=effectiveTime before associatedEntity.
+		-->
+		<time value="${effectiveTime}"/>
 		<associatedEntity classCode="PROV">
 			${/*
 			 * Same id rule as assignedAuthor (#77): SNILS when present,
 			 * else nullFlavor NI. Never extension="unknown".
 			 */
+
 			params.doctorSnils && String(params.doctorSnils).trim()
 				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 				: `<id nullFlavor="NI"/>`}
