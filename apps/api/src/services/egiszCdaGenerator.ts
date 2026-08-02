@@ -2077,6 +2077,49 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedEntity>
 							</performer>
+							<!--
+								DEFECT #283: diagnosis observation/author.
+								WAS: diagnosis OBS had performer (#233) then closed — no entry-level author.
+								Document-level author already attributes the ClinicalDocument.
+								HL7 CDA R2 Act/Observation/Supply has author 0..* (who
+								recorded the act). SEMD validators often flag missing author
+								under body entries so REMD cannot separate recorder from
+								performer at entry level. Form 043/u treating dentist authors
+								the chart entry.
+								NOW: author with time=visitTime and assignedAuthor mirroring
+								document author / entry performer (SNILS or NI, code with
+								position or bare NI, person, MO org). No invented extension
+								or street/phone.
+							-->
+							<author>
+								<time value="${visitTime}"/>
+								<assignedAuthor>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedAuthor>
+							</author>
+
 						</observation>
 
 
@@ -2271,6 +2314,49 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedEntity>
 							</performer>
+							<!--
+								DEFECT #284: anamnesis observation/author.
+								WAS: anamnesis OBS had performer (#234) then closed — no entry-level author. Diagnosis OBS (#283) already carries author.
+								Document-level author already attributes the ClinicalDocument.
+								HL7 CDA R2 Act/Observation/Supply has author 0..* (who
+								recorded the act). SEMD validators often flag missing author
+								under body entries so REMD cannot separate recorder from
+								performer at entry level. Form 043/u treating dentist authors
+								the chart entry.
+								NOW: author with time=visitTime and assignedAuthor mirroring
+								document author / entry performer (SNILS or NI, code with
+								position or bare NI, person, MO org). No invented extension
+								or street/phone.
+							-->
+							<author>
+								<time value="${visitTime}"/>
+								<assignedAuthor>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedAuthor>
+							</author>
+
 						</observation>
 
 
@@ -2479,6 +2565,49 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedEntity>
 							</performer>
+							<!--
+								DEFECT #285: objective-status observation/author.
+								WAS: objective OBS had performer (#235) then closed — no entry-level author. Diagnosis (#283) and anamnesis (#284) already carry author.
+								Document-level author already attributes the ClinicalDocument.
+								HL7 CDA R2 Act/Observation/Supply has author 0..* (who
+								recorded the act). SEMD validators often flag missing author
+								under body entries so REMD cannot separate recorder from
+								performer at entry level. Form 043/u treating dentist authors
+								the chart entry.
+								NOW: author with time=visitTime and assignedAuthor mirroring
+								document author / entry performer (SNILS or NI, code with
+								position or bare NI, person, MO org). No invented extension
+								or street/phone.
+							-->
+							<author>
+								<time value="${visitTime}"/>
+								<assignedAuthor>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedAuthor>
+							</author>
+
 						</observation>
 
 
@@ -2681,6 +2810,49 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedEntity>
 							</performer>
+							<!--
+								DEFECT #288: treatment act/author.
+								WAS: treatment ACT had performer (#238) then closed — no entry-level author. Body OBS (#283-#287) already carry author.
+								Document-level author already attributes the ClinicalDocument.
+								HL7 CDA R2 Act/Observation/Supply has author 0..* (who
+								recorded the act). SEMD validators often flag missing author
+								under body entries so REMD cannot separate recorder from
+								performer at entry level. Form 043/u treating dentist authors
+								the chart entry.
+								NOW: author with time=visitTime and assignedAuthor mirroring
+								document author / entry performer (SNILS or NI, code with
+								position or bare NI, person, MO org). No invented extension
+								or street/phone.
+							-->
+							<author>
+								<time value="${visitTime}"/>
+								<assignedAuthor>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedAuthor>
+							</author>
+
 						</act>
 
 
@@ -2882,6 +3054,49 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedEntity>
 							</performer>
+							<!--
+								DEFECT #286: complications observation/author.
+								WAS: complications OBS had performer (#236) then closed — no entry-level author. Diagnosis (#283) through objective (#285) already carry author.
+								Document-level author already attributes the ClinicalDocument.
+								HL7 CDA R2 Act/Observation/Supply has author 0..* (who
+								recorded the act). SEMD validators often flag missing author
+								under body entries so REMD cannot separate recorder from
+								performer at entry level. Form 043/u treating dentist authors
+								the chart entry.
+								NOW: author with time=visitTime and assignedAuthor mirroring
+								document author / entry performer (SNILS or NI, code with
+								position or bare NI, person, MO org). No invented extension
+								or street/phone.
+							-->
+							<author>
+								<time value="${visitTime}"/>
+								<assignedAuthor>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedAuthor>
+							</author>
+
 						</observation>
 
 
@@ -3089,6 +3304,49 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedEntity>
 							</performer>
+							<!--
+								DEFECT #287: comorbidities observation/author.
+								WAS: comorbidities OBS had performer (#237) then closed — no entry-level author. Diagnosis (#283) through complications (#286) already carry author.
+								Document-level author already attributes the ClinicalDocument.
+								HL7 CDA R2 Act/Observation/Supply has author 0..* (who
+								recorded the act). SEMD validators often flag missing author
+								under body entries so REMD cannot separate recorder from
+								performer at entry level. Form 043/u treating dentist authors
+								the chart entry.
+								NOW: author with time=visitTime and assignedAuthor mirroring
+								document author / entry performer (SNILS or NI, code with
+								position or bare NI, person, MO org). No invented extension
+								or street/phone.
+							-->
+							<author>
+								<time value="${visitTime}"/>
+								<assignedAuthor>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedAuthor>
+							</author>
+
 						</observation>
 
 
@@ -3327,6 +3585,49 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</representedOrganization>
 								</assignedEntity>
 							</performer>
+							<!--
+								DEFECT #289: instrument-tray supply/author.
+								WAS: supply had performer (#239) then closed — no entry-level author. Body OBS (#283-#287) and treatment ACT (#288) already carry author.
+								Document-level author already attributes the ClinicalDocument.
+								HL7 CDA R2 Act/Observation/Supply has author 0..* (who
+								recorded the act). SEMD validators often flag missing author
+								under body entries so REMD cannot separate recorder from
+								performer at entry level. Form 043/u treating dentist authors
+								the chart entry.
+								NOW: author with time=visitTime and assignedAuthor mirroring
+								document author / entry performer (SNILS or NI, code with
+								position or bare NI, person, MO org). No invented extension
+								or street/phone.
+							-->
+							<author>
+								<time value="${visitTime}"/>
+								<assignedAuthor>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedAuthor>
+							</author>
+
 						</supply>
 
 
