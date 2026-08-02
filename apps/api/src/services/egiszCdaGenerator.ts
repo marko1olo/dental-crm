@@ -785,6 +785,48 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(encounterExtension)}"/>
 		</order>
 	</inFulfillmentOf>
+	<!--
+		DEFECT #130: ClinicalDocument/participant typeCode="REF" (referrer).
+		WAS: header had inFulfillmentOf (#129) then jumped to componentOf
+		with no participant. SEMD validators expect a REF participant
+		(who referred the patient into this ambulatory encounter) so REMD
+		can attribute the care request chain. Form 043/u walk-in dental
+		has no separate external referrer on the chart.
+		NOW: participant typeCode="REF" with associatedEntity classCode="PROV"
+		mirroring treating dentist + MO (same id rules as assignedAuthor).
+		SNILS or nullFlavor NI; clinicOid or NI. No invented street/phone.
+	-->
+	<participant typeCode="REF">
+		<associatedEntity classCode="PROV">
+			${/*
+			 * Same id rule as assignedAuthor (#77): SNILS when present,
+			 * else nullFlavor NI. Never extension="unknown".
+			 */
+			params.doctorSnils && String(params.doctorSnils).trim()
+				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+				: `<id nullFlavor="NI"/>`}
+			<code nullFlavor="NI"/>
+			<addr nullFlavor="NI"/>
+			<telecom nullFlavor="NI"/>
+			<associatedPerson>
+				<name>
+					<family>${escapeXml(params.doctorName.last)}</family>
+					<given>${escapeXml(params.doctorName.first)}</given>
+					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+				</name>
+			</associatedPerson>
+			${`<scopingOrganization>
+				${
+					params.clinicOid && String(params.clinicOid).trim()
+						? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+						: `<id nullFlavor="NI"/>`
+				}
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<name>${escapeXml(params.clinicName)}</name>
+			</scopingOrganization>`}
+		</associatedEntity>
+	</participant>
 
 
 	<!--
