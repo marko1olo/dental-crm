@@ -1745,23 +1745,6 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				message: DIARY_CLINIC_UNKNOWN_REVISE_MESSAGE,
 			});
 
-		const [existing] = await db
-			.select()
-			.from(visitDiaries)
-			.where(
-				and(eq(visitDiaries.id, id), eq(visitDiaries.organizationId, orgId)),
-			);
-
-		if (!existing)
-			return reply
-				.code(404)
-				.send({ error: "NotFound", message: DIARY_NOT_FOUND_REVISE_MESSAGE });
-		if (!existing.isLocked)
-			return reply.code(409).send({
-				error: "NotLocked",
-				message: "Дневник не подписан — просто редактируйте его.",
-			});
-
 		const body = {
 			anamnesis:
 				typeof parsedReviseBody.data.anamnesis === "string"
@@ -1806,58 +1789,81 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		};
 
 		/*
-		 * Непустой новый barcode — только если журнал стерилизации клиники
-		 * подтвердил цикл (тот же критерий, что POST /api/sterilization/link).
-		 * Иначе админ мог бы вписать произвольный штрихкод в подписанную 043/у.
+		 * DEFECT #84: admin revise of signed Form 043/у must serialize on the row.
+		 * БЫЛО: SELECT outside the transaction (no FOR UPDATE), then tx only
+		 * inserted visit_diary_revisions + UPDATE from that stale snapshot.
+		 * Two concurrent POST /revise both read previous_*=X, both write
+		 * forensic rows with previous=X, both bump version to N+1 — intermediate
+		 * SOAP Y is lost from the legal revision chain and diary_hash/version
+		 * can collide under READ COMMITTED.
+		 * СТАЛО: entire revise ceremony in one transaction: FOR UPDATE, re-check
+		 * is_locked, build previous_* + hash + version from the locked row, then
+		 * insert revision + UPDATE (same pattern as draft #73 / lock #76 / tray #82).
 		 */
-		const nextTrayBarcode =
-			body.instrumentTrayBarcode !== undefined
-				? body.instrumentTrayBarcode.trim()
-				: (existing.instrumentTrayBarcode ?? "");
-		if (
-			body.instrumentTrayBarcode !== undefined &&
-			nextTrayBarcode.length > 0
-		) {
-			const [trayLog] = await db
-				.select({
-					id: sterilizationLogs.id,
-					status: sterilizationLogs.status,
-				})
-				.from(sterilizationLogs)
+		type ReviseTxResult =
+			| { kind: "not_found" }
+			| { kind: "not_locked" }
+			| { kind: "invalid_tray" }
+			| { kind: "ok"; hash: string; revisionCount: number };
+
+		const reviseResult: ReviseTxResult = await db.transaction(async (tx) => {
+			const [existing] = await tx
+				.select()
+				.from(visitDiaries)
 				.where(
-					and(
-						eq(sterilizationLogs.organizationId, orgId),
-						eq(sterilizationLogs.barcode, nextTrayBarcode),
-					),
+					and(eq(visitDiaries.id, id), eq(visitDiaries.organizationId, orgId)),
 				)
-				.orderBy(desc(sterilizationLogs.timestamp))
-				.limit(1);
-			if (!trayLog || trayLog.status !== "passed") {
-				return reply.code(400).send({
-					error: "InvalidTrayBarcode",
-					message:
-						"Лоток не подтверждён журналом стерилизации этой клиники: такого штрихкода нет или последний цикл не пройден. Укажите штрихкод с прошедшей стерилизацией или очистите поле лотка.",
-				});
+				.for("update");
+
+			if (!existing) return { kind: "not_found" as const };
+			if (!existing.isLocked) return { kind: "not_locked" as const };
+
+			/*
+			 * Непустой новый barcode — только если журнал стерилизации клиники
+			 * подтвердил цикл (тот же критерий, что POST /api/sterilization/link).
+			 * Иначе админ мог бы вписать произвольный штрихкод в подписанную 043/у.
+			 * Check inside the row lock so tray default uses the locked snapshot.
+			 */
+			const nextTrayBarcode =
+				body.instrumentTrayBarcode !== undefined
+					? body.instrumentTrayBarcode.trim()
+					: (existing.instrumentTrayBarcode ?? "");
+			if (
+				body.instrumentTrayBarcode !== undefined &&
+				nextTrayBarcode.length > 0
+			) {
+				const [trayLog] = await tx
+					.select({
+						id: sterilizationLogs.id,
+						status: sterilizationLogs.status,
+					})
+					.from(sterilizationLogs)
+					.where(
+						and(
+							eq(sterilizationLogs.organizationId, orgId),
+							eq(sterilizationLogs.barcode, nextTrayBarcode),
+						),
+					)
+					.orderBy(desc(sterilizationLogs.timestamp))
+					.limit(1);
+				if (!trayLog || trayLog.status !== "passed") {
+					return { kind: "invalid_tray" as const };
+				}
 			}
-		}
 
-		const newHash = computeDiaryHash(
-			existing.visitId,
-			existing.patientId ?? "",
-			body.anamnesis ?? existing.anamnesis,
-			body.statusLocalis ?? existing.statusLocalis,
-			body.treatmentDescription ?? existing.treatmentDescription,
-			body.diagnosisIcd10 ?? existing.diagnosisIcd10,
-			body.diagnosisTooth ?? existing.diagnosisTooth,
-			body.complications ?? existing.complications,
-			body.comorbidities ?? existing.comorbidities,
-			nextTrayBarcode,
-		);
+			const newHash = computeDiaryHash(
+				existing.visitId,
+				existing.patientId ?? "",
+				body.anamnesis ?? existing.anamnesis,
+				body.statusLocalis ?? existing.statusLocalis,
+				body.treatmentDescription ?? existing.treatmentDescription,
+				body.diagnosisIcd10 ?? existing.diagnosisIcd10,
+				body.diagnosisTooth ?? existing.diagnosisTooth,
+				body.complications ?? existing.complications,
+				body.comorbidities ?? existing.comorbidities,
+				nextTrayBarcode,
+			);
 
-		// Одна транзакция на запись ревизии и правку дневника. БЫЛО: два отдельных
-		// запроса — упавшая правка оставляла в журнале ревизию об изменении,
-		// которого не произошло.
-		const revisionCount = await db.transaction(async (tx) => {
 			/*
 			 * БЫЛО: insert не писал previous_diagnosis_tooth и revision_reason,
 			 * хотя миграция 0116 уже добавила колонки, а клиент шлёт revisionReason.
@@ -1911,16 +1917,21 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					complications: body.complications ?? existing.complications,
 					comorbidities: body.comorbidities ?? existing.comorbidities,
 					instrumentTrayBarcode:
-					body.instrumentTrayBarcode !== undefined
-						? nextTrayBarcode || null
-						: existing.instrumentTrayBarcode,
-				diaryHash: newHash,
+						body.instrumentTrayBarcode !== undefined
+							? nextTrayBarcode || null
+							: existing.instrumentTrayBarcode,
+					diaryHash: newHash,
 					cryptoSignaturePkcs7: null,
 					version: (existing.version ?? 1) + 1,
 					updatedAt: new Date(),
 				})
 				.where(
-					and(eq(visitDiaries.id, id), eq(visitDiaries.organizationId, orgId)),
+					and(
+						eq(visitDiaries.id, id),
+						eq(visitDiaries.organizationId, orgId),
+						/* belt: only revise while still locked (Form 043/у signed) */
+						eq(visitDiaries.isLocked, true),
+					),
 				);
 
 			/*
@@ -1949,8 +1960,31 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 						eq(visitDiaryRevisions.organizationId, orgId),
 					),
 				);
-			return tally?.total ?? 0;
+			return {
+				kind: "ok" as const,
+				hash: newHash,
+				revisionCount: tally?.total ?? 0,
+			};
 		});
+
+		if (reviseResult.kind === "not_found") {
+			return reply
+				.code(404)
+				.send({ error: "NotFound", message: DIARY_NOT_FOUND_REVISE_MESSAGE });
+		}
+		if (reviseResult.kind === "not_locked") {
+			return reply.code(409).send({
+				error: "NotLocked",
+				message: "Дневник не подписан — просто редактируйте его.",
+			});
+		}
+		if (reviseResult.kind === "invalid_tray") {
+			return reply.code(400).send({
+				error: "InvalidTrayBarcode",
+				message:
+					"Лоток не подтверждён журналом стерилизации этой клиники: такого штрихкода нет или последний цикл не пройден. Укажите штрихкод с прошедшей стерилизацией или очистите поле лотка.",
+			});
+		}
 
 		/*
 		 * cryptoSignatureAttached: false — PKCS#7 обнулён вместе с newHash.
@@ -1959,11 +1993,12 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		 */
 		return reply.send({
 			success: true,
-			hash: newHash,
-			revisionCount,
+			hash: reviseResult.hash,
+			revisionCount: reviseResult.revisionCount,
 			cryptoSignatureAttached: false,
 		});
 	});
+
 
 	// Legacy endpoint: sync-progress + plan signature (kept for backwards compat)
 	app.post("/api/diaries/sync-progress", async (req, reply) => {
