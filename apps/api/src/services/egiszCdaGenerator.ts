@@ -1210,8 +1210,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								(unique per document version; no invented "unknown").
 							-->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-dx"/>
-							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" displayName="Диагноз"/>
+							<!--
+								DEFECT #155: diagnosis observation codeSystemName=LOINC.
+								WAS: entry code had code+codeSystem+displayName only —
+								no codeSystemName. Sibling sections (anamnesis/objective/
+								treatment/etc.) and section@code (#154) emit
+								codeSystemName="LOINC". SEMD validators expect the
+								code system label on every LOINC CE so REMD can render
+								the dictionary name without OID lookup.
+								NOW: codeSystemName="LOINC" on diagnosis observation code.
+							-->
+							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Диагноз"/>
 							<!-- DEFECT #143: observation statusCode completed (mirror act/supply) -->
+
 							<statusCode code="completed"/>
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
