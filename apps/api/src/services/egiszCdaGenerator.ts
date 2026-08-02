@@ -1513,7 +1513,42 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<id nullFlavor="NI"/>
 				</externalAct>
 			</reference>
-						<!--
+									<!--
+				DEFECT #385: documentationOf/serviceEvent/specimen.
+				WAS: serviceEvent had reference/subject then entryRelationship — no specimen.
+				Body entries (#337-#341/#362-#363) already carry specimen SPC.
+				HL7 CDA R2 Act has specimen 0..* (material). SEMD validators often
+				flag missing specimen under documentationOf/serviceEvent. Form 043/u
+				ambulatory dental care event does not collect discrete specimen identity
+				— do not invent specimen type codes or IDs.
+				NOW: specimen typeCode=SPC with specimenRole id nullFlavor NI until
+				chart field exists.
+			-->
+			<specimen typeCode="SPC">
+				<specimenRole>
+					<id nullFlavor="NI"/>
+				</specimenRole>
+			</specimen>
+			<!--
+				DEFECT #386: documentationOf/serviceEvent/consumable.
+				WAS: serviceEvent had specimen/subject then entryRelationship — no consumable.
+				Body ACT/SPLY/OBS (#373-#374/#380-#384) already carry consumable CSM.
+				HL7 CDA R2 Act has consumable 0..* (materials used by the care event).
+				SEMD validators often flag missing consumable under documentationOf/
+				serviceEvent. Form 043/u chart does not collect discrete consumable NSI
+				codes for the care event — do not invent material codes or barcodes.
+				NOW: consumable typeCode=CSM with manufacturedProduct classCode=MANU
+				and manufacturedMaterial code/name nullFlavor NI until chart field exists.
+			-->
+			<consumable typeCode="CSM">
+				<manufacturedProduct classCode="MANU">
+					<manufacturedMaterial>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</manufacturedMaterial>
+				</manufacturedProduct>
+			</consumable>
+<!--
 				DEFECT #371: documentationOf/serviceEvent/subject.
 				WAS: serviceEvent had reference then entryRelationship — no subject.
 				Body entries (#364-#370) already carry subject SBJ.
@@ -5503,8 +5538,54 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<manufacturedMaterial>
 										<code nullFlavor="NI"/>
 										<name nullFlavor="NI"/>
-									</manufacturedMaterial>
-								</manufacturedProduct>
+									
+									<!--
+										DEFECT #388: instrument-tray manufacturedMaterial/lotNumberText.
+									<!--
+										DEFECT #389: instrument-tray manufacturedMaterial/desc.
+										WAS: manufacturedMaterial had code/name/lotNumberText — no desc.
+										HL7 CDA R2 Material has desc 0..1 (ED description). SEMD validators
+										often flag missing material description under tray product. Form 043/u
+										chart has no separate material narrative beyond tray barcode text on
+										supply — do not invent device catalog prose.
+										NOW: desc nullFlavor NI until chart field exists.
+									-->
+									<desc nullFlavor="NI"/>
+										WAS: manufacturedMaterial had code/name NI only — no lotNumberText.
+										HL7 CDA R2 Material has lotNumberText 0..1 (batch/lot). SEMD
+										validators often flag missing lot under sterilization tray material.
+										Form 043/u instrumentTrayBarcode is device id, not a lot number —
+										do not reuse barcode as lot or invent lot strings.
+										NOW: lotNumberText nullFlavor NI until chart field exists.
+									-->
+									<lotNumberText nullFlavor="NI"/>
+								
+									<!--
+										DEFECT #390: instrument-tray manufacturedMaterial/expirationTime.
+										WAS: manufacturedMaterial had code/name/lot/desc — no expirationTime.
+										HL7 CDA R2 Material has expirationTime 0..1. SEMD validators often
+										flag missing expiry under sterilization tray material. Form 043/u
+										chart does not collect tray sterilization expiry — do not invent TS.
+										NOW: expirationTime nullFlavor NI until chart field exists.
+									-->
+									<expirationTime nullFlavor="NI"/>
+								</manufacturedMaterial>
+								
+								<!--
+									DEFECT #387: instrument-tray manufacturedProduct/manufacturerOrganization.
+									WAS: manufacturedProduct had id + manufacturedMaterial only — no
+									manufacturerOrganization. HL7 CDA R2 ManufacturedProduct has
+									manufacturerOrganization 0..1. SEMD validators often flag missing
+									manufacturer under sterilization tray product. Form 043/u tray barcode
+									has no manufacturer registry field — do not invent org ids or names.
+									NOW: manufacturerOrganization with id/name nullFlavor NI until chart
+									field exists.
+								-->
+								<manufacturerOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+								</manufacturerOrganization>
+							</manufacturedProduct>
 							</product>
 						
 							<!--
