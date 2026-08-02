@@ -689,7 +689,26 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				icd10Code: resolvedIcd10,
 				diagnosisText: effectiveDiagnosis,
 				visitDate: encounterDate,
-				documentId: row.visit.id,
+				/*
+				 * DEFECT #89: ClinicalDocument/id must be unique per diary version.
+				 * БЫЛО (#88): documentId === visit.id === documentSetId — setId
+				 * was stable but id never changed across revise, so REMD saw
+				 * versionNumber=2 with the same ClinicalDocument/id as v1
+				 * (HL7 CDA R2 requires id unique within the set; setId stable).
+				 * СТАЛО: documentId = "{visitId}-v{N}" when diary.version known;
+				 * without diary fall back to visit.id (EMK-only export, v1).
+				 * documentSetId stays visit.id (DEFECT #88). encounterId stays
+				 * visit.id (DEFECT #87).
+				 */
+				documentId: (() => {
+					const ver =
+						typeof diaryRow?.version === "number" &&
+						Number.isFinite(diaryRow.version) &&
+						diaryRow.version >= 1
+							? Math.floor(diaryRow.version)
+							: null;
+					return ver != null ? `${row.visit.id}-v${ver}` : row.visit.id;
+				})(),
 				/*
 				 * DEFECT #87: encompassingEncounter extension = visit id.
 				 * БЫЛО (#86): generator reused documentId for encounter id —
@@ -707,8 +726,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				 * but setId still equaled id — HL7/REMD cannot link version N
 				 * to version 1 as one document set.
 				 * СТАЛО: documentSetId = visit.id (stable across revise);
-				 * documentId remains the version instance id (today visit.id
-				 * until a per-version export UUID is introduced).
+				 * documentId is versioned instance id (DEFECT #89).
 				 */
 				documentSetId: row.visit.id,
 
@@ -719,6 +737,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				diaryRow.version >= 1
 					? { documentVersion: Math.floor(diaryRow.version) }
 					: {}),
+
 				/*
 				 * DEFECT #72: ClinicalDocument + author effectiveTime = diary sign.
 				 * БЫЛО: generator always used wall-clock "now" on each CDA download —
