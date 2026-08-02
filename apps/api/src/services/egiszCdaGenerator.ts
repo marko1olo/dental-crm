@@ -613,6 +613,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				service IS the dental exam protocol documented by this CDA.
 			-->
 			<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Протокол стоматологического осмотра"/>
+			<!--
+				DEFECT #126: documentationOf/serviceEvent/statusCode.
+				БЫЛО (#124): serviceEvent had code + effectiveTime + performer
+				but no statusCode. encompassingEncounter already emits
+				statusCode completed (#125). HL7 CDA R2 Act status is expected
+				on the care event so REMD knows the documented service is
+				finished (Form 043/у export is post-slot).
+				СТАЛО: statusCode code="completed" after code, before effectiveTime.
+			-->
+			<statusCode code="completed"/>
 			<effectiveTime value="${visitTime}"/>
 			<performer typeCode="PRF">
 				<assignedEntity>
