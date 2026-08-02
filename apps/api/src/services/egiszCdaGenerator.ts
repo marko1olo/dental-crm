@@ -3092,7 +3092,44 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<expectedUseTime nullFlavor="NI"/>
 							<!--
+								DEFECT #269: instrument-tray supply/approachSiteCode.
+								WAS: supply had expectedUseTime (#206) then jumped to product
+								(#207) — no approachSiteCode. Treatment ACT (#221) and body
+								OBS (#224-#228) already carry approachSiteCode NI. HL7 CDA R2
+								Supply has approachSiteCode 0..* (anatomical approach for the
+								supply act). SEMD validators often flag missing approach under
+								sterilization tray supply. Form 043/u tray barcode has no
+								anatomical approach — do not invent ISO 3950.
+								NOW: approachSiteCode nullFlavor NI until chart field exists.
+							-->
+							<approachSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #270: instrument-tray supply/targetSiteCode.
+								WAS: supply had approachSiteCode NI (#269) but no
+								targetSiteCode. Treatment ACT (#222) and body OBS (#223/
+								#229-#232) already emit targetSiteCode. HL7 CDA R2 Supply has
+								targetSiteCode 0..* (anatomical site the supply is directed
+								at). SEMD validators often flag missing target site under
+								sterilization tray supply. Form 043/u tray is whole-visit
+								device link — no single tooth; do not invent ISO 3950.
+								NOW: targetSiteCode nullFlavor NI until chart field exists.
+							-->
+							<targetSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #271: instrument-tray supply/interpretationCode.
+								WAS: supply had approach/targetSite only — no
+								interpretationCode. Body OBS entries already carry
+								interpretationCode NI (#187/#193-#196). HL7 CDA R2 Supply
+								(Act) has interpretationCode 0..*. SEMD validators often
+								flag missing interpretation under sterilization tray supply.
+								Form 043/u tray barcode is device identity only — do not
+								invent N/A/H.
+								NOW: interpretationCode nullFlavor NI until chart field exists.
+							-->
+							<interpretationCode nullFlavor="NI"/>
+							<!--
 								DEFECT #207: instrument-tray supply/product.
+
 								WAS: supply carried tray barcode only in text — no product
 								participant. HL7 CDA R2 Supply has product 0..1
 								(ManufacturedProduct) so REMD can join the sterilization
