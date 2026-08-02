@@ -329,9 +329,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			params.doctorSnils && String(params.doctorSnils).trim()
 				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 				: `<id nullFlavor="NI"/>`}
-			${params.doctorPosition && params.doctorPosition.trim()
+			${/*
+			 * DEFECT #138: assignedAuthor/code must always be present.
+			 * WAS: code emitted only when doctorPosition non-empty, and then
+			 * only as nullFlavor NI + displayName. When position blank the
+			 * entire code element was omitted — SEMD validators expect
+			 * assignedAuthor/code (specialty/role) 0..1 as a real node;
+			 * omitting it loses the specialty slot entirely.
+			 * NOW: always emit code. When doctorPosition present keep
+			 * nullFlavor NI + displayName (no NSI specialty code wired yet);
+			 * when blank emit bare nullFlavor NI (no invented code).
+			 */
+			params.doctorPosition && params.doctorPosition.trim()
 				? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
-				: ""}
+				: `<code nullFlavor="NI"/>`}
 			<!--
 				DEFECT #99: assignedAuthor addr + telecom (HL7 CDA R2 / EGISZ SEMD).
 				БЫЛО: assignedAuthor had id/code/person/org only — no addr/telecom.
