@@ -763,6 +763,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					params.clinicOid && String(params.clinicOid).trim()
 						? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
 						: `<id nullFlavor="NI"/>`}
+					<!--
+						DEFECT #123: healthCareFacility/code (facility care setting).
+						БЫЛО (#92/#120): healthCareFacility had id + location +
+						serviceProviderOrganization but no code. HL7 CDA R2 /
+						EGISZ SEMD expect the facility role code (care setting)
+						under encompassingEncounter/location. Encounter already
+						carries AMB (#91); facility without code is incomplete.
+						СТАЛО: emit AMB (ambulatory) with the same NSI dictionary
+						as encompassingEncounter/code — this SEMD is always an
+						ambulatory dental protocol (Form 043/у), not inpatient.
+					-->
+					<code code="AMB" codeSystem="1.2.643.5.1.13.13.11.1461" codeSystemName="Виды медицинской помощи" displayName="Амбулаторная помощь"/>
 					<location>
 						<!--
 							DEFECT #112: healthCareFacility/location addr
