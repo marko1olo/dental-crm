@@ -12,6 +12,12 @@ export interface EgiszCdaParams {
 	doctorPosition?: string;
 	icd10Code: string;
 	diagnosisText: string;
+	/**
+	 * DEFECT #74: ISO 3950 tooth number from visit_diaries.diagnosis_tooth.
+	 * Form 043/у and diary_hash carry the tooth; CDA diagnosis observation
+	 * previously dropped it — REMD export lost which tooth was treated.
+	 */
+	diagnosisTooth?: string | null;
 	anamnesis?: string;
 	/** Status localis / objective exam (043 O-block → visits.objectiveStatus). */
 	objectiveStatus?: string;
@@ -155,12 +161,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<code code="29548-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Диагнозы"/>
 					<title>Диагноз</title>
 					<text>
-						<paragraph>${escapeXml(params.diagnosisText)} (МКБ-10: ${escapeXml(params.icd10Code)})</paragraph>
+						<paragraph>${escapeXml(params.diagnosisText)} (МКБ-10: ${escapeXml(params.icd10Code)})${params.diagnosisTooth && String(params.diagnosisTooth).trim() ? ` · зуб ${escapeXml(String(params.diagnosisTooth).trim())}` : ""}</paragraph>
 					</text>
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
 							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" displayName="Диагноз"/>
-							<value xsi:type="CD" code="${escapeXml(params.icd10Code)}" codeSystem="1.2.643.5.1.13.13.11.1005" displayName="${escapeXml(params.diagnosisText)}"/>
+							<value xsi:type="CD" code="${escapeXml(params.icd10Code)}" codeSystem="1.2.643.5.1.13.13.11.1005" displayName="${escapeXml(params.diagnosisText)}"/>${params.diagnosisTooth && String(params.diagnosisTooth).trim()
+								? `
+							<!-- DEFECT #74: ISO 3950 tooth from visit_diaries.diagnosis_tooth -->
+							<targetSiteCode code="${escapeXml(String(params.diagnosisTooth).trim())}" codeSystem="1.2.643.5.1.13.13.11.1466" codeSystemName="Зубы" displayName="Зуб ${escapeXml(String(params.diagnosisTooth).trim())}"/>`
+								: ""}
 						</observation>
 					</entry>
 				</section>
@@ -231,3 +241,4 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	</component>
 </ClinicalDocument>`;
 }
+

@@ -196,7 +196,85 @@ describe("egiszCdaGenerator", () => {
 		);
 	});
 
+	/**
+	 * DEFECT #74: ISO 3950 tooth from visit_diaries.diagnosis_tooth must appear
+	 * in CDA diagnosis observation as targetSiteCode (and in human-readable text).
+	 * Without this, signed 043 tooth never reaches EGISZ/REMD export.
+	 */
+	test("DEFECT #74: diagnosisTooth exports as targetSiteCode on diagnosis observation", () => {
+		const base: EgiszCdaParams = {
+			patientId: "pat-74",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicName: "Клиника",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес дентина",
+			visitDate: new Date("2024-06-01T10:00:00.000Z"),
+			documentId: "doc-74",
+		};
+
+		const withTooth = generateDentalCdaXml({
+			...base,
+			diagnosisTooth: "36",
+		});
+		assert.ok(
+			withTooth.includes(
+				'targetSiteCode code="36" codeSystem="1.2.643.5.1.13.13.11.1466"',
+			),
+			"diagnosis observation must carry ISO 3950 targetSiteCode",
+		);
+		assert.ok(
+			withTooth.includes("· зуб 36"),
+			"human-readable diagnosis text must include tooth number",
+		);
+		assert.ok(
+			withTooth.includes('displayName="Зуб 36"'),
+			"targetSiteCode displayName must include tooth",
+		);
+
+		const withoutTooth = generateDentalCdaXml(base);
+		assert.ok(
+			!withoutTooth.includes("targetSiteCode"),
+			"targetSiteCode must be omitted when diagnosisTooth absent",
+		);
+		assert.ok(
+			!withoutTooth.includes("· зуб"),
+			"human-readable tooth suffix must be omitted when diagnosisTooth absent",
+		);
+
+		// Blank/whitespace tooth must not emit empty targetSiteCode
+		const blankTooth = generateDentalCdaXml({
+			...base,
+			diagnosisTooth: "   ",
+		});
+		assert.ok(
+			!blankTooth.includes("targetSiteCode"),
+			"whitespace-only diagnosisTooth must not emit targetSiteCode",
+		);
+
+		// XML special chars in tooth must be escaped
+		const evilTooth = generateDentalCdaXml({
+			...base,
+			diagnosisTooth: "3" + String.fromCharCode(60) + "6" + String.fromCharCode(62) + String.fromCharCode(38) + "x",
+		});
+		const lt = "&" + "lt;";
+		const gt = "&" + "gt;";
+		const amp = "&" + "amp;";
+		assert.ok(
+			evilTooth.includes("targetSiteCode code=\"3" + lt + "6" + gt + amp + "x\""),
+			"diagnosisTooth must be XML-escaped in targetSiteCode@code",
+		);
+		assert.ok(
+			!evilTooth.includes("code=\"3" + String.fromCharCode(60) + "6"),
+			"raw < must not appear in targetSiteCode@code",
+		);
+	});
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 
 		const params: EgiszCdaParams = {
 			patientId: "pat-esc",

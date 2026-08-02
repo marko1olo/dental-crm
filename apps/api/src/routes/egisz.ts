@@ -487,6 +487,14 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				typeof diaryRow?.instrumentTrayBarcode === "string"
 					? diaryRow.instrumentTrayBarcode.trim()
 					: "";
+			/*
+			 * DEFECT #74: diagnosis_tooth is on visit_diaries (043 SOAP + diary_hash).
+			 * Without export, signed tooth number never reaches EGISZ CDA diagnosis.
+			 */
+			const diagnosisTooth =
+				typeof diaryRow?.diagnosisTooth === "string"
+					? diaryRow.diagnosisTooth.trim()
+					: "";
 
 			// Врач 043 (doctorId) приоритетнее appointment.doctorUserId — это кто вёл карту.
 			if (diaryRow?.doctorId) {
@@ -716,6 +724,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				...(instrumentTrayBarcode
 					? { instrumentTrayBarcode }
 					: {}),
+				/* DEFECT #74: ISO 3950 tooth → CDA diagnosis targetSiteCode */
+				...(diagnosisTooth ? { diagnosisTooth } : {}),
 				...(treatmentPlan ? { treatmentDescription: treatmentPlan } : {}),
 			};
 
