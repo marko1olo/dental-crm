@@ -1976,10 +1976,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: methodCode nullFlavor NI until chart field exists.
 							-->
 							<methodCode nullFlavor="NI"/>
+							<!--
+								DEFECT #196: comorbidities observation/interpretationCode.
+								WAS: comorbidities OBS gained methodCode NI (#192) but still
+								had no interpretationCode. Diagnosis (#187), anamnesis (#193),
+								objective (#194) and complications (#195) already carry
+								interpretationCode NI. HL7 CDA R2 Observation has
+								interpretationCode 0..*. SEMD validators often flag missing
+								interpretation under comorbidities OBS. Form 043/u
+								comorbidities is free-text note — do not invent a fake N/A/H.
+								NOW: interpretationCode nullFlavor NI until chart field exists.
+							-->
+							<interpretationCode nullFlavor="NI"/>
 						</observation>
 					</entry></section>
 			</component>
 			<!-- DEFECT #57: инструментальный лоток 043 (sterilization barcode) -->
+
 
 			${params.instrumentTrayBarcode && params.instrumentTrayBarcode.trim()
 				? `<component>
