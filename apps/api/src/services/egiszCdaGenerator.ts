@@ -1089,7 +1089,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<text>
 						<paragraph>${escapeXml(params.objectiveStatus || "Без особенностей")}</paragraph>
 					</text>
-				</section>
+				
+					<!--
+						DEFECT #133: Objective status section entry/observation.
+						WAS: section 29545-1 had only narrative text - no entry.
+						Anamnesis (#132) and Diagnosis already carry observation entries;
+						SEMD validators expect structured entry under objective status.
+						NOW: entry/observation EVN with LOINC 29545-1 and ST value
+						from params.objectiveStatus (default Bez osobennostey).
+					-->
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<code code="29545-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Объективный статус"/>
+							<value xsi:type="ST">${escapeXml(params.objectiveStatus || "Без особенностей")}</value>
+						</observation>
+					</entry></section>
 			</component>
 			<!-- Оказанные услуги / Лечение -->
 			<component>
