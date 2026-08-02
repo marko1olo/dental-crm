@@ -327,15 +327,108 @@ describe("egiszCdaGenerator", () => {
 			minimal.indexOf("</legalAuthenticator>") +
 				"</legalAuthenticator>".length,
 		);
+		// DEFECT #77: id required (1..*) — nullFlavor NI when SNILS absent
+		assert.ok(
+			laMin.includes('<id nullFlavor="NI"/>'),
+			"legalAuthenticator must emit id nullFlavor=NI when doctorSnils absent",
+		);
 		assert.ok(
 			!laMin.includes('root="1.2.643.100.3"'),
-			"SNILS id omitted when doctorSnils absent",
+			"SNILS root omitted when doctorSnils absent",
 		);
 		assert.ok(
 			!laMin.includes("displayName="),
 			"position code omitted when doctorPosition absent",
 		);
 	});
+
+	/**
+	 * DEFECT #77: assignedAuthor/id and legalAuthenticator assignedEntity/id
+	 * are required (1..*) in CDA R2. Omitting <id> when doctorSnils is absent
+	 * (users table has no snils column) makes the document schema-invalid.
+	 */
+	test("DEFECT #77: assignedAuthor and legalAuthenticator always emit id", () => {
+		const base = {
+			patientId: "pat-77",
+			patientName: { first: "A", last: "B" },
+			patientSnils: "000",
+			patientBirthDate: "1990-01-01",
+			patientGender: "male" as const,
+			clinicName: "C",
+			doctorName: { first: "D", last: "E" },
+			icd10Code: "K02.1",
+			diagnosisText: "x",
+			visitDate: new Date("2024-06-01T10:00:00.000Z"),
+			documentId: "doc-77",
+		};
+
+		const withoutSnils = generateDentalCdaXml(base);
+		// assignedAuthor must have exactly one id — nullFlavor NI
+		const authorBlock = withoutSnils.slice(
+			withoutSnils.indexOf("<assignedAuthor>"),
+			withoutSnils.indexOf("</assignedAuthor>") + "</assignedAuthor>".length,
+		);
+		assert.ok(
+			authorBlock.includes('<id nullFlavor="NI"/>'),
+			"assignedAuthor must emit id nullFlavor=NI when doctorSnils absent",
+		);
+		assert.ok(
+			!authorBlock.includes('root="1.2.643.100.3"'),
+			"assignedAuthor must not emit SNILS root when doctorSnils absent",
+		);
+
+		const laBlock = withoutSnils.slice(
+			withoutSnils.indexOf("<legalAuthenticator>"),
+			withoutSnils.indexOf("</legalAuthenticator>") +
+				"</legalAuthenticator>".length,
+		);
+		assert.ok(
+			laBlock.includes('<id nullFlavor="NI"/>'),
+			"legalAuthenticator assignedEntity must emit id nullFlavor=NI when doctorSnils absent",
+		);
+
+		// With SNILS — real id, no nullFlavor on id
+		const withSnils = generateDentalCdaXml({
+			...base,
+			doctorSnils: "111-222-333 44",
+		});
+		const authorWith = withSnils.slice(
+			withSnils.indexOf("<assignedAuthor>"),
+			withSnils.indexOf("</assignedAuthor>") + "</assignedAuthor>".length,
+		);
+		assert.ok(
+			authorWith.includes('root="1.2.643.100.3" extension="111-222-333 44"'),
+			"assignedAuthor must emit SNILS id when doctorSnils present",
+		);
+		assert.ok(
+			!authorWith.includes('<id nullFlavor="NI"/>'),
+			"assignedAuthor must not use nullFlavor when doctorSnils present",
+		);
+		const laWith = withSnils.slice(
+			withSnils.indexOf("<legalAuthenticator>"),
+			withSnils.indexOf("</legalAuthenticator>") +
+				"</legalAuthenticator>".length,
+		);
+		assert.ok(
+			laWith.includes('root="1.2.643.100.3" extension="111-222-333 44"'),
+			"legalAuthenticator must emit SNILS id when doctorSnils present",
+		);
+		assert.ok(
+			!laWith.includes('<id nullFlavor="NI"/>'),
+			"legalAuthenticator must not use nullFlavor when doctorSnils present",
+		);
+
+		// Whitespace-only SNILS treated as absent
+		const blankSnils = generateDentalCdaXml({
+			...base,
+			doctorSnils: "   ",
+		});
+		assert.ok(
+			blankSnils.includes('<id nullFlavor="NI"/>'),
+			"whitespace-only doctorSnils must emit nullFlavor NI",
+		);
+	});
+
 
 	/**
 	 * DEFECT #74: ISO 3950 tooth from visit_diaries.diagnosis_tooth must appear

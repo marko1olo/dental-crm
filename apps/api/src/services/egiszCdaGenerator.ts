@@ -128,7 +128,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<author>
 		<time value="${effectiveTime}"/>
 		<assignedAuthor>
-			${params.doctorSnils ? `<id root="1.2.643.100.3" extension="${escapeXml(params.doctorSnils)}"/>` : ""}
+			${/*
+			 * DEFECT #77: assignedAuthor/id is required (1..*) in CDA R2.
+			 * БЫЛО: when doctorSnils absent the whole <id> was omitted → schema
+			 * invalid assignedAuthor (empty id list). users table has no snils
+			 * column yet, so production exports almost always hit this path.
+			 * СТАЛО: SNILS id when present; otherwise <id nullFlavor="NI"/>.
+			 */
+			params.doctorSnils && String(params.doctorSnils).trim()
+				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+				: `<id nullFlavor="NI"/>`}
 			${params.doctorPosition && params.doctorPosition.trim()
 				? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 				: ""}
@@ -141,6 +150,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			</assignedPerson>
 		</assignedAuthor>
 	</author>
+
 	<custodian>
 		<assignedCustodian>
 			<representedCustodianOrganization>
@@ -161,10 +171,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		<time value="${effectiveTime}"/>
 		<signatureCode code="S"/>
 		<assignedEntity>
-			${params.doctorSnils ? `<id root="1.2.643.100.3" extension="${escapeXml(params.doctorSnils)}"/>` : ""}
+			${/* DEFECT #77: assignedEntity/id required (1..*) — same as assignedAuthor */
+			params.doctorSnils && String(params.doctorSnils).trim()
+				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+				: `<id nullFlavor="NI"/>`}
 			${params.doctorPosition && params.doctorPosition.trim()
 				? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 				: ""}
+
 			<assignedPerson>
 				<name>
 					<family>${escapeXml(params.doctorName.last)}</family>
