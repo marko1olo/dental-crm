@@ -470,11 +470,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		street/phone - addr/telecom nullFlavor NI.
 	-->
 	<informant>
+		<!--
+			DEFECT #151: ClinicalDocument/informant/time.
+			WAS: informant had only assignedEntity — no time. dataEnterer
+			(#127) stamps time=effectiveTime; author/legal/authenticator too.
+			HL7 CDA R2 Informant12 may carry time when the informant supplied
+			the facts. SEMD expects the clinical source participation clock
+			for Form 043/u (same documentClock as chart entry / sign).
+			NOW: time value=effectiveTime before assignedEntity.
+		-->
+		<time value="${effectiveTime}"/>
 		<assignedEntity>
 			${/*
 			 * Same id rule as assignedAuthor (#77) / dataEnterer (#127):
 			 * SNILS when present, else nullFlavor NI. Never extension="unknown".
 			 */
+
 			params.doctorSnils && String(params.doctorSnils).trim()
 				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 				: `<id nullFlavor="NI"/>`}
