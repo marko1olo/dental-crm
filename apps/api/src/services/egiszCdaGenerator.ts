@@ -1814,9 +1814,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<uncertaintyCode nullFlavor="NI"/>
 							<!--
+								DEFECT #224: diagnosis observation/approachSiteCode.
+								WAS: diagnosis OBS had uncertaintyCode (#188) then jumped to
+								targetSiteCode (#74/#223) — no approachSiteCode. Treatment
+								ACT already carries approachSiteCode NI (#221). HL7 CDA R2
+								Observation has approachSiteCode 0..* (anatomical approach
+								used to obtain the finding), distinct from targetSiteCode
+								(tooth the finding is about). SEMD validators often flag
+								missing approach under diagnosis OBS. Form 043/u chart has
+								no discrete diagnosis approach field — do not invent ISO 3950.
+								NOW: approachSiteCode nullFlavor NI until chart field exists.
+							-->
+							<approachSiteCode nullFlavor="NI"/>
+							<!--
 								DEFECT #74: ISO 3950 tooth from visit_diaries.diagnosis_tooth
 								when known (targetSiteCode CE).
 								DEFECT #223: diagnosis observation/targetSiteCode always present.
+
 								WAS (#74): targetSiteCode emitted only when diagnosisTooth
 								non-empty — when tooth blank the entire element was omitted.
 								Treatment ACT (#222) always emits targetSiteCode (tooth CE or
