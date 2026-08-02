@@ -742,9 +742,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					${params.doctorSnils && String(params.doctorSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 						: `<id nullFlavor="NI"/>`}
-					${params.doctorPosition && params.doctorPosition.trim()
+					${/*
+					 * DEFECT #141: documentationOf/serviceEvent/performer assignedEntity/code always present.
+					 * WAS: same optional code as assignedAuthor pre-#138 — omitted when
+					 * doctorPosition blank. SEMD validators expect the specialty
+					 * slot under documentationOf/serviceEvent/performer the same way as author/legal/authenticator.
+					 * NOW: always emit code (mirror #138/#139/#140). Position ->
+					 * NI+displayName; blank -> bare nullFlavor NI.
+					 */
+					params.doctorPosition && params.doctorPosition.trim()
 						? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
-						: ""}
+						: `<code nullFlavor="NI"/>`}
 										<!--
 						DEFECT #104: documentationOf/serviceEvent/performer
 						assignedEntity addr + telecom (HL7 CDA R2 / EGISZ SEMD).
@@ -911,9 +919,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					${params.doctorSnils && String(params.doctorSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 						: `<id nullFlavor="NI"/>`}
-					${params.doctorPosition && params.doctorPosition.trim()
+					${/*
+					 * DEFECT #141: encompassingEncounter/responsibleParty assignedEntity/code always present.
+					 * WAS: same optional code as performer pre-#141 first half — omitted when
+					 * doctorPosition blank. SEMD validators expect the specialty
+					 * slot under encompassingEncounter/responsibleParty the same way as author/legal/authenticator.
+					 * NOW: always emit code (mirror #138/#139/#140). Position ->
+					 * NI+displayName; blank -> bare nullFlavor NI.
+					 */
+					params.doctorPosition && params.doctorPosition.trim()
 						? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
-						: ""}
+						: `<code nullFlavor="NI"/>`}
 										<!--
 						DEFECT #105: encompassingEncounter/responsibleParty
 						assignedEntity addr + telecom (HL7 CDA R2 / EGISZ SEMD).
