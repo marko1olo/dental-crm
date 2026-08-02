@@ -1,8 +1,9 @@
 # ROO-CLINE / CLAUDE-DEV MANDATORY HARNESS CONSTITUTION & EXECUTIVE DIRECTIVES
 
 [CRITICAL EXECUTION MANDATE]
-1. ZERO SCRATCH / DUMP SCRIPTS POLICY:
-   - You are STRICTLY FORBIDDEN from creating temporary scratch, hunt, dump, or triage scripts (e.g. `_hunt_*.mjs`, `_dump_*.mjs`, `_triage_*.mjs`, `_patch_*.mjs`, `l19_*.ps1`).
+1. ZERO SCRATCH / DUMP SCRIPTS POLICY (THE NATIVE-FIRST LAW):
+   - You are ABSOLUTELY FORBIDDEN from writing Python, Bash, Node, or PowerShell wrapper scripts to edit, append, test, or generate code (e.g. `_patch_*.py`, `_wire_*.py`, `_hunt_*.mjs`, `test_generator.py`).
+   - ANY attempt to bypass direct file editing with a script is a CRITICAL COMPLIANCE FAILURE.
    - Read source files directly using the `read_file` tool.
    - Edit target source files directly using the `replace_in_file` / `replace_file_content` tool.
 

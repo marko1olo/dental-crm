@@ -81,8 +81,9 @@ Use these exclusively. Blind terminal navigation is banned.
 - Money and legal documents are exact to the kopeck.
 - A migration is complete only as `.sql` + journal + snapshot, proven against a clean database.
 
-**9. WORKSPACE HYGIENE & GIT**
-- Never create temporary scratch files (`test.py`, `temp.js`, etc.) in the project root. Use your agent's isolated scratch directory.
+**9. WORKSPACE HYGIENE & GIT (THE NATIVE-FIRST LAW)**
+- **ZERO CRUTCH SCRIPTS:** You are ABSOLUTELY FORBIDDEN from creating Python, Bash, Node, or PowerShell wrapper scripts (`_patch_*.py`, `_wire_*.py`, `test.py`, `temp.js`, etc.) in the project root to edit, append, test, or generate code.
+- You MUST edit source files natively using `replace_file_content`. Any attempt to write a script to edit another file will result in termination.
 - Always check `git status --short` before modifications. Do not overwrite dirty worktrees blindly.
 - Clean up any garbage files you create before reporting completion.
 
