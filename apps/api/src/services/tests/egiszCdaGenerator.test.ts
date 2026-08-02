@@ -1020,7 +1020,109 @@ describe("egiszCdaGenerator", () => {
 		);
 	});
 
+	test("DEFECT #88: setId is stable document SET; ClinicalDocument/id is version instance", () => {
+		const visitDate = new Date("2024-07-10T14:00:00.000Z");
+		const base: EgiszCdaParams = {
+			patientId: "pat-88",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.777",
+			clinicName: "ООО Стоматология",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K04.0",
+			diagnosisText: "Пульпит",
+			visitDate,
+			documentId: "doc-version-2",
+			documentSetId: "visit-set-stable",
+			documentVersion: 2,
+		};
+
+		const xml = generateDentalCdaXml(base);
+		/* ClinicalDocument/id = this version instance */
+		assert.ok(
+			xml.includes(
+				`<id root="1.2.643.5.1.13.13.12.2.777" extension="doc-version-2"/>`,
+			),
+			"ClinicalDocument/id extension is documentId (version instance)",
+		);
+		/* setId = stable SET across revise */
+		assert.ok(
+			xml.includes(
+				`<setId root="1.2.643.5.1.13.13.12.2.777" extension="visit-set-stable"/>`,
+			),
+			"setId extension must be documentSetId (stable SET key)",
+		);
+		assert.ok(
+			xml.includes('<versionNumber value="2"/>'),
+			"versionNumber tracks diary revise",
+		);
+		/* setId must not silently equal documentId when documentSetId is set */
+		const setIdLine = xml
+			.split("\n")
+			.find((l) => l.includes("<setId "));
+		assert.ok(setIdLine && setIdLine.includes('extension="visit-set-stable"'));
+		assert.ok(setIdLine && !setIdLine.includes('extension="doc-version-2"'));
+
+		/* v1 and v2 share setId, differ on id */
+		const v1 = generateDentalCdaXml({
+			...base,
+			documentId: "doc-version-1",
+			documentVersion: 1,
+		});
+		const v2 = generateDentalCdaXml({
+			...base,
+			documentId: "doc-version-2",
+			documentVersion: 2,
+		});
+		assert.ok(v1.includes('extension="visit-set-stable"'));
+		assert.ok(v2.includes('extension="visit-set-stable"'));
+		assert.ok(v1.includes('extension="doc-version-1"'));
+		assert.ok(v2.includes('extension="doc-version-2"'));
+		assert.ok(v1.includes('<versionNumber value="1"/>'));
+		assert.ok(v2.includes('<versionNumber value="2"/>'));
+
+		/* blank documentSetId → fall back to documentId */
+		const fb = generateDentalCdaXml({
+			...base,
+			documentSetId: "   ",
+		});
+		const fbSet = fb.split("\n").find((l) => l.includes("<setId "));
+		assert.ok(
+			fbSet && fbSet.includes('extension="doc-version-2"'),
+			"blank documentSetId falls back to documentId",
+		);
+
+		/* omitted documentSetId → same fallback */
+		const { documentSetId: _omit, ...noSet } = base;
+		const omitted = generateDentalCdaXml(noSet);
+		const omSet = omitted.split("\n").find((l) => l.includes("<setId "));
+		assert.ok(
+			omSet && omSet.includes('extension="doc-version-2"'),
+			"missing documentSetId falls back to documentId",
+		);
+
+		/* documentSetId XML-escaped */
+		const esc = generateDentalCdaXml({
+			...base,
+			documentSetId:
+				"s" +
+				String.fromCharCode(60) +
+				"x" +
+				String.fromCharCode(38) +
+				"y",
+		});
+		const lt = "&" + "lt;";
+		const amp = "&" + "amp;";
+		assert.ok(
+			esc.includes('<setId root="1.2.643.5.1.13.13.12.2.777" extension="s' + lt + "x" + amp + 'y"/>'),
+			"documentSetId must be XML-escaped in setId",
+		);
+	});
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 
 
 

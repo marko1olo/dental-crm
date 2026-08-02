@@ -700,8 +700,20 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				 * falls back to documentId only if encounterId omitted).
 				 */
 				encounterId: row.visit.id,
+				/*
+				 * DEFECT #88: ClinicalDocument/setId = stable document SET key.
+				 * БЫЛО: generator setId.extension === documentId (same as
+				 * ClinicalDocument/id). After diary revise, versionNumber bumps
+				 * but setId still equaled id — HL7/REMD cannot link version N
+				 * to version 1 as one document set.
+				 * СТАЛО: documentSetId = visit.id (stable across revise);
+				 * documentId remains the version instance id (today visit.id
+				 * until a per-version export UUID is introduced).
+				 */
+				documentSetId: row.visit.id,
 
 			/* DEFECT #61: revised 043 must not re-export as version 1 */
+
 				...(typeof diaryRow?.version === "number" &&
 				Number.isFinite(diaryRow.version) &&
 				diaryRow.version >= 1

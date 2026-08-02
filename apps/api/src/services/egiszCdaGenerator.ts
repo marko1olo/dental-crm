@@ -41,10 +41,18 @@ export interface EgiszCdaParams {
 	 */
 	encounterId?: string;
 	/**
+	 * DEFECT #88: stable ClinicalDocument/setId across diary revise versions.
+	 * HL7 CDA R2: setId identifies the document SET; id is unique per version;
+	 * versionNumber counts revisions. Prefer visit.id (or diary set key).
+	 * When omitted, setId falls back to documentId (legacy single-version export).
+	 */
+	documentSetId?: string;
+	/**
 	 * DEFECT #61: CDA versionNumber must track 043 diary.version after revise.
 	 * Default 1 when diary absent (EMK-only export).
 	 */
 	documentVersion?: number;
+
 
 	/**
 	 * DEFECT #72: ClinicalDocument + author effectiveTime.
@@ -144,7 +152,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		return raw.length > 0 ? raw : params.documentId;
 	})();
 
+	/*
+	 * DEFECT #88: setId must identify the document SET, not each version.
+	 * БЫЛО: setId.extension === documentId (same as ClinicalDocument/id).
+	 * After diary revise, versionNumber bumps but id+setId both changed with
+	 * documentId — REMD/HL7 cannot link version N to version 1 as one set.
+	 * СТАЛО: prefer documentSetId (route: visit.id); fall back to documentId
+	 * for legacy single-shot exports. ClinicalDocument/id stays documentId
+	 * (unique per export/version when route later versions it).
+	 */
+	const setIdExtension = (() => {
+		const raw =
+			params.documentSetId != null ? String(params.documentSetId).trim() : "";
+		return raw.length > 0 ? raw : params.documentId;
+	})();
+
 	return `<?xml version="1.0" encoding="UTF-8"?>
+
 
 <ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<!-- DEFECT #76: realmCode required by HL7 CDA R2 / EGISZ SEMD header profile (RU) -->
@@ -157,9 +181,11 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<effectiveTime value="${effectiveTime}"/>
 	<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25"/>
 	<languageCode code="ru-RU"/>
-	<setId root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(params.documentId)}"/>
+	<!-- DEFECT #88: setId = document SET (stable); id above = this version -->
+	<setId root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(setIdExtension)}"/>
 
 	<versionNumber value="${Math.max(1, Math.floor(Number(params.documentVersion) || 1))}"/>
+
 	<recordTarget>
 		<patientRole>
 			${/*
