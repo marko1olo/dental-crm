@@ -2152,7 +2152,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: expectedUseTime nullFlavor NI until chart field exists.
 							-->
 							<expectedUseTime nullFlavor="NI"/>
+							<!--
+								DEFECT #207: instrument-tray supply/product.
+								WAS: supply carried tray barcode only in text — no product
+								participant. HL7 CDA R2 Supply has product 0..1
+								(ManufacturedProduct) so REMD can join the sterilization
+								device identity as a structured role, not free text alone.
+								Form 043/u instrumentTrayBarcode IS the tray device key —
+								emit it as manufacturedProduct/id under docIdRoot; material
+								code/name stay NI (no NSI device catalog wired yet).
+								NOW: product/manufacturedProduct with id=barcode + material NI.
+							-->
+							<product>
+								<manufacturedProduct classCode="MANU">
+									<id root="${docIdRoot}" extension="${escapeXml(params.instrumentTrayBarcode.trim())}"/>
+									<manufacturedMaterial>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+									</manufacturedMaterial>
+								</manufacturedProduct>
+							</product>
 						</supply>
+
 
 
 
