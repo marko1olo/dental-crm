@@ -1855,6 +1855,56 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(la.includes('<signatureCode code="S"/>'));
 	});
 
+	test("DEFECT #101: authenticator assignedEntity addr and telecom nullFlavor NI", () => {
+		const params: EgiszCdaParams = {
+			patientId: "pat-101",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.101",
+			clinicName: "ООО Клиника Auth Contact",
+			doctorName: { first: "Петр", last: "Петров", middle: "Сергеевич" },
+			doctorSnils: "111-222-333 44",
+			doctorPosition: "Врач-стоматолог",
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate: new Date("2025-05-01T10:00:00.000Z"),
+			documentId: "doc-101",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		const authEnd = "</authenticator>";
+		const auth = xml.slice(
+			xml.indexOf("<authenticator>"),
+			xml.indexOf(authEnd) + authEnd.length,
+		);
+		assert.ok(
+			auth.includes('<addr nullFlavor="NI"/>'),
+			"authenticator assignedEntity must emit addr nullFlavor=NI",
+		);
+		assert.ok(
+			auth.includes('<telecom nullFlavor="NI"/>'),
+			"authenticator assignedEntity must emit telecom nullFlavor=NI",
+		);
+		assert.ok(!auth.includes("<streetAddressLine"));
+		assert.ok(!auth.includes("tel:"));
+		const idIdx = auth.indexOf("<id ");
+		const addrIdx = auth.indexOf("<addr ");
+		const telIdx = auth.indexOf("<telecom ");
+		const personIdx = auth.indexOf("<assignedPerson>");
+		assert.ok(
+			idIdx >= 0 &&
+				addrIdx > idIdx &&
+				telIdx > addrIdx &&
+				personIdx > telIdx,
+			"authenticator order: id → addr → telecom → assignedPerson",
+		);
+		assert.ok(auth.includes("<family>Петров</family>"));
+		assert.ok(auth.includes('<signatureCode code="S"/>'));
+	});
+
+
 
 
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
