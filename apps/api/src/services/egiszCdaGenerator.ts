@@ -1842,10 +1842,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: interpretationCode nullFlavor NI until chart field exists.
 							-->
 							<interpretationCode nullFlavor="NI"/>
+							<!--
+								DEFECT #198: objective-status observation/uncertaintyCode.
+								WAS: objective OBS gained methodCode (#190) and
+								interpretationCode (#194) but still had no uncertaintyCode.
+								Diagnosis (#188) and anamnesis (#197) already carry
+								uncertaintyCode NI. HL7 CDA R2 Observation has
+								uncertaintyCode 0..1 (U/N from ActUncertainty). SEMD
+								validators often flag missing uncertainty under status-localis
+								OBS. Form 043/u objective status is free-text exam note —
+								do not invent U/N.
+								NOW: uncertaintyCode nullFlavor NI until chart field exists.
+							-->
+							<uncertaintyCode nullFlavor="NI"/>
 						</observation>
 					</entry></section>
 			</component>
 			<!-- Оказанные услуги / Лечение -->
+
 
 
 			<component>
