@@ -1226,7 +1226,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<statusCode code="completed"/>
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
-							<value xsi:type="CD" code="${escapeXml(params.icd10Code)}" codeSystem="1.2.643.5.1.13.13.11.1005" displayName="${escapeXml(params.diagnosisText)}"/>${params.diagnosisTooth && String(params.diagnosisTooth).trim()
+							<!--
+								DEFECT #156: diagnosis value CD codeSystemName (МКБ-10).
+								WAS: value xsi:type=CD had code+codeSystem+displayName
+								only — no codeSystemName. Observation code now carries
+								codeSystemName=LOINC (#155); sibling NSI CE elements
+								(AMB encounter, tooth targetSite) already label the
+								dictionary. SEMD validators expect the code system
+								label on ICD-10 CD so REMD can render "МКБ-10" without
+								OID lookup.
+								NOW: codeSystemName="МКБ-10" on diagnosis value CD.
+							-->
+							<value xsi:type="CD" code="${escapeXml(params.icd10Code)}" codeSystem="1.2.643.5.1.13.13.11.1005" codeSystemName="МКБ-10" displayName="${escapeXml(params.diagnosisText)}"/>${params.diagnosisTooth && String(params.diagnosisTooth).trim()
+
 								? `
 							<!-- DEFECT #74: ISO 3950 tooth from visit_diaries.diagnosis_tooth -->
 							<targetSiteCode code="${escapeXml(String(params.diagnosisTooth).trim())}" codeSystem="1.2.643.5.1.13.13.11.1466" codeSystemName="Зубы" displayName="Зуб ${escapeXml(String(params.diagnosisTooth).trim())}"/>`
