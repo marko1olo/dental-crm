@@ -737,6 +737,22 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				diaryRow.version >= 1
 					? { documentVersion: Math.floor(diaryRow.version) }
 					: {}),
+				/*
+				 * DEFECT #90: relatedDocument RPLC → prior ClinicalDocument/id.
+				 * БЫЛО: versionNumber + setId/id (#61/#88/#89) without RPLC
+				 * pointer — REMD saw v2 with no link to which document it
+				 * replaces. СТАЛО: when diary.version >= 2, point at
+				 * "{visitId}-v{N-1}" (same scheme as DEFECT #89 documentId).
+				 * v1 / EMK-only: omit replacesDocumentId (no relatedDocument).
+				 */
+				...(typeof diaryRow?.version === "number" &&
+				Number.isFinite(diaryRow.version) &&
+				diaryRow.version >= 2
+					? {
+							replacesDocumentId: `${row.visit.id}-v${Math.floor(diaryRow.version) - 1}`,
+						}
+					: {}),
+
 
 				/*
 				 * DEFECT #72: ClinicalDocument + author effectiveTime = diary sign.

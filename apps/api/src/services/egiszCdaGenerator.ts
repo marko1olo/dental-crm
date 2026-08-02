@@ -52,7 +52,13 @@ export interface EgiszCdaParams {
 	 * Default 1 when diary absent (EMK-only export).
 	 */
 	documentVersion?: number;
-
+	/**
+	 * DEFECT #90: prior ClinicalDocument/id replaced by this version (RPLC).
+	 * HL7 CDA R2 relatedDocument typeCode="RPLC" points at the document this
+	 * revision supersedes. Prefer "{visitId}-v{N-1}" (DEFECT #89 scheme).
+	 * When omitted/blank, relatedDocument is not emitted (v1 / EMK-only).
+	 */
+	replacesDocumentId?: string;
 
 	/**
 	 * DEFECT #72: ClinicalDocument + author effectiveTime.
@@ -60,6 +66,7 @@ export interface EgiszCdaParams {
 	 */
 	documentTime?: Date;
 }
+
 
 /** Escape free-text for CDA XML text/attribute nodes (DEFECT #49). */
 function escapeXml(value: string): string {
@@ -167,7 +174,39 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		return raw.length > 0 ? raw : params.documentId;
 	})();
 
+	/*
+	 * DEFECT #90: relatedDocument typeCode="RPLC" for revised versions.
+	 * БЫЛО: versionNumber + setId/id existed (#61/#88/#89) but CDA never
+	 * declared which prior ClinicalDocument/id this revision replaces.
+	 * REMD/HL7 RPLC chain was broken — auditors saw v2 without a pointer
+	 * to v1. СТАЛО: when replacesDocumentId is non-empty, emit
+	 * relatedDocument/parentDocument/id with same clinicOid root scheme.
+	 */
+	const replacesId = (() => {
+		const raw =
+			params.replacesDocumentId != null
+				? String(params.replacesDocumentId).trim()
+				: "";
+		return raw.length > 0 ? raw : null;
+	})();
+	const docIdRoot =
+		params.clinicOid && String(params.clinicOid).trim()
+			? escapeXml(String(params.clinicOid).trim())
+			: "1.2.643.5.1.13.13.12.2";
+	const relatedDocumentXml = replacesId
+		? `
+	<!-- DEFECT #90: this version replaces prior ClinicalDocument/id (RPLC) -->
+	<relatedDocument typeCode="RPLC">
+		<parentDocument>
+			<id root="${docIdRoot}" extension="${escapeXml(replacesId)}"/>
+			<setId root="${docIdRoot}" extension="${escapeXml(setIdExtension)}"/>
+			<versionNumber value="${Math.max(1, Math.floor(Number(params.documentVersion) || 1) - 1)}"/>
+		</parentDocument>
+	</relatedDocument>`
+		: "";
+
 	return `<?xml version="1.0" encoding="UTF-8"?>
+
 
 
 <ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -185,8 +224,9 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<setId root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(setIdExtension)}"/>
 
 	<versionNumber value="${Math.max(1, Math.floor(Number(params.documentVersion) || 1))}"/>
-
+	${relatedDocumentXml}
 	<recordTarget>
+
 		<patientRole>
 			${/*
 			 * DEFECT #79: patientRole/id must not emit empty SNILS extension.

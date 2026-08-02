@@ -1121,7 +1121,100 @@ describe("egiszCdaGenerator", () => {
 		);
 	});
 
+	test("DEFECT #90: relatedDocument RPLC points at prior ClinicalDocument/id", () => {
+		const visitDate = new Date("2024-08-01T11:00:00.000Z");
+		const base: EgiszCdaParams = {
+			patientId: "pat-90",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.555",
+			clinicName: "ООО Стоматология",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K04.0",
+			diagnosisText: "Пульпит",
+			visitDate,
+			documentId: "visit-abc-v2",
+			documentSetId: "visit-abc",
+			documentVersion: 2,
+			replacesDocumentId: "visit-abc-v1",
+		};
+
+		const xml = generateDentalCdaXml(base);
+		assert.ok(
+			xml.includes('<relatedDocument typeCode="RPLC">'),
+			"revised CDA must emit relatedDocument typeCode=RPLC",
+		);
+		assert.ok(xml.includes("<parentDocument>"));
+		assert.ok(
+			xml.includes(
+				`<id root="1.2.643.5.1.13.13.12.2.555" extension="visit-abc-v1"/>`,
+			),
+			"parentDocument/id must be prior version ClinicalDocument/id",
+		);
+		assert.ok(
+			xml.includes(
+				`<setId root="1.2.643.5.1.13.13.12.2.555" extension="visit-abc"/>`,
+			),
+			"parentDocument/setId must match stable document SET",
+		);
+		/* parent versionNumber = current - 1 */
+		const parentBlock = xml.slice(
+			xml.indexOf("<parentDocument>"),
+			xml.indexOf("</parentDocument>"),
+		);
+		assert.ok(
+			parentBlock.includes('<versionNumber value="1"/>'),
+			"parentDocument versionNumber is prior version (N-1)",
+		);
+		assert.ok(
+			xml.includes('<versionNumber value="2"/>'),
+			"current document versionNumber remains N",
+		);
+
+		/* v1 / no replacesDocumentId → no relatedDocument */
+		const v1 = generateDentalCdaXml({
+			...base,
+			documentId: "visit-abc-v1",
+			documentVersion: 1,
+			replacesDocumentId: undefined,
+		});
+		assert.ok(
+			!v1.includes("<relatedDocument"),
+			"v1 without replacesDocumentId must not emit relatedDocument",
+		);
+
+		/* blank replacesDocumentId → omit */
+		const blank = generateDentalCdaXml({
+			...base,
+			replacesDocumentId: "   ",
+		});
+		assert.ok(
+			!blank.includes("<relatedDocument"),
+			"blank replacesDocumentId must not emit relatedDocument",
+		);
+
+		/* replacesDocumentId XML-escaped */
+		const esc = generateDentalCdaXml({
+			...base,
+			replacesDocumentId:
+				"p" +
+				String.fromCharCode(60) +
+				"x" +
+				String.fromCharCode(38) +
+				"y",
+		});
+		const lt = "&" + "lt;";
+		const amp = "&" + "amp;";
+		assert.ok(
+			esc.includes('extension="p' + lt + "x" + amp + 'y"'),
+			"replacesDocumentId must be XML-escaped in parentDocument/id",
+		);
+	});
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 
 
 
