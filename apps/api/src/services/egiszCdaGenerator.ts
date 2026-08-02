@@ -1985,7 +1985,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<!--
 								DEFECT #234: anamnesis observation/performer.
 								WAS: anamnesis OBS had method/interpretation/uncertainty/
-								approach/targetSite only — no performer. Diagnosis OBS
+								approach/targetSite only - no performer. Diagnosis OBS
 								already carries performer PRF (#233). HL7 CDA R2 Observation
 								has performer 0..*. SEMD validators often flag missing
 								performer under history OBS so REMD cannot attribute the
@@ -2129,6 +2129,48 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: targetSiteCode nullFlavor NI until chart field exists.
 							-->
 							<targetSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #235: objective-status observation/performer.
+								WAS: objective OBS had method/interpretation/uncertainty/
+								approach/targetSite only - no performer. Diagnosis OBS
+								(#233) and anamnesis OBS (#234) already carry performer PRF.
+								HL7 CDA R2 Observation has performer 0..*. SEMD validators
+								often flag missing performer under status-localis OBS so
+								REMD cannot attribute the exam finding to the treating
+								dentist at entry level (header performer is care-event only).
+								NOW: performer typeCode=PRF with time=visitTime and
+								assignedEntity mirroring diagnosis OBS performer (SNILS or NI,
+								code with position or bare NI, person, MO org). No invented
+								extension="unknown" or street/phone.
+							-->
+							<performer typeCode="PRF">
+								<time value="${visitTime}"/>
+								<assignedEntity>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
 						</observation>
 
 
@@ -2364,6 +2406,48 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: targetSiteCode nullFlavor NI until chart field exists.
 							-->
 							<targetSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #236: complications observation/performer.
+								WAS: complications OBS had method/interpretation/uncertainty/
+								approach/targetSite only - no performer. Diagnosis (#233),
+								anamnesis (#234) and objective (#235) already carry performer PRF.
+								HL7 CDA R2 Observation has performer 0..*. SEMD validators
+								often flag missing performer under complications OBS so
+								REMD cannot attribute the complications note to the treating
+								dentist at entry level (header performer is care-event only).
+								NOW: performer typeCode=PRF with time=visitTime and
+								assignedEntity mirroring diagnosis OBS performer (SNILS or NI,
+								code with position or bare NI, person, MO org). No invented
+								extension="unknown" or street/phone.
+							-->
+							<performer typeCode="PRF">
+								<time value="${visitTime}"/>
+								<assignedEntity>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
 						</observation>
 
 
@@ -2466,6 +2550,49 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: targetSiteCode nullFlavor NI until chart field exists.
 							-->
 							<targetSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #237: comorbidities observation/performer.
+								WAS: comorbidities OBS had method/interpretation/uncertainty/
+								approach/targetSite only - no performer. Diagnosis (#233),
+								anamnesis (#234), objective (#235) and complications (#236)
+								already carry performer PRF. HL7 CDA R2 Observation has
+								performer 0..*. SEMD validators often flag missing performer
+								under comorbidities OBS so REMD cannot attribute the
+								comorbidities note to the treating dentist at entry level
+								(header performer is care-event only).
+								NOW: performer typeCode=PRF with time=visitTime and
+								assignedEntity mirroring diagnosis OBS performer (SNILS or NI,
+								code with position or bare NI, person, MO org). No invented
+								extension="unknown" or street/phone.
+							-->
+							<performer typeCode="PRF">
+								<time value="${visitTime}"/>
+								<assignedEntity>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
 						</observation>
 
 
@@ -2598,4 +2725,5 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	</component>
 </ClinicalDocument>`;
 }
+
 
