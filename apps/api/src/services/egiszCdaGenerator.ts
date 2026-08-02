@@ -422,6 +422,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			params.doctorSnils && String(params.doctorSnils).trim()
 				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 				: `<id nullFlavor="NI"/>`}
+			${/*
+			 * DEFECT #142: dataEnterer assignedEntity/code always present.
+			 * WAS: assignedEntity had id then jumped to addr/telecom with no
+			 * code. assignedAuthor (#138), legalAuthenticator (#139),
+			 * authenticator (#140), performer/responsibleParty (#141) already
+			 * always emit code. SEMD validators expect the specialty slot
+			 * under this assignedEntity the same way.
+			 * NOW: always emit code (mirror #138-#141). Position ->
+			 * NI+displayName; blank -> bare nullFlavor NI.
+			 */
+			params.doctorPosition && params.doctorPosition.trim()
+				? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+				: `<code nullFlavor="NI"/>`}
 			<addr nullFlavor="NI"/>
 			<telecom nullFlavor="NI"/>
 			<assignedPerson>
@@ -465,6 +478,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			params.doctorSnils && String(params.doctorSnils).trim()
 				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 				: `<id nullFlavor="NI"/>`}
+			${/*
+			 * DEFECT #142: informant assignedEntity/code always present.
+			 * WAS: assignedEntity had id then jumped to addr/telecom with no
+			 * code. assignedAuthor (#138), legalAuthenticator (#139),
+			 * authenticator (#140), performer/responsibleParty (#141) already
+			 * always emit code. SEMD validators expect the specialty slot
+			 * under this assignedEntity the same way.
+			 * NOW: always emit code (mirror #138-#141). Position ->
+			 * NI+displayName; blank -> bare nullFlavor NI.
+			 */
+			params.doctorPosition && params.doctorPosition.trim()
+				? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+				: `<code nullFlavor="NI"/>`}
 			<addr nullFlavor="NI"/>
 			<telecom nullFlavor="NI"/>
 			<assignedPerson>
