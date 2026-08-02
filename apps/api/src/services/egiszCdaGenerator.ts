@@ -762,7 +762,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				СТАЛО: statusCode code="completed" after code, before effectiveTime.
 			-->
 			<statusCode code="completed"/>
-			<effectiveTime value="${visitTime}"/>
+			<!--
+				DEFECT #144: documentationOf/serviceEvent/effectiveTime as IVL_TS.
+				WAS: single-value TS effectiveTime value=visitTime. HL7 CDA R2 /
+				EGISZ SEMD expect Act effectiveTime as IVL_TS (interval) on the
+				care event so REMD can join slot start (and later end). Plain TS
+				is accepted by some parsers but SEMD profile prefers low bound.
+				NOW: IVL_TS with low=visitTime (appointment.startsAt). No fake
+				high invented when visit end is not on the chart.
+			-->
+			<effectiveTime xsi:type="IVL_TS">
+				<low value="${visitTime}"/>
+			</effectiveTime>
 			<performer typeCode="PRF">
 				<assignedEntity>
 					${params.doctorSnils && String(params.doctorSnils).trim()
@@ -939,7 +950,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				СТАЛО: statusCode code="completed" (normal ambulatory close).
 			-->
 			<statusCode code="completed"/>
-			<effectiveTime value="${visitTime}"/>
+			<!--
+				DEFECT #144: encompassingEncounter/effectiveTime as IVL_TS.
+				WAS: single-value TS effectiveTime value=visitTime (same class as
+				serviceEvent pre-#144). SEMD validators expect encounter time as
+				IVL_TS interval (low = slot start). Mirror serviceEvent fix.
+				NOW: IVL_TS with low=visitTime. No invented high without end clock.
+			-->
+			<effectiveTime xsi:type="IVL_TS">
+				<low value="${visitTime}"/>
+			</effectiveTime>
 			<responsibleParty>
 				<assignedEntity>
 					${params.doctorSnils && String(params.doctorSnils).trim()
