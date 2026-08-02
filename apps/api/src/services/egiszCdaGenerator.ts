@@ -409,8 +409,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			${params.doctorPosition && params.doctorPosition.trim()
 				? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 				: ""}
-
+			<!--
+				DEFECT #100: legalAuthenticator assignedEntity addr + telecom.
+				БЫЛО: legalAuthenticator had id/code/person/org only — no
+				addr/telecom. SEMD validators expect contact structure under
+				assignedEntity (mirror of assignedAuthor #99 / patientRole #98).
+				We do not invent doctor/clinic street or phone.
+				СТАЛО: emit addr and telecom with nullFlavor="NI".
+			-->
+			<addr nullFlavor="NI"/>
+			<telecom nullFlavor="NI"/>
 			<assignedPerson>
+
 				<name>
 					<family>${escapeXml(params.doctorName.last)}</family>
 					<given>${escapeXml(params.doctorName.first)}</given>
