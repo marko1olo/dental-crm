@@ -107,7 +107,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			? formatDate(birthDateRaw, "yyyyMMdd")
 			: null;
 
-	const genderCode = params.patientGender === "male" ? "1" : params.patientGender === "female" ? "2" : "0";
+	/*
+	 * DEFECT #81: unknown patient gender must not invent code "0".
+	 * БЫЛО: ternary fell through to "0" for any non-male/female value.
+	 * NSI 1.2.643.5.1.13.13.11.1040 uses 1=М, 2=Ж, 3=неопределённый —
+	 * "0" is not a valid code. Route already 422s (DEFECT #68); generator
+	 * must still not emit a fake code for direct callers.
+	 * СТАЛО: 1/2 when known; else administrativeGenderCode nullFlavor="UNK".
+	 */
+	const genderCode =
+		params.patientGender === "male"
+			? "1"
+			: params.patientGender === "female"
+				? "2"
+				: null;
+
 
 
 	return `<?xml version="1.0" encoding="UTF-8"?>
@@ -145,7 +159,11 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<given>${escapeXml(params.patientName.first)}</given>
 					${params.patientName.middle ? `<given>${escapeXml(params.patientName.middle)}</given>` : ""}
 				</name>
-				<administrativeGenderCode code="${genderCode}" codeSystem="1.2.643.5.1.13.13.11.1040"/>
+				${genderCode
+					? `<administrativeGenderCode code="${genderCode}" codeSystem="1.2.643.5.1.13.13.11.1040"/>`
+					: `<!-- DEFECT #81: unknown gender — nullFlavor UNK (never invent code 0) -->
+				<administrativeGenderCode nullFlavor="UNK"/>`}
+
 				${birthTimeValue
 					? `<birthTime value="${birthTimeValue}"/>`
 					: `<!-- DEFECT #80: unknown DOB — nullFlavor UNK (never invent a fake date) -->

@@ -197,11 +197,86 @@ describe("egiszCdaGenerator", () => {
 	});
 
 	/**
+	 * DEFECT #81: unknown patient gender must not invent code "0".
+	 * NSI 1.2.643.5.1.13.13.11.1040: 1=М, 2=Ж — "0" is not valid.
+	 * Route already 422s (DEFECT #68); generator uses nullFlavor="UNK".
+	 */
+	test("DEFECT #81: administrativeGenderCode nullFlavor UNK when gender unknown; 1/2 when known", () => {
+		const base = {
+			patientId: "pat-81",
+			patientName: { first: "A", last: "B" },
+			patientSnils: "000",
+			patientBirthDate: "1990-01-01",
+			patientGender: null as "male" | "female" | "other" | null,
+			clinicName: "C",
+			doctorName: { first: "D", last: "E" },
+			icd10Code: "K02.1",
+			diagnosisText: "x",
+			visitDate: new Date("2024-06-01T10:00:00.000Z"),
+			documentId: "doc-81",
+		};
+
+		const unknown = generateDentalCdaXml(base);
+		assert.ok(
+			unknown.includes('<administrativeGenderCode nullFlavor="UNK"/>'),
+			"null gender must emit administrativeGenderCode nullFlavor=UNK",
+		);
+		assert.ok(
+			!unknown.includes('administrativeGenderCode code="0"'),
+			"must never invent gender code 0",
+		);
+
+		const other = generateDentalCdaXml({
+			...base,
+			patientGender: "other",
+		});
+		assert.ok(
+			other.includes('<administrativeGenderCode nullFlavor="UNK"/>'),
+			"other gender must emit nullFlavor=UNK (not invent code 0 or 3 without NSI mapping)",
+		);
+		assert.ok(
+			!other.includes('administrativeGenderCode code="0"'),
+			"other gender must not invent code 0",
+		);
+
+		const male = generateDentalCdaXml({
+			...base,
+			patientGender: "male",
+		});
+		assert.ok(
+			male.includes(
+				'administrativeGenderCode code="1" codeSystem="1.2.643.5.1.13.13.11.1040"',
+			),
+			"male must emit code 1",
+		);
+		assert.ok(
+			!male.includes('<administrativeGenderCode nullFlavor="UNK"/>'),
+			"male must not use nullFlavor",
+		);
+
+		const female = generateDentalCdaXml({
+			...base,
+			patientGender: "female",
+		});
+		assert.ok(
+			female.includes(
+				'administrativeGenderCode code="2" codeSystem="1.2.643.5.1.13.13.11.1040"',
+			),
+			"female must emit code 2",
+		);
+		assert.ok(
+			!female.includes('<administrativeGenderCode nullFlavor="UNK"/>'),
+			"female must not use nullFlavor",
+		);
+	});
+
+	/**
 	 * DEFECT #80: missing/invalid patient DOB must not be faked as 19000101.
 	 * Route already 422s (DEFECT #64); generator must still not invent DOB
 	 * for direct callers / future paths — use birthTime nullFlavor="UNK".
 	 */
 	test("DEFECT #80: birthTime nullFlavor UNK when DOB missing/invalid; real date when present", () => {
+
 		const base = {
 			patientId: "pat-80",
 			patientName: { first: "A", last: "B" },
