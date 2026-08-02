@@ -2787,6 +2787,44 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<code nullFlavor="NI"/>
 								</relatedSubject>
 							</subject>
+
+							
+							<!--
+								DEFECT #380: diagnosis observation/consumable.
+								WAS: diagnosis observation had performer/.../specimen/subject — no consumable.
+								Treatment ACT (#373) and tray supply (#374) already carry consumable CSM.
+								HL7 CDA R2 Observation (Act) has consumable 0..* (materials used while
+								making the observation). SEMD validators often flag missing consumable
+								under clinical OBS when exam materials cannot be joined. Form 043/u
+								chart does not collect discrete consumable NSI codes for these findings
+								— do not invent material codes or barcodes.
+								NOW: consumable typeCode=CSM with manufacturedProduct classCode=MANU
+								and manufacturedMaterial code/name nullFlavor NI until chart field exists.
+							-->
+							<consumable typeCode="CSM">
+								<manufacturedProduct classCode="MANU">
+									<manufacturedMaterial>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+									</manufacturedMaterial>
+								</manufacturedProduct>
+							</consumable>
+<!--
+								DEFECT #375: diagnosis observation/referenceRange.
+								WAS: diagnosis observation had value/method/.../subject then entryRelationship —
+								no referenceRange. HL7 CDA R2 Observation has referenceRange 0..*
+								(observationRange for normal/abnormal bounds). SEMD validators often
+								flag missing referenceRange under clinical OBS entries. Form 043/u
+								ambulatory dental findings are free-text/ICD — no lab-style reference
+								interval is collected; do not invent PQ bounds or interpretation anchors.
+								NOW: referenceRange with observationRange value nullFlavor NI until
+								chart field exists.
+							-->
+							<referenceRange>
+								<observationRange>
+									<value xsi:type="CD" nullFlavor="NI"/>
+								</observationRange>
+							</referenceRange>
 <!--
 								DEFECT #342: diagnosis observation/entryRelationship.
 								WAS: diagnosis OBS had specimen (#337) then closed — no entryRelationship.
@@ -3232,6 +3270,44 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<code nullFlavor="NI"/>
 								</relatedSubject>
 							</subject>
+
+							
+							<!--
+								DEFECT #381: anamnesis observation/consumable.
+								WAS: anamnesis observation had performer/.../specimen/subject — no consumable.
+								Treatment ACT (#373) and tray supply (#374) already carry consumable CSM.
+								HL7 CDA R2 Observation (Act) has consumable 0..* (materials used while
+								making the observation). SEMD validators often flag missing consumable
+								under clinical OBS when exam materials cannot be joined. Form 043/u
+								chart does not collect discrete consumable NSI codes for these findings
+								— do not invent material codes or barcodes.
+								NOW: consumable typeCode=CSM with manufacturedProduct classCode=MANU
+								and manufacturedMaterial code/name nullFlavor NI until chart field exists.
+							-->
+							<consumable typeCode="CSM">
+								<manufacturedProduct classCode="MANU">
+									<manufacturedMaterial>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+									</manufacturedMaterial>
+								</manufacturedProduct>
+							</consumable>
+<!--
+								DEFECT #376: anamnesis observation/referenceRange.
+								WAS: anamnesis observation had value/method/.../subject then entryRelationship —
+								no referenceRange. HL7 CDA R2 Observation has referenceRange 0..*
+								(observationRange for normal/abnormal bounds). SEMD validators often
+								flag missing referenceRange under clinical OBS entries. Form 043/u
+								ambulatory dental findings are free-text/ICD — no lab-style reference
+								interval is collected; do not invent PQ bounds or interpretation anchors.
+								NOW: referenceRange with observationRange value nullFlavor NI until
+								chart field exists.
+							-->
+							<referenceRange>
+								<observationRange>
+									<value xsi:type="CD" nullFlavor="NI"/>
+								</observationRange>
+							</referenceRange>
 <!--
 								DEFECT #343: anamnesis observation/entryRelationship.
 								WAS: anamnesis OBS had specimen (#338) then closed — no entryRelationship. Diagnosis OBS (#342) already carries entryRelationship COMP.
@@ -3691,6 +3767,44 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<code nullFlavor="NI"/>
 								</relatedSubject>
 							</subject>
+
+							
+							<!--
+								DEFECT #382: objective-status observation/consumable.
+								WAS: objective-status observation had performer/.../specimen/subject — no consumable.
+								Treatment ACT (#373) and tray supply (#374) already carry consumable CSM.
+								HL7 CDA R2 Observation (Act) has consumable 0..* (materials used while
+								making the observation). SEMD validators often flag missing consumable
+								under clinical OBS when exam materials cannot be joined. Form 043/u
+								chart does not collect discrete consumable NSI codes for these findings
+								— do not invent material codes or barcodes.
+								NOW: consumable typeCode=CSM with manufacturedProduct classCode=MANU
+								and manufacturedMaterial code/name nullFlavor NI until chart field exists.
+							-->
+							<consumable typeCode="CSM">
+								<manufacturedProduct classCode="MANU">
+									<manufacturedMaterial>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+									</manufacturedMaterial>
+								</manufacturedProduct>
+							</consumable>
+<!--
+								DEFECT #377: objective-status observation/referenceRange.
+								WAS: objective-status observation had value/method/.../subject then entryRelationship —
+								no referenceRange. HL7 CDA R2 Observation has referenceRange 0..*
+								(observationRange for normal/abnormal bounds). SEMD validators often
+								flag missing referenceRange under clinical OBS entries. Form 043/u
+								ambulatory dental findings are free-text/ICD — no lab-style reference
+								interval is collected; do not invent PQ bounds or interpretation anchors.
+								NOW: referenceRange with observationRange value nullFlavor NI until
+								chart field exists.
+							-->
+							<referenceRange>
+								<observationRange>
+									<value xsi:type="CD" nullFlavor="NI"/>
+								</observationRange>
+							</referenceRange>
 <!--
 								DEFECT #344: objective-status observation/entryRelationship.
 								WAS: objective OBS had specimen (#339) then closed — no entryRelationship. Diagnosis (#342) and anamnesis (#343) already carry entryRelationship COMP.
@@ -4616,6 +4730,44 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<code nullFlavor="NI"/>
 								</relatedSubject>
 							</subject>
+
+							
+							<!--
+								DEFECT #383: complications observation/consumable.
+								WAS: complications observation had performer/.../specimen/subject — no consumable.
+								Treatment ACT (#373) and tray supply (#374) already carry consumable CSM.
+								HL7 CDA R2 Observation (Act) has consumable 0..* (materials used while
+								making the observation). SEMD validators often flag missing consumable
+								under clinical OBS when exam materials cannot be joined. Form 043/u
+								chart does not collect discrete consumable NSI codes for these findings
+								— do not invent material codes or barcodes.
+								NOW: consumable typeCode=CSM with manufacturedProduct classCode=MANU
+								and manufacturedMaterial code/name nullFlavor NI until chart field exists.
+							-->
+							<consumable typeCode="CSM">
+								<manufacturedProduct classCode="MANU">
+									<manufacturedMaterial>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+									</manufacturedMaterial>
+								</manufacturedProduct>
+							</consumable>
+<!--
+								DEFECT #378: complications observation/referenceRange.
+								WAS: complications observation had value/method/.../subject then entryRelationship —
+								no referenceRange. HL7 CDA R2 Observation has referenceRange 0..*
+								(observationRange for normal/abnormal bounds). SEMD validators often
+								flag missing referenceRange under clinical OBS entries. Form 043/u
+								ambulatory dental findings are free-text/ICD — no lab-style reference
+								interval is collected; do not invent PQ bounds or interpretation anchors.
+								NOW: referenceRange with observationRange value nullFlavor NI until
+								chart field exists.
+							-->
+							<referenceRange>
+								<observationRange>
+									<value xsi:type="CD" nullFlavor="NI"/>
+								</observationRange>
+							</referenceRange>
 <!--
 								DEFECT #345: complications observation/entryRelationship.
 								WAS: complications OBS had specimen (#340) then closed — no entryRelationship. Diagnosis (#342) through objective (#344) already carry entryRelationship COMP.
@@ -5074,6 +5226,44 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<code nullFlavor="NI"/>
 								</relatedSubject>
 							</subject>
+
+							
+							<!--
+								DEFECT #384: comorbidities observation/consumable.
+								WAS: comorbidities observation had performer/.../specimen/subject — no consumable.
+								Treatment ACT (#373) and tray supply (#374) already carry consumable CSM.
+								HL7 CDA R2 Observation (Act) has consumable 0..* (materials used while
+								making the observation). SEMD validators often flag missing consumable
+								under clinical OBS when exam materials cannot be joined. Form 043/u
+								chart does not collect discrete consumable NSI codes for these findings
+								— do not invent material codes or barcodes.
+								NOW: consumable typeCode=CSM with manufacturedProduct classCode=MANU
+								and manufacturedMaterial code/name nullFlavor NI until chart field exists.
+							-->
+							<consumable typeCode="CSM">
+								<manufacturedProduct classCode="MANU">
+									<manufacturedMaterial>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+									</manufacturedMaterial>
+								</manufacturedProduct>
+							</consumable>
+<!--
+								DEFECT #379: comorbidities observation/referenceRange.
+								WAS: comorbidities observation had value/method/.../subject then entryRelationship —
+								no referenceRange. HL7 CDA R2 Observation has referenceRange 0..*
+								(observationRange for normal/abnormal bounds). SEMD validators often
+								flag missing referenceRange under clinical OBS entries. Form 043/u
+								ambulatory dental findings are free-text/ICD — no lab-style reference
+								interval is collected; do not invent PQ bounds or interpretation anchors.
+								NOW: referenceRange with observationRange value nullFlavor NI until
+								chart field exists.
+							-->
+							<referenceRange>
+								<observationRange>
+									<value xsi:type="CD" nullFlavor="NI"/>
+								</observationRange>
+							</referenceRange>
 <!--
 								DEFECT #346: comorbidities observation/entryRelationship.
 								WAS: comorbidities OBS had specimen (#341) then closed — no entryRelationship. Diagnosis (#342) through complications (#345) already carry entryRelationship COMP.
