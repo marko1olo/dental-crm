@@ -1927,10 +1927,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<!-- DEFECT #145: observation effectiveTime = visit clock -->
 							<effectiveTime value="${visitTime}"/>
 							<value xsi:type="ST">${escapeXml(params.comorbidities || "Не отмечены")}</value>
+							<!--
+								DEFECT #192: comorbidities observation/methodCode.
+								WAS: comorbidities OBS had id/code/statusCode/effectiveTime/value
+								only — no methodCode. Diagnosis (#186), anamnesis (#189),
+								objective (#190) and complications (#191) already carry
+								methodCode NI. HL7 CDA R2 Observation has methodCode 0..*.
+								SEMD validators often flag missing method under comorbidities
+								OBS. Form 043/u comorbidities is free-text note — do not
+								invent a fake NSI method OID.
+								NOW: methodCode nullFlavor NI until chart field exists.
+							-->
+							<methodCode nullFlavor="NI"/>
 						</observation>
 					</entry></section>
 			</component>
 			<!-- DEFECT #57: инструментальный лоток 043 (sterilization barcode) -->
+
 			${params.instrumentTrayBarcode && params.instrumentTrayBarcode.trim()
 				? `<component>
 				<section>
