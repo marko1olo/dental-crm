@@ -828,6 +828,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		</associatedEntity>
 	</participant>
 
+	<!--
+		DEFECT #131: ClinicalDocument/authorization (HL7 CDA R2 / EGISZ SEMD).
+		WAS: header had participant REF (#130) then jumped to componentOf
+		with no authorization. SEMD validators expect a consent Act under
+		authorization so REMD records that the patient (or legal proxy)
+		authorized release of this Form 043/u protocol to EGISZ/REMD.
+		NOW: authorization/consent with statusCode completed and id under
+		docIdRoot using documentId-consent as the consent key for this
+		SEMD instance. No invented extension=unknown.
+	-->
+	<authorization>
+		<consent>
+			<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-consent"/>
+			<code nullFlavor="NI"/>
+			<statusCode code="completed"/>
+		</consent>
+	</authorization>
+
 
 	<!--
 		DEFECT #86: componentOf/encompassingEncounter (CDA R2 header).
