@@ -856,6 +856,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<inFulfillmentOf>
 		<order>
 			<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(encounterExtension)}"/>
+			<!--
+				DEFECT #146: inFulfillmentOf/order code + statusCode.
+				WAS: order had only id (encounterExtension). HL7 CDA R2 Order
+				expects code (what was ordered) and statusCode (order lifecycle).
+				Bare id leaves REMD unable to classify the fulfilled request or
+				know it is completed (Form 043/u export is post-slot).
+				NOW: code nullFlavor NI (no separate order catalog on chart —
+				do not invent a fake order type code); statusCode completed.
+			-->
+			<code nullFlavor="NI"/>
+			<statusCode code="completed"/>
 		</order>
 	</inFulfillmentOf>
 	<!--
