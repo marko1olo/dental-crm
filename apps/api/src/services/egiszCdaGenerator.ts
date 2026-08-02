@@ -568,7 +568,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			NOW: time value=effectiveTime before assignedEntity.
 		-->
 		<time value="${effectiveTime}"/>
+		<!--
+			DEFECT #168: ClinicalDocument/informant/functionCode.
+			WAS: informant had time (#151) + assignedEntity only — no
+			functionCode. author/dataEnterer/performer already emit
+			functionCode (#166/#167). SEMD expects the participation-level
+			function slot under informant so REMD can distinguish clinical
+			source role from assignedEntity/code specialty (#142).
+			NOW: functionCode NI+displayName when doctorPosition known;
+			bare nullFlavor NI when blank. No invented NSI function code.
+		-->
+		${params.doctorPosition && params.doctorPosition.trim()
+			? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+			: `<functionCode nullFlavor="NI"/>`}
 		<assignedEntity>
+
 			${/*
 			 * Same id rule as assignedAuthor (#77) / dataEnterer (#127):
 			 * SNILS when present, else nullFlavor NI. Never extension="unknown".
