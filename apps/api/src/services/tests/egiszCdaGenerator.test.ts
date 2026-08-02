@@ -197,10 +197,93 @@ describe("egiszCdaGenerator", () => {
 	});
 
 	/**
+	 * DEFECT #79: patientRole/id must not emit empty SNILS extension="" when
+	 * patientSnils is blank/missing. REMD rejects empty II.extension.
+	 */
+	test("DEFECT #79: patientRole id nullFlavor NI without patientSnils; SNILS when present", () => {
+		const base = {
+			patientId: "pat-79",
+			patientName: { first: "A", last: "B" },
+			patientSnils: "",
+			patientBirthDate: "1990-01-01",
+			patientGender: "male" as const,
+			clinicName: "C",
+			doctorName: { first: "D", last: "E" },
+			icd10Code: "K02.1",
+			diagnosisText: "x",
+			visitDate: new Date("2024-06-01T10:00:00.000Z"),
+			documentId: "doc-79",
+		};
+
+		const blank = generateDentalCdaXml(base);
+		const roleBlank = blank.slice(
+			blank.indexOf("<patientRole>"),
+			blank.indexOf("</patientRole>") + "</patientRole>".length,
+		);
+		assert.ok(
+			roleBlank.includes('<id nullFlavor="NI"/>'),
+			"patientRole must emit id nullFlavor=NI when patientSnils blank",
+		);
+		assert.ok(
+			!roleBlank.includes('extension=""'),
+			"patientRole must not emit empty extension attribute",
+		);
+		assert.ok(
+			!roleBlank.includes('root="1.2.643.100.3"'),
+			"patientRole must not emit SNILS root when patientSnils blank",
+		);
+
+		const whitespace = generateDentalCdaXml({
+			...base,
+			patientSnils: "   ",
+		});
+		const roleWs = whitespace.slice(
+			whitespace.indexOf("<patientRole>"),
+			whitespace.indexOf("</patientRole>") + "</patientRole>".length,
+		);
+		assert.ok(
+			roleWs.includes('<id nullFlavor="NI"/>'),
+			"whitespace-only patientSnils must emit nullFlavor NI",
+		);
+
+		const withSnils = generateDentalCdaXml({
+			...base,
+			patientSnils: "123-456-789 00",
+		});
+		const roleOk = withSnils.slice(
+			withSnils.indexOf("<patientRole>"),
+			withSnils.indexOf("</patientRole>") + "</patientRole>".length,
+		);
+		assert.ok(
+			roleOk.includes('root="1.2.643.100.3" extension="123-456-789 00"'),
+			"patientRole must emit SNILS id when patientSnils present",
+		);
+		assert.ok(
+			!roleOk.includes('<id nullFlavor="NI"/>'),
+			"patientRole must not use nullFlavor when patientSnils present",
+		);
+
+		// Evil SNILS must be escaped
+		const lt = "&" + "lt;";
+		const amp = "&" + "amp;";
+		const evilSnils =
+			"12" + String.fromCharCode(60) + "3" + String.fromCharCode(38) + "4";
+		const evil = generateDentalCdaXml({
+			...base,
+			patientSnils: evilSnils,
+		});
+		assert.ok(
+			evil.includes('extension="12' + lt + "3" + amp + '4"'),
+			"patientSnils must be XML-escaped in patientRole id extension",
+		);
+	});
+
+	/**
 	 * DEFECT #78: custodian organization id must not emit empty extension=""
 	 * when clinicOid is absent; clinicOid must be XML-escaped when present.
 	 */
 	test("DEFECT #78: custodian id nullFlavor NI without clinicOid; escaped when present", () => {
+
 		const base = {
 			patientId: "pat-78",
 			patientName: { first: "A", last: "B" },

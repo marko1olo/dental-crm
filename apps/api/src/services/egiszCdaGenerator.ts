@@ -114,8 +114,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<versionNumber value="${Math.max(1, Math.floor(Number(params.documentVersion) || 1))}"/>
 	<recordTarget>
 		<patientRole>
-			<id root="1.2.643.100.3" extension="${escapeXml(params.patientSnils)}"/>
+			${/*
+			 * DEFECT #79: patientRole/id must not emit empty SNILS extension.
+			 * БЫЛО: always <id root="1.2.643.100.3" extension="${patientSnils}"/>.
+			 * When SNILS missing/blank (route falls back to ""), CDA carried
+			 * extension="" — schema-invalid II and REMD rejects the patient.
+			 * Patient also has no alternate id (local MRN) in this path.
+			 * СТАЛО: SNILS id when non-empty after trim; else <id nullFlavor="NI"/>.
+			 */
+			params.patientSnils && String(params.patientSnils).trim()
+				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.patientSnils).trim())}"/>`
+				: `<id nullFlavor="NI"/>`}
 			<patient>
+
 				<name>
 					<family>${escapeXml(params.patientName.last)}</family>
 					<given>${escapeXml(params.patientName.first)}</given>
