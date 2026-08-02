@@ -2321,7 +2321,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: uncertaintyCode nullFlavor NI until chart field exists.
 							-->
 							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #228: comorbidities observation/approachSiteCode.
+								WAS: comorbidities OBS had methodCode/interpretationCode/
+								uncertaintyCode only — no approachSiteCode. Diagnosis (#224),
+								anamnesis (#225), objective (#226) and complications (#227)
+								already carry approachSiteCode NI. HL7 CDA R2 Observation has
+								approachSiteCode 0..*. SEMD validators often flag missing
+								approach under comorbidities OBS. Form 043/u comorbidities
+								is free-text note — do not invent ISO 3950.
+								NOW: approachSiteCode nullFlavor NI until chart field exists.
+							-->
+							<approachSiteCode nullFlavor="NI"/>
 						</observation>
+
 					</entry></section>
 			</component>
 			<!-- DEFECT #57: инструментальный лоток 043 (sterilization barcode) -->
