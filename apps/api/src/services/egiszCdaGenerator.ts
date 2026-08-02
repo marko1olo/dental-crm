@@ -91,11 +91,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	 * СТАЛО: yyyyMMddHHmmss from params.visitDate (already appointment.startsAt).
 	 */
 	const visitTime = formatDate(params.visitDate, "yyyyMMddHHmmss");
-	const birthTime = params.patientBirthDate
-		? formatDate(new Date(params.patientBirthDate), "yyyyMMdd")
-		: "19000101";
+	/*
+	 * DEFECT #80: missing patient DOB must not be faked as 1900-01-01.
+	 * БЫЛО: birthTime = "19000101" when patientBirthDate absent/invalid.
+	 * That writes a false date of birth into EGISZ/REMD CDA — worse than
+	 * null (age-based clinical rules, identity matching, audit).
+	 * СТАЛО: real yyyyMMdd when parseable; else birthTime nullFlavor="UNK".
+	 */
+	const birthDateRaw =
+		params.patientBirthDate && String(params.patientBirthDate).trim()
+			? new Date(params.patientBirthDate)
+			: null;
+	const birthTimeValue =
+		birthDateRaw && !Number.isNaN(birthDateRaw.getTime())
+			? formatDate(birthDateRaw, "yyyyMMdd")
+			: null;
 
 	const genderCode = params.patientGender === "male" ? "1" : params.patientGender === "female" ? "2" : "0";
+
 
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -133,8 +146,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					${params.patientName.middle ? `<given>${escapeXml(params.patientName.middle)}</given>` : ""}
 				</name>
 				<administrativeGenderCode code="${genderCode}" codeSystem="1.2.643.5.1.13.13.11.1040"/>
-				<birthTime value="${birthTime}"/>
+				${birthTimeValue
+					? `<birthTime value="${birthTimeValue}"/>`
+					: `<!-- DEFECT #80: unknown DOB — nullFlavor UNK (never invent a fake date) -->
+				<birthTime nullFlavor="UNK"/>`}
+
 			</patient>
+
 		</patientRole>
 	</recordTarget>
 	<author>

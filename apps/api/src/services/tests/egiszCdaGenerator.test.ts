@@ -197,10 +197,74 @@ describe("egiszCdaGenerator", () => {
 	});
 
 	/**
+	 * DEFECT #80: missing/invalid patient DOB must not be faked as 19000101.
+	 * Route already 422s (DEFECT #64); generator must still not invent DOB
+	 * for direct callers / future paths — use birthTime nullFlavor="UNK".
+	 */
+	test("DEFECT #80: birthTime nullFlavor UNK when DOB missing/invalid; real date when present", () => {
+		const base = {
+			patientId: "pat-80",
+			patientName: { first: "A", last: "B" },
+			patientSnils: "000",
+			patientBirthDate: "",
+			patientGender: "male" as const,
+			clinicName: "C",
+			doctorName: { first: "D", last: "E" },
+			icd10Code: "K02.1",
+			diagnosisText: "x",
+			visitDate: new Date("2024-06-01T10:00:00.000Z"),
+			documentId: "doc-80",
+		};
+
+		const missing = generateDentalCdaXml(base);
+		assert.ok(
+			missing.includes('<birthTime nullFlavor="UNK"/>'),
+			"missing DOB must emit birthTime nullFlavor=UNK",
+		);
+		assert.ok(
+			!missing.includes('birthTime value="19000101"'),
+			"must never invent 19000101 as birthTime",
+		);
+		assert.ok(
+			!missing.includes("19000101"),
+			"fake 19000101 must not appear anywhere in CDA",
+		);
+
+		const invalid = generateDentalCdaXml({
+			...base,
+			patientBirthDate: "not-a-date",
+		});
+		assert.ok(
+			invalid.includes('<birthTime nullFlavor="UNK"/>'),
+			"invalid DOB must emit birthTime nullFlavor=UNK",
+		);
+		assert.ok(!invalid.includes("19000101"), "invalid DOB must not invent 19000101");
+
+		const real = generateDentalCdaXml({
+			...base,
+			patientBirthDate: "1980-05-15T00:00:00.000Z",
+		});
+		assert.ok(
+			real.includes('<birthTime value="'),
+			"valid DOB must emit birthTime value",
+		);
+		assert.ok(
+			!real.includes('<birthTime nullFlavor="UNK"/>'),
+			"valid DOB must not use nullFlavor",
+		);
+		// yyyyMMdd local — at least year 1980 must appear
+		assert.ok(
+			real.includes('birthTime value="1980'),
+			"valid DOB must start with year 1980",
+		);
+	});
+
+	/**
 	 * DEFECT #79: patientRole/id must not emit empty SNILS extension="" when
 	 * patientSnils is blank/missing. REMD rejects empty II.extension.
 	 */
 	test("DEFECT #79: patientRole id nullFlavor NI without patientSnils; SNILS when present", () => {
+
 		const base = {
 			patientId: "pat-79",
 			patientName: { first: "A", last: "B" },
