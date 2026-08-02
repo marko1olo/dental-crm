@@ -1937,6 +1937,11 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			| { kind: "not_found" }
 			| { kind: "not_locked" }
 			| { kind: "invalid_tray" }
+			/*
+			 * DEFECT #113: zero-row revise UPDATE (locked/version belt lost).
+			 * Must not commit a forensic insert without the diary write.
+			 */
+			| { kind: "update_lost" }
 			| { kind: "ok"; hash: string; revisionCount: number };
 
 		const reviseResult: ReviseTxResult = await db.transaction(async (tx) => {
@@ -1997,48 +2002,31 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				nextTrayBarcode,
 			);
 
-			/*
-			 * БЫЛО: insert не писал previous_diagnosis_tooth и revision_reason,
-			 * хотя миграция 0116 уже добавила колонки, а клиент шлёт revisionReason.
-			 * История правок 043/у теряла номер зуба до правки и причину исправления —
-			 * юридический след ревизии подписанного дневника был неполным.
-			 */
-			await tx.insert(visitDiaryRevisions).values({
-				organizationId: orgId,
-				diaryId: existing.id,
-				previousAnamnesis: existing.anamnesis,
-				previousStatusLocalis: existing.statusLocalis,
-				previousDiagnosisIcd10: existing.diagnosisIcd10,
-				previousDiagnosisTooth: existing.diagnosisTooth,
-				previousTreatmentDescription: existing.treatmentDescription,
-				/*
-				 * Forensic 043/у (миграция 0149).
-				 * БЫЛО: update visit_diaries писал complications/comorbidities,
-				 * а snapshot ревизии — нет. Прежний текст осложнений и сопутствующих
-				 * пропадал из истории правки подписанного дневника.
-				 */
-				previousComplications: existing.complications,
-				previousComorbidities: existing.comorbidities,
-				/*
-				 * Forensic 043/у (миграция 0150): прежний штрихкод лотка.
-				 * Без снимка правка лотка в подписанной карте не оставляет следа.
-				 */
-				previousInstrumentTrayBarcode: existing.instrumentTrayBarcode,
-				revisionReason: body.revisionReason,
-				revisedByUserId: userId,
-			});
+			const priorVersion = existing.version ?? 1;
 
-			// Update the diary (unlock for new content, then re-lock immediately)
 			/*
-			 * БЫЛО: update менял diaryHash на newHash, но crypto_signature_pkcs7
-			 * оставлял прежний PKCS#7 от СТАРОГО содержимого. После админ-правки
-			 * 043/у в БД лежала подпись, которая НЕ соответствует текущему хешу —
-			 * проверка ЭЦП «подпись ↔ содержимое» молча врала, а печать показывала
-			 * новый SHA-256 рядом с устаревшим оттиском.
-			 * СТАЛО: PKCS#7 обнуляем. is_locked и locked_at сохраняем (дневник
-			 * остаётся юридически закрытым; повторная УКЭП — отдельный шаг).
+			 * DEFECT #113: admin revise UPDATE must prove the row write.
+			 *
+			 * БЫЛО (#84): FOR UPDATE + UPDATE WHERE is_locked=true, but
+			 * visit_diary_revisions INSERT ran BEFORE the UPDATE, and the
+			 * UPDATE had no .returning() / row-count check. If the belt
+			 * matched zero rows (unlocked between snapshot and write, or
+			 * version drift), the transaction still committed an orphan
+			 * forensic row while diary SOAP/hash/version stayed old; the
+			 * HTTP 200 claimed success with a hash that was never stored.
+			 * Lock #76 / draft #73 / re-attach #85 all fail closed on
+			 * zero returning rows — revise did not.
+			 *
+			 * СТАЛО: UPDATE first with .returning() and optimistic
+			 * version belt (id+org+is_locked+version). Zero rows →
+			 * update_lost (no forensic insert). Only after a proven
+			 * diary write do we insert visit_diary_revisions previous_*
+			 * from the locked snapshot (existing still holds pre-image).
+			 *
+			 * PKCS#7 still cleared: old signature must not seal new hash.
+			 * is_locked and locked_at stay (re-УКЭП is a separate step).
 			 */
-			await tx
+			const updatedRows = await tx
 				.update(visitDiaries)
 				.set({
 					anamnesis: body.anamnesis ?? existing.anamnesis,
@@ -2055,7 +2043,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 							: existing.instrumentTrayBarcode,
 					diaryHash: newHash,
 					cryptoSignaturePkcs7: null,
-					version: (existing.version ?? 1) + 1,
+					version: priorVersion + 1,
 					updatedAt: new Date(),
 				})
 				.where(
@@ -2064,8 +2052,38 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 						eq(visitDiaries.organizationId, orgId),
 						/* belt: only revise while still locked (Form 043/у signed) */
 						eq(visitDiaries.isLocked, true),
+						/* DEFECT #113: optimistic version — concurrent revise loses cleanly */
+						eq(visitDiaries.version, priorVersion),
 					),
-				);
+				)
+				.returning({ id: visitDiaries.id });
+
+			if (updatedRows.length === 0) {
+				return { kind: "update_lost" as const };
+			}
+
+			/*
+			 * Forensic previous_* snapshot from the locked pre-image (existing).
+			 * Insert only after UPDATE returned a row so the legal chain never
+			 * records a revision that did not change the signed diary.
+			 *
+			 * previous_diagnosis_tooth + revision_reason (миграция 0116),
+			 * complications/comorbidities (0149), instrument tray (0150).
+			 */
+			await tx.insert(visitDiaryRevisions).values({
+				organizationId: orgId,
+				diaryId: existing.id,
+				previousAnamnesis: existing.anamnesis,
+				previousStatusLocalis: existing.statusLocalis,
+				previousDiagnosisIcd10: existing.diagnosisIcd10,
+				previousDiagnosisTooth: existing.diagnosisTooth,
+				previousTreatmentDescription: existing.treatmentDescription,
+				previousComplications: existing.complications,
+				previousComorbidities: existing.comorbidities,
+				previousInstrumentTrayBarcode: existing.instrumentTrayBarcode,
+				revisionReason: body.revisionReason,
+				revisedByUserId: userId,
+			});
 
 			/*
 			 * DEFECT #46: admin revise of signed 043 must update EMK/EGISZ source.
@@ -2118,6 +2136,14 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					"Лоток не подтверждён журналом стерилизации этой клиники: такого штрихкода нет или последний цикл не пройден. Укажите штрихкод с прошедшей стерилизацией или очистите поле лотка.",
 			});
 		}
+		if (reviseResult.kind === "update_lost") {
+			return reply.code(409).send({
+				error: "ReviseConflict",
+				message:
+					"Исправление подписанного дневника не применилось: запись уже изменилась или снята с подписи. Откройте приём заново и повторите исправление.",
+			});
+		}
+
 
 		/*
 		 * cryptoSignatureAttached: false — PKCS#7 обнулён вместе с newHash.
