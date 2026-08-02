@@ -1818,10 +1818,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: methodCode nullFlavor NI until chart field exists.
 							-->
 							<methodCode nullFlavor="NI"/>
+							<!--
+								DEFECT #194: objective-status observation/interpretationCode.
+								WAS: objective OBS gained methodCode NI (#190) but still had
+								no interpretationCode. Diagnosis (#187) and anamnesis (#193)
+								already carry interpretationCode NI. HL7 CDA R2 Observation
+								has interpretationCode 0..*. SEMD validators often flag missing
+								interpretation under status-localis OBS. Form 043/u objective
+								status is free-text exam note — do not invent a fake N/A/H.
+								NOW: interpretationCode nullFlavor NI until chart field exists.
+							-->
+							<interpretationCode nullFlavor="NI"/>
 						</observation>
 					</entry></section>
 			</component>
 			<!-- Оказанные услуги / Лечение -->
+
 
 			<component>
 				<section>
