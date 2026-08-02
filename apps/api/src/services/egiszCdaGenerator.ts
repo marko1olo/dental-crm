@@ -1914,10 +1914,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: methodCode nullFlavor NI until chart field exists.
 							-->
 							<methodCode nullFlavor="NI"/>
+							<!--
+								DEFECT #195: complications observation/interpretationCode.
+								WAS: complications OBS gained methodCode NI (#191) but still
+								had no interpretationCode. Diagnosis (#187), anamnesis (#193)
+								and objective (#194) already carry interpretationCode NI.
+								HL7 CDA R2 Observation has interpretationCode 0..*. SEMD
+								validators often flag missing interpretation under
+								complications OBS. Form 043/u complications is free-text
+								note — do not invent a fake N/A/H code.
+								NOW: interpretationCode nullFlavor NI until chart field exists.
+							-->
+							<interpretationCode nullFlavor="NI"/>
 						</observation>
 					</entry></section>
 			</component>
 			<!-- Сопутствующие заболевания (043) -->
+
 
 			<component>
 				<section>
