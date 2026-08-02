@@ -1946,7 +1946,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: repeatNumber nullFlavor NI until chart field exists.
 							-->
 							<repeatNumber nullFlavor="NI"/>
+							<!--
+								DEFECT #211: treatment act/independentInd.
+								WAS: treatment ACT had id/code/text/statusCode/effectiveTime/
+								priorityCode/methodCode/uncertaintyCode/repeatNumber only —
+								no independentInd. Instrument-tray supply already carries
+								independentInd NI (#205). HL7 CDA R2 Act has independentInd
+								0..1 (whether the act can stand alone). SEMD validators
+								often flag missing independentInd under treatment ACT.
+								Form 043/u chart has no independent-act flag — do not invent
+								true/false.
+								NOW: independentInd nullFlavor NI until chart field exists.
+							-->
+							<independentInd nullFlavor="NI"/>
 						</act>
+
 
 
 
