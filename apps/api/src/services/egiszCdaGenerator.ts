@@ -700,6 +700,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<legalAuthenticator>
 		<time value="${effectiveTime}"/>
 		<!--
+			DEFECT #170: legalAuthenticator/functionCode.
+			WAS: legalAuthenticator had time + signatureCode + assignedEntity
+			only — no functionCode. author/dataEnterer/informant/performer/REF
+			already emit functionCode (#166-#169). HL7 CDA R2 LegalAuthenticator
+			has functionCode 0..1 (participation function for the legal signer).
+			SEMD expects the same participation-level function slot so REMD can
+			distinguish legal-sign role from assignedEntity/code specialty (#139).
+			NOW: functionCode NI+displayName when doctorPosition known;
+			bare nullFlavor NI when blank. No invented NSI function code.
+		-->
+		${params.doctorPosition && params.doctorPosition.trim()
+			? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+			: `<functionCode nullFlavor="NI"/>`}
+		<!--
 			DEFECT #159: legalAuthenticator/signatureCode codeSystem + displayName.
 			WAS: signatureCode had code=S only — no codeSystem/codeSystemName/
 			displayName. confidentialityCode (#158) and LOINC/NSI CEs already
@@ -785,7 +799,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<authenticator>
 		<time value="${effectiveTime}"/>
 		<!--
+			DEFECT #170: authenticator/functionCode.
+			WAS: authenticator had time + signatureCode + assignedEntity only —
+			no functionCode. legalAuthenticator (#170) and author (#166) already
+			emit functionCode. HL7 CDA R2 Authenticator has functionCode 0..1
+			(participation function for content attestation). SEMD expects the
+			same participation-level function slot under authenticator.
+			NOW: functionCode NI+displayName when doctorPosition known;
+			bare nullFlavor NI when blank. No invented NSI function code.
+		-->
+		${params.doctorPosition && params.doctorPosition.trim()
+			? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+			: `<functionCode nullFlavor="NI"/>`}
+		<!--
 			DEFECT #159: authenticator/signatureCode codeSystem + displayName.
+
 			WAS: same bare code=S as legalAuthenticator pre-#159. Mirror legal
 			signer ParticipationSignature CE so both signature parties carry
 			the HL7 dictionary label.
