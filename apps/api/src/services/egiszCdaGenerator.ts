@@ -1244,7 +1244,15 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<!-- Оказанные услуги / Лечение -->
 			<component>
 				<section>
-					<code code="47519-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Медицинские услуги"/>
+					<!--
+						DEFECT #149: treatment section LOINC aligned with entry act.
+						WAS: section code 47519-4 (Procedure findings) while entry/act
+						uses 18776-5 (Plan of care note / treatment) and title is
+						"Проведенное лечение". SEMD section@code must match the
+						structured entry LOINC so REMD indexes one concept.
+						NOW: section code 18776-5 + RU displayName matching title/act.
+					-->
+					<code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Проведенное лечение"/>
 					<title>Проведенное лечение</title>
 					<text>
 						<paragraph>${escapeXml(params.treatmentDescription || "Осмотр и консультация")}</paragraph>
@@ -1299,7 +1307,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<!-- Сопутствующие заболевания (043) -->
 			<component>
 				<section>
-					<code code="11348-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Сопутствующие заболевания"/>
+					<!--
+						DEFECT #149: comorbidities section LOINC aligned with entry obs.
+						WAS: section code 11348-0 while entry/observation uses 75326-9
+						(History of comorbid disease). SEMD section@code must match
+						the structured entry LOINC.
+						NOW: section code 75326-9 + RU displayName matching title/obs.
+					-->
+					<code code="75326-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Сопутствующие заболевания"/>
 					<title>Сопутствующие заболевания</title>
 					<text>
 						<paragraph>${escapeXml(params.comorbidities || "Не отмечены")}</paragraph>
@@ -1325,7 +1340,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			${params.instrumentTrayBarcode && params.instrumentTrayBarcode.trim()
 				? `<component>
 				<section>
-					<code code="46264-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Идентификатор медицинского изделия"/>
+					<!--
+						DEFECT #149: instrument tray section LOINC aligned with entry supply.
+						WAS: section code 46264-8 while entry/supply uses 69764-9
+						(Medical device identifier / tray). SEMD section@code must
+						match the structured entry LOINC.
+						NOW: section code 69764-9 + RU displayName matching title/supply.
+					-->
+					<code code="69764-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Инструментальный лоток"/>
 					<title>Инструментальный лоток</title>
 					<text>
 						<paragraph>Штрихкод: ${escapeXml(params.instrumentTrayBarcode.trim())}</paragraph>
