@@ -2029,10 +2029,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: interpretationCode nullFlavor NI until chart field exists.
 							-->
 							<interpretationCode nullFlavor="NI"/>
+							<!--
+								DEFECT #200: comorbidities observation/uncertaintyCode.
+								WAS: comorbidities OBS gained methodCode (#192) and
+								interpretationCode (#196) but still had no uncertaintyCode.
+								Diagnosis (#188), anamnesis (#197), objective (#198) and
+								complications (#199) already carry uncertaintyCode NI.
+								HL7 CDA R2 Observation has uncertaintyCode 0..1 (U/N from
+								ActUncertainty). SEMD validators often flag missing
+								uncertainty under comorbidities OBS. Form 043/u comorbidities
+								is free-text note — do not invent U/N.
+								NOW: uncertaintyCode nullFlavor NI until chart field exists.
+							-->
+							<uncertaintyCode nullFlavor="NI"/>
 						</observation>
 					</entry></section>
 			</component>
 			<!-- DEFECT #57: инструментальный лоток 043 (sterilization barcode) -->
+
 
 
 			${params.instrumentTrayBarcode && params.instrumentTrayBarcode.trim()
