@@ -1353,7 +1353,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<dischargeDispositionCode nullFlavor="NI"/>
 			<!--
+				DEFECT #182: encompassingEncounter/admissionReferralSourceCode.
+				WAS: encounter had dischargeDispositionCode (#179) but no
+				admissionReferralSourceCode. HL7 CDA R2 Encounter has
+				admissionReferralSourceCode 0..1 (how the patient arrived /
+				was referred into the encounter). SEMD validators often flag
+				missing referral source under ambulatory close alongside
+				disposition. Form 043/u chart does not collect admission
+				referral source (walk-in dental) — do not invent a fake NSI
+				referral-source code.
+				NOW: admissionReferralSourceCode nullFlavor NI until chart field exists.
+			-->
+			<admissionReferralSourceCode nullFlavor="NI"/>
+			<!--
 				DEFECT #181: encompassingEncounter/encounterParticipant.
+
 				WAS: encounter had id/code/status/effectiveTime/dischargeDisposition/
 				responsibleParty/location only — no encounterParticipant. HL7 CDA R2
 				EncompassingEncounter has encounterParticipant 0..* (ATND/ADM/CON/…)
