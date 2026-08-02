@@ -299,16 +299,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				</name>
 				${/*
 				 * DEFECT #157: administrativeGenderCode codeSystemName.
-				 * WAS: gender CE had code+codeSystem only — no codeSystemName.
-				 * LOINC/ICD-10/AMB/tooth CEs already label the dictionary
-				 * (#155/#156/#91). SEMD validators expect the NSI gender
-				 * dictionary name so REMD can render without OID lookup.
-				 * NOW: codeSystemName on known 1/2 codes; UNK path unchanged.
+				 * DEFECT #160: administrativeGenderCode displayName (М/Ж).
+				 * WAS (#157): code+codeSystem+codeSystemName only — no
+				 * displayName. confidentialityCode (#158) and signatureCode
+				 * (#159) already carry displayName. SEMD validators expect
+				 * the human-readable gender label on known 1/2 codes.
+				 * NOW: displayName Мужской (1) / Женский (2); UNK unchanged.
 				 */
 				genderCode
-					? `<administrativeGenderCode code="${genderCode}" codeSystem="1.2.643.5.1.13.13.11.1040" codeSystemName="Пол пациента"/>`
+					? `<administrativeGenderCode code="${genderCode}" codeSystem="1.2.643.5.1.13.13.11.1040" codeSystemName="Пол пациента" displayName="${genderCode === "1" ? "Мужской" : "Женский"}"/>`
 					: `<!-- DEFECT #81: unknown gender — nullFlavor UNK (never invent code 0) -->
 				<administrativeGenderCode nullFlavor="UNK"/>`}
+
+
 
 
 				${birthTimeValue
