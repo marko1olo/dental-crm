@@ -2283,7 +2283,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<paragraph>${escapeXml(params.diagnosisText)} (МКБ-10: ${escapeXml(params.icd10Code)})${params.diagnosisTooth && String(params.diagnosisTooth).trim() ? ` · зуб ${escapeXml(String(params.diagnosisTooth).trim())}` : ""}</paragraph>
 					</text>
 					<entry>
-						<observation classCode="OBS" moodCode="EVN">
+						<!--
+							DEFECT #351: diagnosis observation/@negationInd.
+							WAS: open had classCode/moodCode only — no negationInd.
+							HL7 CDA R2 Act has negationInd 0..1. SEMD often requires explicit false on asserted acts.
+							Form 043/u chart entry is asserted (not negated). NOW: negationInd=false on entry open tag.
+						-->
+						<observation classCode="OBS" moodCode="EVN" negationInd="false">
 							<!--
 								DEFECT #153: structuredBody entry Act/id.
 								WAS: diagnosis observation had code/status/time/value
@@ -2754,7 +2760,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						from params.anamnesis (default Bez osobennostey).
 					-->
 					<entry>
-						<observation classCode="OBS" moodCode="EVN">
+						<!--
+							DEFECT #352: anamnesis observation/@negationInd.
+							WAS: open had classCode/moodCode only — no negationInd.
+							HL7 CDA R2 Act has negationInd 0..1. SEMD often requires explicit false on asserted acts.
+							Form 043/u chart entry is asserted (not negated). NOW: negationInd=false on entry open tag.
+						-->
+						<observation classCode="OBS" moodCode="EVN" negationInd="false">
 							<!-- DEFECT #153: entry Act/id (anamnesis) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-anamnesis"/>
 							<code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Анамнез"/>
@@ -3187,7 +3199,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						from params.objectiveStatus (default Bez osobennostey).
 					-->
 					<entry>
-						<observation classCode="OBS" moodCode="EVN">
+						<!--
+							DEFECT #353: objective-status observation/@negationInd.
+							WAS: open had classCode/moodCode only — no negationInd.
+							HL7 CDA R2 Act has negationInd 0..1. SEMD often requires explicit false on asserted acts.
+							Form 043/u chart entry is asserted (not negated). NOW: negationInd=false on entry open tag.
+						-->
+						<observation classCode="OBS" moodCode="EVN" negationInd="false">
 							<!-- DEFECT #153: entry Act/id (objective status) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-objective"/>
 							<code code="29545-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Объективный статус"/>
@@ -3618,7 +3636,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						params.treatmentDescription (default Osmotr i konsultatsiya).
 					-->
 					<entry>
-						<act classCode="ACT" moodCode="EVN">
+						<!--
+							DEFECT #356: treatment act/@negationInd.
+							WAS: open had classCode/moodCode only — no negationInd.
+							HL7 CDA R2 Act has negationInd 0..1. SEMD often requires explicit false on asserted acts.
+							Form 043/u chart entry is asserted (not negated). NOW: negationInd=false on entry open tag.
+						-->
+						<act classCode="ACT" moodCode="EVN" negationInd="false">
 							<!-- DEFECT #153: entry Act/id (treatment) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-treatment"/>
 							<code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Проведенное лечение"/>
@@ -4025,7 +4049,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						from params.complications (default Ne otmecheny).
 					-->
 					<entry>
-						<observation classCode="OBS" moodCode="EVN">
+						<!--
+							DEFECT #354: complications observation/@negationInd.
+							WAS: open had classCode/moodCode only — no negationInd.
+							HL7 CDA R2 Act has negationInd 0..1. SEMD often requires explicit false on asserted acts.
+							Form 043/u chart entry is asserted (not negated). NOW: negationInd=false on entry open tag.
+						-->
+						<observation classCode="OBS" moodCode="EVN" negationInd="false">
 							<!-- DEFECT #153: entry Act/id (complications) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-complications"/>
 							<code code="55109-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Осложнения"/>
@@ -4456,7 +4486,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: structured entry so REMD can index the section.
 					-->
 					<entry>
-						<observation classCode="OBS" moodCode="EVN">
+						<!--
+							DEFECT #355: comorbidities observation/@negationInd.
+							WAS: open had classCode/moodCode only — no negationInd.
+							HL7 CDA R2 Act has negationInd 0..1. SEMD often requires explicit false on asserted acts.
+							Form 043/u chart entry is asserted (not negated). NOW: negationInd=false on entry open tag.
+						-->
+						<observation classCode="OBS" moodCode="EVN" negationInd="false">
 							<!-- DEFECT #153: entry Act/id (comorbidities) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-comorbidities"/>
 							<code code="75326-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Сопутствующие заболевания"/>
@@ -4892,7 +4928,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: structured entry so REMD can index the section.
 					-->
 					<entry>
-						<supply classCode="SPLY" moodCode="EVN">
+						<!--
+							DEFECT #357: instrument-tray supply/@negationInd.
+							WAS: open had classCode/moodCode only — no negationInd.
+							HL7 CDA R2 Act has negationInd 0..1. SEMD often requires explicit false on asserted acts.
+							Form 043/u chart entry is asserted (not negated). NOW: negationInd=false on entry open tag.
+						-->
+						<supply classCode="SPLY" moodCode="EVN" negationInd="false">
 							<!-- DEFECT #153: entry Act/id (instrument tray) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-tray"/>
 							<code code="69764-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Инструментальный лоток"/>
