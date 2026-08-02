@@ -1827,6 +1827,34 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<uncertaintyCode nullFlavor="NI"/>
 							<!--
+								DEFECT #245: diagnosis observation/repeatNumber.
+								WAS: diagnosis OBS had priorityCode (#240)/methodCode/
+								interpretationCode/uncertaintyCode only - no repeatNumber.
+								Treatment ACT (#210), instrument-tray supply (#204),
+								serviceEvent (#215) and encompassingEncounter (#219) already
+								carry repeatNumber NI. HL7 CDA R2 Observation (Act) has
+								repeatNumber 0..1 (how many times the finding act is intended
+								to occur). SEMD validators often flag missing repeatNumber
+								under diagnosis OBS. Form 043/u chart does not collect a
+								discrete diagnosis repeat count - do not invent a number.
+								NOW: repeatNumber nullFlavor NI until chart field exists.
+							-->
+							<repeatNumber nullFlavor="NI"/>
+							<!--
+								DEFECT #246: diagnosis observation/independentInd.
+								WAS: diagnosis OBS had priorityCode/methodCode/
+								interpretationCode/uncertaintyCode/repeatNumber only - no
+								independentInd. Treatment ACT (#211), instrument-tray supply
+								(#205), serviceEvent (#216) and encompassingEncounter (#220)
+								already carry independentInd NI. HL7 CDA R2 Observation (Act)
+								has independentInd 0..1 (whether the act can stand alone).
+								SEMD validators often flag missing independentInd under
+								diagnosis OBS. Form 043/u chart does not collect a discrete
+								independence flag - do not invent true/false.
+								NOW: independentInd nullFlavor NI until chart field exists.
+							-->
+							<independentInd nullFlavor="NI"/>
+							<!--
 								DEFECT #224: diagnosis observation/approachSiteCode.
 								WAS: diagnosis OBS had uncertaintyCode (#188) then jumped to
 								targetSiteCode (#74/#223) — no approachSiteCode. Treatment
@@ -1983,6 +2011,31 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: uncertaintyCode nullFlavor NI until chart field exists.
 							-->
 							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #247: anamnesis observation/repeatNumber.
+								WAS: anamnesis OBS had priorityCode (#241)/methodCode/
+								interpretationCode/uncertaintyCode only - no repeatNumber.
+								Diagnosis OBS (#245), treatment ACT (#210) and serviceEvent
+								(#215) already carry repeatNumber NI. HL7 CDA R2 Observation
+								has repeatNumber 0..1. SEMD validators often flag missing
+								repeatNumber under history OBS. Form 043/u anamnesis is a
+								single interview note - do not invent a number.
+								NOW: repeatNumber nullFlavor NI until chart field exists.
+							-->
+							<repeatNumber nullFlavor="NI"/>
+							<!--
+								DEFECT #248: anamnesis observation/independentInd.
+								WAS: anamnesis OBS had priorityCode/methodCode/
+								interpretationCode/uncertaintyCode/repeatNumber only - no
+								independentInd. Diagnosis OBS (#246), treatment ACT (#211)
+								and serviceEvent (#216) already carry independentInd NI.
+								HL7 CDA R2 Observation has independentInd 0..1. SEMD
+								validators often flag missing independentInd under history
+								OBS. Form 043/u chart has no independence flag - do not
+								invent true/false.
+								NOW: independentInd nullFlavor NI until chart field exists.
+							-->
+							<independentInd nullFlavor="NI"/>
 							<!--
 								DEFECT #225: anamnesis observation/approachSiteCode.
 								WAS: anamnesis OBS had methodCode/interpretationCode/
@@ -2141,6 +2194,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: uncertaintyCode nullFlavor NI until chart field exists.
 							-->
 							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #249: objective-status observation/repeatNumber.
+								WAS: objective OBS had priorityCode (#242)/methodCode/
+								interpretationCode/uncertaintyCode only - no repeatNumber.
+								Diagnosis (#245) and anamnesis (#247) already carry
+								repeatNumber NI. HL7 CDA R2 Observation has repeatNumber
+								0..1. SEMD validators often flag missing repeatNumber under
+								status-localis OBS. Form 043/u objective status is a single
+								exam note - do not invent a number.
+								NOW: repeatNumber nullFlavor NI until chart field exists.
+							-->
+							<repeatNumber nullFlavor="NI"/>
+							<!--
+								DEFECT #250: objective-status observation/independentInd.
+								WAS: objective OBS had priorityCode/methodCode/
+								interpretationCode/uncertaintyCode/repeatNumber only - no
+								independentInd. Diagnosis (#246) and anamnesis (#248) already
+								carry independentInd NI. HL7 CDA R2 Observation has
+								independentInd 0..1. SEMD validators often flag missing
+								independentInd under status-localis OBS. Form 043/u chart
+								has no independence flag - do not invent true/false.
+								NOW: independentInd nullFlavor NI until chart field exists.
+							-->
+							<independentInd nullFlavor="NI"/>
 							<!--
 								DEFECT #226: objective-status observation/approachSiteCode.
 								WAS: objective OBS had methodCode/interpretationCode/
@@ -2474,6 +2551,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<uncertaintyCode nullFlavor="NI"/>
 							<!--
+								DEFECT #251: complications observation/repeatNumber.
+								WAS: complications OBS had priorityCode (#243)/methodCode/
+								interpretationCode/uncertaintyCode only - no repeatNumber.
+								Diagnosis (#245), anamnesis (#247) and objective (#249)
+								already carry repeatNumber NI. HL7 CDA R2 Observation has
+								repeatNumber 0..1. SEMD validators often flag missing
+								repeatNumber under complications OBS. Form 043/u
+								complications is a single free-text note - do not invent
+								a number.
+								NOW: repeatNumber nullFlavor NI until chart field exists.
+							-->
+							<repeatNumber nullFlavor="NI"/>
+							<!--
+								DEFECT #252: complications observation/independentInd.
+								WAS: complications OBS had priorityCode/methodCode/
+								interpretationCode/uncertaintyCode/repeatNumber only - no
+								independentInd. Diagnosis (#246), anamnesis (#248) and
+								objective (#250) already carry independentInd NI. HL7 CDA R2
+								Observation has independentInd 0..1. SEMD validators often
+								flag missing independentInd under complications OBS.
+								Form 043/u chart has no independence flag - do not invent
+								true/false.
+								NOW: independentInd nullFlavor NI until chart field exists.
+							-->
+							<independentInd nullFlavor="NI"/>
+							<!--
 								DEFECT #227: complications observation/approachSiteCode.
 								WAS: complications OBS had methodCode/interpretationCode/
 								uncertaintyCode only — no approachSiteCode. Diagnosis (#224),
@@ -2628,6 +2731,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: uncertaintyCode nullFlavor NI until chart field exists.
 							-->
 							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #253: comorbidities observation/repeatNumber.
+								WAS: comorbidities OBS had priorityCode (#244)/methodCode/
+								interpretationCode/uncertaintyCode only - no repeatNumber.
+								Diagnosis (#245), anamnesis (#247), objective (#249) and
+								complications (#251) already carry repeatNumber NI. HL7 CDA
+								R2 Observation has repeatNumber 0..1. SEMD validators often
+								flag missing repeatNumber under comorbidities OBS. Form
+								043/u comorbidities is a single free-text note - do not
+								invent a number.
+								NOW: repeatNumber nullFlavor NI until chart field exists.
+							-->
+							<repeatNumber nullFlavor="NI"/>
+							<!--
+								DEFECT #254: comorbidities observation/independentInd.
+								WAS: comorbidities OBS had priorityCode/methodCode/
+								interpretationCode/uncertaintyCode/repeatNumber only - no
+								independentInd. Diagnosis (#246), anamnesis (#248),
+								objective (#250) and complications (#252) already carry
+								independentInd NI. HL7 CDA R2 Observation has independentInd
+								0..1. SEMD validators often flag missing independentInd under
+								comorbidities OBS. Form 043/u chart has no independence flag
+								- do not invent true/false.
+								NOW: independentInd nullFlavor NI until chart field exists.
+							-->
+							<independentInd nullFlavor="NI"/>
 							<!--
 								DEFECT #228: comorbidities observation/approachSiteCode.
 								WAS: comorbidities OBS had methodCode/interpretationCode/
