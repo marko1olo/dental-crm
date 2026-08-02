@@ -330,9 +330,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			</representedCustodianOrganization>
 		</assignedCustodian>
 	</custodian>
+	<!--
+		DEFECT #96: informationRecipient (intended receiver of the SEMD).
+		БЫЛО: CDA had author + custodian + legalAuthenticator + authenticator
+		but no informationRecipient. HL7 CDA R2 and EGISZ REMD expect the
+		intended recipient organization (clinic MO / REMD registry) so the
+		document is addressed for registration, not an orphan payload.
+		СТАЛО: informationRecipient/intendedRecipient/receivedOrganization
+		with clinicOid (or default MO root) + clinicName — same identity
+		scheme as custodian representedCustodianOrganization.
+	-->
+	<informationRecipient>
+		<intendedRecipient>
+			<receivedOrganization>
+				${params.clinicOid && String(params.clinicOid).trim()
+					? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+					: `<id nullFlavor="NI"/>`}
+				<name>${escapeXml(params.clinicName)}</name>
+			</receivedOrganization>
+		</intendedRecipient>
+	</informationRecipient>
 
 	<!--
 		DEFECT #75: legalAuthenticator (who signed / locks Form 043/у).
+
 		БЫЛО: CDA had author + custodian only — no legalAuthenticator.
 		EGISZ REMD / SEMD validators require the signing physician block;
 		without it the document has no legal signature party distinct from

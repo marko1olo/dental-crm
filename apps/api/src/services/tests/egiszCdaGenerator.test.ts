@@ -1610,7 +1610,72 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(nsAuth.includes('<signatureCode code="S"/>'));
 	});
 
+	test("DEFECT #96: informationRecipient addresses clinic MO for REMD registration", () => {
+		const params: EgiszCdaParams = {
+			patientId: "pat-96",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.666",
+			clinicName: "ООО Клиника Recipient",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate: new Date("2024-12-15T10:00:00.000Z"),
+			documentId: "doc-96",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		assert.ok(
+			xml.includes("<informationRecipient>"),
+			"CDA must include informationRecipient after custodian",
+		);
+		const irStart = xml.indexOf("<informationRecipient>");
+		const irEnd = xml.indexOf("</informationRecipient>");
+		assert.ok(irStart > 0 && irEnd > irStart);
+		const ir = xml.slice(irStart, irEnd);
+
+		assert.ok(ir.includes("<intendedRecipient>"));
+		assert.ok(ir.includes("<receivedOrganization>"));
+		assert.ok(
+			ir.includes(
+				`root="1.2.643.5.1.13.13.12.2" extension="1.2.643.5.1.13.13.12.2.666"`,
+			),
+			"receivedOrganization id uses MO registry root + clinicOid extension",
+		);
+		assert.ok(
+			ir.includes("<name>ООО Клиника Recipient</name>"),
+			"receivedOrganization name is clinicName",
+		);
+
+		/* after custodian, before legalAuthenticator */
+		const custEnd = xml.indexOf("</custodian>");
+		const legalStart = xml.indexOf("<legalAuthenticator>");
+		assert.ok(custEnd > 0 && irStart > custEnd);
+		assert.ok(legalStart > 0 && irEnd < legalStart);
+
+		/* missing clinicOid → nullFlavor NI */
+		const noOid = generateDentalCdaXml({
+			...params,
+			clinicOid: undefined,
+			clinicName: "Clinic " + String.fromCharCode(60) + "X" + String.fromCharCode(38) + "Y",
+		});
+		const noIr = noOid.slice(
+			noOid.indexOf("<informationRecipient>"),
+			noOid.indexOf("</informationRecipient>"),
+		);
+		assert.ok(noIr.includes('<id nullFlavor="NI"/>'));
+		const lt = "&" + "lt;";
+		const amp = "&" + "amp;";
+		assert.ok(
+			noIr.includes("<name>Clinic " + lt + "X" + amp + "Y</name>"),
+			"clinicName in informationRecipient must be XML-escaped",
+		);
+	});
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 
 
 
