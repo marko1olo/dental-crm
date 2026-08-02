@@ -363,7 +363,40 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			</representedOrganization>
 		</assignedEntity>
 	</legalAuthenticator>
+	<!--
+		DEFECT #95: authenticator (who attested the clinical content).
+		БЫЛО: legalAuthenticator (#75) only — HL7 CDA R2 also allows/expects
+		authenticator for the clinician who authenticates the document content
+		(distinct role from legal signature party). EGISZ SEMD validators that
+		check both blocks reject documents with legalAuthenticator alone when
+		the authoring physician is the same person who attests the SOAP text.
+		СТАЛО: authenticator mirrors doctor identity + signatureCode S and
+		time = documentClock (lockedAt), same scheme as legalAuthenticator.
+	-->
+	<authenticator>
+		<time value="${effectiveTime}"/>
+		<signatureCode code="S"/>
+		<assignedEntity>
+			${params.doctorSnils && String(params.doctorSnils).trim()
+				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+				: `<id nullFlavor="NI"/>`}
+			${params.doctorPosition && params.doctorPosition.trim()
+				? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+				: ""}
+			<assignedPerson>
+				<name>
+					<family>${escapeXml(params.doctorName.last)}</family>
+					<given>${escapeXml(params.doctorName.first)}</given>
+					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+				</name>
+			</assignedPerson>
+			<representedOrganization>
+				<name>${escapeXml(params.clinicName)}</name>
+			</representedOrganization>
+		</assignedEntity>
+	</authenticator>
 	<!-- DEFECT #55/#65: encounter datetime (params.visitDate / appointment.startsAt) -->
+
 	<!--
 		DEFECT #93: documentationOf/serviceEvent/performer (treating physician).
 		БЫЛО: serviceEvent carried only effectiveTime — no performer. HL7 CDA R2

@@ -1531,7 +1531,87 @@ describe("egiszCdaGenerator", () => {
 		);
 	});
 
+	test("DEFECT #95: authenticator present with doctor name, signatureCode S, document time", () => {
+		const documentTime = new Date("2024-05-15T14:30:00.000Z");
+		const pad = (n: number) => n.toString().padStart(2, "0");
+		const expectedClock =
+			`${documentTime.getFullYear()}${pad(documentTime.getMonth() + 1)}${pad(documentTime.getDate())}` +
+			`${pad(documentTime.getHours())}${pad(documentTime.getMinutes())}${pad(documentTime.getSeconds())}`;
+
+		const params: EgiszCdaParams = {
+			patientId: "pat-95",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.555",
+			clinicName: "ООО Клиника Auth",
+			doctorName: { first: "Петр", last: "Петров", middle: "Сергеевич" },
+			doctorSnils: "999-888-777 66",
+			doctorPosition: "Врач-стоматолог",
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate: new Date("2024-05-15T10:00:00.000Z"),
+			documentId: "doc-95",
+			documentTime,
+		};
+
+		const xml = generateDentalCdaXml(params);
+		assert.ok(
+			xml.includes("<authenticator>"),
+			"CDA must include authenticator after legalAuthenticator",
+		);
+		const authStart = xml.indexOf("<authenticator>");
+		const authEnd = xml.indexOf("</authenticator>");
+		assert.ok(authStart > 0 && authEnd > authStart);
+		const auth = xml.slice(authStart, authEnd);
+
+		assert.ok(
+			auth.includes(`<time value="${expectedClock}"/>`),
+			"authenticator time must match documentTime clock",
+		);
+		assert.ok(
+			auth.includes('<signatureCode code="S"/>'),
+			"authenticator must carry signatureCode S",
+		);
+		assert.ok(
+			auth.includes('root="1.2.643.100.3" extension="999-888-777 66"'),
+			"authenticator assignedEntity id must carry doctor SNILS",
+		);
+		assert.ok(auth.includes("<family>Петров</family>"));
+		assert.ok(auth.includes("<given>Петр</given>"));
+		assert.ok(auth.includes("<given>Сергеевич</given>"));
+		assert.ok(
+			auth.includes('displayName="Врач-стоматолог"'),
+			"authenticator should surface doctorPosition",
+		);
+		assert.ok(
+			auth.includes("<name>ООО Клиника Auth</name>"),
+			"authenticator representedOrganization uses clinicName",
+		);
+
+		/* authenticator after legalAuthenticator */
+		const legalIdx = xml.indexOf("</legalAuthenticator>");
+		assert.ok(legalIdx > 0 && authStart > legalIdx);
+
+		/* without doctorSnils → nullFlavor NI */
+		const noSnils = generateDentalCdaXml({
+			...params,
+			doctorSnils: undefined,
+			doctorPosition: undefined,
+			doctorName: { first: "Анна", last: "Сидорова" },
+		});
+		const nsAuth = noSnils.slice(
+			noSnils.indexOf("<authenticator>"),
+			noSnils.indexOf("</authenticator>"),
+		);
+		assert.ok(nsAuth.includes('<id nullFlavor="NI"/>'));
+		assert.ok(nsAuth.includes("<family>Сидорова</family>"));
+		assert.ok(nsAuth.includes('<signatureCode code="S"/>'));
+	});
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 
 
 
