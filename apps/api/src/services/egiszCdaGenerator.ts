@@ -1084,6 +1084,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<statusCode code="completed"/>
 			<!--
+				DEFECT #212: documentationOf/serviceEvent/priorityCode.
+				WAS: serviceEvent had id/code/statusCode/effectiveTime/performer
+				only — no priorityCode. encompassingEncounter (#183) and treatment
+				ACT (#201) already carry priorityCode NI. HL7 CDA R2 Act has
+				priorityCode 0..1 on the care event. SEMD validators often flag
+				missing priority under documentationOf. Form 043/u chart does not
+				collect care-event priority (routine dental) — do not invent a
+				fake HL7 ActPriority code.
+				NOW: priorityCode nullFlavor NI until chart field exists.
+			-->
+			<priorityCode nullFlavor="NI"/>
+			<!--
 				DEFECT #144: documentationOf/serviceEvent/effectiveTime as IVL_TS.
 				WAS: single-value TS effectiveTime value=visitTime. HL7 CDA R2 /
 				EGISZ SEMD expect Act effectiveTime as IVL_TS (interval) on the
@@ -1096,6 +1108,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<low value="${visitTime}"/>
 			</effectiveTime>
 			<performer typeCode="PRF">
+
 				<!--
 					DEFECT #166: documentationOf/serviceEvent/performer/functionCode.
 					WAS: performer had time (#150) + assignedEntity only — no
