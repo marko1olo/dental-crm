@@ -196,8 +196,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 				</name>
 			</assignedPerson>
+			${/*
+			 * DEFECT #83: assignedAuthor must carry representedOrganization.
+			 * БЫЛО: author had person only; legalAuthenticator (#75) already
+			 * embeds clinic name under assignedEntity. EGISZ SEMD / CDA R2
+			 * author.assignedAuthor.representedOrganization is expected so
+			 * the document author is attributed to the MO, not a free agent.
+			 * СТАЛО: mirror clinicName (XML-escaped) as in legalAuthenticator.
+			 */
+			`<representedOrganization>
+				<name>${escapeXml(params.clinicName)}</name>
+			</representedOrganization>`}
 		</assignedAuthor>
 	</author>
+
 
 	<custodian>
 		<assignedCustodian>

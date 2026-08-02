@@ -197,11 +197,60 @@ describe("egiszCdaGenerator", () => {
 	});
 
 	/**
+	 * DEFECT #83: assignedAuthor must carry representedOrganization (clinic MO).
+	 * БЫЛО: author had person only; legalAuthenticator already embeds clinic
+	 * under assignedEntity. EGISZ SEMD / CDA R2 expects author.assignedAuthor
+	 * .representedOrganization so the document author is attributed to the MO.
+	 */
+	test("DEFECT #83: assignedAuthor includes representedOrganization with clinicName", () => {
+		const amp = "&" + "amp;";
+		const xml = generateDentalCdaXml({
+			patientId: "pat-83",
+			patientName: { first: "A", last: "B" },
+			patientSnils: "000",
+			patientBirthDate: "1990-01-01",
+			patientGender: "male",
+			clinicName: "Clinic & Co",
+			doctorName: { first: "D", last: "E" },
+			icd10Code: "K02.1",
+			diagnosisText: "x",
+			visitDate: new Date("2024-06-01T10:00:00.000Z"),
+			documentId: "doc-83",
+		});
+
+		const authorEnd = "</assignedAuthor>";
+		const authorBlock = xml.slice(
+			xml.indexOf("<assignedAuthor>"),
+			xml.indexOf(authorEnd) + authorEnd.length,
+		);
+		assert.ok(
+			authorBlock.includes("<representedOrganization>"),
+			"assignedAuthor must include representedOrganization",
+		);
+		assert.ok(
+			authorBlock.includes("</representedOrganization>"),
+			"assignedAuthor representedOrganization must be closed",
+		);
+		assert.ok(
+			authorBlock.includes("<name>Clinic " + amp + " Co</name>"),
+			"assignedAuthor representedOrganization must carry XML-escaped clinicName",
+		);
+		// representedOrganization must sit after assignedPerson (CDA R2 order)
+		const personEnd = authorBlock.indexOf("</assignedPerson>");
+		const orgStart = authorBlock.indexOf("<representedOrganization>");
+		assert.ok(
+			personEnd > 0 && orgStart > personEnd,
+			"representedOrganization must follow assignedPerson inside assignedAuthor",
+		);
+	});
+
+	/**
 	 * DEFECT #81: unknown patient gender must not invent code "0".
 	 * NSI 1.2.643.5.1.13.13.11.1040: 1=М, 2=Ж — "0" is not valid.
 	 * Route already 422s (DEFECT #68); generator uses nullFlavor="UNK".
 	 */
 	test("DEFECT #81: administrativeGenderCode nullFlavor UNK when gender unknown; 1/2 when known", () => {
+
 		const base = {
 			patientId: "pat-81",
 			patientName: { first: "A", last: "B" },
