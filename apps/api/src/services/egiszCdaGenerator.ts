@@ -545,7 +545,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<addr nullFlavor="NI"/>
 						<telecom nullFlavor="NI"/>
 					</guardianOrganization>
-</guardian>
+					<!--
+						DEFECT #970: patient/guardian/time.
+						WAS: guardian had id/code/addr/telecom/guardianPerson/guardianOrganization — no time. HL7 CDA R2 Guardian (Role) may carry effective time of guardianship. SEMD often flags missing time under guardian when other roles stamp time. Form 043/u does not collect guardianship interval; do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
+					<!--
+						DEFECT #971: patient/guardian/statusCode.
+						WAS: guardian had no statusCode. HL7 CDA R2 Role may carry statusCode. SEMD often flags missing status under guardian when patient role emits status. Form 043/u has no discrete guardian role status; do not invent.
+						NOW: statusCode nullFlavor NI.
+					-->
+					<statusCode nullFlavor="NI"/>
+					</guardian>
 
 				<!--
 					DEFECT #176: patient/birthplace.
@@ -1776,6 +1788,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	NOW: uncertaintyCode nullFlavor NI until chart field exists.
 -->
 <uncertaintyCode nullFlavor="NI"/>
+				<!--
+					DEFECT #912: reference/externalAct/subject.
+					WAS: externalAct had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under externalAct when body acts emit SBJ. Form 043/u has no discrete external-act related-party; do not invent.
+					NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+				-->
+				<subject typeCode="SBJ">
+					<relatedSubject>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<subject>
+							<name nullFlavor="NI"/>
+						</subject>
+					</relatedSubject>
+				</subject>
+				<!--
+					DEFECT #921: reference/externalAct/specimen.
+					WAS: externalAct had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries and serviceEvent already carry SPC shells. Form 043/u external references do not collect specimen identity; do not invent type codes.
+					NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+				-->
+				<specimen typeCode="SPC">
+					<specimenRole>
+						<id nullFlavor="NI"/>
+						<specimenPlayingEntity>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+							<quantity nullFlavor="NI"/>
+						</specimenPlayingEntity>
+					</specimenRole>
+				</specimen>
+				<!--
+					DEFECT #930: reference/externalAct/performer.
+					WAS: externalAct had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under externalAct when serviceEvent/body emit PRF. Form 043/u has no external-act performer identity; do not invent SNILS/FIO.
+					NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<performer typeCode="PRF">
+					<functionCode nullFlavor="NI"/>
+					<time nullFlavor="NI"/>
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</performer>
+				<!--
+					DEFECT #939: reference/externalAct/author.
+					WAS: externalAct had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under externalAct when body acts emit AUT. Form 043/u has no external-act author identity; do not invent.
+					NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+				-->
+				<author typeCode="AUT">
+					<time nullFlavor="NI"/>
+					<assignedAuthor>
+						<id nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+						<representedOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</representedOrganization>
+					</assignedAuthor>
+				</author>
 				</externalAct>
 			</reference>
 									<!--
@@ -2185,7 +2268,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</representedOrganization>
 				</assignedAuthor>
 			</author>
-</order>
+		<!--
+			DEFECT #969: inFulfillmentOf/order/interpretationCode.
+			WAS: order had method/target/uncertainty/author — no interpretationCode. HL7 CDA R2 Act has interpretationCode 0..*. SEMD often flags missing interpretation under inFulfillmentOf/order when body acts emit it.
+			NOW: interpretationCode nullFlavor NI; do not invent.
+		-->
+		<interpretationCode nullFlavor="NI"/>
+		</order>
 	</inFulfillmentOf>
 	<!--
 		DEFECT #130: ClinicalDocument/participant typeCode="REF" (referrer).
@@ -2471,7 +2560,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				</scopingOrganization>
 			</associatedEntity>
 		</participant>
-</consent>
+		<!--
+			DEFECT #968: authorization/consent/interpretationCode.
+			WAS: consent had performer/author/informant/participant — no interpretationCode. HL7 CDA R2 Act has interpretationCode 0..*. SEMD often flags missing interpretation under consent when body acts emit it. Form 043/u has no consent interpretation code; do not invent.
+			NOW: interpretationCode nullFlavor NI.
+		-->
+		<interpretationCode nullFlavor="NI"/>
+		</consent>
 	</authorization>
 
 
@@ -3184,6 +3279,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	NOW: uncertaintyCode nullFlavor NI until chart field exists.
 -->
 <uncertaintyCode nullFlavor="NI"/>
+				<!--
+					DEFECT #913: reference/externalAct/subject.
+					WAS: externalAct had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under externalAct when body acts emit SBJ. Form 043/u has no discrete external-act related-party; do not invent.
+					NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+				-->
+				<subject typeCode="SBJ">
+					<relatedSubject>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<subject>
+							<name nullFlavor="NI"/>
+						</subject>
+					</relatedSubject>
+				</subject>
+				<!--
+					DEFECT #922: reference/externalAct/specimen.
+					WAS: externalAct had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries and serviceEvent already carry SPC shells. Form 043/u external references do not collect specimen identity; do not invent type codes.
+					NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+				-->
+				<specimen typeCode="SPC">
+					<specimenRole>
+						<id nullFlavor="NI"/>
+						<specimenPlayingEntity>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+							<quantity nullFlavor="NI"/>
+						</specimenPlayingEntity>
+					</specimenRole>
+				</specimen>
+				<!--
+					DEFECT #931: reference/externalAct/performer.
+					WAS: externalAct had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under externalAct when serviceEvent/body emit PRF. Form 043/u has no external-act performer identity; do not invent SNILS/FIO.
+					NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<performer typeCode="PRF">
+					<functionCode nullFlavor="NI"/>
+					<time nullFlavor="NI"/>
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</performer>
+				<!--
+					DEFECT #940: reference/externalAct/author.
+					WAS: externalAct had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under externalAct when body acts emit AUT. Form 043/u has no external-act author identity; do not invent.
+					NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+				-->
+				<author typeCode="AUT">
+					<time nullFlavor="NI"/>
+					<assignedAuthor>
+						<id nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+						<representedOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</representedOrganization>
+					</assignedAuthor>
+				</author>
 				</externalAct>
 			</reference>
 									<!--
@@ -4040,6 +4206,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	NOW: uncertaintyCode nullFlavor NI until chart field exists.
 -->
 <uncertaintyCode nullFlavor="NI"/>
+				<!--
+					DEFECT #914: reference/externalAct/subject.
+					WAS: externalAct had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under externalAct when body acts emit SBJ. Form 043/u has no discrete external-act related-party; do not invent.
+					NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+				-->
+				<subject typeCode="SBJ">
+					<relatedSubject>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<subject>
+							<name nullFlavor="NI"/>
+						</subject>
+					</relatedSubject>
+				</subject>
+				<!--
+					DEFECT #923: reference/externalAct/specimen.
+					WAS: externalAct had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries and serviceEvent already carry SPC shells. Form 043/u external references do not collect specimen identity; do not invent type codes.
+					NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+				-->
+				<specimen typeCode="SPC">
+					<specimenRole>
+						<id nullFlavor="NI"/>
+						<specimenPlayingEntity>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+							<quantity nullFlavor="NI"/>
+						</specimenPlayingEntity>
+					</specimenRole>
+				</specimen>
+				<!--
+					DEFECT #932: reference/externalAct/performer.
+					WAS: externalAct had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under externalAct when serviceEvent/body emit PRF. Form 043/u has no external-act performer identity; do not invent SNILS/FIO.
+					NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<performer typeCode="PRF">
+					<functionCode nullFlavor="NI"/>
+					<time nullFlavor="NI"/>
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</performer>
+				<!--
+					DEFECT #941: reference/externalAct/author.
+					WAS: externalAct had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under externalAct when body acts emit AUT. Form 043/u has no external-act author identity; do not invent.
+					NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+				-->
+				<author typeCode="AUT">
+					<time nullFlavor="NI"/>
+					<assignedAuthor>
+						<id nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+						<representedOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</representedOrganization>
+					</assignedAuthor>
+				</author>
 				</externalAct>
 							</reference>
 							<!--
@@ -4284,6 +4521,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	NOW: confidentialityCode N matching ClinicalDocument (#158).
 -->
 <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+								<!--
+									DEFECT #963: referenceRange/observationRange/id.
+									WAS: observationRange had code/text/status/effectiveTime/priority/lang/conf — no id. HL7 CDA R2 Act has id 0..*. SEMD often flags missing id under observationRange when parent observations emit id.
+									NOW: id nullFlavor NI; do not invent range instance OID.
+								-->
+								<id nullFlavor="NI"/>
+								<!--
+									DEFECT #948: referenceRange/observationRange/methodCode.
+									WAS: observationRange had no methodCode. HL7 CDA R2 Observation has methodCode 0..*. Parent observations emit methodCode NI. Form 043/u has no separate range method; do not invent.
+									NOW: methodCode nullFlavor NI.
+								-->
+								<methodCode nullFlavor="NI"/>
+								<!--
+									DEFECT #953: referenceRange/observationRange/targetSiteCode.
+									WAS: observationRange had no targetSiteCode. HL7 CDA R2 Observation has targetSiteCode 0..*. Parent observations emit targetSiteCode. Form 043/u has no separate range site; do not invent tooth codes.
+									NOW: targetSiteCode nullFlavor NI.
+								-->
+								<targetSiteCode nullFlavor="NI"/>
+								<!--
+									DEFECT #958: referenceRange/observationRange/uncertaintyCode.
+									WAS: observationRange had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. Parent acts emit uncertaintyCode NI.
+									NOW: uncertaintyCode nullFlavor NI.
+								-->
+								<uncertaintyCode nullFlavor="NI"/>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -4919,6 +5180,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	NOW: uncertaintyCode nullFlavor NI until chart field exists.
 -->
 <uncertaintyCode nullFlavor="NI"/>
+				<!--
+					DEFECT #915: reference/externalAct/subject.
+					WAS: externalAct had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under externalAct when body acts emit SBJ. Form 043/u has no discrete external-act related-party; do not invent.
+					NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+				-->
+				<subject typeCode="SBJ">
+					<relatedSubject>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<subject>
+							<name nullFlavor="NI"/>
+						</subject>
+					</relatedSubject>
+				</subject>
+				<!--
+					DEFECT #924: reference/externalAct/specimen.
+					WAS: externalAct had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries and serviceEvent already carry SPC shells. Form 043/u external references do not collect specimen identity; do not invent type codes.
+					NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+				-->
+				<specimen typeCode="SPC">
+					<specimenRole>
+						<id nullFlavor="NI"/>
+						<specimenPlayingEntity>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+							<quantity nullFlavor="NI"/>
+						</specimenPlayingEntity>
+					</specimenRole>
+				</specimen>
+				<!--
+					DEFECT #933: reference/externalAct/performer.
+					WAS: externalAct had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under externalAct when serviceEvent/body emit PRF. Form 043/u has no external-act performer identity; do not invent SNILS/FIO.
+					NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<performer typeCode="PRF">
+					<functionCode nullFlavor="NI"/>
+					<time nullFlavor="NI"/>
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</performer>
+				<!--
+					DEFECT #942: reference/externalAct/author.
+					WAS: externalAct had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under externalAct when body acts emit AUT. Form 043/u has no external-act author identity; do not invent.
+					NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+				-->
+				<author typeCode="AUT">
+					<time nullFlavor="NI"/>
+					<assignedAuthor>
+						<id nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+						<representedOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</representedOrganization>
+					</assignedAuthor>
+				</author>
 				</externalAct>
 							</reference>
 							<!--
@@ -5163,6 +5495,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	NOW: confidentialityCode N matching ClinicalDocument (#158).
 -->
 <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+								<!--
+									DEFECT #964: referenceRange/observationRange/id.
+									WAS: observationRange had code/text/status/effectiveTime/priority/lang/conf — no id. HL7 CDA R2 Act has id 0..*. SEMD often flags missing id under observationRange when parent observations emit id.
+									NOW: id nullFlavor NI; do not invent range instance OID.
+								-->
+								<id nullFlavor="NI"/>
+								<!--
+									DEFECT #949: referenceRange/observationRange/methodCode.
+									WAS: observationRange had no methodCode. HL7 CDA R2 Observation has methodCode 0..*. Parent observations emit methodCode NI. Form 043/u has no separate range method; do not invent.
+									NOW: methodCode nullFlavor NI.
+								-->
+								<methodCode nullFlavor="NI"/>
+								<!--
+									DEFECT #954: referenceRange/observationRange/targetSiteCode.
+									WAS: observationRange had no targetSiteCode. HL7 CDA R2 Observation has targetSiteCode 0..*. Parent observations emit targetSiteCode. Form 043/u has no separate range site; do not invent tooth codes.
+									NOW: targetSiteCode nullFlavor NI.
+								-->
+								<targetSiteCode nullFlavor="NI"/>
+								<!--
+									DEFECT #959: referenceRange/observationRange/uncertaintyCode.
+									WAS: observationRange had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. Parent acts emit uncertaintyCode NI.
+									NOW: uncertaintyCode nullFlavor NI.
+								-->
+								<uncertaintyCode nullFlavor="NI"/>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -5812,6 +6168,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	NOW: uncertaintyCode nullFlavor NI until chart field exists.
 -->
 <uncertaintyCode nullFlavor="NI"/>
+				<!--
+					DEFECT #916: reference/externalAct/subject.
+					WAS: externalAct had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under externalAct when body acts emit SBJ. Form 043/u has no discrete external-act related-party; do not invent.
+					NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+				-->
+				<subject typeCode="SBJ">
+					<relatedSubject>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<subject>
+							<name nullFlavor="NI"/>
+						</subject>
+					</relatedSubject>
+				</subject>
+				<!--
+					DEFECT #925: reference/externalAct/specimen.
+					WAS: externalAct had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries and serviceEvent already carry SPC shells. Form 043/u external references do not collect specimen identity; do not invent type codes.
+					NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+				-->
+				<specimen typeCode="SPC">
+					<specimenRole>
+						<id nullFlavor="NI"/>
+						<specimenPlayingEntity>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+							<quantity nullFlavor="NI"/>
+						</specimenPlayingEntity>
+					</specimenRole>
+				</specimen>
+				<!--
+					DEFECT #934: reference/externalAct/performer.
+					WAS: externalAct had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under externalAct when serviceEvent/body emit PRF. Form 043/u has no external-act performer identity; do not invent SNILS/FIO.
+					NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<performer typeCode="PRF">
+					<functionCode nullFlavor="NI"/>
+					<time nullFlavor="NI"/>
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</performer>
+				<!--
+					DEFECT #943: reference/externalAct/author.
+					WAS: externalAct had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under externalAct when body acts emit AUT. Form 043/u has no external-act author identity; do not invent.
+					NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+				-->
+				<author typeCode="AUT">
+					<time nullFlavor="NI"/>
+					<assignedAuthor>
+						<id nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+						<representedOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</representedOrganization>
+					</assignedAuthor>
+				</author>
 				</externalAct>
 							</reference>
 							<!--
@@ -6056,6 +6483,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	NOW: confidentialityCode N matching ClinicalDocument (#158).
 -->
 <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+								<!--
+									DEFECT #965: referenceRange/observationRange/id.
+									WAS: observationRange had code/text/status/effectiveTime/priority/lang/conf — no id. HL7 CDA R2 Act has id 0..*. SEMD often flags missing id under observationRange when parent observations emit id.
+									NOW: id nullFlavor NI; do not invent range instance OID.
+								-->
+								<id nullFlavor="NI"/>
+								<!--
+									DEFECT #950: referenceRange/observationRange/methodCode.
+									WAS: observationRange had no methodCode. HL7 CDA R2 Observation has methodCode 0..*. Parent observations emit methodCode NI. Form 043/u has no separate range method; do not invent.
+									NOW: methodCode nullFlavor NI.
+								-->
+								<methodCode nullFlavor="NI"/>
+								<!--
+									DEFECT #955: referenceRange/observationRange/targetSiteCode.
+									WAS: observationRange had no targetSiteCode. HL7 CDA R2 Observation has targetSiteCode 0..*. Parent observations emit targetSiteCode. Form 043/u has no separate range site; do not invent tooth codes.
+									NOW: targetSiteCode nullFlavor NI.
+								-->
+								<targetSiteCode nullFlavor="NI"/>
+								<!--
+									DEFECT #960: referenceRange/observationRange/uncertaintyCode.
+									WAS: observationRange had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. Parent acts emit uncertaintyCode NI.
+									NOW: uncertaintyCode nullFlavor NI.
+								-->
+								<uncertaintyCode nullFlavor="NI"/>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -6699,6 +7150,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	NOW: uncertaintyCode nullFlavor NI until chart field exists.
 -->
 <uncertaintyCode nullFlavor="NI"/>
+				<!--
+					DEFECT #917: reference/externalAct/subject.
+					WAS: externalAct had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under externalAct when body acts emit SBJ. Form 043/u has no discrete external-act related-party; do not invent.
+					NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+				-->
+				<subject typeCode="SBJ">
+					<relatedSubject>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<subject>
+							<name nullFlavor="NI"/>
+						</subject>
+					</relatedSubject>
+				</subject>
+				<!--
+					DEFECT #926: reference/externalAct/specimen.
+					WAS: externalAct had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries and serviceEvent already carry SPC shells. Form 043/u external references do not collect specimen identity; do not invent type codes.
+					NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+				-->
+				<specimen typeCode="SPC">
+					<specimenRole>
+						<id nullFlavor="NI"/>
+						<specimenPlayingEntity>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+							<quantity nullFlavor="NI"/>
+						</specimenPlayingEntity>
+					</specimenRole>
+				</specimen>
+				<!--
+					DEFECT #935: reference/externalAct/performer.
+					WAS: externalAct had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under externalAct when serviceEvent/body emit PRF. Form 043/u has no external-act performer identity; do not invent SNILS/FIO.
+					NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<performer typeCode="PRF">
+					<functionCode nullFlavor="NI"/>
+					<time nullFlavor="NI"/>
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</performer>
+				<!--
+					DEFECT #944: reference/externalAct/author.
+					WAS: externalAct had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under externalAct when body acts emit AUT. Form 043/u has no external-act author identity; do not invent.
+					NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+				-->
+				<author typeCode="AUT">
+					<time nullFlavor="NI"/>
+					<assignedAuthor>
+						<id nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+						<representedOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</representedOrganization>
+					</assignedAuthor>
+				</author>
 				</externalAct>
 							</reference>
 							
@@ -7518,6 +8040,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	NOW: uncertaintyCode nullFlavor NI until chart field exists.
 -->
 <uncertaintyCode nullFlavor="NI"/>
+				<!--
+					DEFECT #918: reference/externalAct/subject.
+					WAS: externalAct had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under externalAct when body acts emit SBJ. Form 043/u has no discrete external-act related-party; do not invent.
+					NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+				-->
+				<subject typeCode="SBJ">
+					<relatedSubject>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<subject>
+							<name nullFlavor="NI"/>
+						</subject>
+					</relatedSubject>
+				</subject>
+				<!--
+					DEFECT #927: reference/externalAct/specimen.
+					WAS: externalAct had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries and serviceEvent already carry SPC shells. Form 043/u external references do not collect specimen identity; do not invent type codes.
+					NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+				-->
+				<specimen typeCode="SPC">
+					<specimenRole>
+						<id nullFlavor="NI"/>
+						<specimenPlayingEntity>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+							<quantity nullFlavor="NI"/>
+						</specimenPlayingEntity>
+					</specimenRole>
+				</specimen>
+				<!--
+					DEFECT #936: reference/externalAct/performer.
+					WAS: externalAct had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under externalAct when serviceEvent/body emit PRF. Form 043/u has no external-act performer identity; do not invent SNILS/FIO.
+					NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<performer typeCode="PRF">
+					<functionCode nullFlavor="NI"/>
+					<time nullFlavor="NI"/>
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</performer>
+				<!--
+					DEFECT #945: reference/externalAct/author.
+					WAS: externalAct had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under externalAct when body acts emit AUT. Form 043/u has no external-act author identity; do not invent.
+					NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+				-->
+				<author typeCode="AUT">
+					<time nullFlavor="NI"/>
+					<assignedAuthor>
+						<id nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+						<representedOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</representedOrganization>
+					</assignedAuthor>
+				</author>
 				</externalAct>
 							</reference>
 							<!--
@@ -7762,6 +8355,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	NOW: confidentialityCode N matching ClinicalDocument (#158).
 -->
 <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+								<!--
+									DEFECT #966: referenceRange/observationRange/id.
+									WAS: observationRange had code/text/status/effectiveTime/priority/lang/conf — no id. HL7 CDA R2 Act has id 0..*. SEMD often flags missing id under observationRange when parent observations emit id.
+									NOW: id nullFlavor NI; do not invent range instance OID.
+								-->
+								<id nullFlavor="NI"/>
+								<!--
+									DEFECT #951: referenceRange/observationRange/methodCode.
+									WAS: observationRange had no methodCode. HL7 CDA R2 Observation has methodCode 0..*. Parent observations emit methodCode NI. Form 043/u has no separate range method; do not invent.
+									NOW: methodCode nullFlavor NI.
+								-->
+								<methodCode nullFlavor="NI"/>
+								<!--
+									DEFECT #956: referenceRange/observationRange/targetSiteCode.
+									WAS: observationRange had no targetSiteCode. HL7 CDA R2 Observation has targetSiteCode 0..*. Parent observations emit targetSiteCode. Form 043/u has no separate range site; do not invent tooth codes.
+									NOW: targetSiteCode nullFlavor NI.
+								-->
+								<targetSiteCode nullFlavor="NI"/>
+								<!--
+									DEFECT #961: referenceRange/observationRange/uncertaintyCode.
+									WAS: observationRange had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. Parent acts emit uncertaintyCode NI.
+									NOW: uncertaintyCode nullFlavor NI.
+								-->
+								<uncertaintyCode nullFlavor="NI"/>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -8410,6 +9027,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	NOW: uncertaintyCode nullFlavor NI until chart field exists.
 -->
 <uncertaintyCode nullFlavor="NI"/>
+				<!--
+					DEFECT #919: reference/externalAct/subject.
+					WAS: externalAct had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under externalAct when body acts emit SBJ. Form 043/u has no discrete external-act related-party; do not invent.
+					NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+				-->
+				<subject typeCode="SBJ">
+					<relatedSubject>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<subject>
+							<name nullFlavor="NI"/>
+						</subject>
+					</relatedSubject>
+				</subject>
+				<!--
+					DEFECT #928: reference/externalAct/specimen.
+					WAS: externalAct had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries and serviceEvent already carry SPC shells. Form 043/u external references do not collect specimen identity; do not invent type codes.
+					NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+				-->
+				<specimen typeCode="SPC">
+					<specimenRole>
+						<id nullFlavor="NI"/>
+						<specimenPlayingEntity>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+							<quantity nullFlavor="NI"/>
+						</specimenPlayingEntity>
+					</specimenRole>
+				</specimen>
+				<!--
+					DEFECT #937: reference/externalAct/performer.
+					WAS: externalAct had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under externalAct when serviceEvent/body emit PRF. Form 043/u has no external-act performer identity; do not invent SNILS/FIO.
+					NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<performer typeCode="PRF">
+					<functionCode nullFlavor="NI"/>
+					<time nullFlavor="NI"/>
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</performer>
+				<!--
+					DEFECT #946: reference/externalAct/author.
+					WAS: externalAct had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under externalAct when body acts emit AUT. Form 043/u has no external-act author identity; do not invent.
+					NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+				-->
+				<author typeCode="AUT">
+					<time nullFlavor="NI"/>
+					<assignedAuthor>
+						<id nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+						<representedOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</representedOrganization>
+					</assignedAuthor>
+				</author>
 				</externalAct>
 							</reference>
 							<!--
@@ -8654,6 +9342,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	NOW: confidentialityCode N matching ClinicalDocument (#158).
 -->
 <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="Обычный"/>
+								<!--
+									DEFECT #967: referenceRange/observationRange/id.
+									WAS: observationRange had code/text/status/effectiveTime/priority/lang/conf — no id. HL7 CDA R2 Act has id 0..*. SEMD often flags missing id under observationRange when parent observations emit id.
+									NOW: id nullFlavor NI; do not invent range instance OID.
+								-->
+								<id nullFlavor="NI"/>
+								<!--
+									DEFECT #952: referenceRange/observationRange/methodCode.
+									WAS: observationRange had no methodCode. HL7 CDA R2 Observation has methodCode 0..*. Parent observations emit methodCode NI. Form 043/u has no separate range method; do not invent.
+									NOW: methodCode nullFlavor NI.
+								-->
+								<methodCode nullFlavor="NI"/>
+								<!--
+									DEFECT #957: referenceRange/observationRange/targetSiteCode.
+									WAS: observationRange had no targetSiteCode. HL7 CDA R2 Observation has targetSiteCode 0..*. Parent observations emit targetSiteCode. Form 043/u has no separate range site; do not invent tooth codes.
+									NOW: targetSiteCode nullFlavor NI.
+								-->
+								<targetSiteCode nullFlavor="NI"/>
+								<!--
+									DEFECT #962: referenceRange/observationRange/uncertaintyCode.
+									WAS: observationRange had no uncertaintyCode. HL7 CDA R2 Act has uncertaintyCode 0..1. Parent acts emit uncertaintyCode NI.
+									NOW: uncertaintyCode nullFlavor NI.
+								-->
+								<uncertaintyCode nullFlavor="NI"/>
 								</observationRange>
 							</referenceRange>
 <!--
@@ -9379,6 +10091,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	NOW: uncertaintyCode nullFlavor NI until chart field exists.
 -->
 <uncertaintyCode nullFlavor="NI"/>
+				<!--
+					DEFECT #920: reference/externalAct/subject.
+					WAS: externalAct had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under externalAct when body acts emit SBJ. Form 043/u has no discrete external-act related-party; do not invent.
+					NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
+				-->
+				<subject typeCode="SBJ">
+					<relatedSubject>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<subject>
+							<name nullFlavor="NI"/>
+						</subject>
+					</relatedSubject>
+				</subject>
+				<!--
+					DEFECT #929: reference/externalAct/specimen.
+					WAS: externalAct had no specimen. HL7 CDA R2 Act has specimen 0..*. Body entries and serviceEvent already carry SPC shells. Form 043/u external references do not collect specimen identity; do not invent type codes.
+					NOW: specimen typeCode=SPC with specimenRole id NI + specimenPlayingEntity code/name/desc/quantity NI.
+				-->
+				<specimen typeCode="SPC">
+					<specimenRole>
+						<id nullFlavor="NI"/>
+						<specimenPlayingEntity>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+							<quantity nullFlavor="NI"/>
+						</specimenPlayingEntity>
+					</specimenRole>
+				</specimen>
+				<!--
+					DEFECT #938: reference/externalAct/performer.
+					WAS: externalAct had no performer. HL7 CDA R2 Act has performer 0..*. SEMD often flags missing performer under externalAct when serviceEvent/body emit PRF. Form 043/u has no external-act performer identity; do not invent SNILS/FIO.
+					NOW: performer typeCode=PRF with functionCode/time NI + assignedEntity id/code/addr/telecom + assignedPerson/name NI.
+				-->
+				<performer typeCode="PRF">
+					<functionCode nullFlavor="NI"/>
+					<time nullFlavor="NI"/>
+					<assignedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+					</assignedEntity>
+				</performer>
+				<!--
+					DEFECT #947: reference/externalAct/author.
+					WAS: externalAct had no author. HL7 CDA R2 Act has author 0..*. SEMD often flags missing author under externalAct when body acts emit AUT. Form 043/u has no external-act author identity; do not invent.
+					NOW: author typeCode=AUT with time NI + assignedAuthor id/addr/telecom/assignedPerson name + representedOrganization id/name/addr/telecom NI.
+				-->
+				<author typeCode="AUT">
+					<time nullFlavor="NI"/>
+					<assignedAuthor>
+						<id nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<assignedPerson>
+							<name nullFlavor="NI"/>
+						</assignedPerson>
+						<representedOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</representedOrganization>
+					</assignedAuthor>
+				</author>
 				</externalAct>
 							</reference>
 							
