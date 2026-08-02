@@ -834,7 +834,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<!-- Объективный статус / Status localis (043 O-block) -->
 			<component>
 				<section>
-					<code code="29545-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Physical findings"/>
+					<!--
+						DEFECT #121: structuredBody LOINC displayName must be RU
+						(HL7 CDA R2 / EGISZ SEMD languageCode=ru-RU).
+						БЫЛО: four section code@displayName values stayed
+						English (Physical findings / Complications / History of Past
+						illness / Medical device identifier) while titles and the rest
+						of the SEMD are Russian. Validators and REMD human-readable
+						renderers show mixed-language section labels.
+						СТАЛО: displayName mirrors Russian <title> text
+						(LOINC code/codeSystem unchanged).
+					-->
+					<code code="29545-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Объективный статус"/>
 					<title>Объективный статус</title>
 					<text>
 						<paragraph>${escapeXml(params.objectiveStatus || "Без особенностей")}</paragraph>
@@ -854,7 +865,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<!-- Осложнения (043) -->
 			<component>
 				<section>
-					<code code="55109-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Complications"/>
+					<code code="55109-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Осложнения"/>
 					<title>Осложнения</title>
 					<text>
 						<paragraph>${escapeXml(params.complications || "Не отмечены")}</paragraph>
@@ -864,7 +875,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<!-- Сопутствующие заболевания (043) -->
 			<component>
 				<section>
-					<code code="11348-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Past illness"/>
+					<code code="11348-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Сопутствующие заболевания"/>
 					<title>Сопутствующие заболевания</title>
 					<text>
 						<paragraph>${escapeXml(params.comorbidities || "Не отмечены")}</paragraph>
@@ -875,7 +886,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			${params.instrumentTrayBarcode && params.instrumentTrayBarcode.trim()
 				? `<component>
 				<section>
-					<code code="46264-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Medical device identifier"/>
+					<code code="46264-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Идентификатор медицинского изделия"/>
 					<title>Инструментальный лоток</title>
 					<text>
 						<paragraph>Штрихкод: ${escapeXml(params.instrumentTrayBarcode.trim())}</paragraph>
