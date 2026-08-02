@@ -1138,7 +1138,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<text>
 						<paragraph>${escapeXml(params.complications || "Не отмечены")}</paragraph>
 					</text>
-				</section>
+				
+					<!--
+						DEFECT #135: Complications section entry/observation.
+						WAS: section 55109-3 had only narrative text - no entry.
+						Treatment (#134) and prior narrative sections now carry entries;
+						SEMD validators expect structured entry under complications.
+						NOW: entry/observation EVN with LOINC 55109-3 and ST value
+						from params.complications (default Ne otmecheny).
+					-->
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<code code="55109-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Осложнения"/>
+							<value xsi:type="ST">${escapeXml(params.complications || "Не отмечены")}</value>
+						</observation>
+					</entry></section>
 			</component>
 			<!-- Сопутствующие заболевания (043) -->
 			<component>
