@@ -937,8 +937,91 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(noOid.includes("<encompassingEncounter>"));
 	});
 
+	test("DEFECT #87: encompassingEncounter extension prefers encounterId over documentId", () => {
+		const visitDate = new Date("2024-06-01T09:15:00.000Z");
+		const base: EgiszCdaParams = {
+			patientId: "pat-87",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.999",
+			clinicName: "ООО Стоматология",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate,
+			documentId: "doc-uuid-aaa",
+			encounterId: "visit-uuid-bbb",
+		};
+
+		const xml = generateDentalCdaXml(base);
+		/* ClinicalDocument/id keeps documentId */
+		assert.ok(
+			xml.includes('extension="doc-uuid-aaa"'),
+			"ClinicalDocument id extension remains documentId",
+		);
+		/* encompassingEncounter uses encounterId (separate REMD join key) */
+		assert.ok(
+			xml.includes(
+				`<id root="1.2.643.5.1.13.13.12.2.999" extension="visit-uuid-bbb"/>`,
+			),
+			"encompassingEncounter extension must be encounterId (visit), not documentId",
+		);
+		const encBlock = xml.slice(
+			xml.indexOf("<encompassingEncounter>"),
+			xml.indexOf("</encompassingEncounter>"),
+		);
+		assert.ok(
+			encBlock.includes('extension="visit-uuid-bbb"'),
+			"encounter block must carry visit id",
+		);
+		assert.ok(
+			!encBlock.includes('extension="doc-uuid-aaa"'),
+			"encounter block must not reuse ClinicalDocument documentId when encounterId set",
+		);
+
+		/* blank encounterId → fall back to documentId (legacy) */
+		const fallback = generateDentalCdaXml({
+			...base,
+			encounterId: "   ",
+		});
+		const fbEnc = fallback.slice(
+			fallback.indexOf("<encompassingEncounter>"),
+			fallback.indexOf("</encompassingEncounter>"),
+		);
+		assert.ok(
+			fbEnc.includes('extension="doc-uuid-aaa"'),
+			"blank encounterId falls back to documentId",
+		);
+
+		/* omitted encounterId → same fallback */
+		const { encounterId: _omit, ...noEnc } = base;
+		const omitted = generateDentalCdaXml(noEnc);
+		const omEnc = omitted.slice(
+			omitted.indexOf("<encompassingEncounter>"),
+			omitted.indexOf("</encompassingEncounter>"),
+		);
+		assert.ok(
+			omEnc.includes('extension="doc-uuid-aaa"'),
+			"missing encounterId falls back to documentId",
+		);
+
+		/* encounterId XML-escaped */
+		const esc = generateDentalCdaXml({
+			...base,
+			encounterId: "v" + String.fromCharCode(60) + "x" + String.fromCharCode(38) + "y",
+		});
+		const lt = "&" + "lt;";
+		const amp = "&" + "amp;";
+		assert.ok(
+			esc.includes('extension="v' + lt + "x" + amp + 'y"'),
+			"encounterId must be XML-escaped in encompassingEncounter",
+		);
+	});
 
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 
 
 

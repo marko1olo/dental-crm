@@ -34,10 +34,18 @@ export interface EgiszCdaParams {
 	visitDate: Date;
 	documentId: string;
 	/**
+	 * DEFECT #87: ambulatory encounter id for componentOf/encompassingEncounter.
+	 * Prefer visit.id (or appointment.id). Falls back to documentId only when
+	 * the caller has no separate encounter UUID — must not silently equal the
+	 * ClinicalDocument/id when a real visit id is available (REMD join key).
+	 */
+	encounterId?: string;
+	/**
 	 * DEFECT #61: CDA versionNumber must track 043 diary.version after revise.
 	 * Default 1 when diary absent (EMK-only export).
 	 */
 	documentVersion?: number;
+
 	/**
 	 * DEFECT #72: ClinicalDocument + author effectiveTime.
 	 * Prefer diary lockedAt (sign time). Falls back to generation now.
@@ -122,9 +130,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				? "2"
 				: null;
 
-
+	/*
+	 * DEFECT #87: encompassingEncounter extension must be the visit/encounter id.
+	 * БЫЛО (#86): always params.documentId — ClinicalDocument/id and
+	 * componentOf/encompassingEncounter/id shared one extension, so REMD
+	 * could not join the SEMD to visits.id / appointments.id as a separate key.
+	 * СТАЛО: prefer trimmed encounterId; fall back to documentId only when
+	 * the caller has no separate encounter UUID (legacy/EMK-only export).
+	 */
+	const encounterExtension = (() => {
+		const raw =
+			params.encounterId != null ? String(params.encounterId).trim() : "";
+		return raw.length > 0 ? raw : params.documentId;
+	})();
 
 	return `<?xml version="1.0" encoding="UTF-8"?>
+
 <ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<!-- DEFECT #76: realmCode required by HL7 CDA R2 / EGISZ SEMD header profile (RU) -->
 	<realmCode code="RU"/>
@@ -275,16 +296,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		document is explicitly linked to the ambulatory encounter (id + time).
 		Without it validators treat the protocol as detached from the visit;
 		REMD audit cannot join the SEMD to the appointment slot id.
-		СТАЛО: encompassingEncounter with id (documentId as encounter extension
-		when no separate visit UUID is on the generator surface) and the same
-		visitTime clock as documentationOf (yyyyMMddHHmmss).
+		СТАЛО: encompassingEncounter with id + the same visitTime clock as
+		documentationOf (yyyyMMddHHmmss).
+		DEFECT #87: extension is encounterExtension (visit.id preferred),
+		not ClinicalDocument documentId — separate REMD join key.
 	-->
 	<componentOf>
 		<encompassingEncounter>
-			<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(params.documentId)}"/>
+			<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(encounterExtension)}"/>
 			<effectiveTime value="${visitTime}"/>
 		</encompassingEncounter>
 	</componentOf>
+
 	<component>
 
 		<structuredBody>

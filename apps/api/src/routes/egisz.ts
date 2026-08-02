@@ -690,6 +690,17 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				diagnosisText: effectiveDiagnosis,
 				visitDate: encounterDate,
 				documentId: row.visit.id,
+				/*
+				 * DEFECT #87: encompassingEncounter extension = visit id.
+				 * БЫЛО (#86): generator reused documentId for encounter id —
+				 * ClinicalDocument/id and componentOf/id were the same key.
+				 * REMD cannot join SEMD to visits as a separate encounter when
+				 * documentId later becomes diary/export UUID.
+				 * СТАЛО: pass visit.id explicitly as encounterId (generator
+				 * falls back to documentId only if encounterId omitted).
+				 */
+				encounterId: row.visit.id,
+
 			/* DEFECT #61: revised 043 must not re-export as version 1 */
 				...(typeof diaryRow?.version === "number" &&
 				Number.isFinite(diaryRow.version) &&
