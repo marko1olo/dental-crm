@@ -252,7 +252,19 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						: "";
 				return snils ? `${mrnId}\n\t\t\t${snils}` : mrnId;
 			})()}
+			<!--
+				DEFECT #98: patientRole addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+				БЫЛО: patientRole had only id(s) + patient demographics — no
+				addr/telecom. SEMD validators expect contact structure under
+				patientRole; without it REMD flags incomplete recordTarget.
+				We do not invent address/phone (no fake streets/numbers).
+				СТАЛО: emit addr and telecom with nullFlavor="NI" until real
+				patient contact fields are wired from the chart (no schema lie).
+			-->
+			<addr nullFlavor="NI"/>
+			<telecom nullFlavor="NI"/>
 			<patient>
+
 
 
 				<name>

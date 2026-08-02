@@ -1507,9 +1507,10 @@ describe("egiszCdaGenerator", () => {
 			!nsRole.includes('root="1.2.643.100.3"'),
 			"blank SNILS must not emit empty SNILS id",
 		);
+		/* DEFECT #98: addr/telecom may use nullFlavor NI; forbid empty SNILS id only */
 		assert.ok(
-			!nsRole.includes('nullFlavor="NI"'),
-			"when MRN present, do not emit NI placeholder for missing SNILS",
+			!nsRole.includes('extension=""'),
+			"when MRN present, do not emit empty-extension id placeholder for missing SNILS",
 		);
 
 		/* missing clinicOid → default MO root */
@@ -1714,7 +1715,47 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(birthIdx >= 0 && langIdx > birthIdx);
 	});
 
+	test("DEFECT #98: patientRole addr and telecom nullFlavor NI (no invented contact)", () => {
+		const params: EgiszCdaParams = {
+			patientId: "pat-98",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.888",
+			clinicName: "ООО Клиника Contact",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate: new Date("2025-02-01T10:00:00.000Z"),
+			documentId: "doc-98",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		const role = xml.slice(
+			xml.indexOf("<patientRole>"),
+			xml.indexOf("</patientRole>"),
+		);
+		assert.ok(
+			role.includes('<addr nullFlavor="NI"/>'),
+			"patientRole must emit addr nullFlavor=NI when contact unknown",
+		);
+		assert.ok(
+			role.includes('<telecom nullFlavor="NI"/>'),
+			"patientRole must emit telecom nullFlavor=NI when contact unknown",
+		);
+		/* no invented street/phone */
+		assert.ok(!role.includes("<streetAddressLine"));
+		assert.ok(!role.includes("tel:"));
+		/* order: ids → addr → telecom → patient */
+		const addrIdx = role.indexOf("<addr ");
+		const telIdx = role.indexOf("<telecom ");
+		const patientIdx = role.indexOf("<patient>");
+		assert.ok(addrIdx > 0 && telIdx > addrIdx && patientIdx > telIdx);
+	});
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 
 
 
