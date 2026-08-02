@@ -1120,7 +1120,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<uncertaintyCode nullFlavor="NI"/>
 			<!--
+				DEFECT #215: documentationOf/serviceEvent/repeatNumber.
+				WAS: serviceEvent had priorityCode/methodCode/uncertaintyCode only
+				— no repeatNumber. Treatment ACT (#210) and instrument-tray supply
+				(#204) already carry repeatNumber NI. HL7 CDA R2 Act has
+				repeatNumber 0..1 on the care event. SEMD validators often flag
+				missing repeatNumber under documentationOf. Form 043/u care event
+				is a single completed visit — no discrete repeat field and do not
+				invent a fake INT count.
+				NOW: repeatNumber nullFlavor NI until chart field exists.
+			-->
+			<repeatNumber nullFlavor="NI"/>
+			<!--
 				DEFECT #144: documentationOf/serviceEvent/effectiveTime as IVL_TS.
+
 
 
 				WAS: single-value TS effectiveTime value=visitTime. HL7 CDA R2 /
