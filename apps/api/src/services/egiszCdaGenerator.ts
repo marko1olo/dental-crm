@@ -676,8 +676,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name>${escapeXml(params.clinicName)}</name>
 					</location>
 					<serviceProviderOrganization>
+						<!--
+							DEFECT #111: healthCareFacility serviceProviderOrganization
+							addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+							БЫЛО: serviceProviderOrganization had only name child — no
+							addr/telecom. SEMD validators expect MO contact under
+							encounter facility provider org (mirror of responsibleParty
+							org #110). We do not invent clinic street or phone.
+							СТАЛО: emit addr and telecom with nullFlavor="NI".
+						-->
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
 						<name>${escapeXml(params.clinicName)}</name>
 					</serviceProviderOrganization>
+
 				</healthCareFacility>
 			</location>
 		</encompassingEncounter>

@@ -2344,8 +2344,53 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(ro.includes("<name>ООО Клиника Responsible Org Contact</name>"));
 	});
 
+	test("DEFECT #111: serviceProviderOrganization addr and telecom nullFlavor NI", () => {
+		const params: EgiszCdaParams = {
+			patientId: "pat-111",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.111",
+			clinicName: "ООО Клиника Provider Org Contact",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate: new Date("2025-07-01T10:00:00.000Z"),
+			documentId: "doc-111",
+			encounterId: "enc-111",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		const spoEnd = "</serviceProviderOrganization>";
+		const spoStart = xml.indexOf("<serviceProviderOrganization>");
+		assert.ok(spoStart >= 0, "healthCareFacility must include serviceProviderOrganization");
+		const spo = xml.slice(spoStart, xml.indexOf(spoEnd, spoStart) + spoEnd.length);
+		assert.ok(
+			spo.includes('<addr nullFlavor="NI"/>'),
+			"serviceProviderOrganization must emit addr nullFlavor=NI when contact unknown",
+		);
+		assert.ok(
+			spo.includes('<telecom nullFlavor="NI"/>'),
+			"serviceProviderOrganization must emit telecom nullFlavor=NI when contact unknown",
+		);
+		assert.ok(!spo.includes("<streetAddressLine"));
+		assert.ok(!spo.includes("tel:"));
+		/* order: addr → telecom → name (ignore XML comments) */
+		const spoNoComments = spo.replace(/<!--[\s\S]*?-->/g, "");
+		const addrIdx = spoNoComments.indexOf("<addr ");
+		const telIdx = spoNoComments.indexOf("<telecom ");
+		const nameIdx = spoNoComments.indexOf("<name>");
+		assert.ok(
+			addrIdx >= 0 && telIdx > addrIdx && nameIdx > telIdx,
+			"serviceProviderOrganization order: addr → telecom → name",
+		);
+		assert.ok(spo.includes("<name>ООО Клиника Provider Org Contact</name>"));
+	});
+
 
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 
 
 
