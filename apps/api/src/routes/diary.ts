@@ -1514,55 +1514,127 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		 * только прикрепляем подпись и пересчитываем hash по строке (без
 		 * повторной складской церемонии — услуги/склад уже закрыты первым lock).
 		 * locked + PKCS#7 уже есть → по-прежнему 409.
+		 *
+		 * DEFECT #85: re-attach must serialize on the locked 043/у row.
+		 * БЫЛО: outer SELECT without FOR UPDATE, then bare UPDATE by id+org.
+		 * Concurrent double POST /lock after revise both saw null PKCS#7 and
+		 * both wrote crypto_signature_pkcs7 / diaryHash — last writer won,
+		 * first УКЭП silently discarded; concurrent /revise could change SOAP
+		 * between hash snapshot and UPDATE so PKCS#7 sealed the wrong text.
+		 * СТАЛО: FOR UPDATE inside transaction; hash + author fill from locked
+		 * row; UPDATE WHERE is_locked=true AND crypto still empty; zero rows →
+		 * AlreadyLocked (same pattern as draft #73 / lock #76 / revise #84).
 		 */
 		if (existing.isLocked) {
-			const lockedAtIso =
-				existing.lockedAt instanceof Date
-					? existing.lockedAt.toISOString()
-					: typeof existing.lockedAt === "string"
-						? existing.lockedAt
-						: null;
-			const hasPkcs7 =
-				typeof existing.cryptoSignaturePkcs7 === "string" &&
-				existing.cryptoSignaturePkcs7.length > 0;
 			const incomingPkcs7 =
 				typeof pkcs7Signature === "string" && pkcs7Signature.length > 0
 					? pkcs7Signature
 					: null;
 
-			if (!hasPkcs7 && incomingPkcs7) {
-				const reattachHash = computeDiaryHash(
-					existing.visitId,
-					existing.patientId ?? "",
-					existing.anamnesis,
-					existing.statusLocalis,
-					existing.treatmentDescription,
-					existing.diagnosisIcd10,
-					existing.diagnosisTooth,
-					existing.complications,
-					existing.comorbidities,
-					existing.instrumentTrayBarcode,
-				);
-				const resolvedReattach = await resolveSignatureForStorage({
-					pkcs7Signature: incomingPkcs7,
-					userId,
-					organizationId: orgId,
-					diaryHashForMark: reattachHash,
+			const lockedAtIsoFrom = (
+				lockedAt: Date | string | null | undefined,
+			): string | null =>
+				lockedAt instanceof Date
+					? lockedAt.toISOString()
+					: typeof lockedAt === "string"
+						? lockedAt
+						: null;
+
+			if (!incomingPkcs7) {
+				const lockedAtIso = lockedAtIsoFrom(existing.lockedAt);
+				const hasPkcs7 =
+					typeof existing.cryptoSignaturePkcs7 === "string" &&
+					existing.cryptoSignaturePkcs7.length > 0;
+				/*
+				 * БЫЛО: 409 отдавал hash, но не lockedAt. Клиент doLock на 409 ставил
+				 * isLocked=true и hash, а lockedAt оставался null — печать 043/у и
+				 * штамп «Подписан:» показывали «—» / дату с ПК, хотя в БД locked_at есть.
+				 */
+				return reply.code(409).send({
+					error: "AlreadyLocked",
+					hash: existing.diaryHash,
+					lockedAt: lockedAtIso,
+					cryptoSignatureAttached: hasPkcs7,
+					message: hasPkcs7
+						? "Дневник этого приёма уже подписан и заблокирован, второй раз подписывать его не нужно. Если нужна правка подписанного дневника, её проводит администратор клиники через ревизию."
+						: "Дневник уже закрыт замком, но оттиск УКЭП после правки сброшен. Откройте подписание и приложите подпись КриптоПро или простую подпись к текущему отпечатку — склад и услуги повторно не спишутся.",
 				});
-				if (!resolvedReattach.ok) {
-					return reply.code(403).send({
-						error: resolvedReattach.code,
-						message: resolvedReattach.message,
+			}
+
+			type ReattachTxResult =
+				| { kind: "not_found" }
+				| { kind: "not_locked" }
+				| {
+						kind: "already";
+						hash: string | null;
+						lockedAt: string | null;
+						hasPkcs7: boolean;
+				  }
+				| { kind: "pin_rejected"; code: string; message: string }
+				| {
+						kind: "ok";
+						hash: string;
+						lockedAt: string | null;
+						attached: boolean;
+				  };
+
+			const reattachResult: ReattachTxResult = await db.transaction(
+				async (tx) => {
+					const [row] = await tx
+						.select()
+						.from(visitDiaries)
+						.where(
+							and(
+								eq(visitDiaries.id, id),
+								eq(visitDiaries.organizationId, orgId),
+							),
+						)
+						.for("update");
+
+					if (!row) return { kind: "not_found" as const };
+					if (!row.isLocked) return { kind: "not_locked" as const };
+
+					const lockedAtIso = lockedAtIsoFrom(row.lockedAt);
+					const hasPkcs7 =
+						typeof row.cryptoSignaturePkcs7 === "string" &&
+						row.cryptoSignaturePkcs7.length > 0;
+					if (hasPkcs7) {
+						return {
+							kind: "already" as const,
+							hash: row.diaryHash,
+							lockedAt: lockedAtIso,
+							hasPkcs7: true,
+						};
+					}
+
+					const reattachHash = computeDiaryHash(
+						row.visitId,
+						row.patientId ?? "",
+						row.anamnesis,
+						row.statusLocalis,
+						row.treatmentDescription,
+						row.diagnosisIcd10,
+						row.diagnosisTooth,
+						row.complications,
+						row.comorbidities,
+						row.instrumentTrayBarcode,
+					);
+					const resolvedReattach = await resolveSignatureForStorage({
+						pkcs7Signature: incomingPkcs7,
+						userId,
+						organizationId: orgId,
+						diaryHashForMark: reattachHash,
 					});
-				}
-				const now = new Date();
-				await db
-					.update(visitDiaries)
-					.set({
-						diaryHash: reattachHash,
-						cryptoSignaturePkcs7: resolvedReattach.stored,
-						coSignedByUserId: userId,
-						/*
+					if (!resolvedReattach.ok) {
+						return {
+							kind: "pin_rejected" as const,
+							code: resolvedReattach.code,
+							message: resolvedReattach.message,
+						};
+					}
+
+					const now = new Date();
+					/*
 					 * DEFECT #39: progressive fill author/doctor on re-attach.
 					 * БЫЛО: reattach писал только coSignedByUserId. Legacy-строки
 					 * (до DEFECT #35) оставались с doctorId/authorId = null даже
@@ -1571,41 +1643,102 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					 * если колонка ещё null. После revise исходный doctorId
 					 * сохраняется — re-attach не подменяет лечащего врача.
 					 */
-					authorId: existing.authorId ?? userId,
-					doctorId: existing.doctorId ?? userId,
-					lockedByUserId: existing.lockedByUserId ?? userId,
-					updatedAt: now,
-					})
-					.where(
-						and(
-							eq(visitDiaries.id, id),
-							eq(visitDiaries.organizationId, orgId),
-						),
-					);
+					const updatedRows = await tx
+						.update(visitDiaries)
+						.set({
+							diaryHash: reattachHash,
+							cryptoSignaturePkcs7: resolvedReattach.stored,
+							coSignedByUserId: userId,
+							authorId: row.authorId ?? userId,
+							doctorId: row.doctorId ?? userId,
+							lockedByUserId: row.lockedByUserId ?? userId,
+							updatedAt: now,
+						})
+						.where(
+							and(
+								eq(visitDiaries.id, id),
+								eq(visitDiaries.organizationId, orgId),
+								eq(visitDiaries.isLocked, true),
+								/* only first successful re-attach wins the empty PKCS#7 slot */
+								or(
+									isNull(visitDiaries.cryptoSignaturePkcs7),
+									eq(visitDiaries.cryptoSignaturePkcs7, ""),
+								),
+							),
+						)
+						.returning({ id: visitDiaries.id });
+
+					if (updatedRows.length === 0) {
+						const [again] = await tx
+							.select({
+								diaryHash: visitDiaries.diaryHash,
+								lockedAt: visitDiaries.lockedAt,
+								cryptoSignaturePkcs7: visitDiaries.cryptoSignaturePkcs7,
+							})
+							.from(visitDiaries)
+							.where(
+								and(
+									eq(visitDiaries.id, id),
+									eq(visitDiaries.organizationId, orgId),
+								),
+							)
+							.limit(1);
+						const againHas =
+							typeof again?.cryptoSignaturePkcs7 === "string" &&
+							again.cryptoSignaturePkcs7.length > 0;
+						return {
+							kind: "already" as const,
+							hash: again?.diaryHash ?? row.diaryHash,
+							lockedAt: lockedAtIsoFrom(again?.lockedAt ?? row.lockedAt),
+							hasPkcs7: againHas,
+						};
+					}
+
+					return {
+						kind: "ok" as const,
+						hash: reattachHash,
+						lockedAt: lockedAtIso,
+						attached: Boolean(resolvedReattach.stored),
+					};
+				},
+			);
+
+			if (reattachResult.kind === "not_found") {
+				return reply.code(404).send({
+					error: "NotFound",
+					message:
+						"Дневник приёма не найден в этой клинике, подписывать нечего. Так бывает, если страница приёма открыта давно и дневник с тех пор удалён. Откройте приём заново, нажмите «Сохранить черновик» и повторите подписание.",
+				});
+			}
+			if (reattachResult.kind === "pin_rejected") {
+				return reply.code(403).send({
+					error: reattachResult.code,
+					message: reattachResult.message,
+				});
+			}
+			if (reattachResult.kind === "already") {
+				return reply.code(409).send({
+					error: "AlreadyLocked",
+					hash: reattachResult.hash,
+					lockedAt: reattachResult.lockedAt,
+					cryptoSignatureAttached: reattachResult.hasPkcs7,
+					message: reattachResult.hasPkcs7
+						? "Дневник этого приёма уже подписан и заблокирован, второй раз подписывать его не нужно. Если нужна правка подписанного дневника, её проводит администратор клиники через ревизию."
+						: "Дневник уже закрыт замком, но оттиск УКЭП после правки сброшен. Откройте подписание и приложите подпись КриптоПро или простую подпись к текущему отпечатку — склад и услуги повторно не спишутся.",
+				});
+			}
+			if (reattachResult.kind === "ok") {
 				return reply.send({
 					success: true,
-					hash: reattachHash,
-					lockedAt: lockedAtIso,
-					cryptoSignatureAttached: Boolean(resolvedReattach.stored),
+					hash: reattachResult.hash,
+					lockedAt: reattachResult.lockedAt,
+					cryptoSignatureAttached: reattachResult.attached,
 					reattached: true,
 				});
 			}
-
-			/*
-			 * БЫЛО: 409 отдавал hash, но не lockedAt. Клиент doLock на 409 ставил
-			 * isLocked=true и hash, а lockedAt оставался null — печать 043/у и
-			 * штамп «Подписан:» показывали «—» / дату с ПК, хотя в БД locked_at есть.
-			 */
-			return reply.code(409).send({
-				error: "AlreadyLocked",
-				hash: existing.diaryHash,
-				lockedAt: lockedAtIso,
-				cryptoSignatureAttached: hasPkcs7,
-				message: hasPkcs7
-					? "Дневник этого приёма уже подписан и заблокирован, второй раз подписывать его не нужно. Если нужна правка подписанного дневника, её проводит администратор клиники через ревизию."
-					: "Дневник уже закрыт замком, но оттиск УКЭП после правки сброшен. Откройте подписание и приложите подпись КриптоПро или простую подпись к текущему отпечатку — склад и услуги повторно не спишутся.",
-			});
+			/* not_locked: row unlocked between outer read and FOR UPDATE — fall through to ceremony */
 		}
+
 
 		// Церемония — общая с POST /api/diaries, см. runDiarySigningCeremony.
 		// PIN:… → verify + opaque mark ДО транзакции (pbkdf2 вне tx-критики).
