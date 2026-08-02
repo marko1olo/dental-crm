@@ -1108,6 +1108,18 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			// без транзакции, поэтому упавшее списание оставляло дневник уже
 			// подписанным, а склад — нетронутым.
 			const outcome = await db.transaction(async (tx) => {
+				/*
+				 * DEFECT #73: Form 043/у clinical fields immutable when is_locked.
+				 *
+				 * БЫЛО: SELECT without FOR UPDATE, then UPDATE by id+org only.
+				 * Concurrent POST /lock could commit is_locked=true between the
+				 * read and the write; draft save still rewrote anamnesis /
+				 * diagnosis / treatment / tray on the already-signed 043/у.
+				 * Signing ceremony already uses FOR UPDATE; draft path did not.
+				 *
+				 * СТАЛО: row lock via FOR UPDATE, re-check isLocked, and UPDATE
+				 * WHERE is_locked=false. Zero matched rows → AlreadyLocked.
+				 */
 				const [existing] = await tx
 					.select()
 					.from(visitDiaries)
@@ -1117,7 +1129,8 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 							eq(visitDiaries.organizationId, orgId),
 						),
 					)
-					.limit(1);
+					.limit(1)
+					.for("update");
 
 				if (existing?.isLocked) {
 					throw new DiarySigningError(
@@ -1126,9 +1139,10 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					);
 				}
 
+
 				let diaryId: string;
 				if (existing) {
-					await tx
+					const updatedRows = await tx
 						.update(visitDiaries)
 						// БЫЛО: `data.X ?? existing.X` по всем клиническим полям. Пустая
 						// строка — это не undefined, но фронтенд часто не присылает поле
@@ -1186,9 +1200,19 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 							and(
 								eq(visitDiaries.id, existing.id),
 								eq(visitDiaries.organizationId, orgId),
+								/* DEFECT #73: never rewrite clinical columns on locked 043/у */
+								eq(visitDiaries.isLocked, false),
 							),
+						)
+						.returning({ id: visitDiaries.id });
+					if (updatedRows.length === 0) {
+						throw new DiarySigningError(
+							"AlreadyLocked",
+							"Дневник подписан и заблокирован.",
 						);
+					}
 					diaryId = existing.id;
+
 				} else {
 					// Дневник всегда рождается черновиком. БЫЛО: при status "signed"
 					// вставка сразу ставила is_locked, время и хеш — дневник появлялся
@@ -1283,6 +1307,8 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 							and(
 								eq(visitDiaries.id, diaryId),
 								eq(visitDiaries.organizationId, orgId),
+								/* DEFECT #73: draft hash only while unlocked */
+								eq(visitDiaries.isLocked, false),
 							),
 						);
 					/*
