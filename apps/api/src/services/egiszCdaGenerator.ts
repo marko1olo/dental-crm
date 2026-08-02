@@ -4,12 +4,12 @@ export interface EgiszCdaParams {
 	patientSnils: string;
 	patientBirthDate: string | null;
 	patientGender: "male" | "female" | "other" | null;
-	clinicOid?: string;
+	clinicOid?: string | undefined;
 	clinicName: string;
 	doctorName: { first: string; last: string; middle?: string };
-	doctorSnils?: string;
+	doctorSnils?: string | undefined;
 	/** DEFECT #58: specialty label → assignedAuthor/code@displayName */
-	doctorPosition?: string;
+	doctorPosition?: string | undefined;
 	icd10Code: string;
 	diagnosisText: string;
 	/**
@@ -58,7 +58,7 @@ export interface EgiszCdaParams {
 	 * revision supersedes. Prefer "{visitId}-v{N-1}" (DEFECT #89 scheme).
 	 * When omitted/blank, relatedDocument is not emitted (v1 / EMK-only).
 	 */
-	replacesDocumentId?: string;
+	replacesDocumentId?: string | undefined;
 
 	/**
 	 * DEFECT #72: ClinicalDocument + author effectiveTime.
@@ -432,6 +432,49 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			</representedOrganization>`}
 		</assignedEntity>
 	</dataEnterer>
+		<!--
+		DEFECT #128: ClinicalDocument/informant (HL7 CDA R2 / EGISZ SEMD).
+		WAS: header had dataEnterer (#127) then jumped to custodian with
+		no informant. SEMD validators expect the clinical source of the
+		protocol facts (who supplied / confirmed the anamnesis and exam
+		findings) under ClinicalDocument after dataEnterer.
+		NOW: informant after dataEnterer, before custodian. In this
+		Form 043/u pipeline the treating dentist is the clinical informant
+		(no separate patient-relative informant field on the chart).
+		assignedEntity mirrors assignedAuthor / dataEnterer (SNILS or
+		nullFlavor NI, person name, MO org id or NI). No invented
+		street/phone - addr/telecom nullFlavor NI.
+	-->
+	<informant>
+		<assignedEntity>
+			${/*
+			 * Same id rule as assignedAuthor (#77) / dataEnterer (#127):
+			 * SNILS when present, else nullFlavor NI. Never extension="unknown".
+			 */
+			params.doctorSnils && String(params.doctorSnils).trim()
+				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+				: `<id nullFlavor="NI"/>`}
+			<addr nullFlavor="NI"/>
+			<telecom nullFlavor="NI"/>
+			<assignedPerson>
+				<name>
+					<family>${escapeXml(params.doctorName.last)}</family>
+					<given>${escapeXml(params.doctorName.first)}</given>
+					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+				</name>
+			</assignedPerson>
+			${`<representedOrganization>
+				${
+					params.clinicOid && String(params.clinicOid).trim()
+						? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+						: `<id nullFlavor="NI"/>`
+				}
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<name>${escapeXml(params.clinicName)}</name>
+			</representedOrganization>`}
+		</assignedEntity>
+	</informant>
 	<custodian>
 		<assignedCustodian>
 			<representedCustodianOrganization>
