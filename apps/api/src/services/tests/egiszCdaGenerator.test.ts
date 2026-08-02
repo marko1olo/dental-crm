@@ -1754,6 +1754,59 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(addrIdx > 0 && telIdx > addrIdx && patientIdx > telIdx);
 	});
 
+	test("DEFECT #99: assignedAuthor addr and telecom nullFlavor NI (no invented contact)", () => {
+		const params: EgiszCdaParams = {
+			patientId: "pat-99",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.999",
+			clinicName: "ООО Клиника Author Contact",
+			doctorName: { first: "Петр", last: "Петров", middle: "Сергеевич" },
+			doctorSnils: "111-222-333 44",
+			doctorPosition: "Врач-стоматолог",
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate: new Date("2025-03-01T10:00:00.000Z"),
+			documentId: "doc-99",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		const authorEnd = "</assignedAuthor>";
+		const author = xml.slice(
+			xml.indexOf("<assignedAuthor>"),
+			xml.indexOf(authorEnd) + authorEnd.length,
+		);
+		assert.ok(
+			author.includes('<addr nullFlavor="NI"/>'),
+			"assignedAuthor must emit addr nullFlavor=NI when contact unknown",
+		);
+		assert.ok(
+			author.includes('<telecom nullFlavor="NI"/>'),
+			"assignedAuthor must emit telecom nullFlavor=NI when contact unknown",
+		);
+		/* no invented street/phone under author */
+		assert.ok(!author.includes("<streetAddressLine"));
+		assert.ok(!author.includes("tel:"));
+		/* order: id → (code) → addr → telecom → assignedPerson */
+		const idIdx = author.indexOf("<id ");
+		const addrIdx = author.indexOf("<addr ");
+		const telIdx = author.indexOf("<telecom ");
+		const personIdx = author.indexOf("<assignedPerson>");
+		assert.ok(
+			idIdx >= 0 &&
+				addrIdx > idIdx &&
+				telIdx > addrIdx &&
+				personIdx > telIdx,
+			"assignedAuthor order: id → addr → telecom → assignedPerson",
+		);
+		/* still carries person + org (prior defects) */
+		assert.ok(author.includes("<family>Петров</family>"));
+		assert.ok(author.includes("<representedOrganization>"));
+	});
+
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
 
 

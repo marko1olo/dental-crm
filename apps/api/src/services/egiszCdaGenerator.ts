@@ -316,6 +316,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			${params.doctorPosition && params.doctorPosition.trim()
 				? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 				: ""}
+			<!--
+				DEFECT #99: assignedAuthor addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+				БЫЛО: assignedAuthor had id/code/person/org only — no addr/telecom.
+				SEMD validators expect contact structure under assignedAuthor
+				(mirror of patientRole #98). We do not invent clinic/doctor
+				street or phone numbers.
+				СТАЛО: emit addr and telecom with nullFlavor="NI" until real
+				MO contact fields are wired (no schema lie).
+			-->
+			<addr nullFlavor="NI"/>
+			<telecom nullFlavor="NI"/>
 			<assignedPerson>
 				<name>
 					<family>${escapeXml(params.doctorName.last)}</family>
@@ -325,6 +336,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			</assignedPerson>
 			${/*
 			 * DEFECT #83: assignedAuthor must carry representedOrganization.
+
 			 * БЫЛО: author had person only; legalAuthenticator (#75) already
 			 * embeds clinic name under assignedEntity. EGISZ SEMD / CDA R2
 			 * author.assignedAuthor.representedOrganization is expected so
