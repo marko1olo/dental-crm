@@ -848,6 +848,18 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			NOW: codeSystem + codeSystemName + RU displayName on code S.
 		-->
 		<signatureCode code="S" codeSystem="2.16.840.1.113883.5.89" codeSystemName="ParticipationSignature" displayName="Подписано"/>
+		<!--
+			DEFECT #184: legalAuthenticator/signatureText.
+			WAS: legalAuthenticator had time + functionCode + signatureCode +
+			assignedEntity only — no signatureText. HL7 CDA R2 LegalAuthenticator
+			has signatureText 0..1 (ED blob of the actual signature image/CMS).
+			SEMD validators often flag missing signatureText under the legal
+			signer even when signatureCode=S is present. Form 043/u pipeline
+			does not yet attach a detached CMS/PKCS#7 blob at CDA build time —
+			do not invent a fake base64 signature.
+			NOW: signatureText nullFlavor NI until e-sign blob is wired.
+		-->
+		<signatureText nullFlavor="NI"/>
 		<assignedEntity>
 			${/* DEFECT #77: assignedEntity/id required (1..*) — same as assignedAuthor */
 			params.doctorSnils && String(params.doctorSnils).trim()
@@ -855,6 +867,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				: `<id nullFlavor="NI"/>`}
 			${/*
 			 * DEFECT #139: legalAuthenticator assignedEntity/code always present.
+
 			 * WAS: same optional code as assignedAuthor pre-#138 — omitted when
 			 * doctorPosition blank. SEMD validators expect the specialty slot
 			 * under legal signer assignedEntity the same way.
