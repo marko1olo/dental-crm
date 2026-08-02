@@ -2307,6 +2307,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							${params.diagnosisTooth && String(params.diagnosisTooth).trim()
 								? `<targetSiteCode code="${escapeXml(String(params.diagnosisTooth).trim())}" codeSystem="1.2.643.5.1.13.13.11.1466" codeSystemName="Зубы" displayName="Зуб ${escapeXml(String(params.diagnosisTooth).trim())}"/>`
 								: `<targetSiteCode nullFlavor="NI"/>`}
+						
+							<!--
+								DEFECT #238: treatment act/performer.
+								WAS: treatment ACT had approach/targetSite only - no
+								performer. Body OBS entries (diagnosis #233 through
+								comorbidities #237) already carry performer PRF.
+								HL7 CDA R2 Act has performer 0..*. SEMD validators
+								often flag missing performer under procedure/treatment
+								ACT so REMD cannot attribute the care act to the
+								treating dentist at entry level (header performer is
+								care-event only).
+								NOW: performer typeCode=PRF with time=visitTime and
+								assignedEntity mirroring diagnosis OBS performer (SNILS
+								or NI, code with position or bare NI, person, MO org).
+								No invented extension="unknown" or street/phone.
+							-->
+							<performer typeCode="PRF">
+								<time value="${visitTime}"/>
+								<assignedEntity>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
 						</act>
 
 
@@ -2712,6 +2756,49 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</manufacturedMaterial>
 								</manufacturedProduct>
 							</product>
+						
+							<!--
+								DEFECT #239: instrument-tray supply/performer.
+								WAS: supply had product/manufacturedProduct only - no
+								performer. Body OBS (#233-#237) and treatment ACT (#238)
+								already carry performer PRF. HL7 CDA R2 Supply has
+								performer 0..*. SEMD validators often flag missing
+								performer under sterilization tray supply so REMD
+								cannot attribute tray issuance to the treating dentist
+								at entry level (header performer is care-event only).
+								NOW: performer typeCode=PRF with time=visitTime and
+								assignedEntity mirroring diagnosis OBS performer (SNILS
+								or NI, code with position or bare NI, person, MO org).
+								No invented extension="unknown" or street/phone.
+							-->
+							<performer typeCode="PRF">
+								<time value="${visitTime}"/>
+								<assignedEntity>
+									${params.doctorSnils && String(params.doctorSnils).trim()
+										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
+										: `<id nullFlavor="NI"/>`}
+									${params.doctorPosition && params.doctorPosition.trim()
+										? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+										: `<code nullFlavor="NI"/>`}
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<assignedPerson>
+										<name>
+											<family>${escapeXml(params.doctorName.last)}</family>
+											<given>${escapeXml(params.doctorName.first)}</given>
+											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										${params.clinicOid && String(params.clinicOid).trim()
+											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
+											: `<id nullFlavor="NI"/>`}
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<name>${escapeXml(params.clinicName)}</name>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
 						</supply>
 
 
