@@ -1059,7 +1059,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			NOW: time value=effectiveTime before associatedEntity.
 		-->
 		<time value="${effectiveTime}"/>
+		<!--
+			DEFECT #169: ClinicalDocument/participant REF/functionCode.
+			WAS: participant REF had time (#152) + associatedEntity only — no
+			functionCode. author/dataEnterer/informant/performer already emit
+			functionCode (#166/#167/#168). HL7 CDA R2 Participant1.functionCode
+			is the participation function (referrer role), distinct from
+			associatedEntity/code specialty (#147). SEMD expects the same
+			participation-level function slot under REF.
+			NOW: functionCode NI+displayName when doctorPosition known;
+			bare nullFlavor NI when blank. No invented NSI function code.
+		-->
+		${params.doctorPosition && params.doctorPosition.trim()
+			? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+			: `<functionCode nullFlavor="NI"/>`}
 		<associatedEntity classCode="PROV">
+
 			${/*
 			 * Same id rule as assignedAuthor (#77): SNILS when present,
 			 * else nullFlavor NI. Never extension="unknown".
