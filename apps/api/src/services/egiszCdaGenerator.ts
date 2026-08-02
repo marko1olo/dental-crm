@@ -1108,7 +1108,20 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<methodCode nullFlavor="NI"/>
 			<!--
+				DEFECT #214: documentationOf/serviceEvent/uncertaintyCode.
+				WAS: serviceEvent had id/code/statusCode/priorityCode/methodCode/
+				effectiveTime/performer only — no uncertaintyCode. Treatment ACT
+				(#209) and body OBS already carry uncertaintyCode NI. HL7 CDA R2
+				Act has uncertaintyCode 0..1 (U/N from ActUncertainty) on the
+				care event. SEMD validators often flag missing uncertainty under
+				documentationOf. Form 043/u care event is completed dental exam —
+				do not invent U/N.
+				NOW: uncertaintyCode nullFlavor NI until chart field exists.
+			-->
+			<uncertaintyCode nullFlavor="NI"/>
+			<!--
 				DEFECT #144: documentationOf/serviceEvent/effectiveTime as IVL_TS.
+
 
 				WAS: single-value TS effectiveTime value=visitTime. HL7 CDA R2 /
 				EGISZ SEMD expect Act effectiveTime as IVL_TS (interval) on the
