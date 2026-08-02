@@ -1185,8 +1185,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<!-- Диагноз -->
 			<component>
 				<section>
-					<code code="29548-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Диагнозы"/>
+					<!--
+						DEFECT #154: diagnosis section LOINC aligned with entry obs.
+						WAS: section code 29548-5 (Diagnosis) while entry/observation
+						uses 29308-4 (Diagnosis) and title is "Диагноз". SEMD
+						section@code must match the structured entry LOINC so REMD
+						indexes one concept (mirror #149 treatment/comorbidities/tray).
+						NOW: section code 29308-4 + RU displayName matching title/obs.
+					-->
+					<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Диагноз"/>
 					<title>Диагноз</title>
+
 					<text>
 						<paragraph>${escapeXml(params.diagnosisText)} (МКБ-10: ${escapeXml(params.icd10Code)})${params.diagnosisTooth && String(params.diagnosisTooth).trim() ? ` · зуб ${escapeXml(String(params.diagnosisTooth).trim())}` : ""}</paragraph>
 					</text>
