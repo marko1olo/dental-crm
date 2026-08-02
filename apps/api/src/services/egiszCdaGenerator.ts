@@ -889,7 +889,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			params.doctorSnils && String(params.doctorSnils).trim()
 				? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 				: `<id nullFlavor="NI"/>`}
-			<code nullFlavor="NI"/>
+			${/*
+			 * DEFECT #147: participant REF associatedEntity/code always present
+			 * with doctorPosition displayName when known.
+			 * WAS: hardcoded bare <code nullFlavor="NI"/> — specialty slot never
+			 * carried position label even when doctorPosition is on the chart.
+			 * assignedAuthor (#138), dataEnterer/informant (#142), performer/
+			 * responsibleParty (#141) already emit NI+displayName when position
+			 * present. SEMD validators expect the same specialty slot under
+			 * REF associatedEntity (PROV).
+			 * NOW: always emit code (mirror #138-#142). Position ->
+			 * NI+displayName; blank -> bare nullFlavor NI. No invented NSI code.
+			 */
+			params.doctorPosition && params.doctorPosition.trim()
+				? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+				: `<code nullFlavor="NI"/>`}
 			<addr nullFlavor="NI"/>
 			<telecom nullFlavor="NI"/>
 			<associatedPerson>
