@@ -147,6 +147,34 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			</representedCustodianOrganization>
 		</assignedCustodian>
 	</custodian>
+	<!--
+		DEFECT #75: legalAuthenticator (who signed / locks Form 043/у).
+		БЫЛО: CDA had author + custodian only — no legalAuthenticator.
+		EGISZ REMD / SEMD validators require the signing physician block;
+		without it the document has no legal signature party distinct from
+		author time. СТАЛО: legalAuthenticator mirrors doctorName (+ optional
+		SNILS/position) with time = documentClock (lockedAt when provided).
+	-->
+	<legalAuthenticator>
+		<time value="${effectiveTime}"/>
+		<signatureCode code="S"/>
+		<assignedEntity>
+			${params.doctorSnils ? `<id root="1.2.643.100.3" extension="${escapeXml(params.doctorSnils)}"/>` : ""}
+			${params.doctorPosition && params.doctorPosition.trim()
+				? `<code nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
+				: ""}
+			<assignedPerson>
+				<name>
+					<family>${escapeXml(params.doctorName.last)}</family>
+					<given>${escapeXml(params.doctorName.first)}</given>
+					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
+				</name>
+			</assignedPerson>
+			<representedOrganization>
+				<name>${escapeXml(params.clinicName)}</name>
+			</representedOrganization>
+		</assignedEntity>
+	</legalAuthenticator>
 	<!-- DEFECT #55/#65: encounter datetime (params.visitDate / appointment.startsAt) -->
 	<documentationOf>
 		<serviceEvent classCode="PCPR">
@@ -173,6 +201,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								: ""}
 						</observation>
 					</entry>
+
 				</section>
 			</component>
 			<!-- Анамнез -->
