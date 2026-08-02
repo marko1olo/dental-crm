@@ -395,8 +395,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</representedOrganization>
 				</assignedEntity>
 			</responsibleParty>
+			<!--
+				DEFECT #92: encompassingEncounter/location (healthCareFacility).
+				БЫЛО (#91): encounter had id + AMB code + responsibleParty but
+				no location — SEMD validators expect the ambulatory facility
+				where the visit occurred (clinic OID + name). Without it REMD
+				cannot place the encounter at the MO site.
+				СТАЛО: location/healthCareFacility with id (clinicOid) and
+				location/name = clinicName (same root scheme as setId/id).
+			-->
+			<location>
+				<healthCareFacility>
+					<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "unknown"}"/>
+					<location>
+						<name>${escapeXml(params.clinicName)}</name>
+					</location>
+					<serviceProviderOrganization>
+						<name>${escapeXml(params.clinicName)}</name>
+					</serviceProviderOrganization>
+				</healthCareFacility>
+			</location>
 		</encompassingEncounter>
 	</componentOf>
+
 
 
 	<component>

@@ -1291,7 +1291,87 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(nsEnc.includes("<responsibleParty>"));
 	});
 
+	test("DEFECT #92: encompassingEncounter/location healthCareFacility (clinic)", () => {
+		const visitDate = new Date("2024-10-01T12:00:00.000Z");
+		const params: EgiszCdaParams = {
+			patientId: "pat-92",
+			patientName: { first: "Иван", last: "Иванов" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.222",
+			clinicName: "ООО Клиника Локация",
+			doctorName: { first: "Петр", last: "Петров" },
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес",
+			visitDate,
+			documentId: "doc-92",
+			encounterId: "visit-92",
+		};
+
+		const xml = generateDentalCdaXml(params);
+		const enc = xml.slice(
+			xml.indexOf("<encompassingEncounter>"),
+			xml.indexOf("</encompassingEncounter>"),
+		);
+
+		assert.ok(
+			enc.includes("<location>"),
+			"encompassingEncounter must include location",
+		);
+		assert.ok(
+			enc.includes("<healthCareFacility>"),
+			"location must wrap healthCareFacility",
+		);
+		assert.ok(
+			enc.includes(
+				`<id root="1.2.643.5.1.13.13.12.2.222" extension="1.2.643.5.1.13.13.12.2.222"/>`,
+			),
+			"healthCareFacility id uses clinicOid root+extension",
+		);
+		assert.ok(
+			enc.includes("<name>ООО Клиника Локация</name>"),
+			"facility location name is clinicName",
+		);
+		assert.ok(
+			enc.includes("<serviceProviderOrganization>"),
+			"healthCareFacility must include serviceProviderOrganization",
+		);
+
+		/* missing clinicOid → default root + extension unknown */
+		const noOid = generateDentalCdaXml({
+			...params,
+			clinicOid: undefined,
+			clinicName: "Clinic <X> & Co",
+		});
+		const noEnc = noOid.slice(
+			noOid.indexOf("<encompassingEncounter>"),
+			noOid.indexOf("</encompassingEncounter>"),
+		);
+		assert.ok(
+			noEnc.includes(
+				`<id root="1.2.643.5.1.13.13.12.2" extension="unknown"/>`,
+			),
+			"missing clinicOid uses default MO root and unknown extension",
+		);
+		assert.ok(
+			noEnc.includes(
+				"<name>Clinic " +
+					"&" +
+					"lt;X" +
+					"&" +
+					"gt; " +
+					"&" +
+					"amp; Co</name>",
+			),
+			"clinicName in location must be XML-escaped",
+		);
+		assert.ok(noEnc.includes("<healthCareFacility>"));
+		assert.ok(noEnc.includes("<serviceProviderOrganization>"));
+	});
+
 	test("generateDentalCdaXml escapes XML special characters in free text", () => {
+
 
 
 
