@@ -208,7 +208,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: code LOINC 74208-1 (dental exam protocol) matching
 				ClinicalDocument/code and serviceEvent/code.
 			-->
-			<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Протокол стоматологического осмотра"/>
+			<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Протокол стоматологического осмотра">
+				<!--
+					DEFECT #2539: code/translation.
+					WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+					Form 043/u does not collect alternate code system mapping — do not invent.
+					NOW: translation nullFlavor NI.
+				-->
+				<translation nullFlavor="NI"/>
+				<!--
+					DEFECT #2540: code/originalText.
+					WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+					Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+					NOW: originalText nullFlavor NI.
+				-->
+				<originalText nullFlavor="NI"/>
+				<!--
+					DEFECT #2541: code/qualifier.
+					WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+					Form 043/u does not collect code qualifiers — do not invent.
+					NOW: qualifier nullFlavor NI.
+				-->
+				<qualifier nullFlavor="NI"/>
+			</code>
 			<!--
 				DEFECT #429: relatedDocument/parentDocument/text.
 				WAS: parentDocument had id + code + setId + versionNumber only —
@@ -245,7 +267,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 	<typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
 	<templateId root="1.2.643.5.1.13.13.11.1527"/>
 	<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(params.documentId)}"/>
-	<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Протокол стоматологического осмотра"/>
+	<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Протокол стоматологического осмотра">
+		<!--
+			DEFECT #2539: code/translation.
+			WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+			Form 043/u does not collect alternate code system mapping — do not invent.
+			NOW: translation nullFlavor NI.
+		-->
+		<translation nullFlavor="NI"/>
+		<!--
+			DEFECT #2540: code/originalText.
+			WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+			Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+			NOW: originalText nullFlavor NI.
+		-->
+		<originalText nullFlavor="NI"/>
+		<!--
+			DEFECT #2541: code/qualifier.
+			WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+			Form 043/u does not collect code qualifiers — do not invent.
+			NOW: qualifier nullFlavor NI.
+		-->
+		<qualifier nullFlavor="NI"/>
+	</code>
 	<title>Протокол стоматологического осмотра</title>
 	<effectiveTime value="${effectiveTime}"/>
 	<!--
@@ -2733,6 +2777,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 
 	<!--
+		DEFECT #2537: ClinicalDocument/receiver.
+		WAS: header had informationRecipient but no receiver.
+		HL7 CDA R2 ClinicalDocument has receiver 0..*.
+		Form 043/u does not collect a separate receiving device/org — do not invent.
+		NOW: receiver shell with nullFlavor NI children.
+	-->
+	<receiver typeCode="RCV">
+		<!--
+			DEFECT #2538: receiver/device.
+			WAS: no receiving device entity under receiver.
+			HL7 CDA R2 Receiver has device 1..1 (or organization).
+			Form 043/u does not collect receiving device — do not invent.
+			NOW: device shell with id/name nullFlavor NI.
+		-->
+		<device>
+			<id nullFlavor="NI"/>
+			<name nullFlavor="NI"/>
+		</device>
+	</receiver>
+
+	<!--
 		DEFECT #75: legalAuthenticator (who signed / locks Form 043/у).
 
 		БЫЛО: CDA had author + custodian only — no legalAuthenticator.
@@ -3731,7 +3796,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				same code as ClinicalDocument for this Form 043/у SEMD; the
 				service IS the dental exam protocol documented by this CDA.
 			-->
-			<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Протокол стоматологического осмотра"/>
+			<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Протокол стоматологического осмотра">
+				<!--
+					DEFECT #2539: code/translation.
+					WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+					Form 043/u does not collect alternate code system mapping — do not invent.
+					NOW: translation nullFlavor NI.
+				-->
+				<translation nullFlavor="NI"/>
+				<!--
+					DEFECT #2540: code/originalText.
+					WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+					Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+					NOW: originalText nullFlavor NI.
+				-->
+				<originalText nullFlavor="NI"/>
+				<!--
+					DEFECT #2541: code/qualifier.
+					WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+					Form 043/u does not collect code qualifiers — do not invent.
+					NOW: qualifier nullFlavor NI.
+				-->
+				<qualifier nullFlavor="NI"/>
+			</code>
 			<!--
 				DEFECT #276: documentationOf/serviceEvent/text.
 				WAS: serviceEvent had id/code then jumped to statusCode — no
@@ -7581,6 +7668,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: independentInd nullFlavor NI until chart field exists.
 							-->
 							<independentInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2536: act/value.
+								WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+								Observation shells already emit value NI where coded.
+								Form 043/u does not collect a coded act value slot — do not invent.
+								NOW: value nullFlavor NI.
+							-->
+							<value nullFlavor="NI"/>
 <!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -9536,6 +9631,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -11781,6 +11884,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -13729,6 +13840,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -17938,6 +18057,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -19896,7 +20023,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		-->
 		<encompassingEncounter negationInd="false">
 			<id root="${params.clinicOid && String(params.clinicOid).trim() ? escapeXml(String(params.clinicOid).trim()) : "1.2.643.5.1.13.13.12.2"}" extension="${escapeXml(encounterExtension)}"/>
-			<code code="AMB" codeSystem="1.2.643.5.1.13.13.11.1461" codeSystemName="Виды медицинской помощи" displayName="Амбулаторная помощь"/>
+			<code code="AMB" codeSystem="1.2.643.5.1.13.13.11.1461" codeSystemName="Виды медицинской помощи" displayName="Амбулаторная помощь">
+				<!--
+					DEFECT #2539: code/translation.
+					WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+					Form 043/u does not collect alternate code system mapping — do not invent.
+					NOW: translation nullFlavor NI.
+				-->
+				<translation nullFlavor="NI"/>
+				<!--
+					DEFECT #2540: code/originalText.
+					WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+					Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+					NOW: originalText nullFlavor NI.
+				-->
+				<originalText nullFlavor="NI"/>
+				<!--
+					DEFECT #2541: code/qualifier.
+					WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+					Form 043/u does not collect code qualifiers — do not invent.
+					NOW: qualifier nullFlavor NI.
+				-->
+				<qualifier nullFlavor="NI"/>
+			</code>
 			<!--
 				DEFECT #278: encompassingEncounter/text.
 				WAS: encounter had id/code then jumped to statusCode — no
@@ -21050,7 +21199,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						as encompassingEncounter/code — this SEMD is always an
 						ambulatory dental protocol (Form 043/у), not inpatient.
 					-->
-					<code code="AMB" codeSystem="1.2.643.5.1.13.13.11.1461" codeSystemName="Виды медицинской помощи" displayName="Амбулаторная помощь"/>
+					<code code="AMB" codeSystem="1.2.643.5.1.13.13.11.1461" codeSystemName="Виды медицинской помощи" displayName="Амбулаторная помощь">
+						<!--
+							DEFECT #2539: code/translation.
+							WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+							Form 043/u does not collect alternate code system mapping — do not invent.
+							NOW: translation nullFlavor NI.
+						-->
+						<translation nullFlavor="NI"/>
+						<!--
+							DEFECT #2540: code/originalText.
+							WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+							Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+							NOW: originalText nullFlavor NI.
+						-->
+						<originalText nullFlavor="NI"/>
+						<!--
+							DEFECT #2541: code/qualifier.
+							WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+							Form 043/u does not collect code qualifiers — do not invent.
+							NOW: qualifier nullFlavor NI.
+						-->
+						<qualifier nullFlavor="NI"/>
+					</code>
 					<!--
 						DEFECT #2507: healthCareFacility/statusCode.
 						WAS: HCF had id/code/location/SPO only — no statusCode.
@@ -24323,6 +24494,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: independentInd nullFlavor NI until chart field exists.
 							-->
 							<independentInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2536: act/value.
+								WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+								Observation shells already emit value NI where coded.
+								Form 043/u does not collect a coded act value slot — do not invent.
+								NOW: value nullFlavor NI.
+							-->
+							<value nullFlavor="NI"/>
 <!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -26278,6 +26457,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -28498,6 +28685,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -28542,7 +28737,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<!-- DEFECT #165: section/id REMD join key (diagnosis) -->
 					<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-sec-dx"/>
-					<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Диагноз"/>
+					<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Диагноз">
+						<!--
+							DEFECT #2539: code/translation.
+							WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+							Form 043/u does not collect alternate code system mapping — do not invent.
+							NOW: translation nullFlavor NI.
+						-->
+						<translation nullFlavor="NI"/>
+						<!--
+							DEFECT #2540: code/originalText.
+							WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+							Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+							NOW: originalText nullFlavor NI.
+						-->
+						<originalText nullFlavor="NI"/>
+						<!--
+							DEFECT #2541: code/qualifier.
+							WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+							Form 043/u does not collect code qualifiers — do not invent.
+							NOW: qualifier nullFlavor NI.
+						-->
+						<qualifier nullFlavor="NI"/>
+					</code>
 					<title>Диагноз</title>
 
 					<text>
@@ -28626,7 +28843,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								the dictionary name without OID lookup.
 								NOW: codeSystemName="LOINC" on diagnosis observation code.
 							-->
-							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Диагноз"/>
+							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Диагноз">
+								<!--
+									DEFECT #2539: code/translation.
+									WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+									Form 043/u does not collect alternate code system mapping — do not invent.
+									NOW: translation nullFlavor NI.
+								-->
+								<translation nullFlavor="NI"/>
+								<!--
+									DEFECT #2540: code/originalText.
+									WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+									Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+									NOW: originalText nullFlavor NI.
+								-->
+								<originalText nullFlavor="NI"/>
+								<!--
+									DEFECT #2541: code/qualifier.
+									WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+									Form 043/u does not collect code qualifiers — do not invent.
+									NOW: qualifier nullFlavor NI.
+								-->
+								<qualifier nullFlavor="NI"/>
+							</code>
 							<!--
 								DEFECT #255: diagnosis observation/text.
 								WAS: diagnosis OBS had id/code then jumped to statusCode —
@@ -32390,6 +32629,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: independentInd nullFlavor NI until chart field exists.
 							-->
 							<independentInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2536: act/value.
+								WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+								Observation shells already emit value NI where coded.
+								Form 043/u does not collect a coded act value slot — do not invent.
+								NOW: value nullFlavor NI.
+							-->
+							<value nullFlavor="NI"/>
 <!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -34345,6 +34592,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -38372,6 +38627,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -40403,6 +40666,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: independentInd nullFlavor NI until chart field exists.
 									-->
 									<independentInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2536: act/value.
+										WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+										Observation shells already emit value NI where coded.
+										Form 043/u does not collect a coded act value slot — do not invent.
+										NOW: value nullFlavor NI.
+									-->
+									<value nullFlavor="NI"/>
 <!--
 										DEFECT #2523: act/reasonCode.
 										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -40442,7 +40713,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<section>
 					<!-- DEFECT #165: section/id REMD join key (anamnesis) -->
 					<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-sec-anamnesis"/>
-					<code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Анамнез"/>
+					<code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Анамнез">
+						<!--
+							DEFECT #2539: code/translation.
+							WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+							Form 043/u does not collect alternate code system mapping — do not invent.
+							NOW: translation nullFlavor NI.
+						-->
+						<translation nullFlavor="NI"/>
+						<!--
+							DEFECT #2540: code/originalText.
+							WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+							Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+							NOW: originalText nullFlavor NI.
+						-->
+						<originalText nullFlavor="NI"/>
+						<!--
+							DEFECT #2541: code/qualifier.
+							WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+							Form 043/u does not collect code qualifiers — do not invent.
+							NOW: qualifier nullFlavor NI.
+						-->
+						<qualifier nullFlavor="NI"/>
+					</code>
 
 					<title>Анамнез</title>
 					<text>
@@ -40518,7 +40811,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<observation classCode="OBS" moodCode="EVN" negationInd="false">
 							<!-- DEFECT #153: entry Act/id (anamnesis) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-anamnesis"/>
-							<code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Анамнез"/>
+							<code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Анамнез">
+								<!--
+									DEFECT #2539: code/translation.
+									WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+									Form 043/u does not collect alternate code system mapping — do not invent.
+									NOW: translation nullFlavor NI.
+								-->
+								<translation nullFlavor="NI"/>
+								<!--
+									DEFECT #2540: code/originalText.
+									WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+									Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+									NOW: originalText nullFlavor NI.
+								-->
+								<originalText nullFlavor="NI"/>
+								<!--
+									DEFECT #2541: code/qualifier.
+									WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+									Form 043/u does not collect code qualifiers — do not invent.
+									NOW: qualifier nullFlavor NI.
+								-->
+								<qualifier nullFlavor="NI"/>
+							</code>
 							<!--
 								DEFECT #256: anamnesis observation/text.
 								WAS: anamnesis OBS had id/code then jumped to statusCode —
@@ -44250,6 +44565,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: independentInd nullFlavor NI until chart field exists.
 							-->
 							<independentInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2536: act/value.
+								WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+								Observation shells already emit value NI where coded.
+								Form 043/u does not collect a coded act value slot — do not invent.
+								NOW: value nullFlavor NI.
+							-->
+							<value nullFlavor="NI"/>
 <!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -46205,6 +46528,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -50232,6 +50563,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -52263,6 +52602,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: independentInd nullFlavor NI until chart field exists.
 									-->
 									<independentInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2536: act/value.
+										WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+										Observation shells already emit value NI where coded.
+										Form 043/u does not collect a coded act value slot — do not invent.
+										NOW: value nullFlavor NI.
+									-->
+									<value nullFlavor="NI"/>
 <!--
 										DEFECT #2523: act/reasonCode.
 										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -52314,7 +52661,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<!-- DEFECT #165: section/id REMD join key (objective) -->
 					<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-sec-objective"/>
-					<code code="29545-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Объективный статус"/>
+					<code code="29545-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Объективный статус">
+						<!--
+							DEFECT #2539: code/translation.
+							WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+							Form 043/u does not collect alternate code system mapping — do not invent.
+							NOW: translation nullFlavor NI.
+						-->
+						<translation nullFlavor="NI"/>
+						<!--
+							DEFECT #2540: code/originalText.
+							WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+							Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+							NOW: originalText nullFlavor NI.
+						-->
+						<originalText nullFlavor="NI"/>
+						<!--
+							DEFECT #2541: code/qualifier.
+							WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+							Form 043/u does not collect code qualifiers — do not invent.
+							NOW: qualifier nullFlavor NI.
+						-->
+						<qualifier nullFlavor="NI"/>
+					</code>
 					<title>Объективный статус</title>
 					<text>
 						<paragraph>${escapeXml(params.objectiveStatus || "Без особенностей")}</paragraph>
@@ -52389,7 +52758,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<observation classCode="OBS" moodCode="EVN" negationInd="false">
 							<!-- DEFECT #153: entry Act/id (objective status) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-objective"/>
-							<code code="29545-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Объективный статус"/>
+							<code code="29545-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Объективный статус">
+								<!--
+									DEFECT #2539: code/translation.
+									WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+									Form 043/u does not collect alternate code system mapping — do not invent.
+									NOW: translation nullFlavor NI.
+								-->
+								<translation nullFlavor="NI"/>
+								<!--
+									DEFECT #2540: code/originalText.
+									WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+									Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+									NOW: originalText nullFlavor NI.
+								-->
+								<originalText nullFlavor="NI"/>
+								<!--
+									DEFECT #2541: code/qualifier.
+									WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+									Form 043/u does not collect code qualifiers — do not invent.
+									NOW: qualifier nullFlavor NI.
+								-->
+								<qualifier nullFlavor="NI"/>
+							</code>
 							<!--
 								DEFECT #257: objective-status observation/text.
 								WAS: objective OBS had id/code then jumped to statusCode —
@@ -56124,6 +56515,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: independentInd nullFlavor NI until chart field exists.
 							-->
 							<independentInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2536: act/value.
+								WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+								Observation shells already emit value NI where coded.
+								Form 043/u does not collect a coded act value slot — do not invent.
+								NOW: value nullFlavor NI.
+							-->
+							<value nullFlavor="NI"/>
 <!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -58079,6 +58478,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -62106,6 +62513,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -64137,6 +64552,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: independentInd nullFlavor NI until chart field exists.
 									-->
 									<independentInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2536: act/value.
+										WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+										Observation shells already emit value NI where coded.
+										Form 043/u does not collect a coded act value slot — do not invent.
+										NOW: value nullFlavor NI.
+									-->
+									<value nullFlavor="NI"/>
 <!--
 										DEFECT #2523: act/reasonCode.
 										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -64183,7 +64606,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<!-- DEFECT #165: section/id REMD join key (treatment) -->
 					<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-sec-treatment"/>
-					<code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Проведенное лечение"/>
+					<code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Проведенное лечение">
+						<!--
+							DEFECT #2539: code/translation.
+							WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+							Form 043/u does not collect alternate code system mapping — do not invent.
+							NOW: translation nullFlavor NI.
+						-->
+						<translation nullFlavor="NI"/>
+						<!--
+							DEFECT #2540: code/originalText.
+							WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+							Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+							NOW: originalText nullFlavor NI.
+						-->
+						<originalText nullFlavor="NI"/>
+						<!--
+							DEFECT #2541: code/qualifier.
+							WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+							Form 043/u does not collect code qualifiers — do not invent.
+							NOW: qualifier nullFlavor NI.
+						-->
+						<qualifier nullFlavor="NI"/>
+					</code>
 					<title>Проведенное лечение</title>
 					<text>
 						<paragraph>${escapeXml(params.treatmentDescription || "Осмотр и консультация")}</paragraph>
@@ -64258,7 +64703,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<act classCode="ACT" moodCode="EVN" negationInd="false">
 							<!-- DEFECT #153: entry Act/id (treatment) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-treatment"/>
-							<code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Проведенное лечение"/>
+							<code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Проведенное лечение">
+								<!--
+									DEFECT #2539: code/translation.
+									WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+									Form 043/u does not collect alternate code system mapping — do not invent.
+									NOW: translation nullFlavor NI.
+								-->
+								<translation nullFlavor="NI"/>
+								<!--
+									DEFECT #2540: code/originalText.
+									WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+									Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+									NOW: originalText nullFlavor NI.
+								-->
+								<originalText nullFlavor="NI"/>
+								<!--
+									DEFECT #2541: code/qualifier.
+									WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+									Form 043/u does not collect code qualifiers — do not invent.
+									NOW: qualifier nullFlavor NI.
+								-->
+								<qualifier nullFlavor="NI"/>
+							</code>
 							<text>${escapeXml(params.treatmentDescription || "Осмотр и консультация")}</text>
 							<!--
 								DEFECT #265: treatment act/languageCode.
@@ -64350,6 +64817,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: independentInd nullFlavor NI until chart field exists.
 							-->
 							<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 							<!--
 								DEFECT #221: treatment act/approachSiteCode.
 								WAS: treatment ACT had priorityCode/methodCode/uncertaintyCode/
@@ -70272,7 +70747,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<section>
 					<!-- DEFECT #165: section/id REMD join key (complications) -->
 					<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-sec-complications"/>
-					<code code="55109-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Осложнения"/>
+					<code code="55109-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Осложнения">
+						<!--
+							DEFECT #2539: code/translation.
+							WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+							Form 043/u does not collect alternate code system mapping — do not invent.
+							NOW: translation nullFlavor NI.
+						-->
+						<translation nullFlavor="NI"/>
+						<!--
+							DEFECT #2540: code/originalText.
+							WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+							Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+							NOW: originalText nullFlavor NI.
+						-->
+						<originalText nullFlavor="NI"/>
+						<!--
+							DEFECT #2541: code/qualifier.
+							WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+							Form 043/u does not collect code qualifiers — do not invent.
+							NOW: qualifier nullFlavor NI.
+						-->
+						<qualifier nullFlavor="NI"/>
+					</code>
 					<title>Осложнения</title>
 					<text>
 						<paragraph>${escapeXml(params.complications || "Не отмечены")}</paragraph>
@@ -70347,7 +70844,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<observation classCode="OBS" moodCode="EVN" negationInd="false">
 							<!-- DEFECT #153: entry Act/id (complications) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-complications"/>
-							<code code="55109-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Осложнения"/>
+							<code code="55109-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Осложнения">
+								<!--
+									DEFECT #2539: code/translation.
+									WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+									Form 043/u does not collect alternate code system mapping — do not invent.
+									NOW: translation nullFlavor NI.
+								-->
+								<translation nullFlavor="NI"/>
+								<!--
+									DEFECT #2540: code/originalText.
+									WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+									Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+									NOW: originalText nullFlavor NI.
+								-->
+								<originalText nullFlavor="NI"/>
+								<!--
+									DEFECT #2541: code/qualifier.
+									WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+									Form 043/u does not collect code qualifiers — do not invent.
+									NOW: qualifier nullFlavor NI.
+								-->
+								<qualifier nullFlavor="NI"/>
+							</code>
 							<!--
 								DEFECT #258: complications observation/text.
 								WAS: complications OBS had id/code then jumped to statusCode —
@@ -74086,6 +74605,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: independentInd nullFlavor NI until chart field exists.
 							-->
 							<independentInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2536: act/value.
+								WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+								Observation shells already emit value NI where coded.
+								Form 043/u does not collect a coded act value slot — do not invent.
+								NOW: value nullFlavor NI.
+							-->
+							<value nullFlavor="NI"/>
 <!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -76041,6 +76568,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -80068,6 +80603,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -82099,6 +82642,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: independentInd nullFlavor NI until chart field exists.
 									-->
 									<independentInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2536: act/value.
+										WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+										Observation shells already emit value NI where coded.
+										Form 043/u does not collect a coded act value slot — do not invent.
+										NOW: value nullFlavor NI.
+									-->
+									<value nullFlavor="NI"/>
 <!--
 										DEFECT #2523: act/reasonCode.
 										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -82144,7 +82695,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<!-- DEFECT #165: section/id REMD join key (comorbidities) -->
 					<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-sec-comorbidities"/>
-					<code code="75326-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Сопутствующие заболевания"/>
+					<code code="75326-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Сопутствующие заболевания">
+						<!--
+							DEFECT #2539: code/translation.
+							WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+							Form 043/u does not collect alternate code system mapping — do not invent.
+							NOW: translation nullFlavor NI.
+						-->
+						<translation nullFlavor="NI"/>
+						<!--
+							DEFECT #2540: code/originalText.
+							WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+							Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+							NOW: originalText nullFlavor NI.
+						-->
+						<originalText nullFlavor="NI"/>
+						<!--
+							DEFECT #2541: code/qualifier.
+							WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+							Form 043/u does not collect code qualifiers — do not invent.
+							NOW: qualifier nullFlavor NI.
+						-->
+						<qualifier nullFlavor="NI"/>
+					</code>
 					<title>Сопутствующие заболевания</title>
 					<text>
 						<paragraph>${escapeXml(params.comorbidities || "Не отмечены")}</paragraph>
@@ -82216,7 +82789,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<observation classCode="OBS" moodCode="EVN" negationInd="false">
 							<!-- DEFECT #153: entry Act/id (comorbidities) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-comorbidities"/>
-							<code code="75326-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Сопутствующие заболевания"/>
+							<code code="75326-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Сопутствующие заболевания">
+								<!--
+									DEFECT #2539: code/translation.
+									WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+									Form 043/u does not collect alternate code system mapping — do not invent.
+									NOW: translation nullFlavor NI.
+								-->
+								<translation nullFlavor="NI"/>
+								<!--
+									DEFECT #2540: code/originalText.
+									WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+									Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+									NOW: originalText nullFlavor NI.
+								-->
+								<originalText nullFlavor="NI"/>
+								<!--
+									DEFECT #2541: code/qualifier.
+									WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+									Form 043/u does not collect code qualifiers — do not invent.
+									NOW: qualifier nullFlavor NI.
+								-->
+								<qualifier nullFlavor="NI"/>
+							</code>
 							<!--
 								DEFECT #259: comorbidities observation/text.
 								WAS: comorbidities OBS had id/code then jumped to statusCode —
@@ -85959,6 +86554,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: independentInd nullFlavor NI until chart field exists.
 							-->
 							<independentInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2536: act/value.
+								WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+								Observation shells already emit value NI where coded.
+								Form 043/u does not collect a coded act value slot — do not invent.
+								NOW: value nullFlavor NI.
+							-->
+							<value nullFlavor="NI"/>
 <!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -87914,6 +88517,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -91941,6 +92552,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -93972,6 +94591,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: independentInd nullFlavor NI until chart field exists.
 									-->
 									<independentInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2536: act/value.
+										WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+										Observation shells already emit value NI where coded.
+										Form 043/u does not collect a coded act value slot — do not invent.
+										NOW: value nullFlavor NI.
+									-->
+									<value nullFlavor="NI"/>
 <!--
 										DEFECT #2523: act/reasonCode.
 										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -94018,7 +94645,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<!-- DEFECT #165: section/id REMD join key (instrument tray) -->
 					<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-sec-tray"/>
-					<code code="69764-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Инструментальный лоток"/>
+					<code code="69764-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Инструментальный лоток">
+						<!--
+							DEFECT #2539: code/translation.
+							WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+							Form 043/u does not collect alternate code system mapping — do not invent.
+							NOW: translation nullFlavor NI.
+						-->
+						<translation nullFlavor="NI"/>
+						<!--
+							DEFECT #2540: code/originalText.
+							WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+							Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+							NOW: originalText nullFlavor NI.
+						-->
+						<originalText nullFlavor="NI"/>
+						<!--
+							DEFECT #2541: code/qualifier.
+							WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+							Form 043/u does not collect code qualifiers — do not invent.
+							NOW: qualifier nullFlavor NI.
+						-->
+						<qualifier nullFlavor="NI"/>
+					</code>
 					<title>Инструментальный лоток</title>
 					<text>
 						<paragraph>Штрихкод: ${escapeXml(params.instrumentTrayBarcode.trim())}</paragraph>
@@ -94090,7 +94739,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<supply classCode="SPLY" moodCode="EVN" negationInd="false">
 							<!-- DEFECT #153: entry Act/id (instrument tray) -->
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-tray"/>
-							<code code="69764-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Инструментальный лоток"/>
+							<code code="69764-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Инструментальный лоток">
+								<!--
+									DEFECT #2539: code/translation.
+									WAS: coded CE/CD self-closed with no translation. HL7 CDA R2 CD has translation 0..*.
+									Form 043/u does not collect alternate code system mapping — do not invent.
+									NOW: translation nullFlavor NI.
+								-->
+								<translation nullFlavor="NI"/>
+								<!--
+									DEFECT #2540: code/originalText.
+									WAS: code missing originalText. HL7 CDA R2 CD has originalText 0..1.
+									Form 043/u free-text label already lives in displayName when present — do not invent originalText.
+									NOW: originalText nullFlavor NI.
+								-->
+								<originalText nullFlavor="NI"/>
+								<!--
+									DEFECT #2541: code/qualifier.
+									WAS: code missing qualifier. HL7 CDA R2 CD has qualifier 0..*.
+									Form 043/u does not collect code qualifiers — do not invent.
+									NOW: qualifier nullFlavor NI.
+								-->
+								<qualifier nullFlavor="NI"/>
+							</code>
 							<text>${escapeXml(params.instrumentTrayBarcode || "") || "—"}</text>
 							<!--
 								DEFECT #266: instrument-tray supply/languageCode.
@@ -94194,6 +94865,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: independentInd nullFlavor NI until chart field exists.
 							-->
 							<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: supply/value.
+						WAS: entry missing value. HL7 CDA R2 Supply has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded supply value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 							<!--
 								DEFECT #206: instrument-tray supply/expectedUseTime.
 								WAS: supply had id/code/text/statusCode/effectiveTime/priorityCode/
@@ -97909,6 +98588,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: independentInd nullFlavor NI until chart field exists.
 							-->
 							<independentInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2536: act/value.
+								WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+								Observation shells already emit value NI where coded.
+								Form 043/u does not collect a coded act value slot — do not invent.
+								NOW: value nullFlavor NI.
+							-->
+							<value nullFlavor="NI"/>
 <!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -99864,6 +100551,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: independentInd nullFlavor NI until chart field exists.
 					-->
 					<independentInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2536: act/value.
+						WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+						Observation shells already emit value NI where coded.
+						Form 043/u does not collect a coded act value slot — do not invent.
+						NOW: value nullFlavor NI.
+					-->
+					<value nullFlavor="NI"/>
 <!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
@@ -102087,6 +102782,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: independentInd nullFlavor NI until chart field exists.
 									-->
 									<independentInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2536: act/value.
+										WAS: entry missing value. HL7 CDA R2 Act has value 0..*.
+										Observation shells already emit value NI where coded.
+										Form 043/u does not collect a coded act value slot — do not invent.
+										NOW: value nullFlavor NI.
+									-->
+									<value nullFlavor="NI"/>
 <!--
 										DEFECT #2523: act/reasonCode.
 										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
