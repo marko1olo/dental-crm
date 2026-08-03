@@ -7494,6 +7494,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2523: act/reasonCode.
+								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+								collect coded entry reason distinct from diagnosis — do not invent.
+								NOW: reasonCode nullFlavor NI until chart field exists.
+							-->
+							<reasonCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2524: act/availabilityTime.
+								WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+								serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+								NOW: availabilityTime nullFlavor NI until chart field exists.
+							-->
+							<availabilityTime nullFlavor="NI"/>
+
 						</act>
 					</entryRelationship>
 					<!--
@@ -9398,7 +9414,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
-					<subject typeCode="SBJ">
+					
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<subject typeCode="SBJ">
 						<relatedSubject>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -11594,6 +11626,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+
 </act>
 			</entryRelationship>
 
@@ -13491,7 +13539,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
 				NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 			-->
-			<subject typeCode="SBJ">
+			
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<subject typeCode="SBJ">
 				<relatedSubject>
 					<code nullFlavor="NI"/>
 					<addr nullFlavor="NI"/>
@@ -17632,7 +17696,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
 				NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 			-->
-			<subject typeCode="SBJ">
+			
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<subject typeCode="SBJ">
 				<relatedSubject>
 					<code nullFlavor="NI"/>
 					<addr nullFlavor="NI"/>
@@ -23924,6 +24004,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2523: act/reasonCode.
+								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+								collect coded entry reason distinct from diagnosis — do not invent.
+								NOW: reasonCode nullFlavor NI until chart field exists.
+							-->
+							<reasonCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2524: act/availabilityTime.
+								WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+								serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+								NOW: availabilityTime nullFlavor NI until chart field exists.
+							-->
+							<availabilityTime nullFlavor="NI"/>
+
 						</act>
 					</entryRelationship>
 					<!--
@@ -25828,7 +25924,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
-					<subject typeCode="SBJ">
+					
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<subject typeCode="SBJ">
 						<relatedSubject>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -27999,6 +28111,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+
 </act>
 			</entryRelationship>
 
@@ -28290,7 +28418,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								code with position or bare NI, person, MO org). No invented
 								extension="unknown" or street/phone.
 							-->
-							<performer typeCode="PRF">
+							
+					<!--
+						DEFECT #2523: observation/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: observation/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<performer typeCode="PRF">
 								<time value="${visitTime}"/>
 				<!--
 					DEFECT #2455: performer/functionCode.
@@ -31798,6 +31942,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2523: act/reasonCode.
+								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+								collect coded entry reason distinct from diagnosis — do not invent.
+								NOW: reasonCode nullFlavor NI until chart field exists.
+							-->
+							<reasonCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2524: act/availabilityTime.
+								WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+								serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+								NOW: availabilityTime nullFlavor NI until chart field exists.
+							-->
+							<availabilityTime nullFlavor="NI"/>
+
 						</act>
 					</entryRelationship>
 					<!--
@@ -33702,7 +33862,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
-					<subject typeCode="SBJ">
+					
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<subject typeCode="SBJ">
 						<relatedSubject>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -37670,7 +37846,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
 										NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 									-->
-									<subject typeCode="SBJ">
+									
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<subject typeCode="SBJ">
 										<relatedSubject>
 											<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
@@ -39652,6 +39844,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2523: act/reasonCode.
+										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+										serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+										collect coded entry reason distinct from diagnosis — do not invent.
+										NOW: reasonCode nullFlavor NI until chart field exists.
+									-->
+									<reasonCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2524: act/availabilityTime.
+										WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+										serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+										NOW: availabilityTime nullFlavor NI until chart field exists.
+									-->
+									<availabilityTime nullFlavor="NI"/>
+
 </act>
 							</entryRelationship>
 
@@ -39898,7 +40106,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: performer typeCode=PRF with time=visitTime and
 								assignedEntity mirroring diagnosis OBS performer.
 							-->
-							<performer typeCode="PRF">
+							
+					<!--
+						DEFECT #2523: observation/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: observation/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<performer typeCode="PRF">
 								<time value="${visitTime}"/>
 				<!--
 					DEFECT #2455: performer/functionCode.
@@ -43406,6 +43630,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2523: act/reasonCode.
+								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+								collect coded entry reason distinct from diagnosis — do not invent.
+								NOW: reasonCode nullFlavor NI until chart field exists.
+							-->
+							<reasonCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2524: act/availabilityTime.
+								WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+								serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+								NOW: availabilityTime nullFlavor NI until chart field exists.
+							-->
+							<availabilityTime nullFlavor="NI"/>
+
 						</act>
 					</entryRelationship>
 					<!--
@@ -45310,7 +45550,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
-					<subject typeCode="SBJ">
+					
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<subject typeCode="SBJ">
 						<relatedSubject>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -49278,7 +49534,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
 										NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 									-->
-									<subject typeCode="SBJ">
+									
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<subject typeCode="SBJ">
 										<relatedSubject>
 											<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
@@ -51260,6 +51532,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2523: act/reasonCode.
+										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+										serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+										collect coded entry reason distinct from diagnosis — do not invent.
+										NOW: reasonCode nullFlavor NI until chart field exists.
+									-->
+									<reasonCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2524: act/availabilityTime.
+										WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+										serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+										NOW: availabilityTime nullFlavor NI until chart field exists.
+									-->
+									<availabilityTime nullFlavor="NI"/>
+
 </act>
 							</entryRelationship>
 
@@ -51520,7 +51808,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								code with position or bare NI, person, MO org). No invented
 								extension="unknown" or street/phone.
 							-->
-							<performer typeCode="PRF">
+							
+					<!--
+						DEFECT #2523: observation/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: observation/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<performer typeCode="PRF">
 								<time value="${visitTime}"/>
 				<!--
 					DEFECT #2455: performer/functionCode.
@@ -55028,6 +55332,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2523: act/reasonCode.
+								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+								collect coded entry reason distinct from diagnosis — do not invent.
+								NOW: reasonCode nullFlavor NI until chart field exists.
+							-->
+							<reasonCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2524: act/availabilityTime.
+								WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+								serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+								NOW: availabilityTime nullFlavor NI until chart field exists.
+							-->
+							<availabilityTime nullFlavor="NI"/>
+
 						</act>
 					</entryRelationship>
 					<!--
@@ -56932,7 +57252,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
-					<subject typeCode="SBJ">
+					
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<subject typeCode="SBJ">
 						<relatedSubject>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -60900,7 +61236,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
 										NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 									-->
-									<subject typeCode="SBJ">
+									
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<subject typeCode="SBJ">
 										<relatedSubject>
 											<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
@@ -62882,6 +63234,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2523: act/reasonCode.
+										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+										serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+										collect coded entry reason distinct from diagnosis — do not invent.
+										NOW: reasonCode nullFlavor NI until chart field exists.
+									-->
+									<reasonCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2524: act/availabilityTime.
+										WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+										serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+										NOW: availabilityTime nullFlavor NI until chart field exists.
+									-->
+									<availabilityTime nullFlavor="NI"/>
+
 </act>
 							</entryRelationship>
 
@@ -63136,7 +63504,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								or NI, code with position or bare NI, person, MO org).
 								No invented extension="unknown" or street/phone.
 							-->
-							<performer typeCode="PRF">
+							
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<performer typeCode="PRF">
 								<time value="${visitTime}"/>
 				<!--
 					DEFECT #2455: performer/functionCode.
@@ -69169,7 +69553,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								code with position or bare NI, person, MO org). No invented
 								extension="unknown" or street/phone.
 							-->
-							<performer typeCode="PRF">
+							
+					<!--
+						DEFECT #2523: observation/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: observation/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<performer typeCode="PRF">
 								<time value="${visitTime}"/>
 				<!--
 					DEFECT #2455: performer/functionCode.
@@ -72677,6 +73077,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2523: act/reasonCode.
+								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+								collect coded entry reason distinct from diagnosis — do not invent.
+								NOW: reasonCode nullFlavor NI until chart field exists.
+							-->
+							<reasonCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2524: act/availabilityTime.
+								WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+								serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+								NOW: availabilityTime nullFlavor NI until chart field exists.
+							-->
+							<availabilityTime nullFlavor="NI"/>
+
 						</act>
 					</entryRelationship>
 					<!--
@@ -74581,7 +74997,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
-					<subject typeCode="SBJ">
+					
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<subject typeCode="SBJ">
 						<relatedSubject>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -78549,7 +78981,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
 										NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 									-->
-									<subject typeCode="SBJ">
+									
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<subject typeCode="SBJ">
 										<relatedSubject>
 											<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
@@ -80531,6 +80979,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2523: act/reasonCode.
+										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+										serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+										collect coded entry reason distinct from diagnosis — do not invent.
+										NOW: reasonCode nullFlavor NI until chart field exists.
+									-->
+									<reasonCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2524: act/availabilityTime.
+										WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+										serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+										NOW: availabilityTime nullFlavor NI until chart field exists.
+									-->
+									<availabilityTime nullFlavor="NI"/>
+
 </act>
 							</entryRelationship>
 
@@ -80790,7 +81254,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								code with position or bare NI, person, MO org). No invented
 								extension="unknown" or street/phone.
 							-->
-							<performer typeCode="PRF">
+							
+					<!--
+						DEFECT #2523: observation/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: observation/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<performer typeCode="PRF">
 								<time value="${visitTime}"/>
 				<!--
 					DEFECT #2455: performer/functionCode.
@@ -84298,6 +84778,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2523: act/reasonCode.
+								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+								collect coded entry reason distinct from diagnosis — do not invent.
+								NOW: reasonCode nullFlavor NI until chart field exists.
+							-->
+							<reasonCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2524: act/availabilityTime.
+								WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+								serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+								NOW: availabilityTime nullFlavor NI until chart field exists.
+							-->
+							<availabilityTime nullFlavor="NI"/>
+
 						</act>
 					</entryRelationship>
 					<!--
@@ -86202,7 +86698,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
-					<subject typeCode="SBJ">
+					
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<subject typeCode="SBJ">
 						<relatedSubject>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -90170,7 +90682,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
 										NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 									-->
-									<subject typeCode="SBJ">
+									
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<subject typeCode="SBJ">
 										<relatedSubject>
 											<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
@@ -92152,6 +92680,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2523: act/reasonCode.
+										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+										serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+										collect coded entry reason distinct from diagnosis — do not invent.
+										NOW: reasonCode nullFlavor NI until chart field exists.
+									-->
+									<reasonCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2524: act/availabilityTime.
+										WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+										serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+										NOW: availabilityTime nullFlavor NI until chart field exists.
+									-->
+									<availabilityTime nullFlavor="NI"/>
+
 </act>
 							</entryRelationship>
 
@@ -92418,7 +92962,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								code/name stay NI (no NSI device catalog wired yet).
 								NOW: product/manufacturedProduct with id=barcode + material NI.
 							-->
-							<product>
+							
+					<!--
+						DEFECT #2523: supply/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: supply/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<product>
 								<manufacturedProduct classCode="MANU">
 									<id root="${docIdRoot}" extension="${escapeXml(params.instrumentTrayBarcode.trim())}"/>
 									<manufacturedMaterial>
@@ -95996,6 +96556,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2523: act/reasonCode.
+								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+								collect coded entry reason distinct from diagnosis — do not invent.
+								NOW: reasonCode nullFlavor NI until chart field exists.
+							-->
+							<reasonCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2524: act/availabilityTime.
+								WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+								serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+								NOW: availabilityTime nullFlavor NI until chart field exists.
+							-->
+							<availabilityTime nullFlavor="NI"/>
+
 						</act>
 					</entryRelationship>
 					<!--
@@ -97900,7 +98476,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						WAS: nested COMP act had codes through uncertaintyCode — no subject. HL7 CDA R2 Act has subject 0..1. SEMD often flags missing subject under nested COMP acts when body/externalAct emit SBJ. Form 043/u has no discrete nested-act related-party; do not invent.
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
-					<subject typeCode="SBJ">
+					
+					<!--
+						DEFECT #2523: act/reasonCode.
+						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+						collect coded entry reason distinct from diagnosis — do not invent.
+						NOW: reasonCode nullFlavor NI until chart field exists.
+					-->
+					<reasonCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2524: act/availabilityTime.
+						WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+						serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+						NOW: availabilityTime nullFlavor NI until chart field exists.
+					-->
+					<availabilityTime nullFlavor="NI"/>
+<subject typeCode="SBJ">
 						<relatedSubject>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -100074,6 +100666,22 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2523: act/reasonCode.
+										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
+										serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
+										collect coded entry reason distinct from diagnosis — do not invent.
+										NOW: reasonCode nullFlavor NI until chart field exists.
+									-->
+									<reasonCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2524: act/availabilityTime.
+										WAS: entry missing availabilityTime. HL7 CDA R2 Act has availabilityTime 0..1.
+										serviceEvent already emits availabilityTime NI (#2521). Do not invent clock.
+										NOW: availabilityTime nullFlavor NI until chart field exists.
+									-->
+									<availabilityTime nullFlavor="NI"/>
+
 </act>
 							</entryRelationship>
 
