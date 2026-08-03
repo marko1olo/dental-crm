@@ -1211,6 +1211,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 	</dataEnterer>
 		<!--
@@ -1450,6 +1470,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 	
 			<!--
@@ -1469,6 +1509,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -1898,6 +2009,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 	</legalAuthenticator>
 	<!--
@@ -2167,6 +2298,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 	</authenticator>
 	<!-- DEFECT #55/#65: encounter datetime (params.visitDate / appointment.startsAt) -->
@@ -2615,6 +2766,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 			</performer>
 			<!--
@@ -3009,6 +3180,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 			
 			<!--
@@ -3028,6 +3219,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -3102,7 +3364,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<telecom nullFlavor="NI"/>
 							</place>
 						</birthplace>
-					</associatedPerson>
+					
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 					<scopingOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
 							? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
@@ -3357,6 +3669,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -3633,6 +3965,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -3652,6 +4004,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -3697,7 +4120,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -4061,6 +4534,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				</performer>
 				<!--
@@ -4373,6 +4866,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				
 			<!--
@@ -4392,6 +4905,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -4455,7 +5039,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 								</place>
 							</birthplace>
-						</associatedPerson>
+						
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 					
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -4726,6 +5360,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -5038,6 +5692,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -5057,6 +5731,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -5120,7 +5865,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -6100,6 +6895,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 		</performer>
 		<!--
@@ -6244,6 +7059,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 		
 			<!--
@@ -6263,6 +7098,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -6326,6 +7232,56 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 						</place>
 					</birthplace>
+				
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</associatedPerson>
 			
 					<!--
@@ -6597,6 +7553,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 			</performer>
 			<!--
@@ -6909,6 +7885,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 			
 			<!--
@@ -6928,6 +7924,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -6991,7 +8058,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<telecom nullFlavor="NI"/>
 							</place>
 						</birthplace>
-					</associatedPerson>
+					
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 				
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -7303,7 +8420,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 					</place>
 				</birthplace>
-			</associatedPerson>
+			
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 			${`<scopingOrganization>
 				${
 					params.clinicOid && String(params.clinicOid).trim()
@@ -7564,6 +8731,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 
 		</performer>
@@ -7857,6 +9044,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 		
 			<!--
@@ -7876,6 +9083,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -7943,6 +9221,56 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 						</place>
 					</birthplace>
+				
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</associatedPerson>
 				<!--
 					DEFECT #908: consent/participant/WIT/associatedEntity/scopingOrganization.
@@ -8272,6 +9600,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 			</performer>
 			<!--
@@ -8584,6 +9932,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 			
 			<!--
@@ -8603,6 +9971,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -8666,7 +10105,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<telecom nullFlavor="NI"/>
 							</place>
 						</birthplace>
-					</associatedPerson>
+					
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 				
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -9286,6 +10775,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 			</encounterParticipant>
 			<responsibleParty>
@@ -9502,6 +11011,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 			</responsibleParty>
 
@@ -9978,6 +11507,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 			
 			<!--
@@ -9997,6 +11546,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -10071,7 +11691,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<telecom nullFlavor="NI"/>
 							</place>
 						</birthplace>
-					</associatedPerson>
+					
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 					<scopingOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
 							? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
@@ -10326,6 +11996,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -10602,6 +12292,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -10621,6 +12331,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -10666,7 +12447,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -11030,6 +12861,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				</performer>
 				<!--
@@ -11342,6 +13193,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				
 			<!--
@@ -11361,6 +13232,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -11424,7 +13366,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 								</place>
 							</birthplace>
-						</associatedPerson>
+						
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 					
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -11695,6 +13687,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -12007,6 +14019,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -12026,6 +14058,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -12089,7 +14192,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -13033,6 +15186,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 							</performer>
 							<!--
@@ -13428,6 +15601,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 							
 			<!--
@@ -13447,6 +15640,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -13521,7 +15785,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												<telecom nullFlavor="NI"/>
 											</place>
 										</birthplace>
-									</associatedPerson>
+									
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
 											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
@@ -13776,6 +16090,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -14052,6 +16386,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -14071,6 +16425,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -14116,7 +16541,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -14480,6 +16955,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				</performer>
 				<!--
@@ -14792,6 +17287,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				
 			<!--
@@ -14811,6 +17326,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -14874,7 +17460,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 								</place>
 							</birthplace>
-						</associatedPerson>
+						
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 					
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -15145,6 +17781,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -15457,6 +18113,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -15476,6 +18152,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -15539,7 +18286,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -16226,6 +19023,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 								</performer>
 								<!--
@@ -16538,6 +19355,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 								
 			<!--
@@ -16557,6 +19394,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -16620,7 +19528,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 													<telecom nullFlavor="NI"/>
 												</place>
 											</birthplace>
-										</associatedPerson>
+										
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 									
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -16891,6 +19849,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 									</performer>
 									<!--
@@ -17203,6 +20181,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 									
 			<!--
@@ -17222,6 +20220,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -17285,7 +20354,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 														<telecom nullFlavor="NI"/>
 													</place>
 												</birthplace>
-											</associatedPerson>
+											
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 										
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -17995,6 +21114,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 							</performer>
 							<!--
@@ -18390,6 +21529,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 							
 			<!--
@@ -18409,6 +21568,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -18483,7 +21713,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												<telecom nullFlavor="NI"/>
 											</place>
 										</birthplace>
-									</associatedPerson>
+									
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
 											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
@@ -18738,6 +22018,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -19014,6 +22314,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -19033,6 +22353,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -19078,7 +22469,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -19442,6 +22883,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				</performer>
 				<!--
@@ -19754,6 +23215,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				
 			<!--
@@ -19773,6 +23254,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -19836,7 +23388,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 								</place>
 							</birthplace>
-						</associatedPerson>
+						
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 					
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -20107,6 +23709,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -20419,6 +24041,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -20438,6 +24080,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -20501,7 +24214,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -21188,6 +24951,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 								</performer>
 								<!--
@@ -21500,6 +25283,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 								
 			<!--
@@ -21519,6 +25322,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -21582,7 +25456,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 													<telecom nullFlavor="NI"/>
 												</place>
 											</birthplace>
-										</associatedPerson>
+										
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 									
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -21853,6 +25777,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 									</performer>
 									<!--
@@ -22165,6 +26109,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 									
 			<!--
@@ -22184,6 +26148,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -22247,7 +26282,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 														<telecom nullFlavor="NI"/>
 													</place>
 												</birthplace>
-											</associatedPerson>
+											
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 										
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -22971,6 +27056,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 							</performer>
 							<!--
@@ -23366,6 +27471,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 							
 			<!--
@@ -23385,6 +27510,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -23459,7 +27655,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												<telecom nullFlavor="NI"/>
 											</place>
 										</birthplace>
-									</associatedPerson>
+									
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
 											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
@@ -23714,6 +27960,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -23990,6 +28256,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -24009,6 +28295,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -24054,7 +28411,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -24418,6 +28825,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				</performer>
 				<!--
@@ -24730,6 +29157,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				
 			<!--
@@ -24749,6 +29196,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -24812,7 +29330,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 								</place>
 							</birthplace>
-						</associatedPerson>
+						
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 					
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -25083,6 +29651,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -25395,6 +29983,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -25414,6 +30022,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -25477,7 +30156,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -26164,6 +30893,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 								</performer>
 								<!--
@@ -26476,6 +31225,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 								
 			<!--
@@ -26495,6 +31264,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -26558,7 +31398,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 													<telecom nullFlavor="NI"/>
 												</place>
 											</birthplace>
-										</associatedPerson>
+										
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 									
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -26829,6 +31719,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 									</performer>
 									<!--
@@ -27141,6 +32051,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 									
 			<!--
@@ -27160,6 +32090,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -27223,7 +32224,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 														<telecom nullFlavor="NI"/>
 													</place>
 												</birthplace>
-											</associatedPerson>
+											
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 										
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -27941,6 +32992,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 							</performer>
 							<!--
@@ -28336,6 +33407,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 							
 			<!--
@@ -28355,6 +33446,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -28429,7 +33591,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												<telecom nullFlavor="NI"/>
 											</place>
 										</birthplace>
-									</associatedPerson>
+									
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
 											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
@@ -28684,6 +33896,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -28960,6 +34192,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -28979,6 +34231,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -29024,7 +34347,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -29388,6 +34761,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				</performer>
 				<!--
@@ -29700,6 +35093,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				
 			<!--
@@ -29719,6 +35132,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -29782,7 +35266,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 								</place>
 							</birthplace>
-						</associatedPerson>
+						
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 					
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -30661,6 +36195,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 							</performer>
 							<!--
@@ -31056,6 +36610,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 							
 			<!--
@@ -31075,6 +36649,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -31149,7 +36794,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												<telecom nullFlavor="NI"/>
 											</place>
 										</birthplace>
-									</associatedPerson>
+									
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
 											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
@@ -31404,6 +37099,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -31680,6 +37395,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -31699,6 +37434,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -31744,7 +37550,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -32108,6 +37964,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				</performer>
 				<!--
@@ -32420,6 +38296,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				
 			<!--
@@ -32439,6 +38335,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -32502,7 +38469,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 								</place>
 							</birthplace>
-						</associatedPerson>
+						
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 					
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -32773,6 +38790,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -33085,6 +39122,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -33104,6 +39161,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -33167,7 +39295,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -33854,6 +40032,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 								</performer>
 								<!--
@@ -34166,6 +40364,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 								
 			<!--
@@ -34185,6 +40403,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -34248,7 +40537,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 													<telecom nullFlavor="NI"/>
 												</place>
 											</birthplace>
-										</associatedPerson>
+										
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 									
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -34519,6 +40858,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 									</performer>
 									<!--
@@ -34831,6 +41190,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 									
 			<!--
@@ -34850,6 +41229,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -34913,7 +41363,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 														<telecom nullFlavor="NI"/>
 													</place>
 												</birthplace>
-											</associatedPerson>
+											
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 										
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -35636,6 +42136,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 							</performer>
 							<!--
@@ -36031,6 +42551,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 							
 			<!--
@@ -36050,6 +42590,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -36124,7 +42735,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												<telecom nullFlavor="NI"/>
 											</place>
 										</birthplace>
-									</associatedPerson>
+									
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
 											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
@@ -36379,6 +43040,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -36655,6 +43336,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -36674,6 +43375,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -36719,7 +43491,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -37083,6 +43905,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				</performer>
 				<!--
@@ -37395,6 +44237,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				
 			<!--
@@ -37414,6 +44276,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -37477,7 +44410,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 								</place>
 							</birthplace>
-						</associatedPerson>
+						
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 					
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -37748,6 +44731,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -38060,6 +45063,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -38079,6 +45102,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -38142,7 +45236,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -38829,6 +45973,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 								</performer>
 								<!--
@@ -39141,6 +46305,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 								
 			<!--
@@ -39160,6 +46344,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -39223,7 +46478,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 													<telecom nullFlavor="NI"/>
 												</place>
 											</birthplace>
-										</associatedPerson>
+										
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 									
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -39494,6 +46799,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 									</performer>
 									<!--
@@ -39806,6 +47131,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 									
 			<!--
@@ -39825,6 +47170,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -39888,7 +47304,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 														<telecom nullFlavor="NI"/>
 													</place>
 												</birthplace>
-											</associatedPerson>
+											
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 										
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -40688,6 +48154,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 							</performer>
 							<!--
@@ -41083,6 +48569,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 							
 			<!--
@@ -41102,6 +48608,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -41176,7 +48753,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												<telecom nullFlavor="NI"/>
 											</place>
 										</birthplace>
-									</associatedPerson>
+									
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
 											? `<id root="1.2.643.5.1.13.13.12.2" extension="${escapeXml(String(params.clinicOid).trim())}"/>`
@@ -41431,6 +49058,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -41707,6 +49354,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -41726,6 +49393,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -41771,7 +49509,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -42135,6 +49923,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				</performer>
 				<!--
@@ -42447,6 +50255,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 				
 			<!--
@@ -42466,6 +50294,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -42529,7 +50428,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									<telecom nullFlavor="NI"/>
 								</place>
 							</birthplace>
-						</associatedPerson>
+						
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 					
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
@@ -42800,6 +50749,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					</performer>
 					<!--
@@ -43112,6 +51081,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</issuingOrganization>
 				</asLicensedEntity>
+			
+				<!--
+					DEFECT #2470: assignedEntity/asMember.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity
+					— no asMember. HL7 RIM Role may carry asMember (membership in a
+					group / department / clinical team). SEMD often flags incomplete
+					staff Role without membership slot. Form 043/u does not collect
+					team/group membership id — do not invent.
+					NOW: asMember id/code/statusCode/effectiveTime NI + groupOrganization id/name NI.
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
 			</assignedEntity>
 					
 			<!--
@@ -43131,6 +51120,77 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<effectiveTime nullFlavor="NI"/>
 				<relatedPerson>
 					<name nullFlavor="NI"/>
+				
+					<!--
+						DEFECT #2461: relatedPerson/administrativeGenderCode.
+						WAS: relatedPerson had only name NI — no administrativeGenderCode.
+						HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD
+						often flags incomplete relatedPerson under informant/relatedEntity.
+						Form 043/u does not collect related-informant gender — do not invent.
+						NOW: administrativeGenderCode nullFlavor NI.
+					-->
+					<administrativeGenderCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2462: relatedPerson/birthTime.
+						WAS: relatedPerson missing birthTime. HL7 CDA R2 Person may carry
+						birthTime 0..1. Do not invent DOB for related informant.
+						NOW: birthTime nullFlavor NI.
+					-->
+					<birthTime nullFlavor="NI"/>
+					<!--
+						DEFECT #2463: relatedPerson/birthplace.
+						WAS: relatedPerson missing birthplace. HL7 CDA R2 Person may carry
+						birthplace 0..1. Do not invent birth place.
+						NOW: birthplace/place name/addr/telecom NI.
+					-->
+					<birthplace>
+						<place>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+						</place>
+					</birthplace>
+					<!--
+						DEFECT #2464: relatedPerson/maritalStatusCode.
+						WAS: relatedPerson missing maritalStatusCode. Do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2465: relatedPerson/raceCode.
+						WAS: relatedPerson missing raceCode. Do not invent.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2466: relatedPerson/ethnicGroupCode.
+						WAS: relatedPerson missing ethnicGroupCode. Do not invent.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2467: relatedPerson/languageCommunication.
+						WAS: relatedPerson missing languageCommunication. Do not invent.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2468: relatedPerson/asCitizen.
+						WAS: relatedPerson missing asCitizen. Do not invent nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
 				</relatedPerson>
 			</relatedEntity>
 		</informant>
@@ -43194,7 +51254,57 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 									</place>
 								</birthplace>
-							</associatedPerson>
+							
+					<!--
+						DEFECT #2456: associatedPerson/maritalStatusCode.
+						WAS: associatedPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete associatedPerson under
+						participant/associatedEntity. Form 043/u does not collect
+						associated-person marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2457: associatedPerson/raceCode.
+						WAS: associatedPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2458: associatedPerson/ethnicGroupCode.
+						WAS: associatedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2459: associatedPerson/languageCommunication.
+						WAS: associatedPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2460: associatedPerson/asCitizen.
+						WAS: associatedPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</associatedPerson>
 						
 					<!--
 						DEFECT #2446: associatedEntity/scopingOrganization.
