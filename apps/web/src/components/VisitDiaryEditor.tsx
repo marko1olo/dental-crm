@@ -24,6 +24,7 @@ import {
 } from "./VisitDiaryPhotoUpload";
 import { VisitDiaryTemplateSelector } from "./VisitDiaryTemplateSelector";
 import { CryptoProSigner } from "./visit/CryptoProSigner";
+import { realVisitFieldId } from "./visit/visitIdentity";
 import { specialtyLabels } from "../workspaceUiLabels";
 import "../styles/visit-diary-043.css";
 
@@ -133,37 +134,62 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 	 * Бумажная 043/у уходила в карту пациента как будто финальная.
 	 * СТАЛО: block when !isLocked (после load); keep revise/unread gates.
 	 */
-	const printBlockedReason = diaryUnread
-		? "Печать недоступна, пока записи приёма не прочитаны"
-		: isRevising
-			? "Печать недоступна, пока идёт правка подписанного дневника. Сохраните правку или нажмите «Отмена»."
-			: !isLocked
-				? "Печать формы 043/у доступна после подписи дневника"
-				: undefined;
-	const printBlocked = Boolean(printBlockedReason);
-
 	// Always under AppLogicProvider when mounted from VisitOdontogramTab — call unconditionally (Rules of Hooks).
 	const ctx = useAppLogicContext();
 	const activePatient = ctx.activePatient;
 	const clinicSettings = ctx.dashboard?.clinicSettings;
 	const activeDoctor = ctx.activeDoctor;
 
+	/*
+	 * ПЕЧАТЬ 043/у — ТОЛЬКО ПАЦИЕНТ ЭТОГО ВИЗИТА.
+	 *
+	 * БЫЛО: шапка формы брала ctx.activePatient (выбор в разделе «Пациенты»).
+	 * SOAP/hash — от visitId/patientId пропа, а ФИО/дата рождения/номер карты —
+	 * от другого выбранного человека. Бумажная 043/у уходила с чужим ФИО.
+	 *
+	 * СТАЛО: если activePatient.id !== patientId пропа — не подставляем чужие
+	 * паспортные данные; печатаем «—» и блокируем печать (printPatientMismatch).
+	 */
+	const selectedPatientId = realVisitFieldId(
+		activePatient && typeof activePatient === "object"
+			? (activePatient as { id?: unknown }).id
+			: null,
+	);
+	const diaryPatientId = realVisitFieldId(patientId);
+	const printPatient =
+		diaryPatientId && selectedPatientId && selectedPatientId === diaryPatientId
+			? activePatient
+			: null;
+	const printPatientMismatch = Boolean(
+		diaryPatientId && selectedPatientId && selectedPatientId !== diaryPatientId,
+	);
 
-	const patientFullName = formatPersonName(activePatient);
+	const patientFullName = formatPersonName(printPatient);
 	const patientBirthDate =
-		typeof activePatient?.birthDate === "string"
-			? activePatient.birthDate
-			: typeof activePatient?.dateOfBirth === "string"
-				? activePatient.dateOfBirth
+		typeof printPatient?.birthDate === "string"
+			? printPatient.birthDate
+			: typeof printPatient?.dateOfBirth === "string"
+				? printPatient.dateOfBirth
 				: "";
 	const patientCardNumber =
-		typeof activePatient?.cardNumber === "string"
-			? activePatient.cardNumber
-			: typeof activePatient?.medicalCardNumber === "string"
-				? activePatient.medicalCardNumber
-				: typeof activePatient?.chartNumber === "string"
-					? activePatient.chartNumber
+		typeof printPatient?.cardNumber === "string"
+			? printPatient.cardNumber
+			: typeof printPatient?.medicalCardNumber === "string"
+				? printPatient.medicalCardNumber
+				: typeof printPatient?.chartNumber === "string"
+					? printPatient.chartNumber
 					: "";
+	const printBlockedReason = diaryUnread
+		? "Печать недоступна, пока записи приёма не прочитаны"
+		: isRevising
+			? "Печать недоступна, пока идёт правка подписанного дневника. Сохраните правку или нажмите «Отмена»."
+			: !isLocked
+				? "Печать формы 043/у доступна после подписи дневника"
+				: printPatientMismatch
+					? "Печать 043/у заблокирована: в разделе «Пациенты» выбран другой человек, не пациент этого визита. Верните выбор на пациента приёма."
+					: undefined;
+	const printBlocked = Boolean(printBlockedReason);
+
 	const clinicName =
 		typeof clinicSettings?.name === "string"
 			? clinicSettings.name

@@ -138,7 +138,7 @@ export function VisitEmkTab() {
 	const [isLinkingTray, setIsLinkingTray] = React.useState(false);
 
 	const handleDownloadCdaXml = async () => {
-		const visitId = dashboard?.activeVisit?.id || dashboard?.activeAppointment?.visitId;
+		const visitId = realVisitFieldId(dashboard?.activeVisit?.id);
 		if (!visitId) {
 			showToast("Сначала выберите или откройте активный визит для экспорта CDA R2", "warning");
 			return;
@@ -172,7 +172,7 @@ export function VisitEmkTab() {
 
 	const handleLinkSterilizationTray = async (e: React.FormEvent) => {
 		e.preventDefault();
-		const visitId = dashboard?.activeVisit?.id || dashboard?.activeAppointment?.visitId;
+		const visitId = realVisitFieldId(dashboard?.activeVisit?.id);
 		if (!visitId) {
 			showToast("Сначала выберите или откройте активный визит для привязки лотка", "warning");
 			return;
