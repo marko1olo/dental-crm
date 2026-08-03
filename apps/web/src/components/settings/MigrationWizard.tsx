@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { AUTHED_API_FILE_FAILURE, downloadAuthedApiFile } from "../../lib/authedApiFile";
 import "./MigrationWizard.css";
+
 
 /**
  * Мастер переноса базы из старой системы.
@@ -217,6 +219,33 @@ export function MigrationWizard() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const pollTimerRef = useRef<number | null>(null);
 
+  /*
+   * Clinical headers for every migration route (requireClinicalReadContext /
+   * requireClinicalMutationContext). BYLO: bare fetch — only apiAuthFetch
+   * clinic/staff tokens. Without x-dente-admin-secret customer gets 403 while
+   * local unguarded env stays green. authRef keeps secret fresh across login
+   * without thrashing callback deps.
+   */
+  const appLogic = useAppLogicContext();
+  const authRef = useRef(appLogic?.auth);
+  authRef.current = appLogic?.auth;
+
+  const clinicalReadHeaders = useCallback((extra?: Record<string, string>): Record<string, string> => {
+    const auth = authRef.current;
+    if (auth && typeof auth.denteClinicalReadHeaders === "function") {
+      return auth.denteClinicalReadHeaders(extra ?? {});
+    }
+    return { ...(extra ?? {}) };
+  }, []);
+
+  const clinicalMutationHeaders = useCallback((extra?: Record<string, string>): Record<string, string> => {
+    const auth = authRef.current;
+    if (auth && typeof auth.denteClinicalMutationHeaders === "function") {
+      return auth.denteClinicalMutationHeaders(extra ?? {});
+    }
+    return { ...(extra ?? {}) };
+  }, []);
+
   /** Останавливает опрос при уходе со страницы: иначе таймер живёт после размонтирования. */
   useEffect(() => {
     return () => {
@@ -239,12 +268,12 @@ export function MigrationWizard() {
     try {
       const response = await fetch("/api/migration/upload", {
         method: "POST",
-        headers: {
+        headers: clinicalMutationHeaders({
           "content-type": "application/octet-stream",
           // Кириллицу в заголовок класть нельзя: значения — ByteString.
           "x-migration-file-name": encodeURIComponent(file.name),
           "x-migration-source-name": encodeURIComponent(file.name)
-        },
+        }),
         body: file
       });
 
@@ -263,7 +292,7 @@ export function MigrationWizard() {
       setBusy(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allowLlm]);
+  }, [allowLlm, clinicalMutationHeaders]);
 
   // -------------------------------------------------------------------
   // Шаг 2: карта соответствия
@@ -274,7 +303,7 @@ export function MigrationWizard() {
     try {
       const response = await fetch(`/api/migration/${runId}/map`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: clinicalMutationHeaders({ "content-type": "application/json" }),
         body: JSON.stringify({ allowLlm: useLlm })
       });
       const result = await readResponse<MapResponse>(response);
@@ -288,27 +317,38 @@ export function MigrationWizard() {
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [clinicalMutationHeaders]);
 
   // -------------------------------------------------------------------
   // Шаг 3: прогон и опрос состояния
   // -------------------------------------------------------------------
   const pollStatus = useCallback(async (runId: string) => {
-    const response = await fetch(`/api/migration/${runId}`);
+    const auth = authRef.current;
+    const headers =
+      auth && typeof auth.denteClinicalReadHeaders === "function"
+        ? auth.denteClinicalReadHeaders()
+        : clinicalReadHeaders();
+    const response = await fetch(`/api/migration/${runId}`, { headers });
     const result = await readResponse<RunStatus>(response);
     if (!result.ok) return null;
     setStatus(result.data);
     return result.data;
-  }, []);
+  }, [clinicalReadHeaders]);
 
   const loadReport = useCallback(async (runId: string) => {
-    const response = await fetch(`/api/migration/${runId}/reconciliation`);
+    const auth = authRef.current;
+    const headers =
+      auth && typeof auth.denteClinicalReadHeaders === "function"
+        ? auth.denteClinicalReadHeaders()
+        : clinicalReadHeaders();
+    const response = await fetch(`/api/migration/${runId}/reconciliation`, { headers });
     const result = await readResponse<ReconciliationResponse>(response);
     if (result.ok) {
       setReport(result.data);
       setStep("report");
     }
-  }, []);
+  }, [clinicalReadHeaders]);
+
 
   const startRun = useCallback(
     async (dryRun: boolean) => {
@@ -321,7 +361,7 @@ export function MigrationWizard() {
       try {
         const response = await fetch(`/api/migration/${upload.runId}/execute`, {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: clinicalMutationHeaders({ "content-type": "application/json" }),
           body: JSON.stringify({ dryRun, sourceSystem: "legacy" })
         });
         const result = await readResponse<{ accepted: boolean; status: string }>(response);
@@ -359,7 +399,7 @@ export function MigrationWizard() {
         setBusy(false);
       }
     },
-    [upload, pollStatus, loadReport]
+    [upload, pollStatus, loadReport, clinicalMutationHeaders]
   );
 
   const rollback = useCallback(async () => {
@@ -367,9 +407,14 @@ export function MigrationWizard() {
     setBusy(true);
     setError(null);
     try {
+      const auth = authRef.current;
+      const headers =
+        auth && typeof auth.denteClinicalMutationHeaders === "function"
+          ? auth.denteClinicalMutationHeaders({ "content-type": "application/json" })
+          : clinicalMutationHeaders({ "content-type": "application/json" });
       const response = await fetch("/api/migration/rollback", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers,
         body: JSON.stringify({ runId: upload.runId, confirm: true })
       });
       const result = await readResponse<{ message: string }>(response);
@@ -383,7 +428,7 @@ export function MigrationWizard() {
     } finally {
       setBusy(false);
     }
-  }, [upload, pollStatus]);
+  }, [upload, pollStatus, clinicalMutationHeaders]);
 
   // -------------------------------------------------------------------
   // Поиск баз на диске
@@ -392,9 +437,14 @@ export function MigrationWizard() {
     setBusy(true);
     setError(null);
     try {
+      const auth = authRef.current;
+      const headers =
+        auth && typeof auth.denteClinicalMutationHeaders === "function"
+          ? auth.denteClinicalMutationHeaders({ "content-type": "application/json" })
+          : clinicalMutationHeaders({ "content-type": "application/json" });
       const response = await fetch("/api/migration/discover", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers,
         body: JSON.stringify({ roots: [], maxDepth: 5, timeBudgetMs: 30000 })
       });
       const result = await readResponse<DiscoveryResponse>(response);
@@ -406,7 +456,9 @@ export function MigrationWizard() {
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [clinicalMutationHeaders]);
+
+
 
   // -------------------------------------------------------------------
   // Отрисовка
