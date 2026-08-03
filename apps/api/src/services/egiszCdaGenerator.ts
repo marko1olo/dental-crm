@@ -961,6 +961,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 				</name>
 				<!--
+					DEFECT #2546: assignedPerson/desc.
+					WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+					Person narrative description is optional.
+					Form 043/u does not collect this coded slot — do not invent.
+					NOW: desc nullFlavor NI.
+				-->
+				<desc nullFlavor="NI"/>
+				<!--
 					DEFECT #1574: assignedPerson/administrativeGenderCode.
 					WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
 					Form 043/u chart does not collect this person sex; do not invent M/F.
@@ -1446,6 +1454,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 				</name>
 				<!--
+					DEFECT #2546: assignedPerson/desc.
+					WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+					Person narrative description is optional.
+					Form 043/u does not collect this coded slot — do not invent.
+					NOW: desc nullFlavor NI.
+				-->
+				<desc nullFlavor="NI"/>
+				<!--
 					DEFECT #1577: assignedPerson/administrativeGenderCode.
 					WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
 					Form 043/u chart does not collect this person sex; do not invent M/F.
@@ -1901,6 +1917,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<given>${escapeXml(params.doctorName.first)}</given>
 					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 				</name>
+				<!--
+					DEFECT #2546: assignedPerson/desc.
+					WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+					Person narrative description is optional.
+					Form 043/u does not collect this coded slot — do not invent.
+					NOW: desc nullFlavor NI.
+				-->
+				<desc nullFlavor="NI"/>
 				<!--
 					DEFECT #1580: assignedPerson/administrativeGenderCode.
 					WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -2794,6 +2818,30 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		<device>
 			<id nullFlavor="NI"/>
 			<name nullFlavor="NI"/>
+			<!--
+				DEFECT #2549: device/code.
+				WAS: device missing code.
+				HL7 CDA R2 Device has code 0..1.
+				Form 043/u does not collect this coded slot — do not invent.
+				NOW: code nullFlavor NI.
+			-->
+			<code nullFlavor="NI"/>
+			<!--
+				DEFECT #2550: device/manufacturerModelName.
+				WAS: device missing manufacturerModelName.
+				HL7 CDA R2 Device has manufacturerModelName 0..1.
+				Form 043/u does not collect this coded slot — do not invent.
+				NOW: manufacturerModelName nullFlavor NI.
+			-->
+			<manufacturerModelName nullFlavor="NI"/>
+			<!--
+				DEFECT #2551: device/softwareName.
+				WAS: device missing softwareName.
+				HL7 CDA R2 Device has softwareName 0..1.
+				Form 043/u does not collect this coded slot — do not invent.
+				NOW: softwareName nullFlavor NI.
+			-->
+			<softwareName nullFlavor="NI"/>
 		</device>
 	</receiver>
 
@@ -2888,6 +2936,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<given>${escapeXml(params.doctorName.first)}</given>
 					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 				</name>
+				<!--
+					DEFECT #2546: assignedPerson/desc.
+					WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+					Person narrative description is optional.
+					Form 043/u does not collect this coded slot — do not invent.
+					NOW: desc nullFlavor NI.
+				-->
+				<desc nullFlavor="NI"/>
 				<!--
 					DEFECT #1583: assignedPerson/administrativeGenderCode.
 					WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -3365,6 +3421,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<given>${escapeXml(params.doctorName.first)}</given>
 					${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 				</name>
+				<!--
+					DEFECT #2546: assignedPerson/desc.
+					WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+					Person narrative description is optional.
+					Form 043/u does not collect this coded slot — do not invent.
+					NOW: desc nullFlavor NI.
+				-->
+				<desc nullFlavor="NI"/>
 				<!--
 					DEFECT #1586: assignedPerson/administrativeGenderCode.
 					WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -4116,6 +4180,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
 						<!--
+							DEFECT #2546: assignedPerson/desc.
+							WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+							Person narrative description is optional.
+							Form 043/u does not collect this coded slot — do not invent.
+							NOW: desc nullFlavor NI.
+						-->
+						<desc nullFlavor="NI"/>
+						<!--
 							DEFECT #1589: assignedPerson/administrativeGenderCode.
 							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
 							Form 043/u chart does not collect this person sex; do not invent M/F.
@@ -4553,6 +4625,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
 						<!--
+							DEFECT #2546: assignedPerson/desc.
+							WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+							Person narrative description is optional.
+							Form 043/u does not collect this coded slot — do not invent.
+							NOW: desc nullFlavor NI.
+						-->
+						<desc nullFlavor="NI"/>
+						<!--
 							DEFECT #1592: assignedPerson/administrativeGenderCode.
 							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
 							Form 043/u chart does not collect this person sex; do not invent M/F.
@@ -4978,6 +5058,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<given>${escapeXml(params.doctorName.first)}</given>
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
+						<!--
+							DEFECT #2546: assignedPerson/desc.
+							WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+							Person narrative description is optional.
+							Form 043/u does not collect this coded slot — do not invent.
+							NOW: desc nullFlavor NI.
+						-->
+						<desc nullFlavor="NI"/>
 						<!--
 							DEFECT #1595: assignedPerson/administrativeGenderCode.
 							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -5583,7 +5671,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				${params.doctorPosition && params.doctorPosition.trim()
 					? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 					: `<functionCode nullFlavor="NI"/>`}
-				<associatedEntity classCode="PROV">
+				
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PROV">
 					${params.doctorSnils && String(params.doctorSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 						: `<id nullFlavor="NI"/>`}
@@ -6015,6 +6112,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -6043,6 +6161,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -6383,10 +6509,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -6773,6 +6915,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -6780,6 +6930,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -7324,7 +7482,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -7870,6 +8037,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<desc nullFlavor="NI"/>
 							<quantity nullFlavor="NI"/>
+							<!--
+								DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+								WAS: specimenPlayingEntity missing asEntityWithGeneric.
+								HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+								Form 043/u does not collect generic entity mapping — do not invent.
+								NOW: asEntityWithGeneric shell with nullFlavor NI children.
+							-->
+							<asEntityWithGeneric classCode="GEN">
+								<code nullFlavor="NI"/>
+							</asEntityWithGeneric>
+							<!--
+								DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+								WAS: specimenPlayingEntity missing asOtherIDs.
+								HL7 CDA R2 Entity has asOtherIDs 0..*.
+								Form 043/u does not collect alternate specimen IDs — do not invent.
+								NOW: asOtherIDs shell with id nullFlavor NI.
+							-->
+							<asOtherIDs classCode="IDENT">
+								<id nullFlavor="NI"/>
+							</asOtherIDs>
+
 						</specimenPlayingEntity>
 					</specimenRole>
 				</specimen>
@@ -7898,6 +8086,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1604: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -8256,10 +8452,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 					<assignedAuthor>
 						<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1607: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -8664,6 +8876,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -8671,6 +8891,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1610: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -9233,7 +9461,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-					<associatedEntity classCode="PRS">
+					
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -9704,6 +9941,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -9732,6 +9990,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #1619: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -10090,10 +10356,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #1622: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -10498,6 +10780,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -10505,6 +10795,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #1625: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -11067,7 +11365,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -11612,6 +11919,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							NOW: quantity nullFlavor NI; do not invent PQ amounts.
 						-->
 						<quantity nullFlavor="NI"/>
+						<!--
+							DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+							WAS: specimenPlayingEntity missing asEntityWithGeneric.
+							HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+							Form 043/u does not collect generic entity mapping — do not invent.
+							NOW: asEntityWithGeneric shell with nullFlavor NI children.
+						-->
+						<asEntityWithGeneric classCode="GEN">
+							<code nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+							WAS: specimenPlayingEntity missing asOtherIDs.
+							HL7 CDA R2 Entity has asOtherIDs 0..*.
+							Form 043/u does not collect alternate specimen IDs — do not invent.
+							NOW: asOtherIDs shell with id nullFlavor NI.
+						-->
+						<asOtherIDs classCode="IDENT">
+							<id nullFlavor="NI"/>
+						</asOtherIDs>
+
 					</specimenPlayingEntity>
 </specimenRole>
 			</specimen>
@@ -12042,10 +12370,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: id/addr/telecom NI + assignedPerson/name NI; do not invent.
 					-->
 					<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 					<addr nullFlavor="NI"/>
 					<telecom nullFlavor="NI"/>
 					<assignedPerson>
 						<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 						<!--
 							DEFECT #1632: assignedPerson/administrativeGenderCode.
 							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -12491,6 +12835,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<name nullFlavor="NI"/>
 					<desc nullFlavor="NI"/>
 					<quantity nullFlavor="NI"/>
+					<!--
+						DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+						WAS: specimenPlayingEntity missing asEntityWithGeneric.
+						HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+						Form 043/u does not collect generic entity mapping — do not invent.
+						NOW: asEntityWithGeneric shell with nullFlavor NI children.
+					-->
+					<asEntityWithGeneric classCode="GEN">
+						<code nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+						WAS: specimenPlayingEntity missing asOtherIDs.
+						HL7 CDA R2 Entity has asOtherIDs 0..*.
+						Form 043/u does not collect alternate specimen IDs — do not invent.
+						NOW: asOtherIDs shell with id nullFlavor NI.
+					-->
+					<asOtherIDs classCode="IDENT">
+						<id nullFlavor="NI"/>
+					</asOtherIDs>
+
 				</specimenPlayingEntity>
 			</specimenRole>
 		</specimen>
@@ -12519,6 +12884,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<telecom nullFlavor="NI"/>
 				<assignedPerson>
 					<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 					<!--
 						DEFECT #1638: assignedPerson/administrativeGenderCode.
 						WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -12873,6 +13246,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 				<id nullFlavor="NI"/>
 				<code nullFlavor="NI"/>
@@ -12880,6 +13261,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<telecom nullFlavor="NI"/>
 				<assignedPerson>
 					<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 					<!--
 						DEFECT #1641: assignedPerson/administrativeGenderCode.
 						WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -13442,7 +13831,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-			<associatedEntity classCode="PRS">
+			
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 				<id nullFlavor="NI"/>
 				<code nullFlavor="NI"/>
 				<addr nullFlavor="NI"/>
@@ -13913,6 +14311,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 						<desc nullFlavor="NI"/>
 						<quantity nullFlavor="NI"/>
+						<!--
+							DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+							WAS: specimenPlayingEntity missing asEntityWithGeneric.
+							HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+							Form 043/u does not collect generic entity mapping — do not invent.
+							NOW: asEntityWithGeneric shell with nullFlavor NI children.
+						-->
+						<asEntityWithGeneric classCode="GEN">
+							<code nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+							WAS: specimenPlayingEntity missing asOtherIDs.
+							HL7 CDA R2 Entity has asOtherIDs 0..*.
+							Form 043/u does not collect alternate specimen IDs — do not invent.
+							NOW: asOtherIDs shell with id nullFlavor NI.
+						-->
+						<asOtherIDs classCode="IDENT">
+							<id nullFlavor="NI"/>
+						</asOtherIDs>
+
 					</specimenPlayingEntity>
 				</specimenRole>
 			</specimen>
@@ -13941,6 +14360,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<assignedPerson>
 						<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 						<!--
 							DEFECT #1650: assignedPerson/administrativeGenderCode.
 							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -14299,10 +14726,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 				<assignedAuthor>
 					<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 					<addr nullFlavor="NI"/>
 					<telecom nullFlavor="NI"/>
 					<assignedPerson>
 						<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 						<!--
 							DEFECT #1653: assignedPerson/administrativeGenderCode.
 							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -14707,6 +15150,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
@@ -14714,6 +15165,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<assignedPerson>
 						<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 						<!--
 							DEFECT #1656: assignedPerson/administrativeGenderCode.
 							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -15276,7 +15735,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-				<associatedEntity classCode="PRS">
+				
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
 					<addr nullFlavor="NI"/>
@@ -15826,7 +16294,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		${params.doctorPosition && params.doctorPosition.trim()
 			? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 			: `<functionCode nullFlavor="NI"/>`}
-		<associatedEntity classCode="PROV">
+		
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PROV">
 
 			${/*
 			 * Same id rule as assignedAuthor (#77): SNILS when present,
@@ -16268,6 +16745,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2544: performer/time.
+						WAS: performer missing time. HL7 CDA R2 Performer2 has time 0..1.
+						Performer time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 
 				<!--
@@ -16289,6 +16774,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<assignedPerson>
 
 					<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 					<!--
 						DEFECT #1665: assignedPerson/administrativeGenderCode.
 						WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -16658,10 +17151,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					NOW: id/addr/telecom NI + assignedPerson/name NI; do not invent.
 				-->
 				<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 				<addr nullFlavor="NI"/>
 				<telecom nullFlavor="NI"/>
 				<assignedPerson>
 					<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 					<!--
 						DEFECT #1668: assignedPerson/administrativeGenderCode.
 						WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -17029,12 +17538,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 				<id nullFlavor="NI"/>
 				<addr nullFlavor="NI"/>
 				<telecom nullFlavor="NI"/>
 				<assignedPerson>
 					<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 					<!--
 						DEFECT #1671: assignedPerson/administrativeGenderCode.
 						WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -17597,7 +18122,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-			<associatedEntity classCode="PRS">
+			
+					<!--
+						DEFECT #2545: participant/time.
+						WAS: participant missing time. HL7 CDA R2 Participant2 has time 0..1.
+						Participation time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 
 				<!--
 					DEFECT #851: consent/participant/associatedEntity demographics.
@@ -17974,6 +18516,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<name nullFlavor="NI"/>
 					<desc nullFlavor="NI"/>
 					<quantity nullFlavor="NI"/>
+					<!--
+						DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+						WAS: specimenPlayingEntity missing asEntityWithGeneric.
+						HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+						Form 043/u does not collect generic entity mapping — do not invent.
+						NOW: asEntityWithGeneric shell with nullFlavor NI children.
+					-->
+					<asEntityWithGeneric classCode="GEN">
+						<code nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+						WAS: specimenPlayingEntity missing asOtherIDs.
+						HL7 CDA R2 Entity has asOtherIDs 0..*.
+						Form 043/u does not collect alternate specimen IDs — do not invent.
+						NOW: asOtherIDs shell with id nullFlavor NI.
+					-->
+					<asOtherIDs classCode="IDENT">
+						<id nullFlavor="NI"/>
+					</asOtherIDs>
+
 				</specimenPlayingEntity>
 			</specimenRole>
 		</specimen>
@@ -18130,6 +18693,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 						<desc nullFlavor="NI"/>
 						<quantity nullFlavor="NI"/>
+						<!--
+							DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+							WAS: specimenPlayingEntity missing asEntityWithGeneric.
+							HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+							Form 043/u does not collect generic entity mapping — do not invent.
+							NOW: asEntityWithGeneric shell with nullFlavor NI children.
+						-->
+						<asEntityWithGeneric classCode="GEN">
+							<code nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+							WAS: specimenPlayingEntity missing asOtherIDs.
+							HL7 CDA R2 Entity has asOtherIDs 0..*.
+							Form 043/u does not collect alternate specimen IDs — do not invent.
+							NOW: asOtherIDs shell with id nullFlavor NI.
+						-->
+						<asOtherIDs classCode="IDENT">
+							<id nullFlavor="NI"/>
+						</asOtherIDs>
+
 					</specimenPlayingEntity>
 				</specimenRole>
 			</specimen>
@@ -18158,6 +18742,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<assignedPerson>
 						<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 						<!--
 							DEFECT #1681: assignedPerson/administrativeGenderCode.
 							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -18516,10 +19108,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 				<assignedAuthor>
 					<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 					<addr nullFlavor="NI"/>
 					<telecom nullFlavor="NI"/>
 					<assignedPerson>
 						<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 						<!--
 							DEFECT #1684: assignedPerson/administrativeGenderCode.
 							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -18924,6 +19532,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
@@ -18931,6 +19547,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<telecom nullFlavor="NI"/>
 					<assignedPerson>
 						<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 						<!--
 							DEFECT #1687: assignedPerson/administrativeGenderCode.
 							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -19493,7 +20117,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-				<associatedEntity classCode="PRS">
+				
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
 					<addr nullFlavor="NI"/>
@@ -20343,6 +20976,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
 						<!--
+							DEFECT #2546: assignedPerson/desc.
+							WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+							Person narrative description is optional.
+							Form 043/u does not collect this coded slot — do not invent.
+							NOW: desc nullFlavor NI.
+						-->
+						<desc nullFlavor="NI"/>
+						<!--
 							DEFECT #1693: assignedPerson/administrativeGenderCode.
 							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
 							Form 043/u chart does not collect this person sex; do not invent M/F.
@@ -20764,6 +21405,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<given>${escapeXml(params.doctorName.first)}</given>
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
+						<!--
+							DEFECT #2546: assignedPerson/desc.
+							WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+							Person narrative description is optional.
+							Form 043/u does not collect this coded slot — do not invent.
+							NOW: desc nullFlavor NI.
+						-->
+						<desc nullFlavor="NI"/>
 						<!--
 							DEFECT #1696: assignedPerson/administrativeGenderCode.
 							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -21379,6 +22028,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
 						<!--
+							DEFECT #2546: assignedPerson/desc.
+							WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+							Person narrative description is optional.
+							Form 043/u does not collect this coded slot — do not invent.
+							NOW: desc nullFlavor NI.
+						-->
+						<desc nullFlavor="NI"/>
+						<!--
 							DEFECT #1699: assignedPerson/administrativeGenderCode.
 							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
 							Form 043/u chart does not collect this person sex; do not invent M/F.
@@ -21804,6 +22461,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<given>${escapeXml(params.doctorName.first)}</given>
 							${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 						</name>
+						<!--
+							DEFECT #2546: assignedPerson/desc.
+							WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+							Person narrative description is optional.
+							Form 043/u does not collect this coded slot — do not invent.
+							NOW: desc nullFlavor NI.
+						-->
+						<desc nullFlavor="NI"/>
 						<!--
 							DEFECT #1702: assignedPerson/administrativeGenderCode.
 							WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -22409,7 +23074,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				${params.doctorPosition && params.doctorPosition.trim()
 					? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 					: `<functionCode nullFlavor="NI"/>`}
-				<associatedEntity classCode="PROV">
+				
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PROV">
 					${params.doctorSnils && String(params.doctorSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 						: `<id nullFlavor="NI"/>`}
@@ -22841,6 +23515,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -22869,6 +23564,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -23209,10 +23912,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -23599,6 +24318,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -23606,6 +24333,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -24150,7 +24885,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -24696,6 +25440,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<desc nullFlavor="NI"/>
 							<quantity nullFlavor="NI"/>
+							<!--
+								DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+								WAS: specimenPlayingEntity missing asEntityWithGeneric.
+								HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+								Form 043/u does not collect generic entity mapping — do not invent.
+								NOW: asEntityWithGeneric shell with nullFlavor NI children.
+							-->
+							<asEntityWithGeneric classCode="GEN">
+								<code nullFlavor="NI"/>
+							</asEntityWithGeneric>
+							<!--
+								DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+								WAS: specimenPlayingEntity missing asOtherIDs.
+								HL7 CDA R2 Entity has asOtherIDs 0..*.
+								Form 043/u does not collect alternate specimen IDs — do not invent.
+								NOW: asOtherIDs shell with id nullFlavor NI.
+							-->
+							<asOtherIDs classCode="IDENT">
+								<id nullFlavor="NI"/>
+							</asOtherIDs>
+
 						</specimenPlayingEntity>
 					</specimenRole>
 				</specimen>
@@ -24724,6 +25489,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1711: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -25082,10 +25855,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 					<assignedAuthor>
 						<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1714: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -25490,6 +26279,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -25497,6 +26294,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1717: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -26059,7 +26864,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-					<associatedEntity classCode="PRS">
+					
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -26530,6 +27344,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -26558,6 +27393,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #1726: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -26916,10 +27759,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #1729: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -27324,6 +28183,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -27331,6 +28198,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #1732: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -27893,7 +28768,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -28438,6 +29322,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							NOW: quantity nullFlavor NI; do not invent PQ amounts.
 						-->
 						<quantity nullFlavor="NI"/>
+						<!--
+							DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+							WAS: specimenPlayingEntity missing asEntityWithGeneric.
+							HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+							Form 043/u does not collect generic entity mapping — do not invent.
+							NOW: asEntityWithGeneric shell with nullFlavor NI children.
+						-->
+						<asEntityWithGeneric classCode="GEN">
+							<code nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+							WAS: specimenPlayingEntity missing asOtherIDs.
+							HL7 CDA R2 Entity has asOtherIDs 0..*.
+							Form 043/u does not collect alternate specimen IDs — do not invent.
+							NOW: asOtherIDs shell with id nullFlavor NI.
+						-->
+						<asOtherIDs classCode="IDENT">
+							<id nullFlavor="NI"/>
+						</asOtherIDs>
+
 					</specimenPlayingEntity>
 </specimenRole>
 			</specimen>
@@ -29094,6 +29999,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #1740: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -29513,6 +30426,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #1743: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -29939,6 +30860,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #1746: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -30544,7 +31473,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
-								<associatedEntity classCode="PROV">
+								
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PROV">
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -30976,6 +31914,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -31004,6 +31963,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -31344,10 +32311,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -31734,6 +32717,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -31741,6 +32732,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -32285,7 +33284,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -32831,6 +33839,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<desc nullFlavor="NI"/>
 							<quantity nullFlavor="NI"/>
+							<!--
+								DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+								WAS: specimenPlayingEntity missing asEntityWithGeneric.
+								HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+								Form 043/u does not collect generic entity mapping — do not invent.
+								NOW: asEntityWithGeneric shell with nullFlavor NI children.
+							-->
+							<asEntityWithGeneric classCode="GEN">
+								<code nullFlavor="NI"/>
+							</asEntityWithGeneric>
+							<!--
+								DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+								WAS: specimenPlayingEntity missing asOtherIDs.
+								HL7 CDA R2 Entity has asOtherIDs 0..*.
+								Form 043/u does not collect alternate specimen IDs — do not invent.
+								NOW: asOtherIDs shell with id nullFlavor NI.
+							-->
+							<asOtherIDs classCode="IDENT">
+								<id nullFlavor="NI"/>
+							</asOtherIDs>
+
 						</specimenPlayingEntity>
 					</specimenRole>
 				</specimen>
@@ -32859,6 +33888,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1755: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -33217,10 +34254,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 					<assignedAuthor>
 						<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1758: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -33625,6 +34678,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -33632,6 +34693,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1761: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -34194,7 +35263,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-					<associatedEntity classCode="PRS">
+					
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -34665,6 +35743,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -34693,6 +35792,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #1770: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -35051,10 +36158,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #1773: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -35459,6 +36582,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -35466,6 +36597,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #1776: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -36028,7 +37167,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -36573,6 +37721,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											NOW: quantity nullFlavor NI; do not invent PQ amounts.
 										-->
 										<quantity nullFlavor="NI"/>
+										<!--
+											DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+											WAS: specimenPlayingEntity missing asEntityWithGeneric.
+											HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+											Form 043/u does not collect generic entity mapping — do not invent.
+											NOW: asEntityWithGeneric shell with nullFlavor NI children.
+										-->
+										<asEntityWithGeneric classCode="GEN">
+											<code nullFlavor="NI"/>
+										</asEntityWithGeneric>
+										<!--
+											DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+											WAS: specimenPlayingEntity missing asOtherIDs.
+											HL7 CDA R2 Entity has asOtherIDs 0..*.
+											Form 043/u does not collect alternate specimen IDs — do not invent.
+											NOW: asOtherIDs shell with id nullFlavor NI.
+										-->
+										<asOtherIDs classCode="IDENT">
+											<id nullFlavor="NI"/>
+										</asOtherIDs>
+
 									</specimenPlayingEntity>
 </specimenRole>
 							</specimen>
@@ -36866,6 +38035,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<name nullFlavor="NI"/>
 											<desc nullFlavor="NI"/>
 											<quantity nullFlavor="NI"/>
+											<!--
+												DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+												WAS: specimenPlayingEntity missing asEntityWithGeneric.
+												HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+												Form 043/u does not collect generic entity mapping — do not invent.
+												NOW: asEntityWithGeneric shell with nullFlavor NI children.
+											-->
+											<asEntityWithGeneric classCode="GEN">
+												<code nullFlavor="NI"/>
+											</asEntityWithGeneric>
+											<!--
+												DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+												WAS: specimenPlayingEntity missing asOtherIDs.
+												HL7 CDA R2 Entity has asOtherIDs 0..*.
+												Form 043/u does not collect alternate specimen IDs — do not invent.
+												NOW: asOtherIDs shell with id nullFlavor NI.
+											-->
+											<asOtherIDs classCode="IDENT">
+												<id nullFlavor="NI"/>
+											</asOtherIDs>
+
 										</specimenPlayingEntity>
 									</specimenRole>
 								</specimen>
@@ -36894,6 +38084,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 											<!--
 												DEFECT #1786: assignedPerson/administrativeGenderCode.
 												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -37252,10 +38450,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 									<assignedAuthor>
 										<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 										<addr nullFlavor="NI"/>
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 											<!--
 												DEFECT #1789: assignedPerson/administrativeGenderCode.
 												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -37660,6 +38874,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
@@ -37667,6 +38889,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 											<!--
 												DEFECT #1792: assignedPerson/administrativeGenderCode.
 												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -38229,7 +39459,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-									<associatedEntity classCode="PRS">
+									
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<addr nullFlavor="NI"/>
@@ -38700,6 +39939,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												<name nullFlavor="NI"/>
 												<desc nullFlavor="NI"/>
 												<quantity nullFlavor="NI"/>
+												<!--
+													DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+													WAS: specimenPlayingEntity missing asEntityWithGeneric.
+													HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+													Form 043/u does not collect generic entity mapping — do not invent.
+													NOW: asEntityWithGeneric shell with nullFlavor NI children.
+												-->
+												<asEntityWithGeneric classCode="GEN">
+													<code nullFlavor="NI"/>
+												</asEntityWithGeneric>
+												<!--
+													DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+													WAS: specimenPlayingEntity missing asOtherIDs.
+													HL7 CDA R2 Entity has asOtherIDs 0..*.
+													Form 043/u does not collect alternate specimen IDs — do not invent.
+													NOW: asOtherIDs shell with id nullFlavor NI.
+												-->
+												<asOtherIDs classCode="IDENT">
+													<id nullFlavor="NI"/>
+												</asOtherIDs>
+
 											</specimenPlayingEntity>
 										</specimenRole>
 									</specimen>
@@ -38728,6 +39988,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 												<!--
 													DEFECT #1801: assignedPerson/administrativeGenderCode.
 													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -39086,10 +40354,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 										<assignedAuthor>
 											<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 												<!--
 													DEFECT #1804: assignedPerson/administrativeGenderCode.
 													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -39494,6 +40778,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
@@ -39501,6 +40793,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 												<!--
 													DEFECT #1807: assignedPerson/administrativeGenderCode.
 													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -40063,7 +41363,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-										<associatedEntity classCode="PRS">
+										
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
@@ -41030,6 +42339,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #1814: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -41449,6 +42766,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #1817: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -41875,6 +43200,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #1820: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -42480,7 +43813,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
-								<associatedEntity classCode="PROV">
+								
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PROV">
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -42912,6 +44254,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -42940,6 +44303,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -43280,10 +44651,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -43670,6 +45057,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -43677,6 +45072,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -44221,7 +45624,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -44767,6 +46179,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<desc nullFlavor="NI"/>
 							<quantity nullFlavor="NI"/>
+							<!--
+								DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+								WAS: specimenPlayingEntity missing asEntityWithGeneric.
+								HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+								Form 043/u does not collect generic entity mapping — do not invent.
+								NOW: asEntityWithGeneric shell with nullFlavor NI children.
+							-->
+							<asEntityWithGeneric classCode="GEN">
+								<code nullFlavor="NI"/>
+							</asEntityWithGeneric>
+							<!--
+								DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+								WAS: specimenPlayingEntity missing asOtherIDs.
+								HL7 CDA R2 Entity has asOtherIDs 0..*.
+								Form 043/u does not collect alternate specimen IDs — do not invent.
+								NOW: asOtherIDs shell with id nullFlavor NI.
+							-->
+							<asOtherIDs classCode="IDENT">
+								<id nullFlavor="NI"/>
+							</asOtherIDs>
+
 						</specimenPlayingEntity>
 					</specimenRole>
 				</specimen>
@@ -44795,6 +46228,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1829: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -45153,10 +46594,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 					<assignedAuthor>
 						<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1832: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -45561,6 +47018,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -45568,6 +47033,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1835: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -46130,7 +47603,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-					<associatedEntity classCode="PRS">
+					
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -46601,6 +48083,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -46629,6 +48132,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #1844: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -46987,10 +48498,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #1847: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -47395,6 +48922,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -47402,6 +48937,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #1850: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -47964,7 +49507,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -48509,6 +50061,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											NOW: quantity nullFlavor NI; do not invent PQ amounts.
 										-->
 										<quantity nullFlavor="NI"/>
+										<!--
+											DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+											WAS: specimenPlayingEntity missing asEntityWithGeneric.
+											HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+											Form 043/u does not collect generic entity mapping — do not invent.
+											NOW: asEntityWithGeneric shell with nullFlavor NI children.
+										-->
+										<asEntityWithGeneric classCode="GEN">
+											<code nullFlavor="NI"/>
+										</asEntityWithGeneric>
+										<!--
+											DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+											WAS: specimenPlayingEntity missing asOtherIDs.
+											HL7 CDA R2 Entity has asOtherIDs 0..*.
+											Form 043/u does not collect alternate specimen IDs — do not invent.
+											NOW: asOtherIDs shell with id nullFlavor NI.
+										-->
+										<asOtherIDs classCode="IDENT">
+											<id nullFlavor="NI"/>
+										</asOtherIDs>
+
 									</specimenPlayingEntity>
 </specimenRole>
 							</specimen>
@@ -48802,6 +50375,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<name nullFlavor="NI"/>
 											<desc nullFlavor="NI"/>
 											<quantity nullFlavor="NI"/>
+											<!--
+												DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+												WAS: specimenPlayingEntity missing asEntityWithGeneric.
+												HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+												Form 043/u does not collect generic entity mapping — do not invent.
+												NOW: asEntityWithGeneric shell with nullFlavor NI children.
+											-->
+											<asEntityWithGeneric classCode="GEN">
+												<code nullFlavor="NI"/>
+											</asEntityWithGeneric>
+											<!--
+												DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+												WAS: specimenPlayingEntity missing asOtherIDs.
+												HL7 CDA R2 Entity has asOtherIDs 0..*.
+												Form 043/u does not collect alternate specimen IDs — do not invent.
+												NOW: asOtherIDs shell with id nullFlavor NI.
+											-->
+											<asOtherIDs classCode="IDENT">
+												<id nullFlavor="NI"/>
+											</asOtherIDs>
+
 										</specimenPlayingEntity>
 									</specimenRole>
 								</specimen>
@@ -48830,6 +50424,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 											<!--
 												DEFECT #1860: assignedPerson/administrativeGenderCode.
 												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -49188,10 +50790,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 									<assignedAuthor>
 										<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 										<addr nullFlavor="NI"/>
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 											<!--
 												DEFECT #1863: assignedPerson/administrativeGenderCode.
 												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -49596,6 +51214,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
@@ -49603,6 +51229,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 											<!--
 												DEFECT #1866: assignedPerson/administrativeGenderCode.
 												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -50165,7 +51799,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-									<associatedEntity classCode="PRS">
+									
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<addr nullFlavor="NI"/>
@@ -50636,6 +52279,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												<name nullFlavor="NI"/>
 												<desc nullFlavor="NI"/>
 												<quantity nullFlavor="NI"/>
+												<!--
+													DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+													WAS: specimenPlayingEntity missing asEntityWithGeneric.
+													HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+													Form 043/u does not collect generic entity mapping — do not invent.
+													NOW: asEntityWithGeneric shell with nullFlavor NI children.
+												-->
+												<asEntityWithGeneric classCode="GEN">
+													<code nullFlavor="NI"/>
+												</asEntityWithGeneric>
+												<!--
+													DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+													WAS: specimenPlayingEntity missing asOtherIDs.
+													HL7 CDA R2 Entity has asOtherIDs 0..*.
+													Form 043/u does not collect alternate specimen IDs — do not invent.
+													NOW: asOtherIDs shell with id nullFlavor NI.
+												-->
+												<asOtherIDs classCode="IDENT">
+													<id nullFlavor="NI"/>
+												</asOtherIDs>
+
 											</specimenPlayingEntity>
 										</specimenRole>
 									</specimen>
@@ -50664,6 +52328,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 												<!--
 													DEFECT #1875: assignedPerson/administrativeGenderCode.
 													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -51022,10 +52694,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 										<assignedAuthor>
 											<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 												<!--
 													DEFECT #1878: assignedPerson/administrativeGenderCode.
 													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -51430,6 +53118,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
@@ -51437,6 +53133,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 												<!--
 													DEFECT #1881: assignedPerson/administrativeGenderCode.
 													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -51999,7 +53703,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-										<associatedEntity classCode="PRS">
+										
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
@@ -52980,6 +54693,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #1888: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -53399,6 +55120,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #1891: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -53825,6 +55554,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #1894: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -54430,7 +56167,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
-								<associatedEntity classCode="PROV">
+								
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PROV">
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -54862,6 +56608,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -54890,6 +56657,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -55230,10 +57005,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -55620,6 +57411,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -55627,6 +57426,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -56171,7 +57978,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -56717,6 +58533,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<desc nullFlavor="NI"/>
 							<quantity nullFlavor="NI"/>
+							<!--
+								DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+								WAS: specimenPlayingEntity missing asEntityWithGeneric.
+								HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+								Form 043/u does not collect generic entity mapping — do not invent.
+								NOW: asEntityWithGeneric shell with nullFlavor NI children.
+							-->
+							<asEntityWithGeneric classCode="GEN">
+								<code nullFlavor="NI"/>
+							</asEntityWithGeneric>
+							<!--
+								DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+								WAS: specimenPlayingEntity missing asOtherIDs.
+								HL7 CDA R2 Entity has asOtherIDs 0..*.
+								Form 043/u does not collect alternate specimen IDs — do not invent.
+								NOW: asOtherIDs shell with id nullFlavor NI.
+							-->
+							<asOtherIDs classCode="IDENT">
+								<id nullFlavor="NI"/>
+							</asOtherIDs>
+
 						</specimenPlayingEntity>
 					</specimenRole>
 				</specimen>
@@ -56745,6 +58582,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1903: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -57103,10 +58948,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 					<assignedAuthor>
 						<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1906: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -57511,6 +59372,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -57518,6 +59387,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1909: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -58080,7 +59957,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-					<associatedEntity classCode="PRS">
+					
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -58551,6 +60437,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -58579,6 +60486,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #1918: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -58937,10 +60852,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #1921: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -59345,6 +61276,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -59352,6 +61291,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #1924: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -59914,7 +61861,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -60459,6 +62415,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											NOW: quantity nullFlavor NI; do not invent PQ amounts.
 										-->
 										<quantity nullFlavor="NI"/>
+										<!--
+											DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+											WAS: specimenPlayingEntity missing asEntityWithGeneric.
+											HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+											Form 043/u does not collect generic entity mapping — do not invent.
+											NOW: asEntityWithGeneric shell with nullFlavor NI children.
+										-->
+										<asEntityWithGeneric classCode="GEN">
+											<code nullFlavor="NI"/>
+										</asEntityWithGeneric>
+										<!--
+											DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+											WAS: specimenPlayingEntity missing asOtherIDs.
+											HL7 CDA R2 Entity has asOtherIDs 0..*.
+											Form 043/u does not collect alternate specimen IDs — do not invent.
+											NOW: asOtherIDs shell with id nullFlavor NI.
+										-->
+										<asOtherIDs classCode="IDENT">
+											<id nullFlavor="NI"/>
+										</asOtherIDs>
+
 									</specimenPlayingEntity>
 </specimenRole>
 							</specimen>
@@ -60752,6 +62729,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<name nullFlavor="NI"/>
 											<desc nullFlavor="NI"/>
 											<quantity nullFlavor="NI"/>
+											<!--
+												DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+												WAS: specimenPlayingEntity missing asEntityWithGeneric.
+												HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+												Form 043/u does not collect generic entity mapping — do not invent.
+												NOW: asEntityWithGeneric shell with nullFlavor NI children.
+											-->
+											<asEntityWithGeneric classCode="GEN">
+												<code nullFlavor="NI"/>
+											</asEntityWithGeneric>
+											<!--
+												DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+												WAS: specimenPlayingEntity missing asOtherIDs.
+												HL7 CDA R2 Entity has asOtherIDs 0..*.
+												Form 043/u does not collect alternate specimen IDs — do not invent.
+												NOW: asOtherIDs shell with id nullFlavor NI.
+											-->
+											<asOtherIDs classCode="IDENT">
+												<id nullFlavor="NI"/>
+											</asOtherIDs>
+
 										</specimenPlayingEntity>
 									</specimenRole>
 								</specimen>
@@ -60780,6 +62778,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 											<!--
 												DEFECT #1934: assignedPerson/administrativeGenderCode.
 												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -61138,10 +63144,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 									<assignedAuthor>
 										<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 										<addr nullFlavor="NI"/>
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 											<!--
 												DEFECT #1937: assignedPerson/administrativeGenderCode.
 												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -61546,6 +63568,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
@@ -61553,6 +63583,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 											<!--
 												DEFECT #1940: assignedPerson/administrativeGenderCode.
 												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -62115,7 +64153,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-									<associatedEntity classCode="PRS">
+									
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<addr nullFlavor="NI"/>
@@ -62586,6 +64633,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												<name nullFlavor="NI"/>
 												<desc nullFlavor="NI"/>
 												<quantity nullFlavor="NI"/>
+												<!--
+													DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+													WAS: specimenPlayingEntity missing asEntityWithGeneric.
+													HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+													Form 043/u does not collect generic entity mapping — do not invent.
+													NOW: asEntityWithGeneric shell with nullFlavor NI children.
+												-->
+												<asEntityWithGeneric classCode="GEN">
+													<code nullFlavor="NI"/>
+												</asEntityWithGeneric>
+												<!--
+													DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+													WAS: specimenPlayingEntity missing asOtherIDs.
+													HL7 CDA R2 Entity has asOtherIDs 0..*.
+													Form 043/u does not collect alternate specimen IDs — do not invent.
+													NOW: asOtherIDs shell with id nullFlavor NI.
+												-->
+												<asOtherIDs classCode="IDENT">
+													<id nullFlavor="NI"/>
+												</asOtherIDs>
+
 											</specimenPlayingEntity>
 										</specimenRole>
 									</specimen>
@@ -62614,6 +64682,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 												<!--
 													DEFECT #1949: assignedPerson/administrativeGenderCode.
 													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -62972,10 +65048,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 										<assignedAuthor>
 											<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 												<!--
 													DEFECT #1952: assignedPerson/administrativeGenderCode.
 													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -63380,6 +65472,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
@@ -63387,6 +65487,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 												<!--
 													DEFECT #1955: assignedPerson/administrativeGenderCode.
 													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -63949,7 +66057,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-										<associatedEntity classCode="PRS">
+										
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
@@ -64932,6 +67049,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #1962: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -65351,6 +67476,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #1965: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -65777,6 +67910,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #1968: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -66382,7 +68523,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
-								<associatedEntity classCode="PROV">
+								
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PROV">
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -66814,6 +68964,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -66842,6 +69013,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -67182,10 +69361,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -67572,6 +69767,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -67579,6 +69782,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -68123,7 +70334,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -68620,6 +70840,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<desc nullFlavor="NI"/>
 							<quantity nullFlavor="NI"/>
+							<!--
+								DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+								WAS: specimenPlayingEntity missing asEntityWithGeneric.
+								HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+								Form 043/u does not collect generic entity mapping — do not invent.
+								NOW: asEntityWithGeneric shell with nullFlavor NI children.
+							-->
+							<asEntityWithGeneric classCode="GEN">
+								<code nullFlavor="NI"/>
+							</asEntityWithGeneric>
+							<!--
+								DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+								WAS: specimenPlayingEntity missing asOtherIDs.
+								HL7 CDA R2 Entity has asOtherIDs 0..*.
+								Form 043/u does not collect alternate specimen IDs — do not invent.
+								NOW: asOtherIDs shell with id nullFlavor NI.
+							-->
+							<asOtherIDs classCode="IDENT">
+								<id nullFlavor="NI"/>
+							</asOtherIDs>
+
 						</specimenPlayingEntity>
 					</specimenRole>
 				</specimen>
@@ -68648,6 +70889,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1977: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -69006,10 +71255,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 					<assignedAuthor>
 						<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1980: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -69414,6 +71679,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -69421,6 +71694,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #1983: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -69983,7 +72264,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-					<associatedEntity classCode="PRS">
+					
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -70593,6 +72883,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											NOW: quantity nullFlavor NI; do not invent PQ amounts.
 										-->
 										<quantity nullFlavor="NI"/>
+										<!--
+											DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+											WAS: specimenPlayingEntity missing asEntityWithGeneric.
+											HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+											Form 043/u does not collect generic entity mapping — do not invent.
+											NOW: asEntityWithGeneric shell with nullFlavor NI children.
+										-->
+										<asEntityWithGeneric classCode="GEN">
+											<code nullFlavor="NI"/>
+										</asEntityWithGeneric>
+										<!--
+											DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+											WAS: specimenPlayingEntity missing asOtherIDs.
+											HL7 CDA R2 Entity has asOtherIDs 0..*.
+											Form 043/u does not collect alternate specimen IDs — do not invent.
+											NOW: asOtherIDs shell with id nullFlavor NI.
+										-->
+										<asOtherIDs classCode="IDENT">
+											<id nullFlavor="NI"/>
+										</asOtherIDs>
+
 									</specimenPlayingEntity>
 </specimenRole>
 							</specimen>
@@ -71070,6 +73381,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #1991: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -71489,6 +73808,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #1994: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -71915,6 +74242,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #1997: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -72520,7 +74855,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
-								<associatedEntity classCode="PROV">
+								
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PROV">
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -72952,6 +75296,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -72980,6 +75345,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -73320,10 +75693,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -73710,6 +76099,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -73717,6 +76114,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -74261,7 +76666,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -74807,6 +77221,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<desc nullFlavor="NI"/>
 							<quantity nullFlavor="NI"/>
+							<!--
+								DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+								WAS: specimenPlayingEntity missing asEntityWithGeneric.
+								HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+								Form 043/u does not collect generic entity mapping — do not invent.
+								NOW: asEntityWithGeneric shell with nullFlavor NI children.
+							-->
+							<asEntityWithGeneric classCode="GEN">
+								<code nullFlavor="NI"/>
+							</asEntityWithGeneric>
+							<!--
+								DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+								WAS: specimenPlayingEntity missing asOtherIDs.
+								HL7 CDA R2 Entity has asOtherIDs 0..*.
+								Form 043/u does not collect alternate specimen IDs — do not invent.
+								NOW: asOtherIDs shell with id nullFlavor NI.
+							-->
+							<asOtherIDs classCode="IDENT">
+								<id nullFlavor="NI"/>
+							</asOtherIDs>
+
 						</specimenPlayingEntity>
 					</specimenRole>
 				</specimen>
@@ -74835,6 +77270,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #2006: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -75193,10 +77636,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 					<assignedAuthor>
 						<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #2009: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -75601,6 +78060,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -75608,6 +78075,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #2012: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -76170,7 +78645,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-					<associatedEntity classCode="PRS">
+					
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -76641,6 +79125,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -76669,6 +79174,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #2021: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -77027,10 +79540,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #2024: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -77435,6 +79964,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -77442,6 +79979,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #2027: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -78004,7 +80549,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -78549,6 +81103,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											NOW: quantity nullFlavor NI; do not invent PQ amounts.
 										-->
 										<quantity nullFlavor="NI"/>
+										<!--
+											DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+											WAS: specimenPlayingEntity missing asEntityWithGeneric.
+											HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+											Form 043/u does not collect generic entity mapping — do not invent.
+											NOW: asEntityWithGeneric shell with nullFlavor NI children.
+										-->
+										<asEntityWithGeneric classCode="GEN">
+											<code nullFlavor="NI"/>
+										</asEntityWithGeneric>
+										<!--
+											DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+											WAS: specimenPlayingEntity missing asOtherIDs.
+											HL7 CDA R2 Entity has asOtherIDs 0..*.
+											Form 043/u does not collect alternate specimen IDs — do not invent.
+											NOW: asOtherIDs shell with id nullFlavor NI.
+										-->
+										<asOtherIDs classCode="IDENT">
+											<id nullFlavor="NI"/>
+										</asOtherIDs>
+
 									</specimenPlayingEntity>
 </specimenRole>
 							</specimen>
@@ -78842,6 +81417,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<name nullFlavor="NI"/>
 											<desc nullFlavor="NI"/>
 											<quantity nullFlavor="NI"/>
+											<!--
+												DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+												WAS: specimenPlayingEntity missing asEntityWithGeneric.
+												HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+												Form 043/u does not collect generic entity mapping — do not invent.
+												NOW: asEntityWithGeneric shell with nullFlavor NI children.
+											-->
+											<asEntityWithGeneric classCode="GEN">
+												<code nullFlavor="NI"/>
+											</asEntityWithGeneric>
+											<!--
+												DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+												WAS: specimenPlayingEntity missing asOtherIDs.
+												HL7 CDA R2 Entity has asOtherIDs 0..*.
+												Form 043/u does not collect alternate specimen IDs — do not invent.
+												NOW: asOtherIDs shell with id nullFlavor NI.
+											-->
+											<asOtherIDs classCode="IDENT">
+												<id nullFlavor="NI"/>
+											</asOtherIDs>
+
 										</specimenPlayingEntity>
 									</specimenRole>
 								</specimen>
@@ -78870,6 +81466,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 											<!--
 												DEFECT #2037: assignedPerson/administrativeGenderCode.
 												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -79228,10 +81832,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 									<assignedAuthor>
 										<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 										<addr nullFlavor="NI"/>
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 											<!--
 												DEFECT #2040: assignedPerson/administrativeGenderCode.
 												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -79636,6 +82256,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
@@ -79643,6 +82271,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 											<!--
 												DEFECT #2043: assignedPerson/administrativeGenderCode.
 												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -80205,7 +82841,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-									<associatedEntity classCode="PRS">
+									
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<addr nullFlavor="NI"/>
@@ -80676,6 +83321,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												<name nullFlavor="NI"/>
 												<desc nullFlavor="NI"/>
 												<quantity nullFlavor="NI"/>
+												<!--
+													DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+													WAS: specimenPlayingEntity missing asEntityWithGeneric.
+													HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+													Form 043/u does not collect generic entity mapping — do not invent.
+													NOW: asEntityWithGeneric shell with nullFlavor NI children.
+												-->
+												<asEntityWithGeneric classCode="GEN">
+													<code nullFlavor="NI"/>
+												</asEntityWithGeneric>
+												<!--
+													DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+													WAS: specimenPlayingEntity missing asOtherIDs.
+													HL7 CDA R2 Entity has asOtherIDs 0..*.
+													Form 043/u does not collect alternate specimen IDs — do not invent.
+													NOW: asOtherIDs shell with id nullFlavor NI.
+												-->
+												<asOtherIDs classCode="IDENT">
+													<id nullFlavor="NI"/>
+												</asOtherIDs>
+
 											</specimenPlayingEntity>
 										</specimenRole>
 									</specimen>
@@ -80704,6 +83370,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 												<!--
 													DEFECT #2052: assignedPerson/administrativeGenderCode.
 													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -81062,10 +83736,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 										<assignedAuthor>
 											<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 												<!--
 													DEFECT #2055: assignedPerson/administrativeGenderCode.
 													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -81470,6 +84160,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
@@ -81477,6 +84175,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 												<!--
 													DEFECT #2058: assignedPerson/administrativeGenderCode.
 													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -82039,7 +84745,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-										<associatedEntity classCode="PRS">
+										
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
@@ -83019,6 +85734,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #2065: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -83438,6 +86161,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #2068: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -83864,6 +86595,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #2071: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -84469,7 +87208,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
-								<associatedEntity classCode="PROV">
+								
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PROV">
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -84901,6 +87649,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -84929,6 +87698,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -85269,10 +88046,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -85659,6 +88452,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -85666,6 +88467,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -86210,7 +89019,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -86756,6 +89574,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<desc nullFlavor="NI"/>
 							<quantity nullFlavor="NI"/>
+							<!--
+								DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+								WAS: specimenPlayingEntity missing asEntityWithGeneric.
+								HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+								Form 043/u does not collect generic entity mapping — do not invent.
+								NOW: asEntityWithGeneric shell with nullFlavor NI children.
+							-->
+							<asEntityWithGeneric classCode="GEN">
+								<code nullFlavor="NI"/>
+							</asEntityWithGeneric>
+							<!--
+								DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+								WAS: specimenPlayingEntity missing asOtherIDs.
+								HL7 CDA R2 Entity has asOtherIDs 0..*.
+								Form 043/u does not collect alternate specimen IDs — do not invent.
+								NOW: asOtherIDs shell with id nullFlavor NI.
+							-->
+							<asOtherIDs classCode="IDENT">
+								<id nullFlavor="NI"/>
+							</asOtherIDs>
+
 						</specimenPlayingEntity>
 					</specimenRole>
 				</specimen>
@@ -86784,6 +89623,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #2080: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -87142,10 +89989,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 					<assignedAuthor>
 						<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #2083: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -87550,6 +90413,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -87557,6 +90428,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #2086: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -88119,7 +90998,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-					<associatedEntity classCode="PRS">
+					
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -88590,6 +91478,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -88618,6 +91527,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #2095: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -88976,10 +91893,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #2098: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -89384,6 +92317,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -89391,6 +92332,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #2101: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -89953,7 +92902,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -90498,6 +93456,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											NOW: quantity nullFlavor NI; do not invent PQ amounts.
 										-->
 										<quantity nullFlavor="NI"/>
+										<!--
+											DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+											WAS: specimenPlayingEntity missing asEntityWithGeneric.
+											HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+											Form 043/u does not collect generic entity mapping — do not invent.
+											NOW: asEntityWithGeneric shell with nullFlavor NI children.
+										-->
+										<asEntityWithGeneric classCode="GEN">
+											<code nullFlavor="NI"/>
+										</asEntityWithGeneric>
+										<!--
+											DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+											WAS: specimenPlayingEntity missing asOtherIDs.
+											HL7 CDA R2 Entity has asOtherIDs 0..*.
+											Form 043/u does not collect alternate specimen IDs — do not invent.
+											NOW: asOtherIDs shell with id nullFlavor NI.
+										-->
+										<asOtherIDs classCode="IDENT">
+											<id nullFlavor="NI"/>
+										</asOtherIDs>
+
 									</specimenPlayingEntity>
 </specimenRole>
 							</specimen>
@@ -90791,6 +93770,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<name nullFlavor="NI"/>
 											<desc nullFlavor="NI"/>
 											<quantity nullFlavor="NI"/>
+											<!--
+												DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+												WAS: specimenPlayingEntity missing asEntityWithGeneric.
+												HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+												Form 043/u does not collect generic entity mapping — do not invent.
+												NOW: asEntityWithGeneric shell with nullFlavor NI children.
+											-->
+											<asEntityWithGeneric classCode="GEN">
+												<code nullFlavor="NI"/>
+											</asEntityWithGeneric>
+											<!--
+												DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+												WAS: specimenPlayingEntity missing asOtherIDs.
+												HL7 CDA R2 Entity has asOtherIDs 0..*.
+												Form 043/u does not collect alternate specimen IDs — do not invent.
+												NOW: asOtherIDs shell with id nullFlavor NI.
+											-->
+											<asOtherIDs classCode="IDENT">
+												<id nullFlavor="NI"/>
+											</asOtherIDs>
+
 										</specimenPlayingEntity>
 									</specimenRole>
 								</specimen>
@@ -90819,6 +93819,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 											<!--
 												DEFECT #2111: assignedPerson/administrativeGenderCode.
 												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -91177,10 +94185,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 									<assignedAuthor>
 										<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 										<addr nullFlavor="NI"/>
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 											<!--
 												DEFECT #2114: assignedPerson/administrativeGenderCode.
 												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -91585,6 +94609,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
@@ -91592,6 +94624,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										<telecom nullFlavor="NI"/>
 										<assignedPerson>
 											<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 											<!--
 												DEFECT #2117: assignedPerson/administrativeGenderCode.
 												WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -92154,7 +95194,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-									<associatedEntity classCode="PRS">
+									
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<addr nullFlavor="NI"/>
@@ -92625,6 +95674,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												<name nullFlavor="NI"/>
 												<desc nullFlavor="NI"/>
 												<quantity nullFlavor="NI"/>
+												<!--
+													DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+													WAS: specimenPlayingEntity missing asEntityWithGeneric.
+													HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+													Form 043/u does not collect generic entity mapping — do not invent.
+													NOW: asEntityWithGeneric shell with nullFlavor NI children.
+												-->
+												<asEntityWithGeneric classCode="GEN">
+													<code nullFlavor="NI"/>
+												</asEntityWithGeneric>
+												<!--
+													DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+													WAS: specimenPlayingEntity missing asOtherIDs.
+													HL7 CDA R2 Entity has asOtherIDs 0..*.
+													Form 043/u does not collect alternate specimen IDs — do not invent.
+													NOW: asOtherIDs shell with id nullFlavor NI.
+												-->
+												<asOtherIDs classCode="IDENT">
+													<id nullFlavor="NI"/>
+												</asOtherIDs>
+
 											</specimenPlayingEntity>
 										</specimenRole>
 									</specimen>
@@ -92653,6 +95723,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 												<!--
 													DEFECT #2126: assignedPerson/administrativeGenderCode.
 													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -93011,10 +96089,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 										<assignedAuthor>
 											<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 												<!--
 													DEFECT #2129: assignedPerson/administrativeGenderCode.
 													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -93419,6 +96513,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
@@ -93426,6 +96528,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<telecom nullFlavor="NI"/>
 											<assignedPerson>
 												<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 												<!--
 													DEFECT #2132: assignedPerson/administrativeGenderCode.
 													WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -93988,7 +97098,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-										<associatedEntity classCode="PRS">
+										
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
@@ -95053,6 +98172,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #2139: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -95472,6 +98599,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #2142: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -95898,6 +99033,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<given>${escapeXml(params.doctorName.first)}</given>
 											${params.doctorName.middle ? `<given>${escapeXml(params.doctorName.middle)}</given>` : ""}
 										</name>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 										<!--
 											DEFECT #2145: assignedPerson/administrativeGenderCode.
 											WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -96503,7 +99646,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
-								<associatedEntity classCode="PROV">
+								
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PROV">
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -96935,6 +100087,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -96963,6 +100136,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -97303,10 +100484,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -97693,6 +100890,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -97700,6 +100905,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
 								<birthplace>
@@ -98244,7 +101457,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -98790,6 +102012,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<desc nullFlavor="NI"/>
 							<quantity nullFlavor="NI"/>
+							<!--
+								DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+								WAS: specimenPlayingEntity missing asEntityWithGeneric.
+								HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+								Form 043/u does not collect generic entity mapping — do not invent.
+								NOW: asEntityWithGeneric shell with nullFlavor NI children.
+							-->
+							<asEntityWithGeneric classCode="GEN">
+								<code nullFlavor="NI"/>
+							</asEntityWithGeneric>
+							<!--
+								DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+								WAS: specimenPlayingEntity missing asOtherIDs.
+								HL7 CDA R2 Entity has asOtherIDs 0..*.
+								Form 043/u does not collect alternate specimen IDs — do not invent.
+								NOW: asOtherIDs shell with id nullFlavor NI.
+							-->
+							<asOtherIDs classCode="IDENT">
+								<id nullFlavor="NI"/>
+							</asOtherIDs>
+
 						</specimenPlayingEntity>
 					</specimenRole>
 				</specimen>
@@ -98818,6 +102061,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #2154: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -99176,10 +102427,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 					<assignedAuthor>
 						<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #2157: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -99584,6 +102851,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -99591,6 +102866,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 						<assignedPerson>
 							<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 							<!--
 								DEFECT #2160: assignedPerson/administrativeGenderCode.
 								WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -100153,7 +103436,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-					<associatedEntity classCode="PRS">
+					
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -100624,6 +103916,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<desc nullFlavor="NI"/>
 								<quantity nullFlavor="NI"/>
+								<!--
+									DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+									WAS: specimenPlayingEntity missing asEntityWithGeneric.
+									HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+									Form 043/u does not collect generic entity mapping — do not invent.
+									NOW: asEntityWithGeneric shell with nullFlavor NI children.
+								-->
+								<asEntityWithGeneric classCode="GEN">
+									<code nullFlavor="NI"/>
+								</asEntityWithGeneric>
+								<!--
+									DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+									WAS: specimenPlayingEntity missing asOtherIDs.
+									HL7 CDA R2 Entity has asOtherIDs 0..*.
+									Form 043/u does not collect alternate specimen IDs — do not invent.
+									NOW: asOtherIDs shell with id nullFlavor NI.
+								-->
+								<asOtherIDs classCode="IDENT">
+									<id nullFlavor="NI"/>
+								</asOtherIDs>
+
 							</specimenPlayingEntity>
 						</specimenRole>
 					</specimen>
@@ -100652,6 +103965,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #2169: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -101010,10 +104331,26 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 
 						<assignedAuthor>
 							<id nullFlavor="NI"/>
+					<!--
+						DEFECT #2552: assignedAuthor/code.
+						WAS: assignedAuthor missing code. HL7 CDA R2 AssignedAuthor has code 0..*.
+						Role code for author is optional when id is present.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #2172: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -101418,6 +104755,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: modeCode nullFlavor NI until chart field exists.
 					-->
 					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2543: informant/time.
+						WAS: informant missing time. HL7 CDA R2 Informant12 has time 0..1.
+						Informant time is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
 <assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -101425,6 +104770,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<telecom nullFlavor="NI"/>
 							<assignedPerson>
 								<name nullFlavor="NI"/>
+					<!--
+						DEFECT #2546: assignedPerson/desc.
+						WAS: assignedPerson missing desc. HL7 CDA R2 Person has desc 0..1.
+						Person narrative description is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: desc nullFlavor NI.
+					-->
+					<desc nullFlavor="NI"/>
 								<!--
 									DEFECT #2175: assignedPerson/administrativeGenderCode.
 									WAS: person had name only — no administrativeGenderCode. HL7 CDA R2 Person has administrativeGenderCode 0..1.
@@ -101987,7 +105340,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-						<associatedEntity classCode="PRS">
+						
+					<!--
+						DEFECT #2542: participant/awarenessCode.
+						WAS: participant missing awarenessCode. HL7 CDA R2 Participant2 has awarenessCode 0..1.
+						Awareness code is optional.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: awarenessCode nullFlavor NI.
+					-->
+					<awarenessCode nullFlavor="NI"/>
+<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -102626,6 +105988,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											NOW: quantity nullFlavor NI; do not invent PQ amounts.
 										-->
 										<quantity nullFlavor="NI"/>
+										<!--
+											DEFECT #2547: specimenPlayingEntity/asEntityWithGeneric.
+											WAS: specimenPlayingEntity missing asEntityWithGeneric.
+											HL7 CDA R2 Entity has asEntityWithGeneric 0..*.
+											Form 043/u does not collect generic entity mapping — do not invent.
+											NOW: asEntityWithGeneric shell with nullFlavor NI children.
+										-->
+										<asEntityWithGeneric classCode="GEN">
+											<code nullFlavor="NI"/>
+										</asEntityWithGeneric>
+										<!--
+											DEFECT #2548: specimenPlayingEntity/asOtherIDs.
+											WAS: specimenPlayingEntity missing asOtherIDs.
+											HL7 CDA R2 Entity has asOtherIDs 0..*.
+											Form 043/u does not collect alternate specimen IDs — do not invent.
+											NOW: asOtherIDs shell with id nullFlavor NI.
+										-->
+										<asOtherIDs classCode="IDENT">
+											<id nullFlavor="NI"/>
+										</asOtherIDs>
+
 									</specimenPlayingEntity>
 </specimenRole>
 							</specimen>
