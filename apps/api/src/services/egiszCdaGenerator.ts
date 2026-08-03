@@ -548,7 +548,56 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<telecom nullFlavor="NI"/>
 							</place>
 						</birthplace>
-					</guardianPerson>
+					
+					<!--
+						DEFECT #2449: guardianPerson/maritalStatusCode.
+						WAS: guardianPerson had name/gender/birthTime/birthplace — no
+						maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+						0..1. SEMD often flags incomplete guardianPerson demographics.
+						Form 043/u does not collect guardian marital status — do not invent.
+						NOW: maritalStatusCode nullFlavor NI.
+					-->
+					<maritalStatusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2450: guardianPerson/raceCode.
+						WAS: guardianPerson missing raceCode. HL7 CDA R2 Person may carry
+						raceCode 0..*. Do not invent race from Form 043/u.
+						NOW: raceCode nullFlavor NI.
+					-->
+					<raceCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2451: guardianPerson/ethnicGroupCode.
+						WAS: guardianPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+						carry ethnicGroupCode 0..*. Do not invent ethnicity.
+						NOW: ethnicGroupCode nullFlavor NI.
+					-->
+					<ethnicGroupCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2452: guardianPerson/languageCommunication.
+						WAS: guardianPerson missing languageCommunication. HL7 CDA R2
+						Person may carry languageCommunication 0..*. Do not invent language.
+						NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+					-->
+					<languageCommunication>
+						<languageCode nullFlavor="NI"/>
+						<modeCode nullFlavor="NI"/>
+						<proficiencyLevelCode nullFlavor="NI"/>
+						<preferenceInd nullFlavor="NI"/>
+					</languageCommunication>
+					<!--
+						DEFECT #2453: guardianPerson/asCitizen.
+						WAS: guardianPerson missing asCitizen. HL7 RIM Entity may carry
+						asCitizen. Do not invent citizenship/nation code.
+						NOW: asCitizen code NI + politicalNation code/name NI.
+					-->
+					<asCitizen>
+						<code nullFlavor="NI"/>
+						<politicalNation>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+						</politicalNation>
+					</asCitizen>
+				</guardianPerson>
 				
 					<!--
 						DEFECT #852: patient/guardian/guardianOrganization.
@@ -914,7 +963,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</wholeOrganization>
 				</asOrganizationPartOf>
 			</representedOrganization>`}
-		</assignedAuthor>
+		
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 	</author>
 	<!--
 		DEFECT #127: ClinicalDocument/dataEnterer (HL7 CDA R2 / EGISZ SEMD).
@@ -1122,7 +1189,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</wholeOrganization>
 				</asOrganizationPartOf>
 			</representedOrganization>`}
-		</assignedEntity>
+		
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 	</dataEnterer>
 		<!--
 		DEFECT #128: ClinicalDocument/informant (HL7 CDA R2 / EGISZ SEMD).
@@ -1339,8 +1428,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</wholeOrganization>
 				</asOrganizationPartOf>
 			</representedOrganization>`}
-		</assignedEntity>
-	</informant>
+		
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+	
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 	<custodian>
 		<assignedCustodian>
 			<representedCustodianOrganization>
@@ -1745,7 +1876,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</wholeOrganization>
 				</asOrganizationPartOf>
 			</representedOrganization>
-		</assignedEntity>
+		
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 	</legalAuthenticator>
 	<!--
 		DEFECT #95: authenticator (who attested the clinical content).
@@ -1992,7 +2145,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</wholeOrganization>
 				</asOrganizationPartOf>
 			</representedOrganization>
-		</assignedEntity>
+		
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 	</authenticator>
 	<!-- DEFECT #55/#65: encounter datetime (params.visitDate / appointment.startsAt) -->
 
@@ -2418,7 +2593,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							</wholeOrganization>
 						</asOrganizationPartOf>
 					</representedOrganization>
-				</assignedEntity>
+				
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 			</performer>
 			<!--
 				DEFECT #290: documentationOf/serviceEvent/author.
@@ -2597,7 +2794,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							</wholeOrganization>
 						</asOrganizationPartOf>
 					</representedOrganization>
-				</assignedAuthor>
+				
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 			</author>
 			<!--
 				DEFECT #299: documentationOf/serviceEvent/informant.
@@ -2772,8 +2987,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							</wholeOrganization>
 						</asOrganizationPartOf>
 					</representedOrganization>
-				</assignedEntity>
-			</informant>
+				
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+			
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 			<!--
 				DEFECT #308: documentationOf/serviceEvent/participant.
 				WAS: serviceEvent had performer/author/informant then closed — no entry-level participant. Body entries (#301-#307) already carry participant REF.
@@ -2791,6 +3048,15 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<participant typeCode="REF">
 				<time value="${visitTime}"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 				${params.doctorPosition && params.doctorPosition.trim()
 					? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 					: `<functionCode nullFlavor="NI"/>`}
@@ -3069,7 +3335,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2185: precondition/criterion/author.
@@ -3201,7 +3489,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #2186: precondition/criterion/informant.
@@ -3305,8 +3611,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #2187: precondition/criterion/participant.
 						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
@@ -3314,6 +3662,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -3331,7 +3698,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #2188: precondition/criterion/entryRelationship.
@@ -3655,7 +4039,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #939: reference/externalAct/author.
@@ -3805,7 +4211,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</wholeOrganization>
 							</asOrganizationPartOf>
 						</representedOrganization>
-					</assignedAuthor>
+					
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 				</author>
 				<!--
 					DEFECT #972: reference/externalAct/informant.
@@ -3927,8 +4351,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
-				</informant>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+				
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 				<!--
 					DEFECT #981: reference/externalAct/participant.
 					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
@@ -3936,6 +4402,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<participant typeCode="IND">
 					<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 					<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -3971,7 +4456,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</place>
 							</birthplace>
 						</associatedPerson>
-					</associatedEntity>
+					
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 				</participant>
 				<!--
 					DEFECT #990: reference/externalAct/entryRelationship.
@@ -4202,7 +4704,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1318: entryRelationship/act/author.
@@ -4352,7 +4876,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #1319: entryRelationship/act/informant.
@@ -4474,8 +5016,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #1320: entryRelationship/act/participant.
 						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
@@ -4483,6 +5067,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -4518,7 +5121,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #1321: entryRelationship/act/entryRelationship.
@@ -5252,7 +5872,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							</wholeOrganization>
 						</asOrganizationPartOf>
 					</representedOrganization>
-				</assignedAuthor>
+				
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 			</author>
 		<!--
 			DEFECT #969: inFulfillmentOf/order/interpretationCode.
@@ -5440,6 +6078,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
+			
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
 			</assignedEntity>
 		</performer>
 		<!--
@@ -5562,7 +6222,49 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
+			
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
 			</assignedEntity>
+		
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
 		</informant>
 		<!--
 			DEFECT #1036: inFulfillmentOf/order/participant.
@@ -5571,6 +6273,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		-->
 		<participant typeCode="IND">
 			<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 			<associatedEntity classCode="PRS">
 				<id nullFlavor="NI"/>
 				<code nullFlavor="NI"/>
@@ -5606,7 +6327,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						</place>
 					</birthplace>
 				</associatedPerson>
-			</associatedEntity>
+			
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 		</participant>
 		<!--
 			DEFECT #1072: inFulfillmentOf/order/entryRelationship.
@@ -5837,7 +6575,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-				</assignedEntity>
+				
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 			</performer>
 			<!--
 				DEFECT #1327: entryRelationship/act/author.
@@ -5987,7 +6747,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</wholeOrganization>
 							</asOrganizationPartOf>
 						</representedOrganization>
-				</assignedAuthor>
+				
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 			</author>
 			<!--
 				DEFECT #1328: entryRelationship/act/informant.
@@ -6109,8 +6887,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-				</assignedEntity>
-			</informant>
+				
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+			
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 			<!--
 				DEFECT #1329: entryRelationship/act/participant.
 				WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
@@ -6118,6 +6938,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<participant typeCode="IND">
 				<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 				<associatedEntity classCode="PRS">
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
@@ -6153,6 +6992,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							</place>
 						</birthplace>
 					</associatedPerson>
+				
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
 				</associatedEntity>
 			</participant>
 			<!--
@@ -6364,6 +7220,15 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			NOW: time value=effectiveTime before associatedEntity.
 		-->
 		<time value="${effectiveTime}"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 		<!--
 			DEFECT #169: ClinicalDocument/participant REF/functionCode.
 			WAS: participant REF had time (#152) + associatedEntity only — no
@@ -6538,6 +7403,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		-->
 		<uncertaintyCode nullFlavor="NI"/>
 		<performer typeCode="PRF">
+				<!--
+					DEFECT #2455: performer/functionCode.
+					WAS: performer had time/modeCode/assignedEntity — no functionCode.
+					HL7 CDA R2 Performer may carry functionCode 0..1. SEMD often flags
+					incomplete performer without function slot. Do not invent function.
+					NOW: functionCode nullFlavor NI.
+				-->
+				<functionCode nullFlavor="NI"/>
 
 			<assignedEntity>
 
@@ -6669,6 +7542,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				</asEmployee>
 			</assignedPerson>
 
+			
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
 			</assignedEntity>
 
 		</performer>
@@ -6800,6 +7695,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
+			
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
 			</assignedAuthor>
 		</author>
 
@@ -6922,7 +7835,49 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
+			
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
 			</assignedEntity>
+		
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
 		</informant>
 
 <!--
@@ -6931,6 +7886,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			NOW: participant typeCode=WIT with associatedEntity id/code/addr/telecom/associatedPerson name NI; do not invent witness identity.
 		-->
 		<participant typeCode="WIT">
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 			<associatedEntity classCode="PRS">
 
 				<!--
@@ -7276,7 +8250,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-				</assignedEntity>
+				
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 			</performer>
 			<!--
 				DEFECT #1336: entryRelationship/act/author.
@@ -7426,7 +8422,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-				</assignedAuthor>
+				
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 			</author>
 			<!--
 				DEFECT #1337: entryRelationship/act/informant.
@@ -7548,8 +8562,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-				</assignedEntity>
-			</informant>
+				
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+			
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 			<!--
 				DEFECT #1338: entryRelationship/act/participant.
 				WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
@@ -7557,6 +8613,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<participant typeCode="IND">
 				<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 				<associatedEntity classCode="PRS">
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
@@ -7592,6 +8667,23 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							</place>
 						</birthplace>
 					</associatedPerson>
+				
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
 				</associatedEntity>
 			</participant>
 			<!--
@@ -8172,7 +9264,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							</wholeOrganization>
 						</asOrganizationPartOf>
 					</representedOrganization>
-				</assignedEntity>
+				
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 			</encounterParticipant>
 			<responsibleParty>
 
@@ -8366,7 +9480,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							</wholeOrganization>
 						</asOrganizationPartOf>
 					</representedOrganization>
-				</assignedEntity>
+				
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 			</responsibleParty>
 
 			<!--
@@ -8627,7 +9763,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							</wholeOrganization>
 						</asOrganizationPartOf>
 					</representedOrganization>
-				</assignedAuthor>
+				
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 			</author>
 			<!--
 				DEFECT #300: encompassingEncounter/informant.
@@ -8802,8 +9956,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							</wholeOrganization>
 						</asOrganizationPartOf>
 					</representedOrganization>
-				</assignedEntity>
-			</informant>
+				
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+			
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 			<!--
 				DEFECT #309: encompassingEncounter/participant.
 				WAS: encompassingEncounter had author/informant then closed — no entry-level participant. serviceEvent (#308) and body entries (#301-#307) already carry participant REF.
@@ -8821,6 +10017,15 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<participant typeCode="REF">
 				<time value="${visitTime}"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 				${params.doctorPosition && params.doctorPosition.trim()
 					? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 					: `<functionCode nullFlavor="NI"/>`}
@@ -9099,7 +10304,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2194: precondition/criterion/author.
@@ -9231,7 +10458,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #2195: precondition/criterion/informant.
@@ -9335,8 +10580,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #2196: precondition/criterion/participant.
 						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
@@ -9344,6 +10631,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -9361,7 +10667,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #2197: precondition/criterion/entryRelationship.
@@ -9685,7 +11008,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #940: reference/externalAct/author.
@@ -9835,7 +11180,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							</wholeOrganization>
 						</asOrganizationPartOf>
 					</representedOrganization>
-					</assignedAuthor>
+					
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 				</author>
 				<!--
 					DEFECT #973: reference/externalAct/informant.
@@ -9957,8 +11320,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
-				</informant>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+				
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 				<!--
 					DEFECT #982: reference/externalAct/participant.
 					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
@@ -9966,6 +11371,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<participant typeCode="IND">
 					<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 					<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -10001,7 +11425,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</place>
 							</birthplace>
 						</associatedPerson>
-					</associatedEntity>
+					
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 				</participant>
 				<!--
 					DEFECT #991: reference/externalAct/entryRelationship.
@@ -10232,7 +11673,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1345: entryRelationship/act/author.
@@ -10382,7 +11845,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							</wholeOrganization>
 						</asOrganizationPartOf>
 					</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #1346: entryRelationship/act/informant.
@@ -10504,8 +11985,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #1347: entryRelationship/act/participant.
 						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
@@ -10513,6 +12036,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -10548,7 +12090,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #1348: entryRelationship/act/entryRelationship.
@@ -11292,6 +12851,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<performer typeCode="PRF">
 								<time value="${visitTime}"/>
+				<!--
+					DEFECT #2455: performer/functionCode.
+					WAS: performer had time/modeCode/assignedEntity — no functionCode.
+					HL7 CDA R2 Performer may carry functionCode 0..1. SEMD often flags
+					incomplete performer without function slot. Do not invent function.
+					NOW: functionCode nullFlavor NI.
+				-->
+				<functionCode nullFlavor="NI"/>
 								<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -11444,7 +13011,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedEntity>
+								
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 							</performer>
 							<!--
 								DEFECT #283: diagnosis observation/author.
@@ -11624,7 +13213,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedAuthor>
+								
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 							</author>
 							<!--
 								DEFECT #292: diagnosis observation/informant.
@@ -11799,8 +13406,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedEntity>
-							</informant>
+								
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+							
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 							<!--
 								DEFECT #301: diagnosis observation/participant.
 								WAS: diagnosis OBS had performer (#233) + author (#283) + informant (#292) then closed — no entry-level participant.
@@ -11818,6 +13467,15 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<participant typeCode="REF">
 								<time value="${visitTime}"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
@@ -12096,7 +13754,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2203: precondition/criterion/author.
@@ -12228,7 +13908,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #2204: precondition/criterion/informant.
@@ -12332,8 +14030,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #2205: precondition/criterion/participant.
 						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
@@ -12341,6 +14081,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -12358,7 +14117,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #2206: precondition/criterion/entryRelationship.
@@ -12682,7 +14458,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #941: reference/externalAct/author.
@@ -12832,7 +14630,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</wholeOrganization>
 							</asOrganizationPartOf>
 						</representedOrganization>
-					</assignedAuthor>
+					
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 				</author>
 				<!--
 					DEFECT #974: reference/externalAct/informant.
@@ -12954,8 +14770,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
-				</informant>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+				
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 				<!--
 					DEFECT #983: reference/externalAct/participant.
 					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
@@ -12963,6 +14821,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<participant typeCode="IND">
 					<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 					<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -12998,7 +14875,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</place>
 							</birthplace>
 						</associatedPerson>
-					</associatedEntity>
+					
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 				</participant>
 				<!--
 					DEFECT #992: reference/externalAct/entryRelationship.
@@ -13229,7 +15123,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1354: entryRelationship/act/author.
@@ -13379,7 +15295,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #1355: entryRelationship/act/informant.
@@ -13501,8 +15435,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #1356: entryRelationship/act/participant.
 						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
@@ -13510,6 +15486,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -13545,7 +15540,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #1357: entryRelationship/act/entryRelationship.
@@ -14192,7 +16204,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-									</assignedEntity>
+									
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 								</performer>
 								<!--
 									DEFECT #1023: referenceRange/observationRange/author.
@@ -14342,7 +16376,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</wholeOrganization>
 							</asOrganizationPartOf>
 						</representedOrganization>
-									</assignedAuthor>
+									
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 								</author>
 								<!--
 									DEFECT #1046: referenceRange/observationRange/informant.
@@ -14464,8 +16516,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-									</assignedEntity>
-								</informant>
+									
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+								
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 								<!--
 									DEFECT #1051: referenceRange/observationRange/participant.
 									WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
@@ -14473,6 +16567,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								-->
 								<participant typeCode="IND">
 									<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 									<associatedEntity classCode="PRS">
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
@@ -14508,7 +16621,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												</place>
 											</birthplace>
 										</associatedPerson>
-									</associatedEntity>
+									
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 								</participant>
 								<!--
 									DEFECT #1056: referenceRange/observationRange/entryRelationship.
@@ -14739,7 +16869,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-										</assignedEntity>
+										
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 									</performer>
 									<!--
 										DEFECT #1363: entryRelationship/act/author.
@@ -14889,7 +17041,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 													</wholeOrganization>
 												</asOrganizationPartOf>
 											</representedOrganization>
-										</assignedAuthor>
+										
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 									</author>
 									<!--
 										DEFECT #1364: entryRelationship/act/informant.
@@ -15011,8 +17181,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-										</assignedEntity>
-									</informant>
+										
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+									
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 									<!--
 										DEFECT #1365: entryRelationship/act/participant.
 										WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
@@ -15020,6 +17232,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									-->
 									<participant typeCode="IND">
 										<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 										<associatedEntity classCode="PRS">
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
@@ -15055,7 +17286,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 													</place>
 												</birthplace>
 											</associatedPerson>
-										</associatedEntity>
+										
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 									</participant>
 									<!--
 										DEFECT #1366: entryRelationship/act/entryRelationship.
@@ -15565,6 +17813,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<performer typeCode="PRF">
 								<time value="${visitTime}"/>
+				<!--
+					DEFECT #2455: performer/functionCode.
+					WAS: performer had time/modeCode/assignedEntity — no functionCode.
+					HL7 CDA R2 Performer may carry functionCode 0..1. SEMD often flags
+					incomplete performer without function slot. Do not invent function.
+					NOW: functionCode nullFlavor NI.
+				-->
+				<functionCode nullFlavor="NI"/>
 								<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -15717,7 +17973,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedEntity>
+								
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 							</performer>
 							<!--
 								DEFECT #284: anamnesis observation/author.
@@ -15897,7 +18175,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedAuthor>
+								
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 							</author>
 							<!--
 								DEFECT #293: anamnesis observation/informant.
@@ -16072,8 +18368,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedEntity>
-							</informant>
+								
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+							
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 							<!--
 								DEFECT #302: anamnesis observation/participant.
 								WAS: anamnesis OBS had performer/author/informant then closed — no entry-level participant. Diagnosis OBS (#301) already carries participant REF.
@@ -16091,6 +18429,15 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<participant typeCode="REF">
 								<time value="${visitTime}"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
@@ -16369,7 +18716,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2212: precondition/criterion/author.
@@ -16501,7 +18870,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #2213: precondition/criterion/informant.
@@ -16605,8 +18992,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #2214: precondition/criterion/participant.
 						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
@@ -16614,6 +19043,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -16631,7 +19079,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #2215: precondition/criterion/entryRelationship.
@@ -16955,7 +19420,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #942: reference/externalAct/author.
@@ -17105,7 +19592,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</wholeOrganization>
 							</asOrganizationPartOf>
 						</representedOrganization>
-					</assignedAuthor>
+					
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 				</author>
 				<!--
 					DEFECT #975: reference/externalAct/informant.
@@ -17227,8 +19732,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
-				</informant>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+				
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 				<!--
 					DEFECT #984: reference/externalAct/participant.
 					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
@@ -17236,6 +19783,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<participant typeCode="IND">
 					<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 					<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -17271,7 +19837,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</place>
 							</birthplace>
 						</associatedPerson>
-					</associatedEntity>
+					
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 				</participant>
 				<!--
 					DEFECT #993: reference/externalAct/entryRelationship.
@@ -17502,7 +20085,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1372: entryRelationship/act/author.
@@ -17652,7 +20257,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #1373: entryRelationship/act/informant.
@@ -17774,8 +20397,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #1374: entryRelationship/act/participant.
 						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
@@ -17783,6 +20448,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -17818,7 +20502,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #1375: entryRelationship/act/entryRelationship.
@@ -18465,7 +21166,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-									</assignedEntity>
+									
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 								</performer>
 								<!--
 									DEFECT #1024: referenceRange/observationRange/author.
@@ -18615,7 +21338,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												</wholeOrganization>
 											</asOrganizationPartOf>
 										</representedOrganization>
-									</assignedAuthor>
+									
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 								</author>
 								<!--
 									DEFECT #1047: referenceRange/observationRange/informant.
@@ -18737,8 +21478,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-									</assignedEntity>
-								</informant>
+									
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+								
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 								<!--
 									DEFECT #1052: referenceRange/observationRange/participant.
 									WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
@@ -18746,6 +21529,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								-->
 								<participant typeCode="IND">
 									<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 									<associatedEntity classCode="PRS">
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
@@ -18781,7 +21583,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												</place>
 											</birthplace>
 										</associatedPerson>
-									</associatedEntity>
+									
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 								</participant>
 								<!--
 									DEFECT #1057: referenceRange/observationRange/entryRelationship.
@@ -19012,7 +21831,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-										</assignedEntity>
+										
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 									</performer>
 									<!--
 										DEFECT #1381: entryRelationship/act/author.
@@ -19162,7 +22003,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 													</wholeOrganization>
 												</asOrganizationPartOf>
 											</representedOrganization>
-										</assignedAuthor>
+										
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 									</author>
 									<!--
 										DEFECT #1382: entryRelationship/act/informant.
@@ -19284,8 +22143,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-										</assignedEntity>
-									</informant>
+										
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+									
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 									<!--
 										DEFECT #1383: entryRelationship/act/participant.
 										WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
@@ -19293,6 +22194,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									-->
 									<participant typeCode="IND">
 										<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 										<associatedEntity classCode="PRS">
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
@@ -19328,7 +22248,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 													</place>
 												</birthplace>
 											</associatedPerson>
-										</associatedEntity>
+										
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 									</participant>
 									<!--
 										DEFECT #1384: entryRelationship/act/entryRelationship.
@@ -19852,6 +22789,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<performer typeCode="PRF">
 								<time value="${visitTime}"/>
+				<!--
+					DEFECT #2455: performer/functionCode.
+					WAS: performer had time/modeCode/assignedEntity — no functionCode.
+					HL7 CDA R2 Performer may carry functionCode 0..1. SEMD often flags
+					incomplete performer without function slot. Do not invent function.
+					NOW: functionCode nullFlavor NI.
+				-->
+				<functionCode nullFlavor="NI"/>
 								<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -20004,7 +22949,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedEntity>
+								
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 							</performer>
 							<!--
 								DEFECT #285: objective-status observation/author.
@@ -20184,7 +23151,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedAuthor>
+								
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 							</author>
 							<!--
 								DEFECT #294: objective-status observation/informant.
@@ -20359,8 +23344,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedEntity>
-							</informant>
+								
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+							
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 							<!--
 								DEFECT #303: objective-status observation/participant.
 								WAS: objective OBS had performer/author/informant then closed — no entry-level participant. Diagnosis (#301) and anamnesis (#302) already carry participant REF.
@@ -20378,6 +23405,15 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<participant typeCode="REF">
 								<time value="${visitTime}"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
@@ -20656,7 +23692,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2221: precondition/criterion/author.
@@ -20788,7 +23846,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #2222: precondition/criterion/informant.
@@ -20892,8 +23968,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #2223: precondition/criterion/participant.
 						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
@@ -20901,6 +24019,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -20918,7 +24055,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #2224: precondition/criterion/entryRelationship.
@@ -21242,7 +24396,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #943: reference/externalAct/author.
@@ -21392,7 +24568,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</wholeOrganization>
 							</asOrganizationPartOf>
 						</representedOrganization>
-					</assignedAuthor>
+					
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 				</author>
 				<!--
 					DEFECT #976: reference/externalAct/informant.
@@ -21514,8 +24708,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
-				</informant>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+				
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 				<!--
 					DEFECT #985: reference/externalAct/participant.
 					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
@@ -21523,6 +24759,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<participant typeCode="IND">
 					<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 					<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -21558,7 +24813,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</place>
 							</birthplace>
 						</associatedPerson>
-					</associatedEntity>
+					
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 				</participant>
 				<!--
 					DEFECT #994: reference/externalAct/entryRelationship.
@@ -21789,7 +25061,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1390: entryRelationship/act/author.
@@ -21939,7 +25233,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #1391: entryRelationship/act/informant.
@@ -22061,8 +25373,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #1392: entryRelationship/act/participant.
 						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
@@ -22070,6 +25424,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -22105,7 +25478,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #1393: entryRelationship/act/entryRelationship.
@@ -22752,7 +26142,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-									</assignedEntity>
+									
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 								</performer>
 								<!--
 									DEFECT #1025: referenceRange/observationRange/author.
@@ -22902,7 +26314,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												</wholeOrganization>
 											</asOrganizationPartOf>
 										</representedOrganization>
-									</assignedAuthor>
+									
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 								</author>
 								<!--
 									DEFECT #1048: referenceRange/observationRange/informant.
@@ -23024,8 +26454,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-									</assignedEntity>
-								</informant>
+									
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+								
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 								<!--
 									DEFECT #1053: referenceRange/observationRange/participant.
 									WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
@@ -23033,6 +26505,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								-->
 								<participant typeCode="IND">
 									<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 									<associatedEntity classCode="PRS">
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
@@ -23068,7 +26559,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												</place>
 											</birthplace>
 										</associatedPerson>
-									</associatedEntity>
+									
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 								</participant>
 								<!--
 									DEFECT #1058: referenceRange/observationRange/entryRelationship.
@@ -23299,7 +26807,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-										</assignedEntity>
+										
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 									</performer>
 									<!--
 										DEFECT #1399: entryRelationship/act/author.
@@ -23449,7 +26979,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 													</wholeOrganization>
 												</asOrganizationPartOf>
 											</representedOrganization>
-										</assignedAuthor>
+										
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 									</author>
 									<!--
 										DEFECT #1400: entryRelationship/act/informant.
@@ -23571,8 +27119,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-										</assignedEntity>
-									</informant>
+										
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+									
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 									<!--
 										DEFECT #1401: entryRelationship/act/participant.
 										WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
@@ -23580,6 +27170,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									-->
 									<participant typeCode="IND">
 										<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 										<associatedEntity classCode="PRS">
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
@@ -23615,7 +27224,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 													</place>
 												</birthplace>
 											</associatedPerson>
-										</associatedEntity>
+										
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 									</participant>
 									<!--
 										DEFECT #1402: entryRelationship/act/entryRelationship.
@@ -24133,6 +27759,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<performer typeCode="PRF">
 								<time value="${visitTime}"/>
+				<!--
+					DEFECT #2455: performer/functionCode.
+					WAS: performer had time/modeCode/assignedEntity — no functionCode.
+					HL7 CDA R2 Performer may carry functionCode 0..1. SEMD often flags
+					incomplete performer without function slot. Do not invent function.
+					NOW: functionCode nullFlavor NI.
+				-->
+				<functionCode nullFlavor="NI"/>
 								<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -24285,7 +27919,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedEntity>
+								
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 							</performer>
 							<!--
 								DEFECT #288: treatment act/author.
@@ -24465,7 +28121,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedAuthor>
+								
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 							</author>
 							<!--
 								DEFECT #297: treatment act/informant.
@@ -24640,8 +28314,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedEntity>
-							</informant>
+								
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+							
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 							<!--
 								DEFECT #306: treatment act/participant.
 								WAS: treatment ACT had performer/author/informant then closed — no entry-level participant. Body OBS (#301-#305) already carry participant REF.
@@ -24659,6 +28375,15 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<participant typeCode="REF">
 								<time value="${visitTime}"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
@@ -24937,7 +28662,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2230: precondition/criterion/author.
@@ -25069,7 +28816,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #2231: precondition/criterion/informant.
@@ -25173,8 +28938,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #2232: precondition/criterion/participant.
 						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
@@ -25182,6 +28989,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -25199,7 +29025,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #2233: precondition/criterion/entryRelationship.
@@ -25523,7 +29366,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #944: reference/externalAct/author.
@@ -25673,7 +29538,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</wholeOrganization>
 							</asOrganizationPartOf>
 						</representedOrganization>
-					</assignedAuthor>
+					
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 				</author>
 				<!--
 					DEFECT #977: reference/externalAct/informant.
@@ -25795,8 +29678,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
-				</informant>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+				
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 				<!--
 					DEFECT #986: reference/externalAct/participant.
 					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
@@ -25804,6 +29729,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<participant typeCode="IND">
 					<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 					<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -25839,7 +29783,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</place>
 							</birthplace>
 						</associatedPerson>
-					</associatedEntity>
+					
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 				</participant>
 				<!--
 					DEFECT #995: reference/externalAct/entryRelationship.
@@ -26518,6 +30479,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<performer typeCode="PRF">
 								<time value="${visitTime}"/>
+				<!--
+					DEFECT #2455: performer/functionCode.
+					WAS: performer had time/modeCode/assignedEntity — no functionCode.
+					HL7 CDA R2 Performer may carry functionCode 0..1. SEMD often flags
+					incomplete performer without function slot. Do not invent function.
+					NOW: functionCode nullFlavor NI.
+				-->
+				<functionCode nullFlavor="NI"/>
 								<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -26670,7 +30639,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedEntity>
+								
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 							</performer>
 							<!--
 								DEFECT #286: complications observation/author.
@@ -26850,7 +30841,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedAuthor>
+								
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 							</author>
 							<!--
 								DEFECT #295: complications observation/informant.
@@ -27025,8 +31034,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedEntity>
-							</informant>
+								
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+							
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 							<!--
 								DEFECT #304: complications observation/participant.
 								WAS: complications OBS had performer/author/informant then closed — no entry-level participant. Diagnosis (#301) through objective (#303) already carry participant REF.
@@ -27044,6 +31095,15 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<participant typeCode="REF">
 								<time value="${visitTime}"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
@@ -27322,7 +31382,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2239: precondition/criterion/author.
@@ -27454,7 +31536,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #2240: precondition/criterion/informant.
@@ -27558,8 +31658,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #2241: precondition/criterion/participant.
 						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
@@ -27567,6 +31709,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -27584,7 +31745,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #2242: precondition/criterion/entryRelationship.
@@ -27908,7 +32086,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #945: reference/externalAct/author.
@@ -28058,7 +32258,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</wholeOrganization>
 							</asOrganizationPartOf>
 						</representedOrganization>
-					</assignedAuthor>
+					
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 				</author>
 				<!--
 					DEFECT #978: reference/externalAct/informant.
@@ -28180,8 +32398,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
-				</informant>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+				
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 				<!--
 					DEFECT #987: reference/externalAct/participant.
 					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
@@ -28189,6 +32449,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<participant typeCode="IND">
 					<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 					<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -28224,7 +32503,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</place>
 							</birthplace>
 						</associatedPerson>
-					</associatedEntity>
+					
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 				</participant>
 				<!--
 					DEFECT #996: reference/externalAct/entryRelationship.
@@ -28455,7 +32751,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1408: entryRelationship/act/author.
@@ -28605,7 +32923,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #1409: entryRelationship/act/informant.
@@ -28727,8 +33063,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #1410: entryRelationship/act/participant.
 						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
@@ -28736,6 +33114,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -28771,7 +33168,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #1411: entryRelationship/act/entryRelationship.
@@ -29418,7 +33832,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-									</assignedEntity>
+									
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 								</performer>
 								<!--
 									DEFECT #1026: referenceRange/observationRange/author.
@@ -29568,7 +34004,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												</wholeOrganization>
 											</asOrganizationPartOf>
 										</representedOrganization>
-									</assignedAuthor>
+									
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 								</author>
 								<!--
 									DEFECT #1049: referenceRange/observationRange/informant.
@@ -29690,8 +34144,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-									</assignedEntity>
-								</informant>
+									
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+								
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 								<!--
 									DEFECT #1054: referenceRange/observationRange/participant.
 									WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
@@ -29699,6 +34195,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								-->
 								<participant typeCode="IND">
 									<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 									<associatedEntity classCode="PRS">
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
@@ -29734,7 +34249,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												</place>
 											</birthplace>
 										</associatedPerson>
-									</associatedEntity>
+									
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 								</participant>
 								<!--
 									DEFECT #1059: referenceRange/observationRange/entryRelationship.
@@ -29965,7 +34497,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-										</assignedEntity>
+										
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 									</performer>
 									<!--
 										DEFECT #1417: entryRelationship/act/author.
@@ -30115,7 +34669,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-										</assignedAuthor>
+										
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 									</author>
 									<!--
 										DEFECT #1418: entryRelationship/act/informant.
@@ -30237,8 +34809,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-										</assignedEntity>
-									</informant>
+										
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+									
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 									<!--
 										DEFECT #1419: entryRelationship/act/participant.
 										WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
@@ -30246,6 +34860,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									-->
 									<participant typeCode="IND">
 										<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 										<associatedEntity classCode="PRS">
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
@@ -30281,7 +34914,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 													</place>
 												</birthplace>
 											</associatedPerson>
-										</associatedEntity>
+										
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 									</participant>
 									<!--
 										DEFECT #1420: entryRelationship/act/entryRelationship.
@@ -30804,6 +35454,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<performer typeCode="PRF">
 								<time value="${visitTime}"/>
+				<!--
+					DEFECT #2455: performer/functionCode.
+					WAS: performer had time/modeCode/assignedEntity — no functionCode.
+					HL7 CDA R2 Performer may carry functionCode 0..1. SEMD often flags
+					incomplete performer without function slot. Do not invent function.
+					NOW: functionCode nullFlavor NI.
+				-->
+				<functionCode nullFlavor="NI"/>
 								<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -30956,7 +35614,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedEntity>
+								
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 							</performer>
 							<!--
 								DEFECT #287: comorbidities observation/author.
@@ -31136,7 +35816,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedAuthor>
+								
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 							</author>
 							<!--
 								DEFECT #296: comorbidities observation/informant.
@@ -31311,8 +36009,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedEntity>
-							</informant>
+								
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+							
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 							<!--
 								DEFECT #305: comorbidities observation/participant.
 								WAS: comorbidities OBS had performer/author/informant then closed — no entry-level participant. Diagnosis (#301) through complications (#304) already carry participant REF.
@@ -31330,6 +36070,15 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<participant typeCode="REF">
 								<time value="${visitTime}"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
@@ -31608,7 +36357,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2248: precondition/criterion/author.
@@ -31740,7 +36511,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #2249: precondition/criterion/informant.
@@ -31844,8 +36633,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #2250: precondition/criterion/participant.
 						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
@@ -31853,6 +36684,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -31870,7 +36720,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #2251: precondition/criterion/entryRelationship.
@@ -32194,7 +37061,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #946: reference/externalAct/author.
@@ -32344,7 +37233,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</wholeOrganization>
 							</asOrganizationPartOf>
 						</representedOrganization>
-					</assignedAuthor>
+					
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 				</author>
 				<!--
 					DEFECT #979: reference/externalAct/informant.
@@ -32466,8 +37373,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
-				</informant>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+				
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 				<!--
 					DEFECT #988: reference/externalAct/participant.
 					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
@@ -32475,6 +37424,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<participant typeCode="IND">
 					<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 					<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -32510,7 +37478,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</place>
 							</birthplace>
 						</associatedPerson>
-					</associatedEntity>
+					
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 				</participant>
 				<!--
 					DEFECT #997: reference/externalAct/entryRelationship.
@@ -32741,7 +37726,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1426: entryRelationship/act/author.
@@ -32891,7 +37898,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #1427: entryRelationship/act/informant.
@@ -33013,8 +38038,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #1428: entryRelationship/act/participant.
 						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
@@ -33022,6 +38089,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -33057,7 +38143,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #1429: entryRelationship/act/entryRelationship.
@@ -33704,7 +38807,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-									</assignedEntity>
+									
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 								</performer>
 								<!--
 									DEFECT #1027: referenceRange/observationRange/author.
@@ -33854,7 +38979,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												</wholeOrganization>
 											</asOrganizationPartOf>
 										</representedOrganization>
-									</assignedAuthor>
+									
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 								</author>
 								<!--
 									DEFECT #1050: referenceRange/observationRange/informant.
@@ -33976,8 +39119,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-									</assignedEntity>
-								</informant>
+									
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+								
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 								<!--
 									DEFECT #1055: referenceRange/observationRange/participant.
 									WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
@@ -33985,6 +39170,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								-->
 								<participant typeCode="IND">
 									<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 									<associatedEntity classCode="PRS">
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
@@ -34020,7 +39224,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												</place>
 											</birthplace>
 										</associatedPerson>
-									</associatedEntity>
+									
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 								</participant>
 								<!--
 									DEFECT #1060: referenceRange/observationRange/entryRelationship.
@@ -34251,7 +39472,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-										</assignedEntity>
+										
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 									</performer>
 									<!--
 										DEFECT #1435: entryRelationship/act/author.
@@ -34401,7 +39644,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-										</assignedAuthor>
+										
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 									</author>
 									<!--
 										DEFECT #1436: entryRelationship/act/informant.
@@ -34523,8 +39784,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-										</assignedEntity>
-									</informant>
+										
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+									
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 									<!--
 										DEFECT #1437: entryRelationship/act/participant.
 										WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
@@ -34532,6 +39835,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									-->
 									<participant typeCode="IND">
 										<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 										<associatedEntity classCode="PRS">
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
@@ -34567,7 +39889,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 													</place>
 												</birthplace>
 											</associatedPerson>
-										</associatedEntity>
+										
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 									</participant>
 									<!--
 										DEFECT #1438: entryRelationship/act/entryRelationship.
@@ -35167,6 +40506,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<performer typeCode="PRF">
 								<time value="${visitTime}"/>
+				<!--
+					DEFECT #2455: performer/functionCode.
+					WAS: performer had time/modeCode/assignedEntity — no functionCode.
+					HL7 CDA R2 Performer may carry functionCode 0..1. SEMD often flags
+					incomplete performer without function slot. Do not invent function.
+					NOW: functionCode nullFlavor NI.
+				-->
+				<functionCode nullFlavor="NI"/>
 								<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -35319,7 +40666,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedEntity>
+								
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 							</performer>
 							<!--
 								DEFECT #289: instrument-tray supply/author.
@@ -35499,7 +40868,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedAuthor>
+								
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 							</author>
 							<!--
 								DEFECT #298: instrument-tray supply/informant.
@@ -35674,8 +41061,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											</wholeOrganization>
 										</asOrganizationPartOf>
 									</representedOrganization>
-								</assignedEntity>
-							</informant>
+								
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+							
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 							<!--
 								DEFECT #307: instrument-tray supply/participant.
 								WAS: supply had performer/author/informant then closed — no entry-level participant. Body OBS (#301-#305) and treatment ACT (#306) already carry participant REF.
@@ -35693,6 +41122,15 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<participant typeCode="REF">
 								<time value="${visitTime}"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
@@ -35971,7 +41409,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2257: precondition/criterion/author.
@@ -36103,7 +41563,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #2258: precondition/criterion/informant.
@@ -36207,8 +41685,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #2259: precondition/criterion/participant.
 						WAS: rich criterion had no participant. HL7 CDA R2 Act has participant 0..*. Form 043/u has no discrete criterion participant; do not invent.
@@ -36216,6 +41736,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -36233,7 +41772,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #2260: precondition/criterion/entryRelationship.
@@ -36557,7 +42113,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #947: reference/externalAct/author.
@@ -36707,7 +42285,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</wholeOrganization>
 							</asOrganizationPartOf>
 						</representedOrganization>
-					</assignedAuthor>
+					
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 				</author>
 				<!--
 					DEFECT #980: reference/externalAct/informant.
@@ -36829,8 +42425,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-					</assignedEntity>
-				</informant>
+					
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+				
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 				<!--
 					DEFECT #989: reference/externalAct/participant.
 					WAS: parent had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete participant here; do not invent.
@@ -36838,6 +42476,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<participant typeCode="IND">
 					<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 					<associatedEntity classCode="PRS">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
@@ -36873,7 +42530,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								</place>
 							</birthplace>
 						</associatedPerson>
-					</associatedEntity>
+					
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 				</participant>
 				<!--
 					DEFECT #998: reference/externalAct/entryRelationship.
@@ -37104,7 +42778,29 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1444: entryRelationship/act/author.
@@ -37254,7 +42950,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</wholeOrganization>
 								</asOrganizationPartOf>
 							</representedOrganization>
-						</assignedAuthor>
+						
+				<!--
+					DEFECT #2445: assignedAuthor/assignedAuthoringDevice.
+					WAS: assignedAuthor had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no assignedAuthoringDevice. HL7 CDA R2
+					AssignedAuthor may carry assignedAuthoringDevice 0..1 (software /
+					system that authored the document). SEMD often flags incomplete
+					author without device slot when person+org present. Form 043/u
+					does not collect authoring-device id/manufacturer separately —
+					do not invent device id/code.
+					NOW: assignedAuthoringDevice id/code/manufacturerModelName/softwareName NI.
+				-->
+				<assignedAuthoringDevice>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<manufacturerModelName nullFlavor="NI"/>
+					<softwareName nullFlavor="NI"/>
+				</assignedAuthoringDevice>
+			</assignedAuthor>
 					</author>
 					<!--
 						DEFECT #1445: entryRelationship/act/informant.
@@ -37376,8 +43090,50 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</employerOrganization>
 				</asEmployee>
 			</assignedPerson>
-						</assignedEntity>
-					</informant>
+						
+				<!--
+					DEFECT #2444: assignedEntity/asLicensedEntity.
+					WAS: assignedEntity had id/code/addr/telecom/assignedPerson/
+					representedOrganization — no asLicensedEntity. HL7 RIM Role may
+					carry asLicensedEntity (professional license / accreditation).
+					SEMD often flags incomplete clinical staff Role without license
+					slot under legalAuthenticator/authenticator/performer/informant.
+					Form 043/u does not collect license series/number for every
+					participation clone — do not invent license id/code.
+					NOW: asLicensedEntity id/code/effectiveTime NI +
+					issuingOrganization id/name NI.
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<issuingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</issuingOrganization>
+				</asLicensedEntity>
+			</assignedEntity>
+					
+			<!--
+				DEFECT #2454: informant/relatedEntity.
+				WAS: informant had only assignedEntity — no relatedEntity alternative
+				shell. HL7 CDA R2 Informant may carry relatedEntity 0..1 when the
+				informant is a related person rather than an assigned provider.
+				SEMD often flags informant without relatedEntity slot for
+				non-provider informants. Form 043/u does not collect a separate
+				related-informant person — do not invent relatedPerson name/code.
+				NOW: relatedEntity code/addr/telecom/effectiveTime NI + relatedPerson name NI.
+			-->
+			<relatedEntity>
+				<code nullFlavor="NI"/>
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<effectiveTime nullFlavor="NI"/>
+				<relatedPerson>
+					<name nullFlavor="NI"/>
+				</relatedPerson>
+			</relatedEntity>
+		</informant>
 					<!--
 						DEFECT #1446: entryRelationship/act/participant.
 						WAS: nested COMP act had no participant. HL7 CDA R2 Act has participant 0..*. SEMD often flags missing participant when consent emits WIT/IND. Form 043/u has no discrete nested-act participant; do not invent.
@@ -37385,6 +43141,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					-->
 					<participant typeCode="IND">
 						<time nullFlavor="NI"/>
+			<!--
+				DEFECT #2447: participant/functionCode.
+				WAS: participant had time/associatedEntity — no functionCode.
+				HL7 CDA R2 Participant may carry functionCode 0..1 (participation
+				function / role type). SEMD often flags incomplete participant
+				without function slot. Form 043/u does not collect a separate
+				participant function code for every clone — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2448: participant/modeCode.
+				WAS: participant had time/associatedEntity — no modeCode.
+				HL7 CDA R2 Participant may carry modeCode 0..1 (electronic /
+				written / verbal). SEMD often flags incomplete participant
+				participation without mode slot. Do not invent mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 						<associatedEntity classCode="PRS">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
@@ -37420,7 +43195,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									</place>
 								</birthplace>
 							</associatedPerson>
-						</associatedEntity>
+						
+					<!--
+						DEFECT #2446: associatedEntity/scopingOrganization.
+						WAS: associatedEntity had id/code/addr/telecom/associatedPerson —
+						no scopingOrganization. HL7 CDA R2 AssociatedEntity may carry
+						scopingOrganization 0..1 (MO that scopes the associated role).
+						SEMD often flags incomplete participant/associatedEntity without
+						scoping org slot. Form 043/u does not always collect separate
+						scoping MO beyond clinic — do not invent org id/name.
+						NOW: scopingOrganization id/name/addr/telecom NI.
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</scopingOrganization>
+				</associatedEntity>
 					</participant>
 					<!--
 						DEFECT #1447: entryRelationship/act/entryRelationship.
