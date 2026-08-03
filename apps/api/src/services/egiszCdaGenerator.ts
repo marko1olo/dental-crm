@@ -1817,7 +1817,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		${params.doctorPosition && params.doctorPosition.trim()
 			? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 			: `<functionCode nullFlavor="NI"/>`}
-		<assignedEntity>
+		
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 
 			${/*
 			 * Same id rule as assignedAuthor (#77) / dataEnterer (#127):
@@ -2444,7 +2453,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<modeCode nullFlavor="NI"/>
 
-		<assignedCustodian>
+		
+				<!--
+					DEFECT #2528: custodian/functionCode.
+					WAS: custodian participation missing functionCode at top level.
+					HL7 CDA R2 participation may carry functionCode 0..1. SEMD often flags incomplete participation without function slot.
+					Form 043/u does not collect this coded slot — do not invent.
+					NOW: functionCode nullFlavor NI until chart field exists.
+				-->
+				<functionCode nullFlavor="NI"/>
+<assignedCustodian>
 			<representedCustodianOrganization>
 				${/*
 				 * DEFECT #78: custodian organization id must not emit empty extension.
@@ -2524,7 +2542,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		scheme as custodian representedCustodianOrganization.
 	-->
 	<informationRecipient>
-		<intendedRecipient>
+		
+				<!--
+					DEFECT #2529: informationRecipient/modeCode.
+					WAS: informationRecipient participation missing modeCode at top level.
+					HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+					Form 043/u does not collect this coded slot — do not invent.
+					NOW: modeCode nullFlavor NI until chart field exists.
+				-->
+				<modeCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2530: informationRecipient/functionCode.
+					WAS: informationRecipient participation missing functionCode at top level.
+					HL7 CDA R2 participation may carry functionCode 0..1. SEMD often flags incomplete participation without function slot.
+					Form 043/u does not collect this coded slot — do not invent.
+					NOW: functionCode nullFlavor NI until chart field exists.
+				-->
+				<functionCode nullFlavor="NI"/>
+<intendedRecipient>
 			<!--
 				DEFECT #430: informationRecipient/intendedRecipient/id.
 				WAS: intendedRecipient had only receivedOrganization — no id.
@@ -4406,7 +4441,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-				<assignedAuthor>
+				
+					<!--
+						DEFECT #2526: author/functionCode.
+						WAS: author participation missing functionCode at top level.
+						HL7 CDA R2 participation may carry functionCode 0..1. SEMD often flags incomplete participation without function slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: functionCode nullFlavor NI until chart field exists.
+					-->
+					<functionCode nullFlavor="NI"/>
+<assignedAuthor>
 					${params.doctorSnils && String(params.doctorSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 						: `<id nullFlavor="NI"/>`}
@@ -4823,7 +4867,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				${params.doctorPosition && params.doctorPosition.trim()
 					? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 					: `<functionCode nullFlavor="NI"/>`}
-				<assignedEntity>
+				
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 					${params.doctorSnils && String(params.doctorSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 						: `<id nullFlavor="NI"/>`}
@@ -6624,7 +6677,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -7494,7 +7556,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							
 							<!--
+								DEFECT #2533: act/approachSiteCode.
+								WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+								Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: approachSiteCode nullFlavor NI until chart field exists.
+							-->
+							<approachSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2534: act/repeatNumber.
+								WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+								Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: repeatNumber nullFlavor NI until chart field exists.
+							-->
+							<repeatNumber nullFlavor="NI"/>
+							<!--
+								DEFECT #2535: act/independentInd.
+								WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+								Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: independentInd nullFlavor NI until chart field exists.
+							-->
+							<independentInd nullFlavor="NI"/>
+<!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -8473,7 +8560,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-					<assignedEntity>
+					
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -9415,7 +9511,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
 					
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -10265,7 +10386,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -11626,7 +11756,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -12598,7 +12753,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-			<assignedEntity>
+			
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 				<id nullFlavor="NI"/>
 				<code nullFlavor="NI"/>
 				<addr nullFlavor="NI"/>
@@ -13540,7 +13704,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 			-->
 			
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -14390,7 +14579,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-				<assignedEntity>
+				
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
 					<addr nullFlavor="NI"/>
@@ -15942,7 +16140,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-			<assignedEntity>
+			
+					<!--
+						DEFECT #2527: performer/modeCode.
+						WAS: performer participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 
 				<!--
 
@@ -16694,7 +16901,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-			<assignedEntity>
+			
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 				<id nullFlavor="NI"/>
 				<addr nullFlavor="NI"/>
 				<telecom nullFlavor="NI"/>
@@ -17697,7 +17913,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 			-->
 			
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -18547,7 +18788,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-				<assignedEntity>
+				
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
 					<addr nullFlavor="NI"/>
@@ -20314,7 +20564,24 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			</encounterParticipant>
 			<responsibleParty>
 
-				<assignedEntity>
+				
+					<!--
+						DEFECT #2531: responsibleParty/modeCode.
+						WAS: responsibleParty participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2532: responsibleParty/functionCode.
+						WAS: responsibleParty participation missing functionCode at top level.
+						HL7 CDA R2 participation may carry functionCode 0..1. SEMD often flags incomplete participation without function slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: functionCode nullFlavor NI until chart field exists.
+					-->
+					<functionCode nullFlavor="NI"/>
+<assignedEntity>
 					${params.doctorSnils && String(params.doctorSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 						: `<id nullFlavor="NI"/>`}
@@ -20916,7 +21183,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-				<assignedAuthor>
+				
+					<!--
+						DEFECT #2526: author/functionCode.
+						WAS: author participation missing functionCode at top level.
+						HL7 CDA R2 participation may carry functionCode 0..1. SEMD often flags incomplete participation without function slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: functionCode nullFlavor NI until chart field exists.
+					-->
+					<functionCode nullFlavor="NI"/>
+<assignedAuthor>
 					${params.doctorSnils && String(params.doctorSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 						: `<id nullFlavor="NI"/>`}
@@ -21333,7 +21609,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				${params.doctorPosition && params.doctorPosition.trim()
 					? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 					: `<functionCode nullFlavor="NI"/>`}
-				<assignedEntity>
+				
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 					${params.doctorSnils && String(params.doctorSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 						: `<id nullFlavor="NI"/>`}
@@ -23134,7 +23419,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -24004,7 +24298,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							
 							<!--
+								DEFECT #2533: act/approachSiteCode.
+								WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+								Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: approachSiteCode nullFlavor NI until chart field exists.
+							-->
+							<approachSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2534: act/repeatNumber.
+								WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+								Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: repeatNumber nullFlavor NI until chart field exists.
+							-->
+							<repeatNumber nullFlavor="NI"/>
+							<!--
+								DEFECT #2535: act/independentInd.
+								WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+								Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: independentInd nullFlavor NI until chart field exists.
+							-->
+							<independentInd nullFlavor="NI"/>
+<!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -24983,7 +25302,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-					<assignedEntity>
+					
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -25925,7 +26253,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
 					
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -26775,7 +27128,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -28111,7 +28473,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -28444,7 +28831,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					NOW: functionCode nullFlavor NI.
 				-->
 				<functionCode nullFlavor="NI"/>
-								<assignedEntity>
+								
+					<!--
+						DEFECT #2527: performer/modeCode.
+						WAS: performer participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -28854,7 +29250,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-								<assignedAuthor>
+								
+					<!--
+						DEFECT #2526: author/functionCode.
+						WAS: author participation missing functionCode at top level.
+						HL7 CDA R2 participation may carry functionCode 0..1. SEMD often flags incomplete participation without function slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: functionCode nullFlavor NI until chart field exists.
+					-->
+					<functionCode nullFlavor="NI"/>
+<assignedAuthor>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -29271,7 +29676,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
-								<assignedEntity>
+								
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -31072,7 +31486,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -31942,7 +32365,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							
 							<!--
+								DEFECT #2533: act/approachSiteCode.
+								WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+								Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: approachSiteCode nullFlavor NI until chart field exists.
+							-->
+							<approachSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2534: act/repeatNumber.
+								WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+								Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: repeatNumber nullFlavor NI until chart field exists.
+							-->
+							<repeatNumber nullFlavor="NI"/>
+							<!--
+								DEFECT #2535: act/independentInd.
+								WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+								Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: independentInd nullFlavor NI until chart field exists.
+							-->
+							<independentInd nullFlavor="NI"/>
+<!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -32921,7 +33369,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-					<assignedEntity>
+					
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -33863,7 +34320,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
 					
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -34713,7 +35195,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -36905,7 +37396,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-									<assignedEntity>
+									
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<addr nullFlavor="NI"/>
@@ -37847,7 +38347,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 									-->
 									
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -38697,7 +39222,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-										<assignedEntity>
+										
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
@@ -39844,7 +40378,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+									
 									<!--
+										DEFECT #2533: act/approachSiteCode.
+										WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+										Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: approachSiteCode nullFlavor NI until chart field exists.
+									-->
+									<approachSiteCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2534: act/repeatNumber.
+										WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+										Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: repeatNumber nullFlavor NI until chart field exists.
+									-->
+									<repeatNumber nullFlavor="NI"/>
+									<!--
+										DEFECT #2535: act/independentInd.
+										WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+										Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: independentInd nullFlavor NI until chart field exists.
+									-->
+									<independentInd nullFlavor="NI"/>
+<!--
 										DEFECT #2523: act/reasonCode.
 										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 										serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -40132,7 +40691,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					NOW: functionCode nullFlavor NI.
 				-->
 				<functionCode nullFlavor="NI"/>
-								<assignedEntity>
+								
+					<!--
+						DEFECT #2527: performer/modeCode.
+						WAS: performer participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -40542,7 +41110,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-								<assignedAuthor>
+								
+					<!--
+						DEFECT #2526: author/functionCode.
+						WAS: author participation missing functionCode at top level.
+						HL7 CDA R2 participation may carry functionCode 0..1. SEMD often flags incomplete participation without function slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: functionCode nullFlavor NI until chart field exists.
+					-->
+					<functionCode nullFlavor="NI"/>
+<assignedAuthor>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -40959,7 +41536,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
-								<assignedEntity>
+								
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -42760,7 +43346,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -43630,7 +44225,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							
 							<!--
+								DEFECT #2533: act/approachSiteCode.
+								WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+								Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: approachSiteCode nullFlavor NI until chart field exists.
+							-->
+							<approachSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2534: act/repeatNumber.
+								WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+								Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: repeatNumber nullFlavor NI until chart field exists.
+							-->
+							<repeatNumber nullFlavor="NI"/>
+							<!--
+								DEFECT #2535: act/independentInd.
+								WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+								Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: independentInd nullFlavor NI until chart field exists.
+							-->
+							<independentInd nullFlavor="NI"/>
+<!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -44609,7 +45229,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-					<assignedEntity>
+					
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -45551,7 +46180,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
 					
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -46401,7 +47055,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -48593,7 +49256,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-									<assignedEntity>
+									
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<addr nullFlavor="NI"/>
@@ -49535,7 +50207,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 									-->
 									
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -50385,7 +51082,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-										<assignedEntity>
+										
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
@@ -51532,7 +52238,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+									
 									<!--
+										DEFECT #2533: act/approachSiteCode.
+										WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+										Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: approachSiteCode nullFlavor NI until chart field exists.
+									-->
+									<approachSiteCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2534: act/repeatNumber.
+										WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+										Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: repeatNumber nullFlavor NI until chart field exists.
+									-->
+									<repeatNumber nullFlavor="NI"/>
+									<!--
+										DEFECT #2535: act/independentInd.
+										WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+										Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: independentInd nullFlavor NI until chart field exists.
+									-->
+									<independentInd nullFlavor="NI"/>
+<!--
 										DEFECT #2523: act/reasonCode.
 										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 										serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -51834,7 +52565,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					NOW: functionCode nullFlavor NI.
 				-->
 				<functionCode nullFlavor="NI"/>
-								<assignedEntity>
+								
+					<!--
+						DEFECT #2527: performer/modeCode.
+						WAS: performer participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -52244,7 +52984,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-								<assignedAuthor>
+								
+					<!--
+						DEFECT #2526: author/functionCode.
+						WAS: author participation missing functionCode at top level.
+						HL7 CDA R2 participation may carry functionCode 0..1. SEMD often flags incomplete participation without function slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: functionCode nullFlavor NI until chart field exists.
+					-->
+					<functionCode nullFlavor="NI"/>
+<assignedAuthor>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -52661,7 +53410,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
-								<assignedEntity>
+								
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -54462,7 +55220,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -55332,7 +56099,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							
 							<!--
+								DEFECT #2533: act/approachSiteCode.
+								WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+								Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: approachSiteCode nullFlavor NI until chart field exists.
+							-->
+							<approachSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2534: act/repeatNumber.
+								WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+								Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: repeatNumber nullFlavor NI until chart field exists.
+							-->
+							<repeatNumber nullFlavor="NI"/>
+							<!--
+								DEFECT #2535: act/independentInd.
+								WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+								Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: independentInd nullFlavor NI until chart field exists.
+							-->
+							<independentInd nullFlavor="NI"/>
+<!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -56311,7 +57103,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-					<assignedEntity>
+					
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -57253,7 +58054,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
 					
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -58103,7 +58929,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -60295,7 +61130,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-									<assignedEntity>
+									
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<addr nullFlavor="NI"/>
@@ -61237,7 +62081,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 									-->
 									
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -62087,7 +62956,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-										<assignedEntity>
+										
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
@@ -63234,7 +64112,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+									
 									<!--
+										DEFECT #2533: act/approachSiteCode.
+										WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+										Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: approachSiteCode nullFlavor NI until chart field exists.
+									-->
+									<approachSiteCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2534: act/repeatNumber.
+										WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+										Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: repeatNumber nullFlavor NI until chart field exists.
+									-->
+									<repeatNumber nullFlavor="NI"/>
+									<!--
+										DEFECT #2535: act/independentInd.
+										WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+										Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: independentInd nullFlavor NI until chart field exists.
+									-->
+									<independentInd nullFlavor="NI"/>
+<!--
 										DEFECT #2523: act/reasonCode.
 										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 										serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -63530,7 +64433,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					NOW: functionCode nullFlavor NI.
 				-->
 				<functionCode nullFlavor="NI"/>
-								<assignedEntity>
+								
+					<!--
+						DEFECT #2527: performer/modeCode.
+						WAS: performer participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -63940,7 +64852,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-								<assignedAuthor>
+								
+					<!--
+						DEFECT #2526: author/functionCode.
+						WAS: author participation missing functionCode at top level.
+						HL7 CDA R2 participation may carry functionCode 0..1. SEMD often flags incomplete participation without function slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: functionCode nullFlavor NI until chart field exists.
+					-->
+					<functionCode nullFlavor="NI"/>
+<assignedAuthor>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -64357,7 +65278,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
-								<assignedEntity>
+								
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -66158,7 +67088,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -67991,7 +68930,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-					<assignedEntity>
+					
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -69579,7 +70527,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					NOW: functionCode nullFlavor NI.
 				-->
 				<functionCode nullFlavor="NI"/>
-								<assignedEntity>
+								
+					<!--
+						DEFECT #2527: performer/modeCode.
+						WAS: performer participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -69989,7 +70946,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-								<assignedAuthor>
+								
+					<!--
+						DEFECT #2526: author/functionCode.
+						WAS: author participation missing functionCode at top level.
+						HL7 CDA R2 participation may carry functionCode 0..1. SEMD often flags incomplete participation without function slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: functionCode nullFlavor NI until chart field exists.
+					-->
+					<functionCode nullFlavor="NI"/>
+<assignedAuthor>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -70406,7 +71372,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
-								<assignedEntity>
+								
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -72207,7 +73182,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -73077,7 +74061,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							
 							<!--
+								DEFECT #2533: act/approachSiteCode.
+								WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+								Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: approachSiteCode nullFlavor NI until chart field exists.
+							-->
+							<approachSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2534: act/repeatNumber.
+								WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+								Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: repeatNumber nullFlavor NI until chart field exists.
+							-->
+							<repeatNumber nullFlavor="NI"/>
+							<!--
+								DEFECT #2535: act/independentInd.
+								WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+								Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: independentInd nullFlavor NI until chart field exists.
+							-->
+							<independentInd nullFlavor="NI"/>
+<!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -74056,7 +75065,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-					<assignedEntity>
+					
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -74998,7 +76016,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
 					
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -75848,7 +76891,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -78040,7 +79092,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-									<assignedEntity>
+									
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<addr nullFlavor="NI"/>
@@ -78982,7 +80043,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 									-->
 									
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -79832,7 +80918,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-										<assignedEntity>
+										
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
@@ -80979,7 +82074,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+									
 									<!--
+										DEFECT #2533: act/approachSiteCode.
+										WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+										Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: approachSiteCode nullFlavor NI until chart field exists.
+									-->
+									<approachSiteCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2534: act/repeatNumber.
+										WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+										Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: repeatNumber nullFlavor NI until chart field exists.
+									-->
+									<repeatNumber nullFlavor="NI"/>
+									<!--
+										DEFECT #2535: act/independentInd.
+										WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+										Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: independentInd nullFlavor NI until chart field exists.
+									-->
+									<independentInd nullFlavor="NI"/>
+<!--
 										DEFECT #2523: act/reasonCode.
 										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 										serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -81280,7 +82400,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					NOW: functionCode nullFlavor NI.
 				-->
 				<functionCode nullFlavor="NI"/>
-								<assignedEntity>
+								
+					<!--
+						DEFECT #2527: performer/modeCode.
+						WAS: performer participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -81690,7 +82819,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-								<assignedAuthor>
+								
+					<!--
+						DEFECT #2526: author/functionCode.
+						WAS: author participation missing functionCode at top level.
+						HL7 CDA R2 participation may carry functionCode 0..1. SEMD often flags incomplete participation without function slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: functionCode nullFlavor NI until chart field exists.
+					-->
+					<functionCode nullFlavor="NI"/>
+<assignedAuthor>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -82107,7 +83245,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
-								<assignedEntity>
+								
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -83908,7 +85055,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -84778,7 +85934,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							
 							<!--
+								DEFECT #2533: act/approachSiteCode.
+								WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+								Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: approachSiteCode nullFlavor NI until chart field exists.
+							-->
+							<approachSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2534: act/repeatNumber.
+								WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+								Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: repeatNumber nullFlavor NI until chart field exists.
+							-->
+							<repeatNumber nullFlavor="NI"/>
+							<!--
+								DEFECT #2535: act/independentInd.
+								WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+								Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: independentInd nullFlavor NI until chart field exists.
+							-->
+							<independentInd nullFlavor="NI"/>
+<!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -85757,7 +86938,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-					<assignedEntity>
+					
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -86699,7 +87889,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
 					
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -87549,7 +88764,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -89741,7 +90965,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-									<assignedEntity>
+									
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<addr nullFlavor="NI"/>
@@ -90683,7 +91916,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 										NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 									-->
 									
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -91533,7 +92791,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-										<assignedEntity>
+										
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 											<id nullFlavor="NI"/>
 											<code nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
@@ -92680,7 +93947,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+									
 									<!--
+										DEFECT #2533: act/approachSiteCode.
+										WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+										Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: approachSiteCode nullFlavor NI until chart field exists.
+									-->
+									<approachSiteCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2534: act/repeatNumber.
+										WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+										Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: repeatNumber nullFlavor NI until chart field exists.
+									-->
+									<repeatNumber nullFlavor="NI"/>
+									<!--
+										DEFECT #2535: act/independentInd.
+										WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+										Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: independentInd nullFlavor NI until chart field exists.
+									-->
+									<independentInd nullFlavor="NI"/>
+<!--
 										DEFECT #2523: act/reasonCode.
 										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 										serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -93058,7 +94350,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					NOW: functionCode nullFlavor NI.
 				-->
 				<functionCode nullFlavor="NI"/>
-								<assignedEntity>
+								
+					<!--
+						DEFECT #2527: performer/modeCode.
+						WAS: performer participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -93468,7 +94769,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				NOW: modeCode nullFlavor NI.
 			-->
 			<modeCode nullFlavor="NI"/>
-								<assignedAuthor>
+								
+					<!--
+						DEFECT #2526: author/functionCode.
+						WAS: author participation missing functionCode at top level.
+						HL7 CDA R2 participation may carry functionCode 0..1. SEMD often flags incomplete participation without function slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: functionCode nullFlavor NI until chart field exists.
+					-->
+					<functionCode nullFlavor="NI"/>
+<assignedAuthor>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -93885,7 +95195,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
-								<assignedEntity>
+								
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
 										: `<id nullFlavor="NI"/>`}
@@ -95686,7 +97005,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -96556,7 +97884,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<methodCode nullFlavor="NI"/>
 							<targetSiteCode nullFlavor="NI"/>
 							<uncertaintyCode nullFlavor="NI"/>
+							
 							<!--
+								DEFECT #2533: act/approachSiteCode.
+								WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+								Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: approachSiteCode nullFlavor NI until chart field exists.
+							-->
+							<approachSiteCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2534: act/repeatNumber.
+								WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+								Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: repeatNumber nullFlavor NI until chart field exists.
+							-->
+							<repeatNumber nullFlavor="NI"/>
+							<!--
+								DEFECT #2535: act/independentInd.
+								WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+								Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+								Form 043/u does not collect this coded slot — do not invent.
+								NOW: independentInd nullFlavor NI until chart field exists.
+							-->
+							<independentInd nullFlavor="NI"/>
+<!--
 								DEFECT #2523: act/reasonCode.
 								WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 								serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -97535,7 +98888,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-					<assignedEntity>
+					
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -98477,7 +99839,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: subject typeCode=SBJ with relatedSubject code/addr/telecom NI + subject/name NI.
 					-->
 					
+					
 					<!--
+						DEFECT #2533: act/approachSiteCode.
+						WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+						Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: approachSiteCode nullFlavor NI until chart field exists.
+					-->
+					<approachSiteCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2534: act/repeatNumber.
+						WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+						Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: repeatNumber nullFlavor NI until chart field exists.
+					-->
+					<repeatNumber nullFlavor="NI"/>
+					<!--
+						DEFECT #2535: act/independentInd.
+						WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+						Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: independentInd nullFlavor NI until chart field exists.
+					-->
+					<independentInd nullFlavor="NI"/>
+<!--
 						DEFECT #2523: act/reasonCode.
 						WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 						serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
@@ -99327,7 +100714,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				-->
 				<functionCode nullFlavor="NI"/>
 
-						<assignedEntity>
+						
+					<!--
+						DEFECT #2525: informant/modeCode.
+						WAS: informant participation missing modeCode at top level.
+						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
+						Form 043/u does not collect this coded slot — do not invent.
+						NOW: modeCode nullFlavor NI until chart field exists.
+					-->
+					<modeCode nullFlavor="NI"/>
+<assignedEntity>
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
@@ -100666,7 +102062,32 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						NOW: interpretationCode nullFlavor NI; do not invent N/A/H/L.
 					-->
 					<interpretationCode nullFlavor="NI"/>
+									
 									<!--
+										DEFECT #2533: act/approachSiteCode.
+										WAS: act entry missing approachSiteCode. HL7 CDA R2 Act has approachSiteCode 0..*.
+										Observation/supply shells already emit approachSiteCode NI. Form 043/u does not collect approach site for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: approachSiteCode nullFlavor NI until chart field exists.
+									-->
+									<approachSiteCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2534: act/repeatNumber.
+										WAS: act entry missing repeatNumber. HL7 CDA R2 Act has repeatNumber 0..1.
+										Observation/supply shells already emit repeatNumber NI. Do not invent a repeat count for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: repeatNumber nullFlavor NI until chart field exists.
+									-->
+									<repeatNumber nullFlavor="NI"/>
+									<!--
+										DEFECT #2535: act/independentInd.
+										WAS: act entry missing independentInd. HL7 CDA R2 Act has independentInd 0..1.
+										Observation/supply shells already emit independentInd NI. Do not invent independence flag for narrative acts.
+										Form 043/u does not collect this coded slot — do not invent.
+										NOW: independentInd nullFlavor NI until chart field exists.
+									-->
+									<independentInd nullFlavor="NI"/>
+<!--
 										DEFECT #2523: act/reasonCode.
 										WAS: entry missing reasonCode. HL7 CDA R2 Act has reasonCode 0..*.
 										serviceEvent already emits reasonCode NI (#2520). Form 043/u does not
