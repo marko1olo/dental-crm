@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
-import { readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface DoctorSnilsValidationWidgetProps {
   initialSnils?: string;
@@ -15,6 +15,15 @@ export function DoctorSnilsValidationWidget({ initialSnils = "", onValidSnils }:
     formatted?: string;
     message?: string;
   } | null>(null);
+  /*
+   * Clinical read headers for EGISZ SNILS check.
+   * BYLO: tolko Content-Type + x-dente-staff-token. Route closed by
+   * requireClinicalReadAccess — without x-dente-admin-secret customer gets 403
+   * and the widget always shows "SNILS failed" while local unguarded env is green.
+   * auth from useAppLogicContext (session secret), not AppHelpers bare helpers.
+   */
+  const appLogic = useAppLogicContext();
+  const auth = appLogic?.auth;
 
   async function handleValidate() {
     if (!snils.trim()) {
@@ -26,15 +35,16 @@ export function DoctorSnilsValidationWidget({ initialSnils = "", onValidSnils }:
     setValidationResult(null);
 
     try {
-      const staffToken = readDenteStaffToken() ?? "";
+      const headers =
+        auth && typeof auth.denteClinicalReadHeaders === "function"
+          ? auth.denteClinicalReadHeaders({ "Content-Type": "application/json" })
+          : { "Content-Type": "application/json" };
       const response = await fetch("/api/clinical/egisz/validate-doctor-snils", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-dente-staff-token": staffToken,
-        },
+        headers,
         body: JSON.stringify({ snils }),
       });
+
 
       const data = await response.json();
 

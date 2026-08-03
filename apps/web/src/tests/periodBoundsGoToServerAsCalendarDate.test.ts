@@ -154,8 +154,8 @@ describe("границы периода уходят на сервер кале�
 		const bounds = payoutMonthCalendarBounds("2026-07");
 		assert.ok(bounds, "границы зарплатного месяца не разобраны");
 
-		const fromMoscow = await requestedUrlIn("Europe/Moscow", () => requestDoctorPayouts(bounds));
-		const fromKamchatka = await requestedUrlIn("Asia/Kamchatka", () => requestDoctorPayouts(bounds));
+		const fromMoscow = await requestedUrlIn("Europe/Moscow", () => requestDoctorPayouts(bounds, {}));
+		const fromKamchatka = await requestedUrlIn("Asia/Kamchatka", () => requestDoctorPayouts(bounds, {}));
 
 		assert.equal(
 			fromMoscow,
