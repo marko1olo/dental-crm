@@ -1,0 +1,75 @@
+===== organizations L295 =====
+export const organizations = pgTable("organizations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  loginId: text("login_id"),
+  passwordHash: text("password_hash"),
+  inn: text("inn"),
+  kpp: text("kpp"),
+  ogrn: text("ogrn"),
+  legalAddress: text("legal_address"),
+  medicalLicenseNumber: text("medical_license_number"),
+  medicalLicenseIssuedAt: text("medical_license_issued_at"),
+  medicalLicenseIssuer: text("medical_license_issuer"),
+  email: text("email"),
+  website: text("website"),
+  bankDetails: text("bank_details"),
+  signatoryName: text("signatory_name"),
+  signatoryTitle: text("signatory_title"),
+  /*
+   * Режим клиники: solo_doctor | one_chair | small_clinic | network_clinic.
+   * Словарь один, и он живёт в clinicModeSchema (packages/shared) — здесь его
+   * копии нет намеренно. Ограничение organizations_clinic_mode_known (миграция
+   * 0140) не даёт базе хранить ничего другого.
+   *
+   * Тип колонки остаётся text, а не `$type<ClinicMode>()`: приведение типа
+   * убедило бы читателя, что проверять прочитанное не нужно, а именно доверие к
+   * этой колонке без проверки и спрятало дефект. Проверка на границе чтения
+   * обязательна (db/domainStateHydration.ts, db/settingsQuery.ts).
+   */
+  clinicMode: text("clinic_mode").notNull().default(DEFAULT_CLINIC_MODE),
+  clinicSchedule: jsonb("clinic_schedule"),
+  /*
+   * Какие модули включены у этой клиники.
+   *
+   * До миграции 0139 набора не существовало на сервере вовсе: GET
+   * /api/
+
+===== cashLedger L2641 =====
+export const cashLedger = pgTable("cash_ledger", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  invoiceId: uuid("invoice_id").notNull(),
+  paymentMethod: ledgerPaymentMethod("payment_method").notNull(),
+  amountRub: numeric("amount_rub", { precision: 12, scale: 2 }).notNull(),
+  operatorId: uuid("operator_id"),
+  timestamp: timestamp("timestamp", { withTimezone: true }).notNull().defaultNow(),
+});
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Очередь исходящих сообщений (миграция 0123)
+//
+// Единственная существовавшая очередь — outgoing_notifications — состоит из
+// полей (type, payload jsonb, status text) и не знает ни канала, ни адреса
+// получателя, ни числа попыток, ни причины отказа. Её обработчик умел только
+// Telegram, не повторял отправку и ниоткуда не вызывался. Здесь очередь знает
+// всё, что нужно для разбора: чем отправляли, куда, сколько раз пробовали и
+// почему не вышло.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const communicationOutboxStatus = pgEnum("communication_outbox_status", [
+  "queued",
+  "sending",
+  "sent",
+  "delivered",
+  "failed",
+  "cancelled",
+  "suppressed",
+]);
+
+/**
+ * Сервисные и рекламные сообщения разделены потому, что ФЗ «О рекламе» ст. 18
+ * ч. 1 требует предварительного согласия именно на рекламу по сетям
+ * электросвязи. Напоминание о приёме — сервисное сообщение в рамках договора.
+ */
+export const communicationConsentScope = pgEnum("communicat

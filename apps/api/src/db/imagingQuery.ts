@@ -118,6 +118,29 @@ export async function createImagingStudyInDb(
     aiSummary?: string | null | undefined;
   }
 ): Promise<ImagingStudy> {
+  // Ownership assert: patient (and optional visit) must belong to caller org.
+  const [ownedPatient] = await db
+    .select({ id: schema.patients.id })
+    .from(schema.patients)
+    .where(and(eq(schema.patients.organizationId, organizationId), eq(schema.patients.id, input.patientId)))
+    .limit(1);
+  if (!ownedPatient) {
+    throw new Error("imaging create: patient does not belong to organization");
+  }
+  if (input.visitId) {
+    const [ownedVisit] = await db
+      .select({ id: schema.visits.id })
+      .from(schema.visits)
+      .where(and(
+        eq(schema.visits.organizationId, organizationId),
+        eq(schema.visits.id, input.visitId),
+        eq(schema.visits.patientId, input.patientId),
+      ))
+      .limit(1);
+    if (!ownedVisit) {
+      throw new Error("imaging create: visit does not belong to organization/patient");
+    }
+  }
   const [record] = await db
     .insert(schema.imagingStudies)
     .values({

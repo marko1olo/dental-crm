@@ -290,3 +290,9 @@ Use these exclusively. Blind terminal navigation is banned.
    - *Multi-Scale*: Layouts must behave fluidly under different resolutions, high DPI screens, and browser zooming. Use relative metrics (`rem`, `em`, `%`) and responsive breakpoint modifiers.
 
 
+
+
+## [ORCHESTRATION HIERARCHY v2]
+1. **Antigravity (Orchestrator L1):** Master console and process launcher. Antigravity sets up daemons and timers. Does not block. Can be closed or idled while daemons run.
+2. **Goose / Grok (Agent L2):** Autonomous worker running inside the UniversalDaemonLoop. Goose L2 MUST spawn 3-4 subagents for its own parallel needs (e.g., database schema verification, component audits) and MUST NOT stop or wait for user input. Completion signals are blocked by proxy DAEMON MANDATE.
+3. This architecture REPLACES the legacy Cline integrations.

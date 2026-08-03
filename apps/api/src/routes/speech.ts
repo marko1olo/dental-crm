@@ -37,10 +37,12 @@ import { polishSpeechTranscript } from "../speech/polish.js";
 import {
   requireClinicalMutationAccess,
   requireClinicalMutationContext,
-  requireClinicalReadAccess
+  requireClinicalReadAccess,
+  requireClinicalReadContext
 } from "../accessGuard.js";
 
 type SpeechScopeInput = {
+  organizationId?: string | null | undefined;
   patientId?: string | null | undefined;
   visitId?: string | null | undefined;
   source?: SpeechChunkUploadInput["source"] | null | undefined;
@@ -118,10 +120,9 @@ function sendSpeechChunkRejection(
  * сохраняемого фрагмента ПО присланным patientId/visitId, поэтому без этой проверки
  * фрагмент диктовки ложится в карту той клиники, чей UUID назвал клиент.
  *
- * null допускается только там, где обработчик действительно не знает организацию —
- * сейчас это read-эндпоинты диктовки, у которых стоит лишь булевый гейт
- * requireClinicalReadAccess. Их арендатор не проверяется, это отдельный дефект,
- * см. .agents/archon/packets/S1-speech-unauthenticated/handoff.md.
+ * null больше не используется обработчиками маршрутов. Параметр оставлен nullable
+ * только для внутренних/тестовых вызовов; production read/write пути передают
+ * organizationId из requireClinicalReadContext / requireClinicalMutationContext.
  */
 async function validateSpeechClinicalScope(
   input: SpeechScopeInput,
@@ -202,33 +203,42 @@ async function handleSpeechRecordingStrategy(request: FastifyRequest, reply: Fas
 }
 
 async function handleSpeechChunks(request: FastifyRequest, reply: FastifyReply) {
-  if (!(await requireClinicalReadAccess(request, reply, "speech chunks"))) return;
+  const context = await requireClinicalReadContext(request, reply, "speech chunks");
+  if (!context) return;
   const query = request.query as { recordingId?: string; visitId?: string; patientId?: string };
   const recordingId = query.recordingId?.trim();
   if (!recordingId) return [];
 
   const scopeValidation = await validateSpeechClinicalScope(
     { patientId: query.patientId, visitId: query.visitId },
-    { organizationId: null, requirePatientOrVisit: true }
+    { organizationId: context.organizationId, requirePatientOrVisit: true }
   );
   if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
 
-  const scope: Parameters<typeof listSpeechTranscriptionChunks>[1] = {};
+  const scope: Parameters<typeof listSpeechTranscriptionChunks>[1] = {
+    organizationId: context.organizationId
+  };
   if (scopeValidation.visitId) scope.visitId = scopeValidation.visitId;
   if (scopeValidation.patientId) scope.patientId = scopeValidation.patientId;
   return z.array(speechTranscriptionChunkSchema).parse(listSpeechTranscriptionChunks(recordingId, scope));
 }
 
 async function handleSpeechRecordingsRecovery(request: FastifyRequest, reply: FastifyReply) {
-  if (!(await requireClinicalReadAccess(request, reply, "speech recording recovery"))) return;
+  const context = await requireClinicalReadContext(request, reply, "speech recording recovery");
+  if (!context) return;
   const query = request.query as { visitId?: string; patientId?: string; limit?: string };
   const scopeValidation = await validateSpeechClinicalScope(
     { patientId: query.patientId, visitId: query.visitId },
-    { organizationId: null, requirePatientOrVisit: true }
+    { organizationId: context.organizationId, requirePatientOrVisit: true }
   );
   if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
 
-  const filters: { visitId?: string | null; patientId?: string | null; limit?: number | null } = {};
+  const filters: {
+    organizationId: string;
+    visitId?: string | null;
+    patientId?: string | null;
+    limit?: number | null;
+  } = { organizationId: context.organizationId };
   if (scopeValidation.visitId) filters.visitId = scopeValidation.visitId;
   if (scopeValidation.patientId) filters.patientId = scopeValidation.patientId;
   if (query.limit) filters.limit = Number(query.limit);
@@ -236,16 +246,19 @@ async function handleSpeechRecordingsRecovery(request: FastifyRequest, reply: Fa
 }
 
 async function handleSpeechRecordingAssemble(request: FastifyRequest, reply: FastifyReply) {
-  if (!(await requireClinicalReadAccess(request, reply, "speech recording assemble"))) return;
+  const context = await requireClinicalReadContext(request, reply, "speech recording assemble");
+  if (!context) return;
   const params = request.params as { recordingId: string };
   const query = request.query as { visitId?: string; patientId?: string };
   const scopeValidation = await validateSpeechClinicalScope(
     { patientId: query.patientId, visitId: query.visitId },
-    { organizationId: null, requirePatientOrVisit: true }
+    { organizationId: context.organizationId, requirePatientOrVisit: true }
   );
   if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
 
-  const scope: Parameters<typeof assembleSpeechRecording>[1] = {};
+  const scope: Parameters<typeof assembleSpeechRecording>[1] = {
+    organizationId: context.organizationId
+  };
   if (scopeValidation.visitId) scope.visitId = scopeValidation.visitId;
   if (scopeValidation.patientId) scope.patientId = scopeValidation.patientId;
   return speechRecordingAssemblySchema.parse(assembleSpeechRecording(params.recordingId, scope));

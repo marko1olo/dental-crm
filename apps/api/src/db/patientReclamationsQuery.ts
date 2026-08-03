@@ -79,6 +79,25 @@ export async function createPatientReclamationInDb(
   patientId: string,
   input: { complicationDetails: string; proposedAction: string | null; doctorId: string | null },
 ): Promise<PatientReclamation> {
+  // Ownership assert: patient must belong to caller org (route also checks; helper is shared).
+  const [ownedPatient] = await db
+    .select({ id: schema.patients.id })
+    .from(schema.patients)
+    .where(and(eq(schema.patients.organizationId, orgId), eq(schema.patients.id, patientId)))
+    .limit(1);
+  if (!ownedPatient) {
+    throw new Error("patient_reclamations: patient does not belong to organization");
+  }
+  if (input.doctorId) {
+    const [ownedDoctor] = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(and(eq(schema.users.organizationId, orgId), eq(schema.users.id, input.doctorId)))
+      .limit(1);
+    if (!ownedDoctor) {
+      throw new Error("patient_reclamations: doctor does not belong to organization");
+    }
+  }
   const [row] = await db
     .insert(schema.patientReclamations)
     .values({

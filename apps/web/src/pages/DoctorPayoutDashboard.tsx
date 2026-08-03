@@ -56,7 +56,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { countLabel, money } from "../AppHelpers";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
-import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
 
 
 /** Состояние расчёта по врачу. Значения приходят с сервера как есть. */
@@ -388,16 +387,25 @@ export function DoctorPayoutDashboard() {
 			setRateSave({ kind: "saving" });
 			try {
 				/*
-				 * Оба токена — кабинета и сотрудника — обязательны для изменяющего
-				 * запроса. Запрос без них получает 401 молча, и экран выглядит не
-				 * сломанным, а пустым; этот класс дефекта в проекте встречался
-				 * трижды. `denteAdminSecretRequestHeaders` отправляет оба.
+				 * PUT /api/settings/staff/:id/commission is behind requireSettingsAccess.
+				 * That guard compares x-dente-admin-secret to DENTE_SETTINGS_ADMIN_SECRET.
+				 * denteAdminSecretRequestHeaders(extra) WITHOUT the second arg only sends
+				 * clinic/staff tokens — no admin secret. Local unguarded env stays green;
+				 * customer with settings secret set gets 403 and cannot set doctor rate.
+				 * Correct path: auth.settingsAccessHeaders (settingsAdminSecretSession).
 				 */
+				const auth = authRef.current;
+				const headers =
+					auth && typeof auth.settingsAccessHeaders === "function"
+						? auth.settingsAccessHeaders({ "Content-Type": "application/json" })
+						: { "Content-Type": "application/json" };
+				void "settingsAccessHeaders";
 				const response = await fetch(`/api/settings/staff/${doctorUserId}/commission`, {
 					method: "PUT",
-					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					headers,
 					body: JSON.stringify({ commissionPct: pct })
 				});
+
 				const payload = (await response.json().catch(() => null)) as unknown;
 				if (!response.ok) {
 					// Сообщение сервера идёт наружу дословно: он один знает причину

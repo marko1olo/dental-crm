@@ -731,11 +731,9 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			)
 			.returning({ id: procedureMaterialRules.id });
 		if (!deleted) {
-			const [deletedLegacy] = await db
-				.delete(procedureMaterialRules)
-				.where(eq(procedureMaterialRules.id, ruleId))
-				.returning({ id: procedureMaterialRules.id });
-			if (!deletedLegacy) return reply.status(404).send({ error: "Rule not found" });
+			// No id-only fallback: nullable organizationId legacy rows must be repaired
+			// by migration, not deleted without org defense-in-depth.
+			return reply.status(404).send({ error: "Rule not found" });
 		}
 		return { success: true };
 	});

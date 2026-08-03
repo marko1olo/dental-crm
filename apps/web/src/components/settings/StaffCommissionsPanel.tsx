@@ -10,16 +10,19 @@
  *
  * ТЕПЕРЬ: самодостаточная панель на Settings → Персонал. Грузит GET list,
  * сопоставляет userId с ФИО из дашборда, даёт задать/изменить процент через
- * тот же PUT и те же `denteAdminSecretRequestHeaders`, что и экран выплат
- * (requireSettingsAccess + x-dente-admin-secret).
+ * тот же PUT и `auth.settingsAccessHeaders`, что и остальные вкладки настроек
+ * (requireSettingsAccess + settingsAdminSecretSession → x-dente-admin-secret).
+ *
+ * BYLO: denteAdminSecretRequestHeaders() без второго аргумента — секрет не
+ * уходил. Локально зелёно (unguarded), у заказчика 403 на GET list и PUT rate.
  */
 
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
+
 
 type CommissionRate = {
 	userId: string;
@@ -88,8 +91,15 @@ function isDoctorLikeRole(role: string): boolean {
 
 export const StaffCommissionsPanel: React.FC = () => {
 	const appLogic = useAppLogicContext();
+	/*
+	 * authRef: useAppLogic returns a new auth object each render. Keep the
+	 * settings secret fresh inside loadRates/saveRate without thrashing deps.
+	 */
+	const authRef = useRef(appLogic?.auth);
+	authRef.current = appLogic?.auth;
 	// dashboard живёт на корне useAppLogic; точный тип — ReturnType, читаем мягко.
 	const dashboardUnknown = (appLogic as { dashboard?: unknown } | null)?.dashboard;
+
 	const clinicSettings =
 		dashboardUnknown &&
 		typeof dashboardUnknown === "object" &&

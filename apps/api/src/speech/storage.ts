@@ -172,6 +172,8 @@ function speechChunkKey(recordingId: string, chunkIndex: number): string {
 const durableChunkKeys = new Set<string>();
 
 type SpeechRecordingScope = {
+  /** Tenant gate. Routes must pass verified organizationId; null/omit is legacy-only. */
+  organizationId?: string | null;
   patientId?: string | null;
   visitId?: string | null;
   source?: SpeechTranscriptionChunk["source"] | null;
@@ -214,6 +216,13 @@ function countSpeechQualities(chunks: SpeechTranscriptionChunk[]): SpeechRecordi
 }
 
 function speechChunkMatchesScope(chunk: SpeechTranscriptionChunk, scope: SpeechRecordingScope = {}): boolean {
+  if (
+    scope.organizationId !== undefined &&
+    scope.organizationId !== null &&
+    chunk.organizationId !== scope.organizationId
+  ) {
+    return false;
+  }
   if (scope.patientId !== undefined && chunk.patientId !== scope.patientId) return false;
   if (scope.visitId !== undefined && chunk.visitId !== scope.visitId) return false;
   if (scope.source !== undefined && chunk.source !== scope.source) return false;
@@ -331,9 +340,16 @@ function speechRecordingRecoveryFromChunks(recordingId: string, chunks: SpeechTr
   };
 }
 
-export function listSpeechRecordingRecoveries(input: { visitId?: string | null; patientId?: string | null; limit?: number | null } = {}): SpeechRecordingRecoveryList {
+export function listSpeechRecordingRecoveries(input: { organizationId?: string | null; visitId?: string | null; patientId?: string | null; limit?: number | null } = {}): SpeechRecordingRecoveryList {
   const grouped = new Map<string, SpeechTranscriptionChunk[]>();
   for (const chunk of speechTranscriptionChunks) {
+    if (
+      input.organizationId !== undefined &&
+      input.organizationId !== null &&
+      chunk.organizationId !== input.organizationId
+    ) {
+      continue;
+    }
     if (input.visitId && chunk.visitId !== input.visitId) continue;
     if (input.patientId && chunk.patientId !== input.patientId) continue;
     const chunks = grouped.get(chunk.recordingId) ?? [];

@@ -1,0 +1,39 @@
+# Dental CRM (Clinic MVP) Goose Protocol
+
+## Shell Rules (CRITICAL — saves 20-30% wasted turns)
+- This is Windows. The default shell is `cmd.exe`, NOT PowerShell.
+- FORBIDDEN commands: `Get-Content`, `Select-Object`, `Get-Location`, `Get-ChildItem`, `Write-Host`, `Test-Path`, `head`, `tail`, `wc`.
+- USE INSTEAD: `type` (read files), `dir` (list dirs), `cd /d` (change dir), `echo` (print).
+- For searching: ALWAYS use `rg` (ripgrep). It is on PATH. `grep` is FORBIDDEN.
+- For file discovery: ALWAYS use `fd`. It is on PATH.
+- For reading specific line ranges: use `python -c "..."` or `node -e "..."`.
+- PowerShell is available ONLY via explicit `powershell -Command "..."` prefix.
+
+## Context Management
+- You have a 200k token context window with auto-compaction at 80%.
+- `schema.ts` is 2500+ lines. DO NOT dump it all. Use `rg -n "tableName"` to find sections.
+- `useAppLogic.tsx` is 14,500+ lines. NEVER read it fully. Search with `rg` first.
+- Subagents via `delegate(async: true)` are fully context-isolated — use them for broad file reads.
+
+## Project Law
+1. **Supreme Law**: `dental-crm/.agents/AGENTS.md` (read as complete document).
+2. **Database Architecture**: Native PostgreSQL 18 over TCP on `127.0.0.1:5432`, `drizzle-orm/node-postgres`.
+3. **Mandatory Guardrails**:
+   - Strict tenant/organization isolation (`organizationId`) on all database queries.
+   - Schema updates via Drizzle migrations only.
+   - Zero tolerance for mock/placeholder code.
+   - All money exact to the kopeck.
+
+## Quality Gates
+- Before claiming success: run `npm run typecheck` (tsc --noEmit).
+- Before claiming tenant isolation: verify with `rg "organizationId" <file>`.
+- Never present "plausible" as "verified". Split into ПРОВЕРЕНО / НЕ ПРОВЕРЕНО.
+
+## Autonomous Work Protocol
+- After reading AGENTS.md, use `todo_write` to create a task list.
+- Work through tasks systematically. Check off completed items.
+- When a task is done, move to the next one. Do NOT wait for user input.
+- Spawn subagents for parallel work when reviewing multiple files.
+
+## Auto-Compaction Survival
+- When you suspect context auto-compaction will occur (long sessions), explicitly use 	odo_write to record critical architectural invariants, task state, and file locations. 	odo_write notes persist strongly across compactions.

@@ -88,6 +88,25 @@ export async function createPatientTaskTicketInDb(
     priority: string;
   },
 ): Promise<PatientTaskTicket> {
+  // Ownership assert: patient must belong to caller org (route also checks; helper is shared).
+  const [ownedPatient] = await db
+    .select({ id: schema.patients.id })
+    .from(schema.patients)
+    .where(and(eq(schema.patients.organizationId, orgId), eq(schema.patients.id, patientId)))
+    .limit(1);
+  if (!ownedPatient) {
+    throw new Error("patient_task_tickets: patient does not belong to organization");
+  }
+  if (input.assignedToId) {
+    const [ownedStaff] = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(and(eq(schema.users.organizationId, orgId), eq(schema.users.id, input.assignedToId)))
+      .limit(1);
+    if (!ownedStaff) {
+      throw new Error("patient_task_tickets: assignee does not belong to organization");
+    }
+  }
   const [row] = await db
     .insert(schema.patientTaskTickets)
     .values({
