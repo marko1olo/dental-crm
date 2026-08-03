@@ -672,7 +672,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		-->
 		${params.doctorPosition && params.doctorPosition.trim()
 			? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
-			: `<functionCode nullFlavor="NI"/>`}
+			: `<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2434: author/modeCode.
+				WAS: author had time/signatureCode/functionCode/assigned* —
+				no modeCode. HL7 CDA R2 participation may carry modeCode 0..1
+				(electronic / written / verbal). SEMD often flags incomplete
+				participation without mode slot. Form 043/u does not collect
+				participation mode separately — do not invent a fake mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>`}
 		<assignedAuthor>
 			${/*
 			 * DEFECT #77: assignedAuthor/id is required (1..*) in CDA R2.
@@ -742,6 +752,84 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 					</place>
 				</birthplace>
+				<!--
+					DEFECT #2413: assignedPerson/maritalStatusCode.
+					WAS: assignedPerson had name/gender/birthTime/birthplace only —
+					no maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+					0..1. SEMD often flags incomplete Person demographics under
+					assignedAuthor/assignedEntity. Form 043/u does not collect staff
+					marital status — do not invent.
+					NOW: maritalStatusCode nullFlavor NI.
+				-->
+				<maritalStatusCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2414: assignedPerson/raceCode.
+					WAS: assignedPerson missing raceCode. HL7 CDA R2 Person may carry
+					raceCode 0..*. SEMD often flags incomplete Person race slot.
+					Form 043/u does not collect staff race — do not invent.
+					NOW: raceCode nullFlavor NI.
+				-->
+				<raceCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2415: assignedPerson/ethnicGroupCode.
+					WAS: assignedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+					carry ethnicGroupCode 0..*. SEMD often flags incomplete Person
+					ethnicity slot. Form 043/u does not collect staff ethnicity —
+					do not invent.
+					NOW: ethnicGroupCode nullFlavor NI.
+				-->
+				<ethnicGroupCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2416: assignedPerson/languageCommunication.
+					WAS: assignedPerson missing languageCommunication. HL7 CDA R2 Person
+					may carry languageCommunication 0..*. SEMD often flags incomplete
+					Person language slot under assigned entities. Form 043/u does not
+					collect staff preferred language — do not invent.
+					NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+				-->
+				<languageCommunication>
+					<languageCode nullFlavor="NI"/>
+					<modeCode nullFlavor="NI"/>
+					<proficiencyLevelCode nullFlavor="NI"/>
+					<preferenceInd nullFlavor="NI"/>
+				</languageCommunication>
+				<!--
+					DEFECT #2417: assignedPerson/asCitizen.
+					WAS: assignedPerson missing asCitizen. HL7 RIM Entity may carry
+					asCitizen (citizenship). SEMD often flags incomplete Person without
+					citizenship slot under assignedAuthor/assignedEntity. Form 043/u
+					does not collect staff citizenship — do not invent nation code.
+					NOW: asCitizen code NI + politicalNation code/name NI.
+				-->
+				<asCitizen>
+					<code nullFlavor="NI"/>
+					<politicalNation>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</politicalNation>
+				</asCitizen>
+				<!--
+					DEFECT #2418: assignedPerson/asEmployee.
+					WAS: assignedPerson missing asEmployee. HL7 RIM Entity may carry
+					asEmployee (employment). SEMD often flags incomplete Person without
+					employment slot under clinical staff assigned entities. Form 043/u
+					does not collect employer MO linkage beyond representedOrganization
+					— do not invent employer id/name.
+					NOW: asEmployee id/code/statusCode/effectiveTime NI +
+					employerOrganization id/name/addr/telecom NI.
+				-->
+				<asEmployee>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<employerOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</employerOrganization>
+				</asEmployee>
 			</assignedPerson>
 			${/*
 			 * DEFECT #83: assignedAuthor must carry representedOrganization.
@@ -778,6 +866,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<addr nullFlavor="NI"/>
 				<telecom nullFlavor="NI"/>
 				<name>${escapeXml(params.clinicName)}</name>
+				<!--
+					DEFECT #2405: representedOrganization/standardIndustryClassCode.
+					WAS: org had id/addr/telecom/name only — no
+					standardIndustryClassCode. HL7 CDA R2 Organization may carry
+					standardIndustryClassCode 0..1 (OKVED/industry class). SEMD
+					validators often flag incomplete MO org without industry-class
+					slot. Form 043/u has no OKVED for the clinic — do not invent.
+					NOW: standardIndustryClassCode nullFlavor NI.
+				-->
+				<standardIndustryClassCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2406: representedOrganization/asOrganizationPartOf.
+					WAS: org missing asOrganizationPartOf hierarchy shell.
+					HL7 CDA R2 Organization may nest asOrganizationPartOf
+					(parent MO / holding). SEMD often flags bare MO org without
+					part-of slot. Form 043/u does not collect parent-MO linkage
+					— do not invent parent id/name.
+					NOW: asOrganizationPartOf code/statusCode/effectiveTime NI +
+					wholeOrganization id/name/addr/telecom NI.
+				-->
+				<asOrganizationPartOf>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<wholeOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</wholeOrganization>
+				</asOrganizationPartOf>
 			</representedOrganization>`}
 		</assignedAuthor>
 	</author>
@@ -867,6 +986,84 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 					</place>
 				</birthplace>
+				<!--
+					DEFECT #2413: assignedPerson/maritalStatusCode.
+					WAS: assignedPerson had name/gender/birthTime/birthplace only —
+					no maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+					0..1. SEMD often flags incomplete Person demographics under
+					assignedAuthor/assignedEntity. Form 043/u does not collect staff
+					marital status — do not invent.
+					NOW: maritalStatusCode nullFlavor NI.
+				-->
+				<maritalStatusCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2414: assignedPerson/raceCode.
+					WAS: assignedPerson missing raceCode. HL7 CDA R2 Person may carry
+					raceCode 0..*. SEMD often flags incomplete Person race slot.
+					Form 043/u does not collect staff race — do not invent.
+					NOW: raceCode nullFlavor NI.
+				-->
+				<raceCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2415: assignedPerson/ethnicGroupCode.
+					WAS: assignedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+					carry ethnicGroupCode 0..*. SEMD often flags incomplete Person
+					ethnicity slot. Form 043/u does not collect staff ethnicity —
+					do not invent.
+					NOW: ethnicGroupCode nullFlavor NI.
+				-->
+				<ethnicGroupCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2416: assignedPerson/languageCommunication.
+					WAS: assignedPerson missing languageCommunication. HL7 CDA R2 Person
+					may carry languageCommunication 0..*. SEMD often flags incomplete
+					Person language slot under assigned entities. Form 043/u does not
+					collect staff preferred language — do not invent.
+					NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+				-->
+				<languageCommunication>
+					<languageCode nullFlavor="NI"/>
+					<modeCode nullFlavor="NI"/>
+					<proficiencyLevelCode nullFlavor="NI"/>
+					<preferenceInd nullFlavor="NI"/>
+				</languageCommunication>
+				<!--
+					DEFECT #2417: assignedPerson/asCitizen.
+					WAS: assignedPerson missing asCitizen. HL7 RIM Entity may carry
+					asCitizen (citizenship). SEMD often flags incomplete Person without
+					citizenship slot under assignedAuthor/assignedEntity. Form 043/u
+					does not collect staff citizenship — do not invent nation code.
+					NOW: asCitizen code NI + politicalNation code/name NI.
+				-->
+				<asCitizen>
+					<code nullFlavor="NI"/>
+					<politicalNation>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</politicalNation>
+				</asCitizen>
+				<!--
+					DEFECT #2418: assignedPerson/asEmployee.
+					WAS: assignedPerson missing asEmployee. HL7 RIM Entity may carry
+					asEmployee (employment). SEMD often flags incomplete Person without
+					employment slot under clinical staff assigned entities. Form 043/u
+					does not collect employer MO linkage beyond representedOrganization
+					— do not invent employer id/name.
+					NOW: asEmployee id/code/statusCode/effectiveTime NI +
+					employerOrganization id/name/addr/telecom NI.
+				-->
+				<asEmployee>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<employerOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</employerOrganization>
+				</asEmployee>
 			</assignedPerson>
 			${`<representedOrganization>
 				${
@@ -877,6 +1074,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<addr nullFlavor="NI"/>
 				<telecom nullFlavor="NI"/>
 				<name>${escapeXml(params.clinicName)}</name>
+				<!--
+					DEFECT #2407: representedOrganization/standardIndustryClassCode.
+					WAS: org had id/addr/telecom/name only — no
+					standardIndustryClassCode. HL7 CDA R2 Organization may carry
+					standardIndustryClassCode 0..1 (OKVED/industry class). SEMD
+					validators often flag incomplete MO org without industry-class
+					slot. Form 043/u has no OKVED for the clinic — do not invent.
+					NOW: standardIndustryClassCode nullFlavor NI.
+				-->
+				<standardIndustryClassCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2408: representedOrganization/asOrganizationPartOf.
+					WAS: org missing asOrganizationPartOf hierarchy shell.
+					HL7 CDA R2 Organization may nest asOrganizationPartOf
+					(parent MO / holding). SEMD often flags bare MO org without
+					part-of slot. Form 043/u does not collect parent-MO linkage
+					— do not invent parent id/name.
+					NOW: asOrganizationPartOf code/statusCode/effectiveTime NI +
+					wholeOrganization id/name/addr/telecom NI.
+				-->
+				<asOrganizationPartOf>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<wholeOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</wholeOrganization>
+				</asOrganizationPartOf>
 			</representedOrganization>`}
 		</assignedEntity>
 	</dataEnterer>
@@ -975,6 +1203,84 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 					</place>
 				</birthplace>
+				<!--
+					DEFECT #2413: assignedPerson/maritalStatusCode.
+					WAS: assignedPerson had name/gender/birthTime/birthplace only —
+					no maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+					0..1. SEMD often flags incomplete Person demographics under
+					assignedAuthor/assignedEntity. Form 043/u does not collect staff
+					marital status — do not invent.
+					NOW: maritalStatusCode nullFlavor NI.
+				-->
+				<maritalStatusCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2414: assignedPerson/raceCode.
+					WAS: assignedPerson missing raceCode. HL7 CDA R2 Person may carry
+					raceCode 0..*. SEMD often flags incomplete Person race slot.
+					Form 043/u does not collect staff race — do not invent.
+					NOW: raceCode nullFlavor NI.
+				-->
+				<raceCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2415: assignedPerson/ethnicGroupCode.
+					WAS: assignedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+					carry ethnicGroupCode 0..*. SEMD often flags incomplete Person
+					ethnicity slot. Form 043/u does not collect staff ethnicity —
+					do not invent.
+					NOW: ethnicGroupCode nullFlavor NI.
+				-->
+				<ethnicGroupCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2416: assignedPerson/languageCommunication.
+					WAS: assignedPerson missing languageCommunication. HL7 CDA R2 Person
+					may carry languageCommunication 0..*. SEMD often flags incomplete
+					Person language slot under assigned entities. Form 043/u does not
+					collect staff preferred language — do not invent.
+					NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+				-->
+				<languageCommunication>
+					<languageCode nullFlavor="NI"/>
+					<modeCode nullFlavor="NI"/>
+					<proficiencyLevelCode nullFlavor="NI"/>
+					<preferenceInd nullFlavor="NI"/>
+				</languageCommunication>
+				<!--
+					DEFECT #2417: assignedPerson/asCitizen.
+					WAS: assignedPerson missing asCitizen. HL7 RIM Entity may carry
+					asCitizen (citizenship). SEMD often flags incomplete Person without
+					citizenship slot under assignedAuthor/assignedEntity. Form 043/u
+					does not collect staff citizenship — do not invent nation code.
+					NOW: asCitizen code NI + politicalNation code/name NI.
+				-->
+				<asCitizen>
+					<code nullFlavor="NI"/>
+					<politicalNation>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</politicalNation>
+				</asCitizen>
+				<!--
+					DEFECT #2418: assignedPerson/asEmployee.
+					WAS: assignedPerson missing asEmployee. HL7 RIM Entity may carry
+					asEmployee (employment). SEMD often flags incomplete Person without
+					employment slot under clinical staff assigned entities. Form 043/u
+					does not collect employer MO linkage beyond representedOrganization
+					— do not invent employer id/name.
+					NOW: asEmployee id/code/statusCode/effectiveTime NI +
+					employerOrganization id/name/addr/telecom NI.
+				-->
+				<asEmployee>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<employerOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</employerOrganization>
+				</asEmployee>
 			</assignedPerson>
 			${`<representedOrganization>
 				${
@@ -985,6 +1291,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<addr nullFlavor="NI"/>
 				<telecom nullFlavor="NI"/>
 				<name>${escapeXml(params.clinicName)}</name>
+				<!--
+					DEFECT #2409: representedOrganization/standardIndustryClassCode.
+					WAS: org had id/addr/telecom/name only — no
+					standardIndustryClassCode. HL7 CDA R2 Organization may carry
+					standardIndustryClassCode 0..1 (OKVED/industry class). SEMD
+					validators often flag incomplete MO org without industry-class
+					slot. Form 043/u has no OKVED for the clinic — do not invent.
+					NOW: standardIndustryClassCode nullFlavor NI.
+				-->
+				<standardIndustryClassCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2410: representedOrganization/asOrganizationPartOf.
+					WAS: org missing asOrganizationPartOf hierarchy shell.
+					HL7 CDA R2 Organization may nest asOrganizationPartOf
+					(parent MO / holding). SEMD often flags bare MO org without
+					part-of slot. Form 043/u does not collect parent-MO linkage
+					— do not invent parent id/name.
+					NOW: asOrganizationPartOf code/statusCode/effectiveTime NI +
+					wholeOrganization id/name/addr/telecom NI.
+				-->
+				<asOrganizationPartOf>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<wholeOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</wholeOrganization>
+				</asOrganizationPartOf>
 			</representedOrganization>`}
 		</assignedEntity>
 	</informant>
@@ -1110,6 +1447,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<addr nullFlavor="NI"/>
 				<telecom nullFlavor="NI"/>
 				<name>${escapeXml(params.clinicName)}</name>
+				<!--
+					DEFECT #2411: receivedOrganization/standardIndustryClassCode.
+					WAS: org had id/addr/telecom/name only — no
+					standardIndustryClassCode. HL7 CDA R2 Organization may carry
+					standardIndustryClassCode 0..1 (OKVED/industry class). SEMD
+					validators often flag incomplete MO org without industry-class
+					slot. Form 043/u has no OKVED for the clinic — do not invent.
+					NOW: standardIndustryClassCode nullFlavor NI.
+				-->
+				<standardIndustryClassCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2412: receivedOrganization/asOrganizationPartOf.
+					WAS: org missing asOrganizationPartOf hierarchy shell.
+					HL7 CDA R2 Organization may nest asOrganizationPartOf
+					(parent MO / holding). SEMD often flags bare MO org without
+					part-of slot. Form 043/u does not collect parent-MO linkage
+					— do not invent parent id/name.
+					NOW: asOrganizationPartOf code/statusCode/effectiveTime NI +
+					wholeOrganization id/name/addr/telecom NI.
+				-->
+				<asOrganizationPartOf>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<wholeOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</wholeOrganization>
+				</asOrganizationPartOf>
 			</receivedOrganization>
 		</intendedRecipient>
 	</informationRecipient>
@@ -1139,7 +1507,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		-->
 		${params.doctorPosition && params.doctorPosition.trim()
 			? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
-			: `<functionCode nullFlavor="NI"/>`}
+			: `<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2435: legalAuthenticator/modeCode.
+				WAS: legalAuthenticator had time/signatureCode/functionCode/assigned* —
+				no modeCode. HL7 CDA R2 participation may carry modeCode 0..1
+				(electronic / written / verbal). SEMD often flags incomplete
+				participation without mode slot. Form 043/u does not collect
+				participation mode separately — do not invent a fake mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>`}
 		<!--
 			DEFECT #159: legalAuthenticator/signatureCode codeSystem + displayName.
 			WAS: signatureCode had code=S only — no codeSystem/codeSystemName/
@@ -1223,6 +1601,84 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 					</place>
 				</birthplace>
+				<!--
+					DEFECT #2413: assignedPerson/maritalStatusCode.
+					WAS: assignedPerson had name/gender/birthTime/birthplace only —
+					no maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+					0..1. SEMD often flags incomplete Person demographics under
+					assignedAuthor/assignedEntity. Form 043/u does not collect staff
+					marital status — do not invent.
+					NOW: maritalStatusCode nullFlavor NI.
+				-->
+				<maritalStatusCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2414: assignedPerson/raceCode.
+					WAS: assignedPerson missing raceCode. HL7 CDA R2 Person may carry
+					raceCode 0..*. SEMD often flags incomplete Person race slot.
+					Form 043/u does not collect staff race — do not invent.
+					NOW: raceCode nullFlavor NI.
+				-->
+				<raceCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2415: assignedPerson/ethnicGroupCode.
+					WAS: assignedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+					carry ethnicGroupCode 0..*. SEMD often flags incomplete Person
+					ethnicity slot. Form 043/u does not collect staff ethnicity —
+					do not invent.
+					NOW: ethnicGroupCode nullFlavor NI.
+				-->
+				<ethnicGroupCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2416: assignedPerson/languageCommunication.
+					WAS: assignedPerson missing languageCommunication. HL7 CDA R2 Person
+					may carry languageCommunication 0..*. SEMD often flags incomplete
+					Person language slot under assigned entities. Form 043/u does not
+					collect staff preferred language — do not invent.
+					NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+				-->
+				<languageCommunication>
+					<languageCode nullFlavor="NI"/>
+					<modeCode nullFlavor="NI"/>
+					<proficiencyLevelCode nullFlavor="NI"/>
+					<preferenceInd nullFlavor="NI"/>
+				</languageCommunication>
+				<!--
+					DEFECT #2417: assignedPerson/asCitizen.
+					WAS: assignedPerson missing asCitizen. HL7 RIM Entity may carry
+					asCitizen (citizenship). SEMD often flags incomplete Person without
+					citizenship slot under assignedAuthor/assignedEntity. Form 043/u
+					does not collect staff citizenship — do not invent nation code.
+					NOW: asCitizen code NI + politicalNation code/name NI.
+				-->
+				<asCitizen>
+					<code nullFlavor="NI"/>
+					<politicalNation>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</politicalNation>
+				</asCitizen>
+				<!--
+					DEFECT #2418: assignedPerson/asEmployee.
+					WAS: assignedPerson missing asEmployee. HL7 RIM Entity may carry
+					asEmployee (employment). SEMD often flags incomplete Person without
+					employment slot under clinical staff assigned entities. Form 043/u
+					does not collect employer MO linkage beyond representedOrganization
+					— do not invent employer id/name.
+					NOW: asEmployee id/code/statusCode/effectiveTime NI +
+					employerOrganization id/name/addr/telecom NI.
+				-->
+				<asEmployee>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<employerOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</employerOrganization>
+				</asEmployee>
 			</assignedPerson>
 			<representedOrganization>
 				${/*
@@ -1299,7 +1755,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 		-->
 		${params.doctorPosition && params.doctorPosition.trim()
 			? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
-			: `<functionCode nullFlavor="NI"/>`}
+			: `<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2436: authenticator/modeCode.
+				WAS: authenticator had time/signatureCode/functionCode/assigned* —
+				no modeCode. HL7 CDA R2 participation may carry modeCode 0..1
+				(electronic / written / verbal). SEMD often flags incomplete
+				participation without mode slot. Form 043/u does not collect
+				participation mode separately — do not invent a fake mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>`}
 		<!--
 			DEFECT #159: authenticator/signatureCode codeSystem + displayName.
 
@@ -1382,6 +1848,84 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<telecom nullFlavor="NI"/>
 					</place>
 				</birthplace>
+				<!--
+					DEFECT #2413: assignedPerson/maritalStatusCode.
+					WAS: assignedPerson had name/gender/birthTime/birthplace only —
+					no maritalStatusCode. HL7 CDA R2 Person may carry maritalStatusCode
+					0..1. SEMD often flags incomplete Person demographics under
+					assignedAuthor/assignedEntity. Form 043/u does not collect staff
+					marital status — do not invent.
+					NOW: maritalStatusCode nullFlavor NI.
+				-->
+				<maritalStatusCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2414: assignedPerson/raceCode.
+					WAS: assignedPerson missing raceCode. HL7 CDA R2 Person may carry
+					raceCode 0..*. SEMD often flags incomplete Person race slot.
+					Form 043/u does not collect staff race — do not invent.
+					NOW: raceCode nullFlavor NI.
+				-->
+				<raceCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2415: assignedPerson/ethnicGroupCode.
+					WAS: assignedPerson missing ethnicGroupCode. HL7 CDA R2 Person may
+					carry ethnicGroupCode 0..*. SEMD often flags incomplete Person
+					ethnicity slot. Form 043/u does not collect staff ethnicity —
+					do not invent.
+					NOW: ethnicGroupCode nullFlavor NI.
+				-->
+				<ethnicGroupCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2416: assignedPerson/languageCommunication.
+					WAS: assignedPerson missing languageCommunication. HL7 CDA R2 Person
+					may carry languageCommunication 0..*. SEMD often flags incomplete
+					Person language slot under assigned entities. Form 043/u does not
+					collect staff preferred language — do not invent.
+					NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+				-->
+				<languageCommunication>
+					<languageCode nullFlavor="NI"/>
+					<modeCode nullFlavor="NI"/>
+					<proficiencyLevelCode nullFlavor="NI"/>
+					<preferenceInd nullFlavor="NI"/>
+				</languageCommunication>
+				<!--
+					DEFECT #2417: assignedPerson/asCitizen.
+					WAS: assignedPerson missing asCitizen. HL7 RIM Entity may carry
+					asCitizen (citizenship). SEMD often flags incomplete Person without
+					citizenship slot under assignedAuthor/assignedEntity. Form 043/u
+					does not collect staff citizenship — do not invent nation code.
+					NOW: asCitizen code NI + politicalNation code/name NI.
+				-->
+				<asCitizen>
+					<code nullFlavor="NI"/>
+					<politicalNation>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</politicalNation>
+				</asCitizen>
+				<!--
+					DEFECT #2418: assignedPerson/asEmployee.
+					WAS: assignedPerson missing asEmployee. HL7 RIM Entity may carry
+					asEmployee (employment). SEMD often flags incomplete Person without
+					employment slot under clinical staff assigned entities. Form 043/u
+					does not collect employer MO linkage beyond representedOrganization
+					— do not invent employer id/name.
+					NOW: asEmployee id/code/statusCode/effectiveTime NI +
+					employerOrganization id/name/addr/telecom NI.
+				-->
+				<asEmployee>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<employerOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</employerOrganization>
+				</asEmployee>
 			</assignedPerson>
 			<representedOrganization>
 				${/*
@@ -1796,6 +2340,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<author>
 				<time value="${visitTime}"/>
+			<!--
+				DEFECT #2433: author/modeCode.
+				WAS: author had time/signatureCode/functionCode/assigned* —
+				no modeCode. HL7 CDA R2 participation may carry modeCode 0..1
+				(electronic / written / verbal). SEMD often flags incomplete
+				participation without mode slot. Form 043/u does not collect
+				participation mode separately — do not invent a fake mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 				<assignedAuthor>
 					${params.doctorSnils && String(params.doctorSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -5841,6 +6395,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<author>
 				<time value="${visitTime}"/>
+			<!--
+				DEFECT #2432: author/modeCode.
+				WAS: author had time/signatureCode/functionCode/assigned* —
+				no modeCode. HL7 CDA R2 participation may carry modeCode 0..1
+				(electronic / written / verbal). SEMD often flags incomplete
+				participation without mode slot. Form 043/u does not collect
+				participation mode separately — do not invent a fake mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 				<assignedAuthor>
 					${params.doctorSnils && String(params.doctorSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -7880,6 +8444,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<author>
 								<time value="${visitTime}"/>
+			<!--
+				DEFECT #2431: author/modeCode.
+				WAS: author had time/signatureCode/functionCode/assigned* —
+				no modeCode. HL7 CDA R2 participation may carry modeCode 0..1
+				(electronic / written / verbal). SEMD often flags incomplete
+				participation without mode slot. Form 043/u does not collect
+				participation mode separately — do not invent a fake mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 								<assignedAuthor>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -10721,6 +11295,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<author>
 								<time value="${visitTime}"/>
+			<!--
+				DEFECT #2430: author/modeCode.
+				WAS: author had time/signatureCode/functionCode/assigned* —
+				no modeCode. HL7 CDA R2 participation may carry modeCode 0..1
+				(electronic / written / verbal). SEMD often flags incomplete
+				participation without mode slot. Form 043/u does not collect
+				participation mode separately — do not invent a fake mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 								<assignedAuthor>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -13576,6 +14160,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<author>
 								<time value="${visitTime}"/>
+			<!--
+				DEFECT #2429: author/modeCode.
+				WAS: author had time/signatureCode/functionCode/assigned* —
+				no modeCode. HL7 CDA R2 participation may carry modeCode 0..1
+				(electronic / written / verbal). SEMD often flags incomplete
+				participation without mode slot. Form 043/u does not collect
+				participation mode separately — do not invent a fake mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 								<assignedAuthor>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -16425,6 +17019,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<author>
 								<time value="${visitTime}"/>
+			<!--
+				DEFECT #2428: author/modeCode.
+				WAS: author had time/signatureCode/functionCode/assigned* —
+				no modeCode. HL7 CDA R2 participation may carry modeCode 0..1
+				(electronic / written / verbal). SEMD often flags incomplete
+				participation without mode slot. Form 043/u does not collect
+				participation mode separately — do not invent a fake mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 								<assignedAuthor>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -18089,6 +18693,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<author>
 								<time value="${visitTime}"/>
+			<!--
+				DEFECT #2427: author/modeCode.
+				WAS: author had time/signatureCode/functionCode/assigned* —
+				no modeCode. HL7 CDA R2 participation may carry modeCode 0..1
+				(electronic / written / verbal). SEMD often flags incomplete
+				participation without mode slot. Form 043/u does not collect
+				participation mode separately — do not invent a fake mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 								<assignedAuthor>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -20943,6 +21557,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<author>
 								<time value="${visitTime}"/>
+			<!--
+				DEFECT #2426: author/modeCode.
+				WAS: author had time/signatureCode/functionCode/assigned* —
+				no modeCode. HL7 CDA R2 participation may carry modeCode 0..1
+				(electronic / written / verbal). SEMD often flags incomplete
+				participation without mode slot. Form 043/u does not collect
+				participation mode separately — do not invent a fake mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 								<assignedAuthor>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -23874,6 +24498,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<author>
 								<time value="${visitTime}"/>
+			<!--
+				DEFECT #2425: author/modeCode.
+				WAS: author had time/signatureCode/functionCode/assigned* —
+				no modeCode. HL7 CDA R2 participation may carry modeCode 0..1
+				(electronic / written / verbal). SEMD often flags incomplete
+				participation without mode slot. Form 043/u does not collect
+				participation mode separately — do not invent a fake mode code.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
 								<assignedAuthor>
 									${params.doctorSnils && String(params.doctorSnils).trim()
 										? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
