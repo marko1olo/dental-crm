@@ -4103,6 +4103,15 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2554: wholeOrganization/standardIndustryClassCode.
+									WAS: organization missing standardIndustryClassCode.
+									HL7 CDA R2 Organization has standardIndustryClassCode 0..1.
+									Form 043/u does not collect industry class — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+
 							</wholeOrganization>
 						</asOrganizationPartOf>
 					</serviceProviderOrganization>
@@ -6478,6 +6487,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -7247,6 +7271,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -8421,6 +8460,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				</performer>
 				<!--
@@ -9226,6 +9280,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				
 			<!--
@@ -10325,6 +10394,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -11130,6 +11214,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -13219,6 +13318,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 		</performer>
 		<!--
@@ -13596,6 +13710,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 		
 			<!--
@@ -14695,6 +14824,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 			</performer>
 			<!--
@@ -15500,6 +15644,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 			
 			<!--
@@ -16764,6 +16923,13 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					NOW: id/addr/telecom NI + assignedPerson/name NI; do not invent.
 
 				-->
+					<!--
+						DEFECT #2553: assignedEntity/code.
+						WAS: role missing code. HL7 CDA R2 Role has code 0..*.
+						Form 043/u does not collect this role code — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
 
 				<id nullFlavor="NI"/>
 
@@ -17111,6 +17277,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 
 		</performer>
@@ -17510,6 +17691,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2555: assignedAuthor/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedAuthor>
 		</author>
 
@@ -17548,7 +17744,14 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					<time nullFlavor="NI"/>
 <assignedEntity>
 				<id nullFlavor="NI"/>
-				<addr nullFlavor="NI"/>
+									<!--
+						DEFECT #2553: assignedEntity/code.
+						WAS: role missing code. HL7 CDA R2 Role has code 0..*.
+						Form 043/u does not collect this role code — do not invent.
+						NOW: code nullFlavor NI.
+					-->
+					<code nullFlavor="NI"/>
+<addr nullFlavor="NI"/>
 				<telecom nullFlavor="NI"/>
 				<assignedPerson>
 					<name nullFlavor="NI"/>
@@ -17887,6 +18090,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 		
 			<!--
@@ -19077,6 +19295,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 			</performer>
 			<!--
@@ -19882,6 +20115,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 			
 			<!--
@@ -21972,6 +22220,15 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2554: wholeOrganization/standardIndustryClassCode.
+									WAS: organization missing standardIndustryClassCode.
+									HL7 CDA R2 Organization has standardIndustryClassCode 0..1.
+									Form 043/u does not collect industry class — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+
 							</wholeOrganization>
 						</asOrganizationPartOf>
 					</serviceProviderOrganization>
@@ -23881,6 +24138,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -24650,6 +24922,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -25824,6 +26111,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				</performer>
 				<!--
@@ -26629,6 +26931,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				
 			<!--
@@ -27728,6 +28045,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -28533,6 +28865,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -32280,6 +32627,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -33049,6 +33411,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -34223,6 +34600,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				</performer>
 				<!--
@@ -35028,6 +35420,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				
 			<!--
@@ -36127,6 +36534,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -36932,6 +37354,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -38419,6 +38856,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 								</performer>
 								<!--
@@ -39224,6 +39676,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 								
 			<!--
@@ -40323,6 +40790,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 									</performer>
 									<!--
@@ -41128,6 +41610,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 									
 			<!--
@@ -44620,6 +45117,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -45389,6 +45901,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -46563,6 +47090,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				</performer>
 				<!--
@@ -47368,6 +47910,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				
 			<!--
@@ -48467,6 +49024,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -49272,6 +49844,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -50759,6 +51346,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 								</performer>
 								<!--
@@ -51564,6 +52166,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 								
 			<!--
@@ -52663,6 +53280,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 									</performer>
 									<!--
@@ -53468,6 +54100,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 									
 			<!--
@@ -56974,6 +57621,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -57743,6 +58405,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -58917,6 +59594,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				</performer>
 				<!--
@@ -59722,6 +60414,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				
 			<!--
@@ -60821,6 +61528,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -61626,6 +62348,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -63113,6 +63850,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 								</performer>
 								<!--
@@ -63918,6 +64670,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 								
 			<!--
@@ -65017,6 +65784,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 									</performer>
 									<!--
@@ -65822,6 +66604,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 									
 			<!--
@@ -69330,6 +70127,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -70099,6 +70911,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -71224,6 +72051,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				</performer>
 				<!--
@@ -72029,6 +72871,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				
 			<!--
@@ -75662,6 +76519,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -76431,6 +77303,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -77605,6 +78492,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				</performer>
 				<!--
@@ -78410,6 +79312,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				
 			<!--
@@ -79509,6 +80426,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -80314,6 +81246,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -81801,6 +82748,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 								</performer>
 								<!--
@@ -82606,6 +83568,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 								
 			<!--
@@ -83705,6 +84682,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 									</performer>
 									<!--
@@ -84510,6 +85502,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 									
 			<!--
@@ -88015,6 +89022,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -88784,6 +89806,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -89958,6 +90995,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				</performer>
 				<!--
@@ -90763,6 +91815,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				
 			<!--
@@ -91862,6 +92929,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -92667,6 +93749,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -94154,6 +95251,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 								</performer>
 								<!--
@@ -94959,6 +96071,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 								
 			<!--
@@ -96058,6 +97185,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 									</performer>
 									<!--
@@ -96863,6 +98005,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 									
 			<!--
@@ -100453,6 +101610,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -101222,6 +102394,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
@@ -102396,6 +103583,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				</performer>
 				<!--
@@ -103201,6 +104403,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 				
 			<!--
@@ -104300,6 +105517,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					</performer>
 					<!--
@@ -105105,6 +106337,21 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2556: assignedEntity/representedOrganization.
+						WAS: role missing representedOrganization.
+						HL7 CDA R2 AssignedEntity/AssignedAuthor has representedOrganization 0..1.
+						Form 043/u does not collect a separate org for this role clone — do not invent.
+						NOW: minimal representedOrganization NI shell (no nested AOP).
+					-->
+					<representedOrganization classCode="ORG" determinerCode="INSTANCE">
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</representedOrganization>
+
 </assignedEntity>
 					
 			<!--
