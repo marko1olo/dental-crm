@@ -1188,6 +1188,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<addr nullFlavor="NI"/>
 				<telecom nullFlavor="NI"/>
 				<name>${escapeXml(params.clinicName)}</name>
+				<!--
+					DEFECT #2341: representedOrganization/standardIndustryClassCode.
+					WAS: clinic org had id/addr/telecom/name only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under legalAuthenticator. Form 043/u has no OKVED for MO shell; do not invent.
+					NOW: standardIndustryClassCode nullFlavor NI.
+				-->
+				<standardIndustryClassCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2342: representedOrganization/asOrganizationPartOf.
+					WAS: clinic org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for MO shell; do not invent.
+					NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+				-->
+				<asOrganizationPartOf>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<wholeOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</wholeOrganization>
+				</asOrganizationPartOf>
 			</representedOrganization>
 		</assignedEntity>
 	</legalAuthenticator>
@@ -1325,6 +1347,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<addr nullFlavor="NI"/>
 				<telecom nullFlavor="NI"/>
 				<name>${escapeXml(params.clinicName)}</name>
+				<!--
+					DEFECT #2343: representedOrganization/standardIndustryClassCode.
+					WAS: clinic org had id/addr/telecom/name only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under authenticator. Form 043/u has no OKVED for MO shell; do not invent.
+					NOW: standardIndustryClassCode nullFlavor NI.
+				-->
+				<standardIndustryClassCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2344: representedOrganization/asOrganizationPartOf.
+					WAS: clinic org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for MO shell; do not invent.
+					NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+				-->
+				<asOrganizationPartOf>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<wholeOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</wholeOrganization>
+				</asOrganizationPartOf>
 			</representedOrganization>
 		</assignedEntity>
 	</authenticator>
@@ -1650,6 +1694,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<addr nullFlavor="NI"/>
 						<telecom nullFlavor="NI"/>
 						<name>${escapeXml(params.clinicName)}</name>
+						<!--
+							DEFECT #2345: representedOrganization/standardIndustryClassCode.
+							WAS: clinic org had id/addr/telecom/name only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under serviceEvent/performer. Form 043/u has no OKVED for MO shell; do not invent.
+							NOW: standardIndustryClassCode nullFlavor NI.
+						-->
+						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2346: representedOrganization/asOrganizationPartOf.
+							WAS: clinic org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for MO shell; do not invent.
+							NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+						-->
+						<asOrganizationPartOf>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
 					</representedOrganization>
 				</assignedEntity>
 			</performer>
@@ -2041,6 +2107,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2279: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2280: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
@@ -2386,6 +2474,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
+							<!--
+								DEFECT #2281: representedOrganization/standardIndustryClassCode.
+								WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+								NOW: standardIndustryClassCode nullFlavor NI.
+							-->
+							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2282: representedOrganization/asOrganizationPartOf.
+								WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+								NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+							-->
+							<asOrganizationPartOf>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
@@ -2674,6 +2784,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2283: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2284: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
@@ -3394,6 +3526,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<telecom nullFlavor="NI"/>
+						<!--
+							DEFECT #2263: representedOrganization/standardIndustryClassCode.
+							WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+							NOW: standardIndustryClassCode nullFlavor NI.
+						-->
+						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2264: representedOrganization/asOrganizationPartOf.
+							WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+							NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+						-->
+						<asOrganizationPartOf>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
 					</representedOrganization>
 				</assignedAuthor>
 			</author>
@@ -3772,26 +3926,48 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							NOW: birthTime nullFlavor NI.
 						-->
 						<birthTime nullFlavor="NI"/>
-						<!--
-							DEFECT #1655: assignedPerson/birthplace.
-							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
-							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
-							NOW: birthplace/place name/addr/telecom NI.
-						-->
-						<birthplace>
-							<place>
-								<name nullFlavor="NI"/>
-								<addr nullFlavor="NI"/>
-								<telecom nullFlavor="NI"/>
-							</place>
-						</birthplace>
-					</assignedPerson>
-					<representedOrganization>
-						<id nullFlavor="NI"/>
-						<name nullFlavor="NI"/>
-						<addr nullFlavor="NI"/>
-						<telecom nullFlavor="NI"/>
-					</representedOrganization>
+							<!--
+								DEFECT #1609: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
+						</assignedPerson>
+						<representedOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<!--
+								DEFECT #2265: representedOrganization/standardIndustryClassCode.
+								WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+								NOW: standardIndustryClassCode nullFlavor NI.
+							-->
+							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2266: representedOrganization/asOrganizationPartOf.
+								WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+								NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+							-->
+							<asOrganizationPartOf>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+						</representedOrganization>
 				</assignedAuthor>
 			</author>
 			<!--
@@ -4715,26 +4891,48 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							NOW: birthTime nullFlavor NI.
 						-->
 						<birthTime nullFlavor="NI"/>
-						<!--
-							DEFECT #1686: assignedPerson/birthplace.
-							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
-							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
-							NOW: birthplace/place name/addr/telecom NI.
-						-->
-						<birthplace>
-							<place>
+								<!--
+									DEFECT #1624: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
-							</place>
-						</birthplace>
-					</assignedPerson>
-					<representedOrganization>
-						<id nullFlavor="NI"/>
-						<name nullFlavor="NI"/>
-						<addr nullFlavor="NI"/>
-						<telecom nullFlavor="NI"/>
-					</representedOrganization>
+								<!--
+									DEFECT #2267: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2268: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+							</representedOrganization>
 				</assignedAuthor>
 			</author>
 			<!--
@@ -5866,6 +6064,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2285: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2286: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
@@ -6192,26 +6412,48 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								NOW: birthTime nullFlavor NI.
 							-->
 							<birthTime nullFlavor="NI"/>
-							<!--
-								DEFECT #1716: assignedPerson/birthplace.
-								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
-								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
-								NOW: birthplace/place name/addr/telecom NI.
-							-->
-							<birthplace>
-								<place>
-									<name nullFlavor="NI"/>
-									<addr nullFlavor="NI"/>
-									<telecom nullFlavor="NI"/>
-								</place>
-							</birthplace>
-						</assignedPerson>
-						<representedOrganization>
-							<id nullFlavor="NI"/>
-							<name nullFlavor="NI"/>
-							<addr nullFlavor="NI"/>
-							<telecom nullFlavor="NI"/>
-						</representedOrganization>
+						<!--
+							DEFECT #1655: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
+					</assignedPerson>
+					<representedOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<!--
+							DEFECT #2269: representedOrganization/standardIndustryClassCode.
+							WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+							NOW: standardIndustryClassCode nullFlavor NI.
+						-->
+						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2270: representedOrganization/asOrganizationPartOf.
+							WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+							NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+						-->
+						<asOrganizationPartOf>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+					</representedOrganization>
 					</assignedAuthor>
 				</author>
 				<!--
@@ -6480,26 +6722,48 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 									NOW: birthTime nullFlavor NI.
 								-->
 								<birthTime nullFlavor="NI"/>
-								<!--
-									DEFECT #1731: assignedPerson/birthplace.
-									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
-									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
-									NOW: birthplace/place name/addr/telecom NI.
-								-->
-								<birthplace>
-									<place>
-										<name nullFlavor="NI"/>
-										<addr nullFlavor="NI"/>
-										<telecom nullFlavor="NI"/>
-									</place>
-								</birthplace>
-							</assignedPerson>
-							<representedOrganization>
+						<!--
+							DEFECT #1686: assignedPerson/birthplace.
+							WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+							SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+							NOW: birthplace/place name/addr/telecom NI.
+						-->
+						<birthplace>
+							<place>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</place>
+						</birthplace>
+					</assignedPerson>
+					<representedOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<!--
+							DEFECT #2271: representedOrganization/standardIndustryClassCode.
+							WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+							NOW: standardIndustryClassCode nullFlavor NI.
+						-->
+						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2272: representedOrganization/asOrganizationPartOf.
+							WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+							NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+						-->
+						<asOrganizationPartOf>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
 								<id nullFlavor="NI"/>
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
-							</representedOrganization>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+					</representedOrganization>
 						</assignedAuthor>
 					</author>
 					<!--
@@ -7773,6 +8037,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2287: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2288: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
@@ -8100,7 +8386,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							-->
 							<birthTime nullFlavor="NI"/>
 							<!--
-								DEFECT #1760: assignedPerson/birthplace.
+								DEFECT #1716: assignedPerson/birthplace.
 								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
 								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
 								NOW: birthplace/place name/addr/telecom NI.
@@ -8118,6 +8404,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
+							<!--
+								DEFECT #2273: representedOrganization/standardIndustryClassCode.
+								WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+								NOW: standardIndustryClassCode nullFlavor NI.
+							-->
+							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2274: representedOrganization/asOrganizationPartOf.
+								WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+								NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+							-->
+							<asOrganizationPartOf>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
@@ -8388,7 +8696,7 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								-->
 								<birthTime nullFlavor="NI"/>
 								<!--
-									DEFECT #1775: assignedPerson/birthplace.
+									DEFECT #1731: assignedPerson/birthplace.
 									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
 									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
 									NOW: birthplace/place name/addr/telecom NI.
@@ -8406,6 +8714,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2275: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2276: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
@@ -9091,26 +9421,48 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												NOW: birthTime nullFlavor NI.
 											-->
 											<birthTime nullFlavor="NI"/>
-											<!--
-												DEFECT #1791: assignedPerson/birthplace.
-												WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
-												SEMD often flags incomplete Person without birthplace slot. Do not invent place.
-												NOW: birthplace/place name/addr/telecom NI.
-											-->
-											<birthplace>
-												<place>
-													<name nullFlavor="NI"/>
-													<addr nullFlavor="NI"/>
-													<telecom nullFlavor="NI"/>
-												</place>
-											</birthplace>
-										</assignedPerson>
-										<representedOrganization>
-											<id nullFlavor="NI"/>
-											<name nullFlavor="NI"/>
-											<addr nullFlavor="NI"/>
-											<telecom nullFlavor="NI"/>
-										</representedOrganization>
+							<!--
+								DEFECT #1760: assignedPerson/birthplace.
+								WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+								SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+								NOW: birthplace/place name/addr/telecom NI.
+							-->
+							<birthplace>
+								<place>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</place>
+							</birthplace>
+						</assignedPerson>
+						<representedOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<!--
+								DEFECT #2277: representedOrganization/standardIndustryClassCode.
+								WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+								NOW: standardIndustryClassCode nullFlavor NI.
+							-->
+							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2278: representedOrganization/asOrganizationPartOf.
+								WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+								NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+							-->
+							<asOrganizationPartOf>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+						</representedOrganization>
 									</assignedAuthor>
 								</author>
 								<!--
@@ -9398,6 +9750,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												<name nullFlavor="NI"/>
 												<addr nullFlavor="NI"/>
 												<telecom nullFlavor="NI"/>
+												<!--
+													DEFECT #2289: representedOrganization/standardIndustryClassCode.
+													WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+													NOW: standardIndustryClassCode nullFlavor NI.
+												-->
+												<standardIndustryClassCode nullFlavor="NI"/>
+												<!--
+													DEFECT #2290: representedOrganization/asOrganizationPartOf.
+													WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+													NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+												-->
+												<asOrganizationPartOf>
+													<code nullFlavor="NI"/>
+													<statusCode nullFlavor="NI"/>
+													<effectiveTime nullFlavor="NI"/>
+													<wholeOrganization>
+														<id nullFlavor="NI"/>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</wholeOrganization>
+												</asOrganizationPartOf>
 											</representedOrganization>
 										</assignedAuthor>
 									</author>
@@ -10438,6 +10812,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2291: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2292: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
@@ -10783,6 +11179,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
+							<!--
+								DEFECT #2293: representedOrganization/standardIndustryClassCode.
+								WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+								NOW: standardIndustryClassCode nullFlavor NI.
+							-->
+							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2294: representedOrganization/asOrganizationPartOf.
+								WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+								NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+							-->
+							<asOrganizationPartOf>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
@@ -11071,6 +11489,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2295: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2296: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
@@ -11775,6 +12215,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<name nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
 											<telecom nullFlavor="NI"/>
+											<!--
+												DEFECT #2297: representedOrganization/standardIndustryClassCode.
+												WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+												NOW: standardIndustryClassCode nullFlavor NI.
+											-->
+											<standardIndustryClassCode nullFlavor="NI"/>
+											<!--
+												DEFECT #2298: representedOrganization/asOrganizationPartOf.
+												WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+												NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+											-->
+											<asOrganizationPartOf>
+												<code nullFlavor="NI"/>
+												<statusCode nullFlavor="NI"/>
+												<effectiveTime nullFlavor="NI"/>
+												<wholeOrganization>
+													<id nullFlavor="NI"/>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</wholeOrganization>
+											</asOrganizationPartOf>
 										</representedOrganization>
 									</assignedAuthor>
 								</author>
@@ -12063,6 +12525,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												<name nullFlavor="NI"/>
 												<addr nullFlavor="NI"/>
 												<telecom nullFlavor="NI"/>
+												<!--
+													DEFECT #2299: representedOrganization/standardIndustryClassCode.
+													WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+													NOW: standardIndustryClassCode nullFlavor NI.
+												-->
+												<standardIndustryClassCode nullFlavor="NI"/>
+												<!--
+													DEFECT #2300: representedOrganization/asOrganizationPartOf.
+													WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+													NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+												-->
+												<asOrganizationPartOf>
+													<code nullFlavor="NI"/>
+													<statusCode nullFlavor="NI"/>
+													<effectiveTime nullFlavor="NI"/>
+													<wholeOrganization>
+														<id nullFlavor="NI"/>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</wholeOrganization>
+												</asOrganizationPartOf>
 											</representedOrganization>
 										</assignedAuthor>
 									</author>
@@ -13117,6 +13601,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2301: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2302: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
@@ -13462,6 +13968,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
+							<!--
+								DEFECT #2303: representedOrganization/standardIndustryClassCode.
+								WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+								NOW: standardIndustryClassCode nullFlavor NI.
+							-->
+							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2304: representedOrganization/asOrganizationPartOf.
+								WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+								NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+							-->
+							<asOrganizationPartOf>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
@@ -13750,6 +14278,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2305: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2306: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
@@ -14454,6 +15004,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<name nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
 											<telecom nullFlavor="NI"/>
+											<!--
+												DEFECT #2307: representedOrganization/standardIndustryClassCode.
+												WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+												NOW: standardIndustryClassCode nullFlavor NI.
+											-->
+											<standardIndustryClassCode nullFlavor="NI"/>
+											<!--
+												DEFECT #2308: representedOrganization/asOrganizationPartOf.
+												WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+												NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+											-->
+											<asOrganizationPartOf>
+												<code nullFlavor="NI"/>
+												<statusCode nullFlavor="NI"/>
+												<effectiveTime nullFlavor="NI"/>
+												<wholeOrganization>
+													<id nullFlavor="NI"/>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</wholeOrganization>
+											</asOrganizationPartOf>
 										</representedOrganization>
 									</assignedAuthor>
 								</author>
@@ -14742,6 +15314,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												<name nullFlavor="NI"/>
 												<addr nullFlavor="NI"/>
 												<telecom nullFlavor="NI"/>
+												<!--
+													DEFECT #2309: representedOrganization/standardIndustryClassCode.
+													WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+													NOW: standardIndustryClassCode nullFlavor NI.
+												-->
+												<standardIndustryClassCode nullFlavor="NI"/>
+												<!--
+													DEFECT #2310: representedOrganization/asOrganizationPartOf.
+													WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+													NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+												-->
+												<asOrganizationPartOf>
+													<code nullFlavor="NI"/>
+													<statusCode nullFlavor="NI"/>
+													<effectiveTime nullFlavor="NI"/>
+													<wholeOrganization>
+														<id nullFlavor="NI"/>
+														<name nullFlavor="NI"/>
+														<addr nullFlavor="NI"/>
+														<telecom nullFlavor="NI"/>
+													</wholeOrganization>
+												</asOrganizationPartOf>
 											</representedOrganization>
 										</assignedAuthor>
 									</author>
@@ -15790,6 +16384,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2311: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2312: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
@@ -16135,6 +16751,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
+							<!--
+								DEFECT #2313: representedOrganization/standardIndustryClassCode.
+								WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+								NOW: standardIndustryClassCode nullFlavor NI.
+							-->
+							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2314: representedOrganization/asOrganizationPartOf.
+								WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+								NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+							-->
+							<asOrganizationPartOf>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
@@ -17344,6 +17982,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2315: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2316: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
@@ -17689,6 +18349,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
+							<!--
+								DEFECT #2317: representedOrganization/standardIndustryClassCode.
+								WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+								NOW: standardIndustryClassCode nullFlavor NI.
+							-->
+							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2318: representedOrganization/asOrganizationPartOf.
+								WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+								NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+							-->
+							<asOrganizationPartOf>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
@@ -17977,6 +18659,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2319: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2320: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
@@ -18681,6 +19385,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<name nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
 											<telecom nullFlavor="NI"/>
+											<!--
+												DEFECT #2321: representedOrganization/standardIndustryClassCode.
+												WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+												NOW: standardIndustryClassCode nullFlavor NI.
+											-->
+											<standardIndustryClassCode nullFlavor="NI"/>
+											<!--
+												DEFECT #2322: representedOrganization/asOrganizationPartOf.
+												WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+												NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+											-->
+											<asOrganizationPartOf>
+												<code nullFlavor="NI"/>
+												<statusCode nullFlavor="NI"/>
+												<effectiveTime nullFlavor="NI"/>
+												<wholeOrganization>
+													<id nullFlavor="NI"/>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</wholeOrganization>
+											</asOrganizationPartOf>
 										</representedOrganization>
 									</assignedAuthor>
 								</author>
@@ -18951,25 +19677,47 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												-->
 												<birthTime nullFlavor="NI"/>
 												<!--
-													DEFECT #2057: assignedPerson/birthplace.
-													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
-													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
-													NOW: birthplace/place name/addr/telecom NI.
-												-->
-												<birthplace>
-													<place>
-														<name nullFlavor="NI"/>
-														<addr nullFlavor="NI"/>
-														<telecom nullFlavor="NI"/>
-													</place>
-												</birthplace>
-											</assignedPerson>
-											<representedOrganization>
-												<id nullFlavor="NI"/>
-												<name nullFlavor="NI"/>
-												<addr nullFlavor="NI"/>
-												<telecom nullFlavor="NI"/>
-											</representedOrganization>
+									DEFECT #2057: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2323: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2324: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+							</representedOrganization>
 										</assignedAuthor>
 									</author>
 									<!--
@@ -20022,6 +20770,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2325: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2326: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
@@ -20367,6 +21137,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
+							<!--
+								DEFECT #2327: representedOrganization/standardIndustryClassCode.
+								WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+								NOW: standardIndustryClassCode nullFlavor NI.
+							-->
+							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2328: representedOrganization/asOrganizationPartOf.
+								WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+								NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+							-->
+							<asOrganizationPartOf>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
@@ -20655,6 +21447,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2329: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2330: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
@@ -21359,6 +22173,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 											<name nullFlavor="NI"/>
 											<addr nullFlavor="NI"/>
 											<telecom nullFlavor="NI"/>
+											<!--
+												DEFECT #2331: representedOrganization/standardIndustryClassCode.
+												WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+												NOW: standardIndustryClassCode nullFlavor NI.
+											-->
+											<standardIndustryClassCode nullFlavor="NI"/>
+											<!--
+												DEFECT #2332: representedOrganization/asOrganizationPartOf.
+												WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+												NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+											-->
+											<asOrganizationPartOf>
+												<code nullFlavor="NI"/>
+												<statusCode nullFlavor="NI"/>
+												<effectiveTime nullFlavor="NI"/>
+												<wholeOrganization>
+													<id nullFlavor="NI"/>
+													<name nullFlavor="NI"/>
+													<addr nullFlavor="NI"/>
+													<telecom nullFlavor="NI"/>
+												</wholeOrganization>
+											</asOrganizationPartOf>
 										</representedOrganization>
 									</assignedAuthor>
 								</author>
@@ -21629,25 +22465,47 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 												-->
 												<birthTime nullFlavor="NI"/>
 												<!--
-													DEFECT #2131: assignedPerson/birthplace.
-													WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
-													SEMD often flags incomplete Person without birthplace slot. Do not invent place.
-													NOW: birthplace/place name/addr/telecom NI.
-												-->
-												<birthplace>
-													<place>
-														<name nullFlavor="NI"/>
-														<addr nullFlavor="NI"/>
-														<telecom nullFlavor="NI"/>
-													</place>
-												</birthplace>
-											</assignedPerson>
-											<representedOrganization>
-												<id nullFlavor="NI"/>
-												<name nullFlavor="NI"/>
-												<addr nullFlavor="NI"/>
-												<telecom nullFlavor="NI"/>
-											</representedOrganization>
+									DEFECT #2131: assignedPerson/birthplace.
+									WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+									SEMD often flags incomplete Person without birthplace slot. Do not invent place.
+									NOW: birthplace/place name/addr/telecom NI.
+								-->
+								<birthplace>
+									<place>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</place>
+								</birthplace>
+							</assignedPerson>
+							<representedOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2333: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2334: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+							</representedOrganization>
 										</assignedAuthor>
 									</author>
 									<!--
@@ -22777,6 +23635,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2335: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2336: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
@@ -23122,6 +24002,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 							<name nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<telecom nullFlavor="NI"/>
+							<!--
+								DEFECT #2337: representedOrganization/standardIndustryClassCode.
+								WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+								NOW: standardIndustryClassCode nullFlavor NI.
+							-->
+							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2338: representedOrganization/asOrganizationPartOf.
+								WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+								NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+							-->
+							<asOrganizationPartOf>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
 						</representedOrganization>
 					</assignedAuthor>
 				</author>
@@ -23410,6 +24312,28 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 								<name nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2339: representedOrganization/standardIndustryClassCode.
+									WAS: org had id/name/addr/telecom only — no standardIndustryClassCode. HL7 CDA R2 Organization has standardIndustryClassCode 0..1. SEMD often flags incomplete Organization under assignedAuthor. Form 043/u has no industry class for this shell org; do not invent OKVED.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2340: representedOrganization/asOrganizationPartOf.
+									WAS: org had no asOrganizationPartOf. HL7 CDA R2 Organization has asOrganizationPartOf 0..*. SEMD often flags missing wholeOrganization hierarchy. Form 043/u has no parent org for this shell; do not invent.
+									NOW: asOrganizationPartOf with code/statusCode/effectiveTime NI + wholeOrganization id/name/addr/telecom NI.
+								-->
+								<asOrganizationPartOf>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
 							</representedOrganization>
 						</assignedAuthor>
 					</author>
