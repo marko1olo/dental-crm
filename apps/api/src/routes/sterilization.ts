@@ -2,7 +2,10 @@ import crypto from "crypto";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
+import {
+	requireClinicalMutationContext,
+	requireResolvedStaffOrAdminOrganizationId,
+} from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { sterilizationLogs, users, visitDiaries } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
@@ -118,12 +121,21 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 	});
 
 	app.post("/api/sterilization/link", async (req, reply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+		/*
+		 * Clinical mutation context (not staff-only org).
+		 * BYLO: requireResolvedStaffOrAdminOrganizationId — tolko JWT staff/org,
+		 * bez requireClinicalMutationAccess. Client link bez mutation headers
+		 * prohodil v dev (unguarded) i pisal visit_diaries.barcode + diary_hash.
+		 * STALO: tot zhe gate, chto POST /api/diaries draft/lock — secret kliniki
+		 * + verified organizationId. scan/logs ostayutsya staff-org (zhurnal SanPiN).
+		 */
+		const clinical = await requireClinicalMutationContext(
 			req,
 			reply,
 			"sterilization link",
 		);
-		if (!organizationId) return;
+		if (!clinical) return;
+		const organizationId = clinical.organizationId;
 		const linkParsed = z
 			.object({ visitId: z.string().uuid(), barcode: z.string() })
 			.safeParse(req.body);

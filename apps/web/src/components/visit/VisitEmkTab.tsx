@@ -183,7 +183,16 @@ export function VisitEmkTab() {
 		}
 		setIsLinkingTray(true);
 		try {
-			const headers = appLogic.auth?.denteClinicalReadHeaders?.({ "Content-Type": "application/json" }) ?? { "Content-Type": "application/json" };
+			/*
+			 * POST /api/sterilization/link — klinicheskaya mutaciya visit_diaries.
+			 * BYLO: denteClinicalReadHeaders (read-secret). Pri requireClinicalMutation
+			 * na API read-secret ne prohodit mutation gate → 403 u zakazchika.
+			 * STALO: denteClinicalMutationHeaders, kak diary draft/lock.
+			 */
+			const headers =
+				appLogic.auth?.denteClinicalMutationHeaders?.({
+					"Content-Type": "application/json",
+				}) ?? { "Content-Type": "application/json" };
 			const res = await fetch("/api/sterilization/link", {
 				method: "POST",
 				headers,

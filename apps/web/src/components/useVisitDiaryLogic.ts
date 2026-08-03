@@ -206,7 +206,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	 * «ЭЦП (SHA-256)» как будто подпись на месте. hasCryptoSignature=false
 	 * до повторного /lock с телом pkcs7.
 	 */
-	const [hasCryptoSignature, setHasCryptoSignature] = useState(false);
+	const [hasCryptoSignature, setHasCryptoSignature] = useState(false);
 	/*
 	 * DEFECT #36: ФИО врача из строки дневника (GET doctorFullName).
 	 * Печать 043/у не должна подставлять activeDoctor смены.
@@ -971,9 +971,24 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			return { ok: true, hash: fallbackHash ?? diaryHash };
 		}
 		try {
+			/*
+			 * Clinical mutation headers on sterilization/link.
+			 * BYLO: tolko Content-Type. API pishet visit_diaries (barcode + diary_hash)
+			 * — ta zhe klinicheskaya mutaciya, chto draft/lock. Bez x-dente-admin-secret
+			 * (i pri requireClinicalMutationContext na servere) u zakazchika 403:
+			 * ensureDraftSavedForSigning / doLock PIN-path ne privyazyvali lotok,
+			 * PKCS#7 shjol na hash bez barcode ili podpis sryvalas.
+			 * authRef — tot zhe, chto doSave/doLock (ne useAppLogic() s pustym sekretom).
+			 */
+			const headerSource = authRef.current;
 			const linkRes = await fetch("/api/sterilization/link", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers:
+					headerSource && typeof headerSource.denteClinicalMutationHeaders === "function"
+						? headerSource.denteClinicalMutationHeaders({
+								"Content-Type": "application/json",
+							})
+						: { "Content-Type": "application/json" },
 				body: JSON.stringify({ visitId, barcode: trayBarcode }),
 			});
 			if (!linkRes.ok) {
