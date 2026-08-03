@@ -1231,7 +1231,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 	</dataEnterer>
 		<!--
 		DEFECT #128: ClinicalDocument/informant (HL7 CDA R2 / EGISZ SEMD).
@@ -1490,7 +1508,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 	
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -1688,6 +1724,82 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<informationRecipient>
 				<name nullFlavor="NI"/>
+				<!--
+					DEFECT #2472: informationRecipient (person)/administrativeGenderCode.
+					WAS: informationRecipient person had only name NI — no administrativeGenderCode.
+					HL7 CDA R2 Person may carry administrativeGenderCode 0..1. SEMD often flags
+					incomplete person under intendedRecipient/informationRecipient.
+					Form 043/u routes SEMD to the MO org, not a named person gender — do not invent.
+					NOW: administrativeGenderCode nullFlavor NI.
+				-->
+				<administrativeGenderCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2473: informationRecipient (person)/birthTime.
+					WAS: person missing birthTime. HL7 CDA R2 Person may carry birthTime 0..1.
+					Do not invent DOB for intended recipient person.
+					NOW: birthTime nullFlavor NI.
+				-->
+				<birthTime nullFlavor="NI"/>
+				<!--
+					DEFECT #2474: informationRecipient (person)/birthplace.
+					WAS: person missing birthplace. HL7 CDA R2 Person may carry birthplace 0..1.
+					Do not invent birth place for recipient person.
+					NOW: birthplace/place name/addr/telecom NI.
+				-->
+				<birthplace>
+					<place>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</place>
+				</birthplace>
+				<!--
+					DEFECT #2475: informationRecipient (person)/maritalStatusCode.
+					WAS: person missing maritalStatusCode. HL7 CDA R2 Person may carry
+					maritalStatusCode 0..1. Do not invent marital status.
+					NOW: maritalStatusCode nullFlavor NI.
+				-->
+				<maritalStatusCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2476: informationRecipient (person)/raceCode.
+					WAS: person missing raceCode. HL7 CDA R2 Person may carry raceCode 0..*.
+					Do not invent race.
+					NOW: raceCode nullFlavor NI.
+				-->
+				<raceCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2477: informationRecipient (person)/ethnicGroupCode.
+					WAS: person missing ethnicGroupCode. HL7 CDA R2 Person may carry
+					ethnicGroupCode 0..*. Do not invent ethnicity.
+					NOW: ethnicGroupCode nullFlavor NI.
+				-->
+				<ethnicGroupCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2478: informationRecipient (person)/languageCommunication.
+					WAS: person missing languageCommunication. HL7 CDA R2 Person may carry
+					languageCommunication 0..*. Do not invent language/proficiency.
+					NOW: languageCommunication languageCode/modeCode/proficiencyLevelCode/preferenceInd NI.
+				-->
+				<languageCommunication>
+					<languageCode nullFlavor="NI"/>
+					<modeCode nullFlavor="NI"/>
+					<proficiencyLevelCode nullFlavor="NI"/>
+					<preferenceInd nullFlavor="NI"/>
+				</languageCommunication>
+				<!--
+					DEFECT #2479: informationRecipient (person)/asCitizen.
+					WAS: person missing asCitizen. HL7 CDA R2 Person may carry asCitizen
+					(citizenship). Do not invent citizenship/nation.
+					NOW: asCitizen code NI + politicalNation code/name NI.
+				-->
+				<asCitizen>
+					<code nullFlavor="NI"/>
+					<politicalNation>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</politicalNation>
+				</asCitizen>
+
 			</informationRecipient>
 			<receivedOrganization>
 				${params.clinicOid && String(params.clinicOid).trim()
@@ -2029,7 +2141,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 	</legalAuthenticator>
 	<!--
 		DEFECT #95: authenticator (who attested the clinical content).
@@ -2318,7 +2448,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 	</authenticator>
 	<!-- DEFECT #55/#65: encounter datetime (params.visitDate / appointment.startsAt) -->
 
@@ -2786,7 +2934,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 			</performer>
 			<!--
 				DEFECT #290: documentationOf/serviceEvent/author.
@@ -3200,7 +3366,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 			
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -3689,7 +3873,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2185: precondition/criterion/author.
@@ -3985,7 +4187,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -4554,7 +4774,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #939: reference/externalAct/author.
@@ -4886,7 +5124,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -5380,7 +5636,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1318: entryRelationship/act/author.
@@ -5712,7 +5986,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -6915,7 +7207,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 		</performer>
 		<!--
 			DEFECT #1035: inFulfillmentOf/order/informant.
@@ -7079,7 +7389,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 		
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -7573,7 +7901,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 			</performer>
 			<!--
 				DEFECT #1327: entryRelationship/act/author.
@@ -7905,7 +8251,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 			
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -8751,7 +9115,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 
 		</performer>
 
@@ -9064,7 +9446,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 		
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -9620,7 +10020,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 			</performer>
 			<!--
 				DEFECT #1336: entryRelationship/act/author.
@@ -9952,7 +10370,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 			
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -10795,7 +11231,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 			</encounterParticipant>
 			<responsibleParty>
 
@@ -11031,7 +11485,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 			</responsibleParty>
 
 			<!--
@@ -11527,7 +11999,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 			
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -12016,7 +12506,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2194: precondition/criterion/author.
@@ -12312,7 +12820,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -12881,7 +13407,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #940: reference/externalAct/author.
@@ -13213,7 +13757,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -13707,7 +14269,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1345: entryRelationship/act/author.
@@ -14039,7 +14619,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -15206,7 +15804,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 							</performer>
 							<!--
 								DEFECT #283: diagnosis observation/author.
@@ -15621,7 +16237,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 							
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -16110,7 +16744,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2203: precondition/criterion/author.
@@ -16406,7 +17058,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -16975,7 +17645,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #941: reference/externalAct/author.
@@ -17307,7 +17995,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -17801,7 +18507,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1354: entryRelationship/act/author.
@@ -18133,7 +18857,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -19043,7 +19785,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 								</performer>
 								<!--
 									DEFECT #1023: referenceRange/observationRange/author.
@@ -19375,7 +20135,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 								
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -19869,7 +20647,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 									</performer>
 									<!--
 										DEFECT #1363: entryRelationship/act/author.
@@ -20201,7 +20997,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 									
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -21134,7 +21948,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 							</performer>
 							<!--
 								DEFECT #284: anamnesis observation/author.
@@ -21549,7 +22381,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 							
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -22038,7 +22888,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2212: precondition/criterion/author.
@@ -22334,7 +23202,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -22903,7 +23789,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #942: reference/externalAct/author.
@@ -23235,7 +24139,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -23729,7 +24651,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1372: entryRelationship/act/author.
@@ -24061,7 +25001,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -24971,7 +25929,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 								</performer>
 								<!--
 									DEFECT #1024: referenceRange/observationRange/author.
@@ -25303,7 +26279,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 								
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -25797,7 +26791,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 									</performer>
 									<!--
 										DEFECT #1381: entryRelationship/act/author.
@@ -26129,7 +27141,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 									
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -27076,7 +28106,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 							</performer>
 							<!--
 								DEFECT #285: objective-status observation/author.
@@ -27491,7 +28539,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 							
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -27980,7 +29046,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2221: precondition/criterion/author.
@@ -28276,7 +29360,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -28845,7 +29947,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #943: reference/externalAct/author.
@@ -29177,7 +30297,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -29671,7 +30809,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1390: entryRelationship/act/author.
@@ -30003,7 +31159,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -30913,7 +32087,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 								</performer>
 								<!--
 									DEFECT #1025: referenceRange/observationRange/author.
@@ -31245,7 +32437,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 								
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -31739,7 +32949,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 									</performer>
 									<!--
 										DEFECT #1399: entryRelationship/act/author.
@@ -32071,7 +33299,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 									
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -33012,7 +34258,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 							</performer>
 							<!--
 								DEFECT #288: treatment act/author.
@@ -33427,7 +34691,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 							
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -33916,7 +35198,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2230: precondition/criterion/author.
@@ -34212,7 +35512,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -34781,7 +36099,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #944: reference/externalAct/author.
@@ -35113,7 +36449,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -36215,7 +37569,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 							</performer>
 							<!--
 								DEFECT #286: complications observation/author.
@@ -36630,7 +38002,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 							
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -37119,7 +38509,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2239: precondition/criterion/author.
@@ -37415,7 +38823,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -37984,7 +39410,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #945: reference/externalAct/author.
@@ -38316,7 +39760,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -38810,7 +40272,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1408: entryRelationship/act/author.
@@ -39142,7 +40622,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -40052,7 +41550,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 								</performer>
 								<!--
 									DEFECT #1026: referenceRange/observationRange/author.
@@ -40384,7 +41900,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 								
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -40878,7 +42412,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 									</performer>
 									<!--
 										DEFECT #1417: entryRelationship/act/author.
@@ -41210,7 +42762,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 									
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -42156,7 +43726,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 							</performer>
 							<!--
 								DEFECT #287: comorbidities observation/author.
@@ -42571,7 +44159,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 							
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -43060,7 +44666,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2248: precondition/criterion/author.
@@ -43356,7 +44980,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -43925,7 +45567,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #946: reference/externalAct/author.
@@ -44257,7 +45917,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -44751,7 +46429,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1426: entryRelationship/act/author.
@@ -45083,7 +46779,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -45993,7 +47707,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 								</performer>
 								<!--
 									DEFECT #1027: referenceRange/observationRange/author.
@@ -46325,7 +48057,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 								
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -46819,7 +48569,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 									</performer>
 									<!--
 										DEFECT #1435: entryRelationship/act/author.
@@ -47151,7 +48919,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 									
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -48174,7 +49960,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 							</performer>
 							<!--
 								DEFECT #289: instrument-tray supply/author.
@@ -48589,7 +50393,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 							
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -49078,7 +50900,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #2257: precondition/criterion/author.
@@ -49374,7 +51214,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -49943,7 +51801,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				</performer>
 				<!--
 					DEFECT #947: reference/externalAct/author.
@@ -50275,7 +52151,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 				
 			<!--
 				DEFECT #2454: informant/relatedEntity.
@@ -50769,7 +52663,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					</performer>
 					<!--
 						DEFECT #1444: entryRelationship/act/author.
@@ -51101,7 +53013,25 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<name nullFlavor="NI"/>
 					</groupOrganization>
 				</asMember>
-			</assignedEntity>
+			
+				<!--
+					DEFECT #2471: assignedEntity/asAffiliate.
+					WAS: assignedEntity had id/code/addr/telecom/person/org/asLicensedEntity/asMember
+					— no asAffiliate. HL7 RIM Role may carry asAffiliate (affiliation with
+					another organization / network / association). SEMD often flags incomplete
+					staff Role without affiliation slot. Form 043/u does not collect
+					external affiliation id — do not invent.
+					NOW: asAffiliate code/effectiveTime NI + affiliateOrganization id/name NI.
+				-->
+				<asAffiliate>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+</assignedEntity>
 					
 			<!--
 				DEFECT #2454: informant/relatedEntity.
