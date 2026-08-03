@@ -3859,6 +3859,69 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			<effectiveTime xsi:type="IVL_TS">
 				<low value="${visitTime}"/>
 			</effectiveTime>
+			<!--
+				DEFECT #2520: documentationOf/serviceEvent/reasonCode.
+				WAS: serviceEvent had id/code/text/status/effectiveTime/priority/
+				method and participations — no reasonCode. HL7 CDA R2 Act has
+				reasonCode 0..*. SEMD validators often flag missing reason under
+				documentationOf when body entries carry approach/reason shells.
+				Form 043/u chart does not collect a coded care-event reason
+				distinct from diagnosis OBS — do not invent a fake ActReason.
+				NOW: reasonCode nullFlavor NI until chart field exists.
+			-->
+			<reasonCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2521: documentationOf/serviceEvent/availabilityTime.
+				WAS: serviceEvent missing availabilityTime. HL7 CDA R2 Act has
+				availabilityTime 0..1 (when the information is available).
+				SEMD validators often flag missing availabilityTime under
+				documentationOf alongside effectiveTime. Form 043/u chart does
+				not collect a separate availability clock — do not invent.
+				NOW: availabilityTime nullFlavor NI until chart field exists.
+			-->
+			<availabilityTime nullFlavor="NI"/>
+			<!--
+				DEFECT #2522: documentationOf/serviceEvent/location.
+				WAS: serviceEvent had no care-event location participation
+				(facility lives under encompassingEncounter only). HL7 CDA R2
+				Act has location 0..*. SEMD validators often flag missing
+				location under documentationOf when componentOf emits HCF.
+				Form 043/u chart does not collect a second care-event site
+				distinct from encounter facility — do not invent place name/addr.
+				NOW: location participation shell with nullFlavor NI children.
+			-->
+			<location typeCode="LOC">
+				<time nullFlavor="NI"/>
+				<healthCareFacility>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<location>
+						<addr nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</location>
+					<serviceProviderOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+						<asOrganizationPartOf>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+					</serviceProviderOrganization>
+				</healthCareFacility>
+			</location>
 			<performer typeCode="PRF">
 				<!--
 					DEFECT #2492: performer/modeCode.
@@ -19610,6 +19673,45 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<priorityCode nullFlavor="NI"/>
 			<!--
+				DEFECT #2512: encompassingEncounter/specialCourtesiesCode.
+				WAS: encounter had disposition/referral/LOS/priority only —
+				no specialCourtesiesCode. HL7 CDA R2 Encounter has
+				specialCourtesiesCode 0..*. SEMD validators often flag missing
+				courtesies under ambulatory close alongside disposition.
+				Form 043/u ambulatory dental visit does not collect VIP/courtesies
+				— do not invent a fake HL7 EncounterSpecialCourtesy code.
+				NOW: specialCourtesiesCode nullFlavor NI until chart field exists.
+			-->
+			<specialCourtesiesCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2513: encompassingEncounter/specialArrangementCode.
+				WAS: encounter missing specialArrangementCode. HL7 CDA R2
+				Encounter has specialArrangementCode 0..*. SEMD validators often
+				flag missing special arrangement under ambulatory close.
+				Form 043/u chart does not collect wheelchair/interpreter arrangement
+				— do not invent a fake HL7 SpecialArrangement code.
+				NOW: specialArrangementCode nullFlavor NI until chart field exists.
+			-->
+			<specialArrangementCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2514: encompassingEncounter/departureTransportationCode.
+				WAS: encounter missing departureTransportationCode. HL7 CDA R2
+				Encounter has departureTransportationCode 0..1. SEMD validators
+				often flag missing departure transport under close.
+				Form 043/u ambulatory dental has no departure transport — do not invent.
+				NOW: departureTransportationCode nullFlavor NI until chart field exists.
+			-->
+			<departureTransportationCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2515: encompassingEncounter/preAdmitTestInd.
+				WAS: encounter missing preAdmitTestInd. HL7 CDA R2 Encounter has
+				preAdmitTestInd 0..1 (BL). SEMD validators often flag missing
+				pre-admit test indicator under close. Form 043/u ambulatory dental
+				has no pre-admit testing — do not invent true/false clinical claim.
+				NOW: preAdmitTestInd nullFlavor NI until chart field exists.
+			-->
+			<preAdmitTestInd nullFlavor="NI"/>
+			<!--
 				DEFECT #217: encompassingEncounter/methodCode.
 				WAS: encounter had priorityCode NI (#183) but no methodCode.
 				serviceEvent (#213) and treatment ACT (#208) already carry
@@ -19717,6 +19819,35 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 			-->
 			<encounterParticipant typeCode="ATND">
 				<time value="${visitTime}"/>
+				<!--
+					DEFECT #2517: encounterParticipant/functionCode.
+					WAS: ATND participant had time + assignedEntity only — no
+					functionCode. HL7 CDA R2 Participation has functionCode 0..1.
+					author/performer shells already emit functionCode NI (#2490+).
+					Form 043/u chart does not collect a separate ATND function
+					beyond typeCode=ATND — do not invent a fake ParticipationFunction.
+					NOW: functionCode nullFlavor NI until chart field exists.
+				-->
+				<functionCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2518: encounterParticipant/modeCode.
+					WAS: ATND participant missing modeCode. HL7 CDA R2
+					Participation has modeCode 0..1 (how the participant took part).
+					author/performer shells already emit modeCode NI (#2491+).
+					Form 043/u chart does not collect participation mode (in-person
+					vs phone) — do not invent a fake ParticipationMode code.
+					NOW: modeCode nullFlavor NI until chart field exists.
+				-->
+				<modeCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2519: encounterParticipant/awarenessCode.
+					WAS: ATND participant missing awarenessCode. HL7 CDA R2
+					Participation has awarenessCode 0..1. Form 043/u chart does
+					not collect participant awareness — do not invent a fake
+					TargetAwareness code.
+					NOW: awarenessCode nullFlavor NI until chart field exists.
+				-->
+				<awarenessCode nullFlavor="NI"/>
 				<assignedEntity>
 					${params.doctorSnils && String(params.doctorSnils).trim()
 						? `<id root="1.2.643.100.3" extension="${escapeXml(String(params.doctorSnils).trim())}"/>`
@@ -20536,6 +20667,17 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				location/name = clinicName (same root scheme as setId/id).
 			-->
 			<location>
+				<!--
+					DEFECT #2516: encompassingEncounter/location/time.
+					WAS: encounter location participation had healthCareFacility
+					only — no time. HL7 CDA R2 Participation has time 0..1.
+					SEMD validators often flag missing participation time under
+					componentOf when encounterParticipant already carries time.
+					Form 043/u chart does not collect a separate facility-arrival
+					clock distinct from visitTime — do not invent a second stamp.
+					NOW: time nullFlavor NI until chart field exists.
+				-->
+				<time nullFlavor="NI"/>
 				<healthCareFacility>
 					${/*
 					 * DEFECT #120: healthCareFacility/id must not invent extension="unknown".
@@ -20562,6 +20704,27 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						ambulatory dental protocol (Form 043/у), not inpatient.
 					-->
 					<code code="AMB" codeSystem="1.2.643.5.1.13.13.11.1461" codeSystemName="Виды медицинской помощи" displayName="Амбулаторная помощь"/>
+					<!--
+						DEFECT #2507: healthCareFacility/statusCode.
+						WAS: HCF had id/code/location/SPO only — no statusCode.
+						HL7 CDA R2 Role has statusCode 0..1. SEMD validators often
+						flag missing facility role lifecycle under
+						encompassingEncounter/location. Form 043/u ambulatory
+						export happens after the visit — do not invent a fake
+						status beyond the encounter-level completed.
+						NOW: statusCode nullFlavor NI until facility-status field exists.
+					-->
+					<statusCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2508: healthCareFacility/effectiveTime.
+						WAS: HCF had no effectiveTime/time. HL7 CDA R2 Role has
+						effectiveTime 0..1 (when the facility role is/was active).
+						SEMD validators often flag missing time under facility role
+						when encounter carries IVL_TS. Form 043/u chart does not
+						collect facility-role validity interval — do not invent.
+						NOW: effectiveTime nullFlavor NI until chart field exists.
+					-->
+					<effectiveTime nullFlavor="NI"/>
 					<location>
 						<!--
 							DEFECT #112: healthCareFacility/location addr
@@ -20575,6 +20738,16 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						-->
 						<addr nullFlavor="NI"/>
 						<name>${escapeXml(params.clinicName)}</name>
+						<!--
+							DEFECT #2509: healthCareFacility/location Place telecom.
+							WAS: Place under HCF had addr + name only — no telecom.
+							HL7 CDA R2 Place has telecom 0..*. SEMD validators often
+							flag missing contact under facility place when SPO already
+							emits telecom NI (#111). Form 043/u chart does not collect
+							a separate place phone — do not invent.
+							NOW: telecom nullFlavor NI.
+						-->
+						<telecom nullFlavor="NI"/>
 					</location>
 
 					<serviceProviderOrganization>
@@ -20603,6 +20776,37 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 						<addr nullFlavor="NI"/>
 						<telecom nullFlavor="NI"/>
 						<name>${escapeXml(params.clinicName)}</name>
+						<!--
+							DEFECT #2510: serviceProviderOrganization/standardIndustryClassCode.
+							WAS: SPO under HCF had id/addr/telecom/name only — no
+							standardIndustryClassCode. HL7 CDA R2 Organization has
+							standardIndustryClassCode 0..1. Other org shells already
+							emit SIC NI (#2263+). Form 043/u chart does not collect
+							industry class for the MO — do not invent OKVED/NACE.
+							NOW: standardIndustryClassCode nullFlavor NI.
+						-->
+						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2511: serviceProviderOrganization/asOrganizationPartOf.
+							WAS: SPO missing asOrganizationPartOf/wholeOrganization.
+							HL7 CDA R2 Organization has asOrganizationPartOf 0..*.
+							Other org shells already emit AOP NI (#2263+). wholeOrganization
+							gets identity shells only (SIC on wholeOrg path #2506) —
+							no nested AOP to avoid recursion. Form 043/u chart does not
+							collect parent-MO hierarchy — do not invent.
+							NOW: asOrganizationPartOf shell with nullFlavor NI children.
+						-->
+						<asOrganizationPartOf>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
 					</serviceProviderOrganization>
 
 				</healthCareFacility>
