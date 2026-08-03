@@ -729,6 +729,44 @@ ${/*
 							NOW: standardIndustryClassCode nullFlavor NI.
 						-->
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: guardianOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 
 					</guardianOrganization>
 					<!--
@@ -1380,6 +1418,62 @@ ${/*
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
 				</asOtherIDs>
+				<!--
+					DEFECT #2613: assignedPerson/asLicensedEntity.
+					WAS: assignedPerson missing asLicensedEntity role shell.
+					HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+					Form 043/u does not collect license ids for every staff person — do not invent.
+					NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+				</asLicensedEntity>
+				<!--
+					DEFECT #2614: assignedPerson/asMember.
+					WAS: assignedPerson missing asMember role shell.
+					HL7 CDA R2 Person may carry asMember 0..* (group membership).
+					Form 043/u does not collect staff group membership — do not invent.
+					NOW: minimal asMember id/code/statusCode/effectiveTime +
+					groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
+				<!--
+					DEFECT #2615: assignedPerson/asAffiliate.
+					WAS: assignedPerson missing asAffiliate role shell.
+					HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+					Form 043/u does not collect staff affiliation orgs — do not invent.
+					NOW: minimal asAffiliate id/code/effectiveTime +
+					affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+				-->
+				<asAffiliate>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -1485,6 +1579,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -2029,6 +2140,62 @@ ${/*
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
 				</asOtherIDs>
+				<!--
+					DEFECT #2613: assignedPerson/asLicensedEntity.
+					WAS: assignedPerson missing asLicensedEntity role shell.
+					HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+					Form 043/u does not collect license ids for every staff person — do not invent.
+					NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+				</asLicensedEntity>
+				<!--
+					DEFECT #2614: assignedPerson/asMember.
+					WAS: assignedPerson missing asMember role shell.
+					HL7 CDA R2 Person may carry asMember 0..* (group membership).
+					Form 043/u does not collect staff group membership — do not invent.
+					NOW: minimal asMember id/code/statusCode/effectiveTime +
+					groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
+				<!--
+					DEFECT #2615: assignedPerson/asAffiliate.
+					WAS: assignedPerson missing asAffiliate role shell.
+					HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+					Form 043/u does not collect staff affiliation orgs — do not invent.
+					NOW: minimal asAffiliate id/code/effectiveTime +
+					affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+				-->
+				<asAffiliate>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -2649,6 +2816,62 @@ ${/*
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
 				</asOtherIDs>
+				<!--
+					DEFECT #2613: assignedPerson/asLicensedEntity.
+					WAS: assignedPerson missing asLicensedEntity role shell.
+					HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+					Form 043/u does not collect license ids for every staff person — do not invent.
+					NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+				</asLicensedEntity>
+				<!--
+					DEFECT #2614: assignedPerson/asMember.
+					WAS: assignedPerson missing asMember role shell.
+					HL7 CDA R2 Person may carry asMember 0..* (group membership).
+					Form 043/u does not collect staff group membership — do not invent.
+					NOW: minimal asMember id/code/statusCode/effectiveTime +
+					groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
+				<!--
+					DEFECT #2615: assignedPerson/asAffiliate.
+					WAS: assignedPerson missing asAffiliate role shell.
+					HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+					Form 043/u does not collect staff affiliation orgs — do not invent.
+					NOW: minimal asAffiliate id/code/effectiveTime +
+					affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+				-->
+				<asAffiliate>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -3388,7 +3611,15 @@ ${/*
 	-->
 	<informationRecipient>
 		
-				<!--
+								<!--
+					DEFECT #2611: informationRecipient/time.
+					WAS: informationRecipient participation missing time.
+					HL7 CDA R2 participation may carry time 0..1.
+					Form 043/u does not collect this field — do not invent.
+					NOW: time nullFlavor NI.
+				-->
+				<time nullFlavor="NI"/>
+<!--
 					DEFECT #2529: informationRecipient/modeCode.
 					WAS: informationRecipient participation missing modeCode at top level.
 					HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
@@ -3446,6 +3677,14 @@ ${/*
 					Form 043/u routes SEMD to the MO org, not a named person gender — do not invent.
 					NOW: administrativeGenderCode nullFlavor NI.
 				-->
+				<!--
+					DEFECT #2607: informationRecipient(person)/religiousAffiliationCode.
+					WAS: informationRecipient person missing religiousAffiliationCode.
+					HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+					Form 043/u does not collect this field — do not invent.
+					NOW: religiousAffiliationCode nullFlavor NI.
+				-->
+				<religiousAffiliationCode nullFlavor="NI"/>
 				<administrativeGenderCode nullFlavor="NI"/>
 				<!--
 					DEFECT #2473: informationRecipient (person)/birthTime.
@@ -3531,6 +3770,41 @@ ${/*
 						<name nullFlavor="NI"/>
 					</politicalNation>
 				</asCitizen>
+				<!--
+					DEFECT #2608: informationRecipient(person)/desc.
+					WAS: informationRecipient person missing desc.
+					HL7 CDA R2 Person/Entity may carry desc 0..1.
+					Form 043/u does not collect this field — do not invent.
+					NOW: desc nullFlavor NI.
+				-->
+				<desc nullFlavor="NI"/>
+				<!--
+					DEFECT #2609: informationRecipient(person)/asEntityWithGeneric.
+					WAS: person/entity missing asEntityWithGeneric role shell.
+					HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+					Form 043/u does not collect generic entity ids — do not invent.
+					NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+				-->
+				<asEntityWithGeneric>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<name nullFlavor="NI"/>
+					<desc nullFlavor="NI"/>
+				</asEntityWithGeneric>
+				<!--
+					DEFECT #2610: informationRecipient(person)/asOtherIDs.
+					WAS: person/entity missing asOtherIDs role shell.
+					HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+					Form 043/u does not collect alternate entity ids — do not invent.
+					NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+				-->
+				<asOtherIDs>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+				</asOtherIDs>
+
+
+
 
 			</informationRecipient>
 			<receivedOrganization>
@@ -3998,6 +4272,62 @@ ${/*
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
 				</asOtherIDs>
+				<!--
+					DEFECT #2613: assignedPerson/asLicensedEntity.
+					WAS: assignedPerson missing asLicensedEntity role shell.
+					HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+					Form 043/u does not collect license ids for every staff person — do not invent.
+					NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+				</asLicensedEntity>
+				<!--
+					DEFECT #2614: assignedPerson/asMember.
+					WAS: assignedPerson missing asMember role shell.
+					HL7 CDA R2 Person may carry asMember 0..* (group membership).
+					Form 043/u does not collect staff group membership — do not invent.
+					NOW: minimal asMember id/code/statusCode/effectiveTime +
+					groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
+				<!--
+					DEFECT #2615: assignedPerson/asAffiliate.
+					WAS: assignedPerson missing asAffiliate role shell.
+					HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+					Form 043/u does not collect staff affiliation orgs — do not invent.
+					NOW: minimal asAffiliate id/code/effectiveTime +
+					affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+				-->
+				<asAffiliate>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -4639,6 +4969,62 @@ ${/*
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
 				</asOtherIDs>
+				<!--
+					DEFECT #2613: assignedPerson/asLicensedEntity.
+					WAS: assignedPerson missing asLicensedEntity role shell.
+					HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+					Form 043/u does not collect license ids for every staff person — do not invent.
+					NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+				-->
+				<asLicensedEntity>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+				</asLicensedEntity>
+				<!--
+					DEFECT #2614: assignedPerson/asMember.
+					WAS: assignedPerson missing asMember role shell.
+					HL7 CDA R2 Person may carry asMember 0..* (group membership).
+					Form 043/u does not collect staff group membership — do not invent.
+					NOW: minimal asMember id/code/statusCode/effectiveTime +
+					groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+				-->
+				<asMember>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<groupOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</groupOrganization>
+				</asMember>
+				<!--
+					DEFECT #2615: assignedPerson/asAffiliate.
+					WAS: assignedPerson missing asAffiliate role shell.
+					HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+					Form 043/u does not collect staff affiliation orgs — do not invent.
+					NOW: minimal asAffiliate id/code/effectiveTime +
+					affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+				-->
+				<asAffiliate>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<affiliateOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</affiliateOrganization>
+				</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -5571,6 +5957,62 @@ ${/*
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 						</asOtherIDs>
+						<!--
+							DEFECT #2613: assignedPerson/asLicensedEntity.
+							WAS: assignedPerson missing asLicensedEntity role shell.
+							HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+							Form 043/u does not collect license ids for every staff person — do not invent.
+							NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+						-->
+						<asLicensedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+						</asLicensedEntity>
+						<!--
+							DEFECT #2614: assignedPerson/asMember.
+							WAS: assignedPerson missing asMember role shell.
+							HL7 CDA R2 Person may carry asMember 0..* (group membership).
+							Form 043/u does not collect staff group membership — do not invent.
+							NOW: minimal asMember id/code/statusCode/effectiveTime +
+							groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+						-->
+						<asMember>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<groupOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</groupOrganization>
+						</asMember>
+						<!--
+							DEFECT #2615: assignedPerson/asAffiliate.
+							WAS: assignedPerson missing asAffiliate role shell.
+							HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+							Form 043/u does not collect staff affiliation orgs — do not invent.
+							NOW: minimal asAffiliate id/code/effectiveTime +
+							affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+						-->
+						<asAffiliate>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<affiliateOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</affiliateOrganization>
+						</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -6172,6 +6614,62 @@ ${/*
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 						</asOtherIDs>
+						<!--
+							DEFECT #2613: assignedPerson/asLicensedEntity.
+							WAS: assignedPerson missing asLicensedEntity role shell.
+							HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+							Form 043/u does not collect license ids for every staff person — do not invent.
+							NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+						-->
+						<asLicensedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+						</asLicensedEntity>
+						<!--
+							DEFECT #2614: assignedPerson/asMember.
+							WAS: assignedPerson missing asMember role shell.
+							HL7 CDA R2 Person may carry asMember 0..* (group membership).
+							Form 043/u does not collect staff group membership — do not invent.
+							NOW: minimal asMember id/code/statusCode/effectiveTime +
+							groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+						-->
+						<asMember>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<groupOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</groupOrganization>
+						</asMember>
+						<!--
+							DEFECT #2615: assignedPerson/asAffiliate.
+							WAS: assignedPerson missing asAffiliate role shell.
+							HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+							Form 043/u does not collect staff affiliation orgs — do not invent.
+							NOW: minimal asAffiliate id/code/effectiveTime +
+							affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+						-->
+						<asAffiliate>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<affiliateOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</affiliateOrganization>
+						</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -6240,6 +6738,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -6762,6 +7277,62 @@ ${/*
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 						</asOtherIDs>
+						<!--
+							DEFECT #2613: assignedPerson/asLicensedEntity.
+							WAS: assignedPerson missing asLicensedEntity role shell.
+							HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+							Form 043/u does not collect license ids for every staff person — do not invent.
+							NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+						-->
+						<asLicensedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+						</asLicensedEntity>
+						<!--
+							DEFECT #2614: assignedPerson/asMember.
+							WAS: assignedPerson missing asMember role shell.
+							HL7 CDA R2 Person may carry asMember 0..* (group membership).
+							Form 043/u does not collect staff group membership — do not invent.
+							NOW: minimal asMember id/code/statusCode/effectiveTime +
+							groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+						-->
+						<asMember>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<groupOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</groupOrganization>
+						</asMember>
+						<!--
+							DEFECT #2615: assignedPerson/asAffiliate.
+							WAS: assignedPerson missing asAffiliate role shell.
+							HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+							Form 043/u does not collect staff affiliation orgs — do not invent.
+							NOW: minimal asAffiliate id/code/effectiveTime +
+							affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+						-->
+						<asAffiliate>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<affiliateOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</affiliateOrganization>
+						</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -8309,6 +8880,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -8569,6 +9196,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -8832,6 +9497,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -8898,6 +9619,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -9397,6 +10135,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -9657,6 +10451,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -11104,6 +11936,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -11364,6 +12252,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -11645,6 +12571,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -11711,6 +12693,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -12228,6 +13227,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -12488,6 +13543,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -13844,6 +14937,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -14104,6 +15253,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -14385,6 +15572,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -14451,6 +15694,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -14968,6 +16228,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -15228,6 +16544,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -16431,6 +17785,44 @@ ${/*
 						NOW: standardIndustryClassCode nullFlavor NI.
 					-->
 					<standardIndustryClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2612: manufacturerOrganization/asOrganizationPartOf.
+						WAS: organization missing asOrganizationPartOf hierarchy shell.
+						HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+						SEMD often flags bare org without part-of slot.
+						Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+						NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+						wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+					-->
+					<asOrganizationPartOf>
+						<!--
+							DEFECT #2567: asOrganizationPartOf/id.
+							WAS: asOrganizationPartOf missing id.
+							HL7 CDA R2 Role has id 0..*.
+							Form 043/u does not collect this field — do not invent.
+							NOW: id nullFlavor NI.
+						-->
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<wholeOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<!--
+								DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+								WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+								HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+								SEMD often flags incomplete org without industry-class slot.
+								Form 043/u has no OKVED for this nested org — do not invent.
+								NOW: standardIndustryClassCode nullFlavor NI.
+							-->
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</wholeOrganization>
+					</asOrganizationPartOf>
+
 
 
 				</manufacturerOrganization>
@@ -17095,6 +18487,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -17166,6 +18614,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -17811,6 +19276,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -18071,6 +19592,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -18351,6 +19910,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -18611,6 +20226,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -19967,6 +21620,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -20227,6 +21936,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -20508,6 +22255,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -20574,6 +22377,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -21091,6 +22911,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -21351,6 +23227,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -23267,6 +25181,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -23528,6 +25498,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -23818,6 +25826,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -23838,6 +25902,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -24090,6 +26171,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedAuthor>
@@ -24377,6 +26496,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -24637,6 +26812,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -26142,6 +28355,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -26402,6 +28671,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -26683,6 +28990,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -26749,6 +29112,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -27266,6 +29646,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -27526,6 +29962,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -29121,6 +31595,62 @@ ${/*
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 						</asOtherIDs>
+						<!--
+							DEFECT #2613: assignedPerson/asLicensedEntity.
+							WAS: assignedPerson missing asLicensedEntity role shell.
+							HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+							Form 043/u does not collect license ids for every staff person — do not invent.
+							NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+						-->
+						<asLicensedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+						</asLicensedEntity>
+						<!--
+							DEFECT #2614: assignedPerson/asMember.
+							WAS: assignedPerson missing asMember role shell.
+							HL7 CDA R2 Person may carry asMember 0..* (group membership).
+							Form 043/u does not collect staff group membership — do not invent.
+							NOW: minimal asMember id/code/statusCode/effectiveTime +
+							groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+						-->
+						<asMember>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<groupOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</groupOrganization>
+						</asMember>
+						<!--
+							DEFECT #2615: assignedPerson/asAffiliate.
+							WAS: assignedPerson missing asAffiliate role shell.
+							HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+							Form 043/u does not collect staff affiliation orgs — do not invent.
+							NOW: minimal asAffiliate id/code/effectiveTime +
+							affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+						-->
+						<asAffiliate>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<affiliateOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</affiliateOrganization>
+						</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -29715,6 +32245,62 @@ ${/*
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 						</asOtherIDs>
+						<!--
+							DEFECT #2613: assignedPerson/asLicensedEntity.
+							WAS: assignedPerson missing asLicensedEntity role shell.
+							HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+							Form 043/u does not collect license ids for every staff person — do not invent.
+							NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+						-->
+						<asLicensedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+						</asLicensedEntity>
+						<!--
+							DEFECT #2614: assignedPerson/asMember.
+							WAS: assignedPerson missing asMember role shell.
+							HL7 CDA R2 Person may carry asMember 0..* (group membership).
+							Form 043/u does not collect staff group membership — do not invent.
+							NOW: minimal asMember id/code/statusCode/effectiveTime +
+							groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+						-->
+						<asMember>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<groupOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</groupOrganization>
+						</asMember>
+						<!--
+							DEFECT #2615: assignedPerson/asAffiliate.
+							WAS: assignedPerson missing asAffiliate role shell.
+							HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+							Form 043/u does not collect staff affiliation orgs — do not invent.
+							NOW: minimal asAffiliate id/code/effectiveTime +
+							affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+						-->
+						<asAffiliate>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<affiliateOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</affiliateOrganization>
+						</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -30510,6 +33096,62 @@ ${/*
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 						</asOtherIDs>
+						<!--
+							DEFECT #2613: assignedPerson/asLicensedEntity.
+							WAS: assignedPerson missing asLicensedEntity role shell.
+							HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+							Form 043/u does not collect license ids for every staff person — do not invent.
+							NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+						-->
+						<asLicensedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+						</asLicensedEntity>
+						<!--
+							DEFECT #2614: assignedPerson/asMember.
+							WAS: assignedPerson missing asMember role shell.
+							HL7 CDA R2 Person may carry asMember 0..* (group membership).
+							Form 043/u does not collect staff group membership — do not invent.
+							NOW: minimal asMember id/code/statusCode/effectiveTime +
+							groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+						-->
+						<asMember>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<groupOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</groupOrganization>
+						</asMember>
+						<!--
+							DEFECT #2615: assignedPerson/asAffiliate.
+							WAS: assignedPerson missing asAffiliate role shell.
+							HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+							Form 043/u does not collect staff affiliation orgs — do not invent.
+							NOW: minimal asAffiliate id/code/effectiveTime +
+							affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+						-->
+						<asAffiliate>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<affiliateOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</affiliateOrganization>
+						</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -30578,6 +33220,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -31100,6 +33759,62 @@ ${/*
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 						</asOtherIDs>
+						<!--
+							DEFECT #2613: assignedPerson/asLicensedEntity.
+							WAS: assignedPerson missing asLicensedEntity role shell.
+							HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+							Form 043/u does not collect license ids for every staff person — do not invent.
+							NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+						-->
+						<asLicensedEntity>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+						</asLicensedEntity>
+						<!--
+							DEFECT #2614: assignedPerson/asMember.
+							WAS: assignedPerson missing asMember role shell.
+							HL7 CDA R2 Person may carry asMember 0..* (group membership).
+							Form 043/u does not collect staff group membership — do not invent.
+							NOW: minimal asMember id/code/statusCode/effectiveTime +
+							groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+						-->
+						<asMember>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<groupOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</groupOrganization>
+						</asMember>
+						<!--
+							DEFECT #2615: assignedPerson/asAffiliate.
+							WAS: assignedPerson missing asAffiliate role shell.
+							HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+							Form 043/u does not collect staff affiliation orgs — do not invent.
+							NOW: minimal asAffiliate id/code/effectiveTime +
+							affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+						-->
+						<asAffiliate>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<affiliateOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</affiliateOrganization>
+						</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -32647,6 +35362,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -32907,6 +35678,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -33170,6 +35979,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -33236,6 +36101,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -33735,6 +36617,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -33995,6 +36933,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -35442,6 +38418,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -35702,6 +38734,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -35983,6 +39053,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -36049,6 +39175,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -36566,6 +39709,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -36826,6 +40025,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -38182,6 +41419,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -38442,6 +41735,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -38723,6 +42054,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -38789,6 +42176,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -39306,6 +42710,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -39566,6 +43026,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -40769,6 +44267,44 @@ ${/*
 						NOW: standardIndustryClassCode nullFlavor NI.
 					-->
 					<standardIndustryClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2612: manufacturerOrganization/asOrganizationPartOf.
+						WAS: organization missing asOrganizationPartOf hierarchy shell.
+						HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+						SEMD often flags bare org without part-of slot.
+						Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+						NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+						wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+					-->
+					<asOrganizationPartOf>
+						<!--
+							DEFECT #2567: asOrganizationPartOf/id.
+							WAS: asOrganizationPartOf missing id.
+							HL7 CDA R2 Role has id 0..*.
+							Form 043/u does not collect this field — do not invent.
+							NOW: id nullFlavor NI.
+						-->
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<wholeOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<!--
+								DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+								WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+								HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+								SEMD often flags incomplete org without industry-class slot.
+								Form 043/u has no OKVED for this nested org — do not invent.
+								NOW: standardIndustryClassCode nullFlavor NI.
+							-->
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</wholeOrganization>
+					</asOrganizationPartOf>
+
 
 
 				</manufacturerOrganization>
@@ -41673,6 +45209,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -42256,6 +45848,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -42324,6 +45972,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -42846,6 +46511,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -44393,6 +48114,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -44653,6 +48430,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -44916,6 +48731,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -44982,6 +48853,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -45481,6 +49369,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -45741,6 +49685,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -47188,6 +51170,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -47448,6 +51486,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -47729,6 +51805,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -47795,6 +51927,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -48312,6 +52461,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -48572,6 +52777,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -49928,6 +54171,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -50188,6 +54487,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -50469,6 +54806,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -50535,6 +54928,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -51052,6 +55462,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -51312,6 +55778,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -52598,6 +57102,44 @@ ${/*
 										NOW: standardIndustryClassCode nullFlavor NI.
 									-->
 									<standardIndustryClassCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2612: manufacturerOrganization/asOrganizationPartOf.
+										WAS: organization missing asOrganizationPartOf hierarchy shell.
+										HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+										SEMD often flags bare org without part-of slot.
+										Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+										NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+										wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+									-->
+									<asOrganizationPartOf>
+										<!--
+											DEFECT #2567: asOrganizationPartOf/id.
+											WAS: asOrganizationPartOf missing id.
+											HL7 CDA R2 Role has id 0..*.
+											Form 043/u does not collect this field — do not invent.
+											NOW: id nullFlavor NI.
+										-->
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<statusCode nullFlavor="NI"/>
+										<effectiveTime nullFlavor="NI"/>
+										<wholeOrganization>
+											<id nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<!--
+												DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+												WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+												HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+												SEMD often flags incomplete org without industry-class slot.
+												Form 043/u has no OKVED for this nested org — do not invent.
+												NOW: standardIndustryClassCode nullFlavor NI.
+											-->
+											<standardIndustryClassCode nullFlavor="NI"/>
+										</wholeOrganization>
+									</asOrganizationPartOf>
+
 
 
 								</manufacturerOrganization>
@@ -53089,6 +57631,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -53349,6 +57947,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -53630,6 +58266,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -53696,6 +58388,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -54213,6 +58922,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -54473,6 +59238,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -55829,6 +60632,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -56089,6 +60948,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -56370,6 +61267,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -56436,6 +61389,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -56953,6 +61923,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -57213,6 +62239,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -59000,6 +64064,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -59583,6 +64703,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -59651,6 +64827,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -60173,6 +65366,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -61720,6 +66969,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -61980,6 +67285,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -62243,6 +67586,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -62309,6 +67708,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -62808,6 +68224,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -63068,6 +68540,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -64515,6 +70025,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -64775,6 +70341,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -65056,6 +70660,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -65122,6 +70782,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -65639,6 +71316,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -65899,6 +71632,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -67255,6 +73026,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -67515,6 +73342,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -67796,6 +73661,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -67862,6 +73783,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -68379,6 +74317,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -68639,6 +74633,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -69925,6 +75957,44 @@ ${/*
 										NOW: standardIndustryClassCode nullFlavor NI.
 									-->
 									<standardIndustryClassCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2612: manufacturerOrganization/asOrganizationPartOf.
+										WAS: organization missing asOrganizationPartOf hierarchy shell.
+										HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+										SEMD often flags bare org without part-of slot.
+										Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+										NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+										wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+									-->
+									<asOrganizationPartOf>
+										<!--
+											DEFECT #2567: asOrganizationPartOf/id.
+											WAS: asOrganizationPartOf missing id.
+											HL7 CDA R2 Role has id 0..*.
+											Form 043/u does not collect this field — do not invent.
+											NOW: id nullFlavor NI.
+										-->
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<statusCode nullFlavor="NI"/>
+										<effectiveTime nullFlavor="NI"/>
+										<wholeOrganization>
+											<id nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<!--
+												DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+												WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+												HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+												SEMD often flags incomplete org without industry-class slot.
+												Form 043/u has no OKVED for this nested org — do not invent.
+												NOW: standardIndustryClassCode nullFlavor NI.
+											-->
+											<standardIndustryClassCode nullFlavor="NI"/>
+										</wholeOrganization>
+									</asOrganizationPartOf>
+
 
 
 								</manufacturerOrganization>
@@ -70416,6 +76486,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -70676,6 +76802,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -70957,6 +77121,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -71023,6 +77243,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -71540,6 +77777,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -71800,6 +78093,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -73156,6 +79487,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -73416,6 +79803,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -73697,6 +80122,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -73763,6 +80244,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -74280,6 +80778,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -74540,6 +81094,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -76341,6 +82933,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -76924,6 +83572,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -76992,6 +83696,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -77514,6 +84235,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -79061,6 +85838,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -79321,6 +86154,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -79584,6 +86455,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -79650,6 +86577,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -80149,6 +87093,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -80409,6 +87409,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -81856,6 +88894,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -82116,6 +89210,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -82397,6 +89529,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -82463,6 +89651,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -82980,6 +90185,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -83240,6 +90501,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -84596,6 +91895,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -84856,6 +92211,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -85137,6 +92530,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -85203,6 +92652,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -85720,6 +93186,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -85980,6 +93502,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -87266,6 +94826,44 @@ ${/*
 										NOW: standardIndustryClassCode nullFlavor NI.
 									-->
 									<standardIndustryClassCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2612: manufacturerOrganization/asOrganizationPartOf.
+										WAS: organization missing asOrganizationPartOf hierarchy shell.
+										HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+										SEMD often flags bare org without part-of slot.
+										Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+										NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+										wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+									-->
+									<asOrganizationPartOf>
+										<!--
+											DEFECT #2567: asOrganizationPartOf/id.
+											WAS: asOrganizationPartOf missing id.
+											HL7 CDA R2 Role has id 0..*.
+											Form 043/u does not collect this field — do not invent.
+											NOW: id nullFlavor NI.
+										-->
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<statusCode nullFlavor="NI"/>
+										<effectiveTime nullFlavor="NI"/>
+										<wholeOrganization>
+											<id nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<!--
+												DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+												WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+												HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+												SEMD often flags incomplete org without industry-class slot.
+												Form 043/u has no OKVED for this nested org — do not invent.
+												NOW: standardIndustryClassCode nullFlavor NI.
+											-->
+											<standardIndustryClassCode nullFlavor="NI"/>
+										</wholeOrganization>
+									</asOrganizationPartOf>
+
 
 
 								</manufacturerOrganization>
@@ -87757,6 +95355,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -88017,6 +95671,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -88298,6 +95990,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -88364,6 +96112,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -88881,6 +96646,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -89141,6 +96962,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -90497,6 +98356,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -90757,6 +98672,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -91038,6 +98991,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -91104,6 +99113,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -91621,6 +99647,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -91881,6 +99963,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -93692,6 +101812,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -94275,6 +102451,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -94343,6 +102575,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -94865,6 +103114,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -96412,6 +104717,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -96672,6 +105033,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -96935,6 +105334,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -97001,6 +105456,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -97500,6 +105972,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -97760,6 +106288,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -99150,6 +107716,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -99410,6 +108032,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -99691,6 +108351,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -99757,6 +108473,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -100274,6 +109007,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -100534,6 +109323,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -101655,6 +110482,44 @@ ${/*
 										NOW: standardIndustryClassCode nullFlavor NI.
 									-->
 									<standardIndustryClassCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2612: manufacturerOrganization/asOrganizationPartOf.
+										WAS: organization missing asOrganizationPartOf hierarchy shell.
+										HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+										SEMD often flags bare org without part-of slot.
+										Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+										NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+										wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+									-->
+									<asOrganizationPartOf>
+										<!--
+											DEFECT #2567: asOrganizationPartOf/id.
+											WAS: asOrganizationPartOf missing id.
+											HL7 CDA R2 Role has id 0..*.
+											Form 043/u does not collect this field — do not invent.
+											NOW: id nullFlavor NI.
+										-->
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<statusCode nullFlavor="NI"/>
+										<effectiveTime nullFlavor="NI"/>
+										<wholeOrganization>
+											<id nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<!--
+												DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+												WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+												HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+												SEMD often flags incomplete org without industry-class slot.
+												Form 043/u has no OKVED for this nested org — do not invent.
+												NOW: standardIndustryClassCode nullFlavor NI.
+											-->
+											<standardIndustryClassCode nullFlavor="NI"/>
+										</wholeOrganization>
+									</asOrganizationPartOf>
+
 
 
 								</manufacturerOrganization>
@@ -102559,6 +111424,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -103142,6 +112063,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -103210,6 +112187,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -103732,6 +112726,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -105279,6 +114329,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -105539,6 +114645,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -105802,6 +114946,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -105868,6 +115068,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -106367,6 +115584,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -106627,6 +115900,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -108074,6 +117385,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -108334,6 +117701,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -108615,6 +118020,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -108681,6 +118142,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -109198,6 +118676,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -109458,6 +118992,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -110814,6 +120386,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -111074,6 +120702,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -111355,6 +121021,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -111421,6 +121143,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -111938,6 +121677,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -112198,6 +121993,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -113484,6 +123317,44 @@ ${/*
 										NOW: standardIndustryClassCode nullFlavor NI.
 									-->
 									<standardIndustryClassCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2612: manufacturerOrganization/asOrganizationPartOf.
+										WAS: organization missing asOrganizationPartOf hierarchy shell.
+										HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+										SEMD often flags bare org without part-of slot.
+										Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+										NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+										wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+									-->
+									<asOrganizationPartOf>
+										<!--
+											DEFECT #2567: asOrganizationPartOf/id.
+											WAS: asOrganizationPartOf missing id.
+											HL7 CDA R2 Role has id 0..*.
+											Form 043/u does not collect this field — do not invent.
+											NOW: id nullFlavor NI.
+										-->
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<statusCode nullFlavor="NI"/>
+										<effectiveTime nullFlavor="NI"/>
+										<wholeOrganization>
+											<id nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<!--
+												DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+												WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+												HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+												SEMD often flags incomplete org without industry-class slot.
+												Form 043/u has no OKVED for this nested org — do not invent.
+												NOW: standardIndustryClassCode nullFlavor NI.
+											-->
+											<standardIndustryClassCode nullFlavor="NI"/>
+										</wholeOrganization>
+									</asOrganizationPartOf>
+
 
 
 								</manufacturerOrganization>
@@ -113975,6 +123846,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -114235,6 +124162,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -114516,6 +124481,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -114582,6 +124603,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -115099,6 +125137,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -115359,6 +125453,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -116715,6 +126847,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -116975,6 +127163,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -117256,6 +127482,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -117322,6 +127604,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -117839,6 +128138,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -118099,6 +128454,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -119899,6 +130292,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -120482,6 +130931,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -120550,6 +131055,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -121072,6 +131594,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -122619,6 +133197,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -122879,6 +133513,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -123142,6 +133814,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -123208,6 +133936,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -123707,6 +134452,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -123967,6 +134768,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -125414,6 +136253,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -125674,6 +136569,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -125955,6 +136888,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -126021,6 +137010,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -126538,6 +137544,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -126798,6 +137860,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -128154,6 +139254,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -128414,6 +139570,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -128695,6 +139889,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -128761,6 +140011,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -129278,6 +140545,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -129538,6 +140861,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -130824,6 +142185,44 @@ ${/*
 										NOW: standardIndustryClassCode nullFlavor NI.
 									-->
 									<standardIndustryClassCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2612: manufacturerOrganization/asOrganizationPartOf.
+										WAS: organization missing asOrganizationPartOf hierarchy shell.
+										HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+										SEMD often flags bare org without part-of slot.
+										Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+										NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+										wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+									-->
+									<asOrganizationPartOf>
+										<!--
+											DEFECT #2567: asOrganizationPartOf/id.
+											WAS: asOrganizationPartOf missing id.
+											HL7 CDA R2 Role has id 0..*.
+											Form 043/u does not collect this field — do not invent.
+											NOW: id nullFlavor NI.
+										-->
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<statusCode nullFlavor="NI"/>
+										<effectiveTime nullFlavor="NI"/>
+										<wholeOrganization>
+											<id nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<!--
+												DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+												WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+												HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+												SEMD often flags incomplete org without industry-class slot.
+												Form 043/u has no OKVED for this nested org — do not invent.
+												NOW: standardIndustryClassCode nullFlavor NI.
+											-->
+											<standardIndustryClassCode nullFlavor="NI"/>
+										</wholeOrganization>
+									</asOrganizationPartOf>
+
 
 
 								</manufacturerOrganization>
@@ -131315,6 +142714,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -131575,6 +143030,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -131856,6 +143349,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -131922,6 +143471,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -132439,6 +144005,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -132699,6 +144321,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -134055,6 +145715,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -134315,6 +146031,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -134596,6 +146350,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -134662,6 +146472,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -135179,6 +147006,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -135439,6 +147322,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -137074,6 +148995,44 @@ ${/*
 										NOW: standardIndustryClassCode nullFlavor NI.
 									-->
 									<standardIndustryClassCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2612: manufacturerOrganization/asOrganizationPartOf.
+										WAS: organization missing asOrganizationPartOf hierarchy shell.
+										HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+										SEMD often flags bare org without part-of slot.
+										Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+										NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+										wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+									-->
+									<asOrganizationPartOf>
+										<!--
+											DEFECT #2567: asOrganizationPartOf/id.
+											WAS: asOrganizationPartOf missing id.
+											HL7 CDA R2 Role has id 0..*.
+											Form 043/u does not collect this field — do not invent.
+											NOW: id nullFlavor NI.
+										-->
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<statusCode nullFlavor="NI"/>
+										<effectiveTime nullFlavor="NI"/>
+										<wholeOrganization>
+											<id nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<!--
+												DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+												WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+												HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+												SEMD often flags incomplete org without industry-class slot.
+												Form 043/u has no OKVED for this nested org — do not invent.
+												NOW: standardIndustryClassCode nullFlavor NI.
+											-->
+											<standardIndustryClassCode nullFlavor="NI"/>
+										</wholeOrganization>
+									</asOrganizationPartOf>
+
 
 </manufacturerOrganization>
 							</manufacturedProduct>
@@ -137363,6 +149322,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -137946,6 +149961,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -138014,6 +150085,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -138536,6 +150624,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -140083,6 +152227,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -140343,6 +152543,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -140606,6 +152844,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -140672,6 +152966,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -141171,6 +153482,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -141431,6 +153798,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -142878,6 +155283,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -143138,6 +155599,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -143419,6 +155918,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -143485,6 +156040,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -144002,6 +156574,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -144262,6 +156890,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -145618,6 +158284,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -145878,6 +158600,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -146159,6 +158919,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -146225,6 +159041,23 @@ ${/*
 					<code nullFlavor="NI"/>
 					<manufacturerModelName nullFlavor="NI"/>
 					<softwareName nullFlavor="NI"/>
+					<!--
+						DEFECT #2616: assignedAuthoringDevice/asMaintainedEntity.
+						WAS: assignedAuthoringDevice missing asMaintainedEntity role shell.
+						HL7 CDA R2 Device may carry asMaintainedEntity 0..* (maintenance).
+						Form 043/u does not collect device maintainer person — do not invent.
+						NOW: minimal asMaintainedEntity id/code/effectiveTime +
+						maintainingPerson/name nullFlavor NI.
+					-->
+					<asMaintainedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<maintainingPerson>
+							<name nullFlavor="NI"/>
+						</maintainingPerson>
+					</asMaintainedEntity>
+
 				</assignedAuthoringDevice>
 			
 				<!--
@@ -146742,6 +159575,62 @@ ${/*
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 					</asOtherIDs>
+					<!--
+						DEFECT #2613: assignedPerson/asLicensedEntity.
+						WAS: assignedPerson missing asLicensedEntity role shell.
+						HL7 CDA R2 Person may carry asLicensedEntity 0..* (license/credential).
+						Form 043/u does not collect license ids for every staff person — do not invent.
+						NOW: minimal asLicensedEntity id/code/effectiveTime NI (no issuing/scopingOrganization).
+					-->
+					<asLicensedEntity>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+					</asLicensedEntity>
+					<!--
+						DEFECT #2614: assignedPerson/asMember.
+						WAS: assignedPerson missing asMember role shell.
+						HL7 CDA R2 Person may carry asMember 0..* (group membership).
+						Form 043/u does not collect staff group membership — do not invent.
+						NOW: minimal asMember id/code/statusCode/effectiveTime +
+						groupOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asMember>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<statusCode nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<groupOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</groupOrganization>
+					</asMember>
+					<!--
+						DEFECT #2615: assignedPerson/asAffiliate.
+						WAS: assignedPerson missing asAffiliate role shell.
+						HL7 CDA R2 Person may carry asAffiliate 0..* (affiliation).
+						Form 043/u does not collect staff affiliation orgs — do not invent.
+						NOW: minimal asAffiliate id/code/effectiveTime +
+						affiliateOrganization id/name/telecom/addr/SIC NI (no nested AOP this batch).
+					-->
+					<asAffiliate>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<effectiveTime nullFlavor="NI"/>
+						<affiliateOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</affiliateOrganization>
+					</asAffiliate>
+
+
+
 
 
 			</assignedPerson>
@@ -147002,6 +159891,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2612: representedOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</representedOrganization>
 
 </assignedEntity>
@@ -148112,6 +161039,44 @@ ${/*
 										NOW: standardIndustryClassCode nullFlavor NI.
 									-->
 									<standardIndustryClassCode nullFlavor="NI"/>
+									<!--
+										DEFECT #2612: manufacturerOrganization/asOrganizationPartOf.
+										WAS: organization missing asOrganizationPartOf hierarchy shell.
+										HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+										SEMD often flags bare org without part-of slot.
+										Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+										NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+										wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+									-->
+									<asOrganizationPartOf>
+										<!--
+											DEFECT #2567: asOrganizationPartOf/id.
+											WAS: asOrganizationPartOf missing id.
+											HL7 CDA R2 Role has id 0..*.
+											Form 043/u does not collect this field — do not invent.
+											NOW: id nullFlavor NI.
+										-->
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<statusCode nullFlavor="NI"/>
+										<effectiveTime nullFlavor="NI"/>
+										<wholeOrganization>
+											<id nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<addr nullFlavor="NI"/>
+											<telecom nullFlavor="NI"/>
+											<!--
+												DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+												WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+												HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+												SEMD often flags incomplete org without industry-class slot.
+												Form 043/u has no OKVED for this nested org — do not invent.
+												NOW: standardIndustryClassCode nullFlavor NI.
+											-->
+											<standardIndustryClassCode nullFlavor="NI"/>
+										</wholeOrganization>
+									</asOrganizationPartOf>
+
 
 
 								</manufacturerOrganization>
