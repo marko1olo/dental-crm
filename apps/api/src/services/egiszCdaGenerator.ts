@@ -1128,6 +1128,14 @@ ${/*
 			NOW: functionCode with NI+displayName when doctorPosition known;
 			bare nullFlavor NI when blank. No invented NSI function code.
 		-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 		${params.doctorPosition && params.doctorPosition.trim()
 			? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 			: `<functionCode nullFlavor="NI"/>
@@ -1449,6 +1457,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2617: groupOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</groupOrganization>
 				</asMember>
 				<!--
@@ -1469,6 +1515,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</affiliateOrganization>
 				</asAffiliate>
 
@@ -2171,6 +2255,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2617: groupOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</groupOrganization>
 				</asMember>
 				<!--
@@ -2191,6 +2313,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</affiliateOrganization>
 				</asAffiliate>
 
@@ -2527,6 +2687,14 @@ ${/*
 			for Form 043/u (same documentClock as chart entry / sign).
 			NOW: time value=effectiveTime before assignedEntity.
 		-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 		<time value="${effectiveTime}"/>
 		<!--
 			DEFECT #168: ClinicalDocument/informant/functionCode.
@@ -2847,6 +3015,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2617: groupOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</groupOrganization>
 				</asMember>
 				<!--
@@ -2867,6 +3073,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</affiliateOrganization>
 				</asAffiliate>
 
@@ -3501,6 +3745,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 	<custodian>
@@ -4303,6 +4563,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2617: groupOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</groupOrganization>
 				</asMember>
 				<!--
@@ -4323,6 +4621,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</affiliateOrganization>
 				</asAffiliate>
 
@@ -5000,6 +5336,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2617: groupOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</groupOrganization>
 				</asMember>
 				<!--
@@ -5020,6 +5394,44 @@ ${/*
 						<telecom nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<standardIndustryClassCode nullFlavor="NI"/>
+						<!--
+							DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+							WAS: organization missing asOrganizationPartOf hierarchy shell.
+							HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+							SEMD often flags bare org without part-of slot.
+							Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+							NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+							wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+						-->
+						<asOrganizationPartOf>
+							<!--
+								DEFECT #2567: asOrganizationPartOf/id.
+								WAS: asOrganizationPartOf missing id.
+								HL7 CDA R2 Role has id 0..*.
+								Form 043/u does not collect this field — do not invent.
+								NOW: id nullFlavor NI.
+							-->
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<statusCode nullFlavor="NI"/>
+							<effectiveTime nullFlavor="NI"/>
+							<wholeOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<!--
+									DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+									WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+									HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+									SEMD often flags incomplete org without industry-class slot.
+									Form 043/u has no OKVED for this nested org — do not invent.
+									NOW: standardIndustryClassCode nullFlavor NI.
+								-->
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</wholeOrganization>
+						</asOrganizationPartOf>
+
 					</affiliateOrganization>
 				</asAffiliate>
 
@@ -5659,6 +6071,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 
@@ -5988,6 +6408,44 @@ ${/*
 								<telecom nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2617: groupOrganization/asOrganizationPartOf.
+									WAS: organization missing asOrganizationPartOf hierarchy shell.
+									HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+									SEMD often flags bare org without part-of slot.
+									Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+									NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+									wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+								-->
+								<asOrganizationPartOf>
+									<!--
+										DEFECT #2567: asOrganizationPartOf/id.
+										WAS: asOrganizationPartOf missing id.
+										HL7 CDA R2 Role has id 0..*.
+										Form 043/u does not collect this field — do not invent.
+										NOW: id nullFlavor NI.
+									-->
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<!--
+											DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+											WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+											HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+											SEMD often flags incomplete org without industry-class slot.
+											Form 043/u has no OKVED for this nested org — do not invent.
+											NOW: standardIndustryClassCode nullFlavor NI.
+										-->
+										<standardIndustryClassCode nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+
 							</groupOrganization>
 						</asMember>
 						<!--
@@ -6008,6 +6466,44 @@ ${/*
 								<telecom nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+									WAS: organization missing asOrganizationPartOf hierarchy shell.
+									HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+									SEMD often flags bare org without part-of slot.
+									Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+									NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+									wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+								-->
+								<asOrganizationPartOf>
+									<!--
+										DEFECT #2567: asOrganizationPartOf/id.
+										WAS: asOrganizationPartOf missing id.
+										HL7 CDA R2 Role has id 0..*.
+										Form 043/u does not collect this field — do not invent.
+										NOW: id nullFlavor NI.
+									-->
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<!--
+											DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+											WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+											HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+											SEMD often flags incomplete org without industry-class slot.
+											Form 043/u has no OKVED for this nested org — do not invent.
+											NOW: standardIndustryClassCode nullFlavor NI.
+										-->
+										<standardIndustryClassCode nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+
 							</affiliateOrganization>
 						</asAffiliate>
 
@@ -6353,6 +6849,14 @@ ${/*
 				participation mode separately — do not invent a fake mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 				
 					<!--
@@ -6645,6 +7149,44 @@ ${/*
 								<telecom nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2617: groupOrganization/asOrganizationPartOf.
+									WAS: organization missing asOrganizationPartOf hierarchy shell.
+									HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+									SEMD often flags bare org without part-of slot.
+									Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+									NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+									wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+								-->
+								<asOrganizationPartOf>
+									<!--
+										DEFECT #2567: asOrganizationPartOf/id.
+										WAS: asOrganizationPartOf missing id.
+										HL7 CDA R2 Role has id 0..*.
+										Form 043/u does not collect this field — do not invent.
+										NOW: id nullFlavor NI.
+									-->
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<!--
+											DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+											WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+											HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+											SEMD often flags incomplete org without industry-class slot.
+											Form 043/u has no OKVED for this nested org — do not invent.
+											NOW: standardIndustryClassCode nullFlavor NI.
+										-->
+										<standardIndustryClassCode nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+
 							</groupOrganization>
 						</asMember>
 						<!--
@@ -6665,6 +7207,44 @@ ${/*
 								<telecom nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+									WAS: organization missing asOrganizationPartOf hierarchy shell.
+									HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+									SEMD often flags bare org without part-of slot.
+									Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+									NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+									wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+								-->
+								<asOrganizationPartOf>
+									<!--
+										DEFECT #2567: asOrganizationPartOf/id.
+										WAS: asOrganizationPartOf missing id.
+										HL7 CDA R2 Role has id 0..*.
+										Form 043/u does not collect this field — do not invent.
+										NOW: id nullFlavor NI.
+									-->
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<!--
+											DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+											WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+											HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+											SEMD often flags incomplete org without industry-class slot.
+											Form 043/u has no OKVED for this nested org — do not invent.
+											NOW: standardIndustryClassCode nullFlavor NI.
+										-->
+										<standardIndustryClassCode nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+
 							</affiliateOrganization>
 						</asAffiliate>
 
@@ -7014,7 +7594,15 @@ ${/*
 			-->
 			<informant>
 				<time value="${visitTime}"/>
-				${params.doctorPosition && params.doctorPosition.trim()
+									<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
+${params.doctorPosition && params.doctorPosition.trim()
 					? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 					: `<functionCode nullFlavor="NI"/>`}
 				
@@ -7308,6 +7896,44 @@ ${/*
 								<telecom nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2617: groupOrganization/asOrganizationPartOf.
+									WAS: organization missing asOrganizationPartOf hierarchy shell.
+									HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+									SEMD often flags bare org without part-of slot.
+									Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+									NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+									wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+								-->
+								<asOrganizationPartOf>
+									<!--
+										DEFECT #2567: asOrganizationPartOf/id.
+										WAS: asOrganizationPartOf missing id.
+										HL7 CDA R2 Role has id 0..*.
+										Form 043/u does not collect this field — do not invent.
+										NOW: id nullFlavor NI.
+									-->
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<!--
+											DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+											WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+											HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+											SEMD often flags incomplete org without industry-class slot.
+											Form 043/u has no OKVED for this nested org — do not invent.
+											NOW: standardIndustryClassCode nullFlavor NI.
+										-->
+										<standardIndustryClassCode nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+
 							</groupOrganization>
 						</asMember>
 						<!--
@@ -7328,6 +7954,44 @@ ${/*
 								<telecom nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+									WAS: organization missing asOrganizationPartOf hierarchy shell.
+									HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+									SEMD often flags bare org without part-of slot.
+									Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+									NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+									wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+								-->
+								<asOrganizationPartOf>
+									<!--
+										DEFECT #2567: asOrganizationPartOf/id.
+										WAS: asOrganizationPartOf missing id.
+										HL7 CDA R2 Role has id 0..*.
+										Form 043/u does not collect this field — do not invent.
+										NOW: id nullFlavor NI.
+									-->
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<!--
+											DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+											WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+											HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+											SEMD often flags incomplete org without industry-class slot.
+											Form 043/u has no OKVED for this nested org — do not invent.
+											NOW: standardIndustryClassCode nullFlavor NI.
+										-->
+										<standardIndustryClassCode nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+
 							</affiliateOrganization>
 						</asAffiliate>
 
@@ -7951,6 +8615,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 			<!--
@@ -7978,6 +8658,14 @@ ${/*
 				participation without mode slot. Do not invent mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 				${params.doctorPosition && params.doctorPosition.trim()
 					? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
@@ -8653,6 +9341,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -8911,6 +9607,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -8931,6 +9665,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -9253,6 +10025,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -9528,6 +10308,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -9548,6 +10366,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -9891,6 +10747,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -10166,6 +11030,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -10186,6 +11088,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -10814,6 +11754,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -10832,6 +11788,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -11691,6 +12655,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 					<assignedEntity>
@@ -11967,6 +12939,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -11987,6 +12997,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -12309,6 +13357,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -12602,6 +13658,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -12622,6 +13716,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -12965,6 +14097,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 					
@@ -13258,6 +14398,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -13278,6 +14456,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -13906,6 +15122,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 				<!--
@@ -13924,6 +15156,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -14692,6 +15932,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -14968,6 +16216,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -14988,6 +16274,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -15310,6 +16634,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -15603,6 +16935,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -15623,6 +16993,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -15966,6 +17374,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -16259,6 +17675,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -16279,6 +17733,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -16907,6 +18399,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -16925,6 +18433,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -18219,6 +19735,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -18518,6 +20042,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -18538,6 +20100,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -19031,6 +20631,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 			<assignedEntity>
@@ -19307,6 +20915,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -19327,6 +20973,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -19648,6 +21332,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 			
@@ -19941,6 +21633,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -19961,6 +21691,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -20589,6 +22357,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 		<!--
@@ -20607,6 +22391,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -21375,6 +23167,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<assignedEntity>
@@ -21651,6 +23451,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -21671,6 +23509,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -21993,6 +23869,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -22286,6 +24170,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -22306,6 +24228,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -22649,6 +24609,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 				
@@ -22942,6 +24910,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -22962,6 +24968,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -23590,6 +25634,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 			<!--
@@ -23608,6 +25668,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -24301,6 +26369,14 @@ ${/*
 			same as other document-level participants.
 			NOW: time value=effectiveTime before associatedEntity.
 		-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 		<time value="${effectiveTime}"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -24897,6 +26973,14 @@ ${/*
 					incomplete performer without function slot. Do not invent function.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 			
@@ -25212,6 +27296,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -25232,6 +27354,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -25558,6 +27718,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -25857,6 +28025,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -25877,6 +28083,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -26228,6 +28472,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 			
@@ -26527,6 +28779,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -26547,6 +28837,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -27175,6 +29503,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 
@@ -27193,6 +29537,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -28110,6 +30462,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<assignedEntity>
@@ -28386,6 +30746,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -28406,6 +30804,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -28728,6 +31164,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -29021,6 +31465,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -29041,6 +31523,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -29384,6 +31904,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 				
@@ -29677,6 +32205,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -29697,6 +32263,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -30325,6 +32929,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 			<!--
@@ -30343,6 +32963,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -31626,6 +34254,44 @@ ${/*
 								<telecom nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2617: groupOrganization/asOrganizationPartOf.
+									WAS: organization missing asOrganizationPartOf hierarchy shell.
+									HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+									SEMD often flags bare org without part-of slot.
+									Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+									NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+									wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+								-->
+								<asOrganizationPartOf>
+									<!--
+										DEFECT #2567: asOrganizationPartOf/id.
+										WAS: asOrganizationPartOf missing id.
+										HL7 CDA R2 Role has id 0..*.
+										Form 043/u does not collect this field — do not invent.
+										NOW: id nullFlavor NI.
+									-->
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<!--
+											DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+											WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+											HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+											SEMD often flags incomplete org without industry-class slot.
+											Form 043/u has no OKVED for this nested org — do not invent.
+											NOW: standardIndustryClassCode nullFlavor NI.
+										-->
+										<standardIndustryClassCode nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+
 							</groupOrganization>
 						</asMember>
 						<!--
@@ -31646,6 +34312,44 @@ ${/*
 								<telecom nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+									WAS: organization missing asOrganizationPartOf hierarchy shell.
+									HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+									SEMD often flags bare org without part-of slot.
+									Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+									NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+									wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+								-->
+								<asOrganizationPartOf>
+									<!--
+										DEFECT #2567: asOrganizationPartOf/id.
+										WAS: asOrganizationPartOf missing id.
+										HL7 CDA R2 Role has id 0..*.
+										Form 043/u does not collect this field — do not invent.
+										NOW: id nullFlavor NI.
+									-->
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<!--
+											DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+											WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+											HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+											SEMD often flags incomplete org without industry-class slot.
+											Form 043/u has no OKVED for this nested org — do not invent.
+											NOW: standardIndustryClassCode nullFlavor NI.
+										-->
+										<standardIndustryClassCode nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+
 							</affiliateOrganization>
 						</asAffiliate>
 
@@ -32276,6 +34980,44 @@ ${/*
 								<telecom nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2617: groupOrganization/asOrganizationPartOf.
+									WAS: organization missing asOrganizationPartOf hierarchy shell.
+									HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+									SEMD often flags bare org without part-of slot.
+									Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+									NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+									wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+								-->
+								<asOrganizationPartOf>
+									<!--
+										DEFECT #2567: asOrganizationPartOf/id.
+										WAS: asOrganizationPartOf missing id.
+										HL7 CDA R2 Role has id 0..*.
+										Form 043/u does not collect this field — do not invent.
+										NOW: id nullFlavor NI.
+									-->
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<!--
+											DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+											WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+											HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+											SEMD often flags incomplete org without industry-class slot.
+											Form 043/u has no OKVED for this nested org — do not invent.
+											NOW: standardIndustryClassCode nullFlavor NI.
+										-->
+										<standardIndustryClassCode nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+
 							</groupOrganization>
 						</asMember>
 						<!--
@@ -32296,6 +35038,44 @@ ${/*
 								<telecom nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+									WAS: organization missing asOrganizationPartOf hierarchy shell.
+									HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+									SEMD often flags bare org without part-of slot.
+									Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+									NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+									wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+								-->
+								<asOrganizationPartOf>
+									<!--
+										DEFECT #2567: asOrganizationPartOf/id.
+										WAS: asOrganizationPartOf missing id.
+										HL7 CDA R2 Role has id 0..*.
+										Form 043/u does not collect this field — do not invent.
+										NOW: id nullFlavor NI.
+									-->
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<!--
+											DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+											WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+											HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+											SEMD often flags incomplete org without industry-class slot.
+											Form 043/u has no OKVED for this nested org — do not invent.
+											NOW: standardIndustryClassCode nullFlavor NI.
+										-->
+										<standardIndustryClassCode nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+
 							</affiliateOrganization>
 						</asAffiliate>
 
@@ -32835,6 +35615,14 @@ ${/*
 				participation mode separately — do not invent a fake mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 				
 					<!--
@@ -33127,6 +35915,44 @@ ${/*
 								<telecom nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2617: groupOrganization/asOrganizationPartOf.
+									WAS: organization missing asOrganizationPartOf hierarchy shell.
+									HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+									SEMD often flags bare org without part-of slot.
+									Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+									NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+									wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+								-->
+								<asOrganizationPartOf>
+									<!--
+										DEFECT #2567: asOrganizationPartOf/id.
+										WAS: asOrganizationPartOf missing id.
+										HL7 CDA R2 Role has id 0..*.
+										Form 043/u does not collect this field — do not invent.
+										NOW: id nullFlavor NI.
+									-->
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<!--
+											DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+											WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+											HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+											SEMD often flags incomplete org without industry-class slot.
+											Form 043/u has no OKVED for this nested org — do not invent.
+											NOW: standardIndustryClassCode nullFlavor NI.
+										-->
+										<standardIndustryClassCode nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+
 							</groupOrganization>
 						</asMember>
 						<!--
@@ -33147,6 +35973,44 @@ ${/*
 								<telecom nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+									WAS: organization missing asOrganizationPartOf hierarchy shell.
+									HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+									SEMD often flags bare org without part-of slot.
+									Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+									NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+									wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+								-->
+								<asOrganizationPartOf>
+									<!--
+										DEFECT #2567: asOrganizationPartOf/id.
+										WAS: asOrganizationPartOf missing id.
+										HL7 CDA R2 Role has id 0..*.
+										Form 043/u does not collect this field — do not invent.
+										NOW: id nullFlavor NI.
+									-->
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<!--
+											DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+											WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+											HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+											SEMD often flags incomplete org without industry-class slot.
+											Form 043/u has no OKVED for this nested org — do not invent.
+											NOW: standardIndustryClassCode nullFlavor NI.
+										-->
+										<standardIndustryClassCode nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+
 							</affiliateOrganization>
 						</asAffiliate>
 
@@ -33496,7 +36360,15 @@ ${/*
 			-->
 			<informant>
 				<time value="${visitTime}"/>
-				${params.doctorPosition && params.doctorPosition.trim()
+									<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
+${params.doctorPosition && params.doctorPosition.trim()
 					? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 					: `<functionCode nullFlavor="NI"/>`}
 				
@@ -33790,6 +36662,44 @@ ${/*
 								<telecom nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2617: groupOrganization/asOrganizationPartOf.
+									WAS: organization missing asOrganizationPartOf hierarchy shell.
+									HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+									SEMD often flags bare org without part-of slot.
+									Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+									NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+									wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+								-->
+								<asOrganizationPartOf>
+									<!--
+										DEFECT #2567: asOrganizationPartOf/id.
+										WAS: asOrganizationPartOf missing id.
+										HL7 CDA R2 Role has id 0..*.
+										Form 043/u does not collect this field — do not invent.
+										NOW: id nullFlavor NI.
+									-->
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<!--
+											DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+											WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+											HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+											SEMD often flags incomplete org without industry-class slot.
+											Form 043/u has no OKVED for this nested org — do not invent.
+											NOW: standardIndustryClassCode nullFlavor NI.
+										-->
+										<standardIndustryClassCode nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+
 							</groupOrganization>
 						</asMember>
 						<!--
@@ -33810,6 +36720,44 @@ ${/*
 								<telecom nullFlavor="NI"/>
 								<addr nullFlavor="NI"/>
 								<standardIndustryClassCode nullFlavor="NI"/>
+								<!--
+									DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+									WAS: organization missing asOrganizationPartOf hierarchy shell.
+									HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+									SEMD often flags bare org without part-of slot.
+									Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+									NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+									wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+								-->
+								<asOrganizationPartOf>
+									<!--
+										DEFECT #2567: asOrganizationPartOf/id.
+										WAS: asOrganizationPartOf missing id.
+										HL7 CDA R2 Role has id 0..*.
+										Form 043/u does not collect this field — do not invent.
+										NOW: id nullFlavor NI.
+									-->
+									<id nullFlavor="NI"/>
+									<code nullFlavor="NI"/>
+									<statusCode nullFlavor="NI"/>
+									<effectiveTime nullFlavor="NI"/>
+									<wholeOrganization>
+										<id nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<addr nullFlavor="NI"/>
+										<telecom nullFlavor="NI"/>
+										<!--
+											DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+											WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+											HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+											SEMD often flags incomplete org without industry-class slot.
+											Form 043/u has no OKVED for this nested org — do not invent.
+											NOW: standardIndustryClassCode nullFlavor NI.
+										-->
+										<standardIndustryClassCode nullFlavor="NI"/>
+									</wholeOrganization>
+								</asOrganizationPartOf>
+
 							</affiliateOrganization>
 						</asAffiliate>
 
@@ -34433,6 +37381,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 			<!--
@@ -34460,6 +37424,14 @@ ${/*
 				participation without mode slot. Do not invent mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 				${params.doctorPosition && params.doctorPosition.trim()
 					? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
@@ -35135,6 +38107,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -35393,6 +38373,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -35413,6 +38431,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -35735,6 +38791,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -36010,6 +39074,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -36030,6 +39132,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -36373,6 +39513,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -36648,6 +39796,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -36668,6 +39854,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -37296,6 +40520,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -37314,6 +40554,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -38173,6 +41421,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 					<assignedEntity>
@@ -38449,6 +41705,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -38469,6 +41763,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -38791,6 +42123,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -39084,6 +42424,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -39104,6 +42482,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -39447,6 +42863,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 					
@@ -39740,6 +43164,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -39760,6 +43222,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -40388,6 +43888,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 				<!--
@@ -40406,6 +43922,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -41174,6 +44698,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -41450,6 +44982,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -41470,6 +45040,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -41792,6 +45400,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -42085,6 +45701,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -42105,6 +45759,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -42448,6 +46140,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -42741,6 +46441,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -42761,6 +46499,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -43389,6 +47165,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -43407,6 +47199,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -44948,6 +48748,14 @@ ${/*
 					incomplete performer without function slot. Do not invent function.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 								
 					<!--
@@ -45240,6 +49048,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -45260,6 +49106,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -45587,6 +49471,14 @@ ${/*
 				participation mode separately — do not invent a fake mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 								
 					<!--
@@ -45879,6 +49771,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -45899,6 +49829,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -46248,7 +50216,15 @@ ${/*
 							-->
 							<informant>
 								<time value="${visitTime}"/>
-								${params.doctorPosition && params.doctorPosition.trim()
+													<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
+${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
 								
@@ -46542,6 +50518,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -46562,6 +50576,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -47185,6 +51237,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 							<!--
@@ -47212,6 +51280,14 @@ ${/*
 				participation without mode slot. Do not invent mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
@@ -47887,6 +51963,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -48145,6 +52229,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -48165,6 +52287,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -48487,6 +52647,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -48762,6 +52930,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -48782,6 +52988,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -49125,6 +53369,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -49400,6 +53652,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -49420,6 +53710,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -50048,6 +54376,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -50066,6 +54410,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -50925,6 +55277,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 					<assignedEntity>
@@ -51201,6 +55561,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -51221,6 +55619,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -51543,6 +55979,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -51836,6 +56280,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -51856,6 +56338,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -52199,6 +56719,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 					
@@ -52492,6 +57020,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -52512,6 +57078,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -53140,6 +57744,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 				<!--
@@ -53158,6 +57778,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -53926,6 +58554,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -54202,6 +58838,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -54222,6 +58896,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -54544,6 +59256,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -54837,6 +59557,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -54857,6 +59615,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -55200,6 +59996,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -55493,6 +60297,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -55513,6 +60355,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -56141,6 +61021,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -56159,6 +61055,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -57386,6 +62290,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 									<assignedEntity>
@@ -57662,6 +62574,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -57682,6 +62632,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -58004,6 +62992,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -58297,6 +63293,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -58317,6 +63351,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -58660,6 +63732,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 									
@@ -58953,6 +64033,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -58973,6 +64091,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -59601,6 +64757,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 								<!--
@@ -59619,6 +64791,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -60387,6 +65567,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 										<assignedEntity>
@@ -60663,6 +65851,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -60683,6 +65909,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -61005,6 +66269,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -61298,6 +66570,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -61318,6 +66628,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -61661,6 +67009,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 										
@@ -61954,6 +67310,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -61974,6 +67368,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -62602,6 +68034,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 									<!--
@@ -62620,6 +68068,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -63803,6 +69259,14 @@ ${/*
 					incomplete performer without function slot. Do not invent function.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 								
 					<!--
@@ -64095,6 +69559,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -64115,6 +69617,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -64442,6 +69982,14 @@ ${/*
 				participation mode separately — do not invent a fake mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 								
 					<!--
@@ -64734,6 +70282,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -64754,6 +70340,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -65103,7 +70727,15 @@ ${/*
 							-->
 							<informant>
 								<time value="${visitTime}"/>
-								${params.doctorPosition && params.doctorPosition.trim()
+													<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
+${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
 								
@@ -65397,6 +71029,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -65417,6 +71087,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -66040,6 +71748,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 							<!--
@@ -66067,6 +71791,14 @@ ${/*
 				participation without mode slot. Do not invent mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
@@ -66742,6 +72474,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -67000,6 +72740,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -67020,6 +72798,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -67342,6 +73158,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -67617,6 +73441,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -67637,6 +73499,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -67980,6 +73880,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -68255,6 +74163,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -68275,6 +74221,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -68903,6 +74887,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -68921,6 +74921,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -69780,6 +75788,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 					<assignedEntity>
@@ -70056,6 +76072,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -70076,6 +76130,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -70398,6 +76490,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -70691,6 +76791,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -70711,6 +76849,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -71054,6 +77230,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 					
@@ -71347,6 +77531,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -71367,6 +77589,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -71995,6 +78255,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 				<!--
@@ -72013,6 +78289,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -72781,6 +79065,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -73057,6 +79349,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -73077,6 +79407,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -73399,6 +79767,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -73692,6 +80068,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -73712,6 +80126,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -74055,6 +80507,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -74348,6 +80808,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -74368,6 +80866,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -74996,6 +81532,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -75014,6 +81566,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -76241,6 +82801,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 									<assignedEntity>
@@ -76517,6 +83085,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -76537,6 +83143,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -76859,6 +83503,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -77152,6 +83804,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -77172,6 +83862,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -77515,6 +84243,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 									
@@ -77808,6 +84544,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -77828,6 +84602,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -78456,6 +85268,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 								<!--
@@ -78474,6 +85302,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -79242,6 +86078,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 										<assignedEntity>
@@ -79518,6 +86362,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -79538,6 +86420,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -79860,6 +86780,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -80153,6 +87081,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -80173,6 +87139,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -80516,6 +87520,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 										
@@ -80809,6 +87821,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -80829,6 +87879,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -81457,6 +88545,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 									<!--
@@ -81475,6 +88579,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -82672,6 +89784,14 @@ ${/*
 					incomplete performer without function slot. Do not invent function.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 								
 					<!--
@@ -82964,6 +90084,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -82984,6 +90142,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -83311,6 +90507,14 @@ ${/*
 				participation mode separately — do not invent a fake mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 								
 					<!--
@@ -83603,6 +90807,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -83623,6 +90865,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -83972,7 +91252,15 @@ ${/*
 							-->
 							<informant>
 								<time value="${visitTime}"/>
-								${params.doctorPosition && params.doctorPosition.trim()
+													<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
+${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
 								
@@ -84266,6 +91554,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -84286,6 +91612,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -84909,6 +92273,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 							<!--
@@ -84936,6 +92316,14 @@ ${/*
 				participation without mode slot. Do not invent mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
@@ -85611,6 +92999,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -85869,6 +93265,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -85889,6 +93323,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -86211,6 +93683,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -86486,6 +93966,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -86506,6 +94024,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -86849,6 +94405,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -87124,6 +94688,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -87144,6 +94746,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -87772,6 +95412,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -87790,6 +95446,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -88649,6 +96313,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 					<assignedEntity>
@@ -88925,6 +96597,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -88945,6 +96655,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -89267,6 +97015,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -89560,6 +97316,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -89580,6 +97374,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -89923,6 +97755,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 					
@@ -90216,6 +98056,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -90236,6 +98114,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -90864,6 +98780,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 				<!--
@@ -90882,6 +98814,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -91650,6 +99590,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -91926,6 +99874,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -91946,6 +99932,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -92268,6 +100292,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -92561,6 +100593,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -92581,6 +100651,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -92924,6 +101032,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -93217,6 +101333,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -93237,6 +101391,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -93865,6 +102057,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -93883,6 +102091,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -95110,6 +103326,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 									<assignedEntity>
@@ -95386,6 +103610,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -95406,6 +103668,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -95728,6 +104028,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -96021,6 +104329,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -96041,6 +104387,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -96384,6 +104768,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 									
@@ -96677,6 +105069,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -96697,6 +105127,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -97325,6 +105793,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 								<!--
@@ -97343,6 +105827,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -98111,6 +106603,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 										<assignedEntity>
@@ -98387,6 +106887,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -98407,6 +106945,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -98729,6 +107305,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -99022,6 +107606,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -99042,6 +107664,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -99385,6 +108045,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 										
@@ -99678,6 +108346,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -99698,6 +108404,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -100326,6 +109070,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 									<!--
@@ -100344,6 +109104,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -101551,6 +110319,14 @@ ${/*
 					incomplete performer without function slot. Do not invent function.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 								
 					<!--
@@ -101843,6 +110619,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -101863,6 +110677,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -102190,6 +111042,14 @@ ${/*
 				participation mode separately — do not invent a fake mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 								
 					<!--
@@ -102482,6 +111342,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -102502,6 +111400,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -102851,7 +111787,15 @@ ${/*
 							-->
 							<informant>
 								<time value="${visitTime}"/>
-								${params.doctorPosition && params.doctorPosition.trim()
+													<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
+${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
 								
@@ -103145,6 +112089,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -103165,6 +112147,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -103788,6 +112808,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 							<!--
@@ -103815,6 +112851,14 @@ ${/*
 				participation without mode slot. Do not invent mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
@@ -104490,6 +113534,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -104748,6 +113800,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -104768,6 +113858,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -105090,6 +114218,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -105365,6 +114501,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -105385,6 +114559,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -105728,6 +114940,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -106003,6 +115223,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -106023,6 +115281,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -106651,6 +115947,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -106669,6 +115981,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -107471,6 +116791,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 					<assignedEntity>
@@ -107747,6 +117075,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -107767,6 +117133,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -108089,6 +117493,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -108382,6 +117794,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -108402,6 +117852,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -108745,6 +118233,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 					
@@ -109038,6 +118534,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -109058,6 +118592,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -109686,6 +119258,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 				<!--
@@ -109704,6 +119292,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -111163,6 +120759,14 @@ ${/*
 					incomplete performer without function slot. Do not invent function.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 								
 					<!--
@@ -111455,6 +121059,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -111475,6 +121117,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -111802,6 +121482,14 @@ ${/*
 				participation mode separately — do not invent a fake mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 								
 					<!--
@@ -112094,6 +121782,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -112114,6 +121840,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -112463,7 +122227,15 @@ ${/*
 							-->
 							<informant>
 								<time value="${visitTime}"/>
-								${params.doctorPosition && params.doctorPosition.trim()
+													<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
+${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
 								
@@ -112757,6 +122529,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -112777,6 +122587,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -113400,6 +123248,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 							<!--
@@ -113427,6 +123291,14 @@ ${/*
 				participation without mode slot. Do not invent mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
@@ -114102,6 +123974,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -114360,6 +124240,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -114380,6 +124298,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -114702,6 +124658,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -114977,6 +124941,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -114997,6 +124999,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -115340,6 +125380,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -115615,6 +125663,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -115635,6 +125721,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -116263,6 +126387,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -116281,6 +126421,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -117140,6 +127288,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 					<assignedEntity>
@@ -117416,6 +127572,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -117436,6 +127630,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -117758,6 +127990,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -118051,6 +128291,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -118071,6 +128349,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -118414,6 +128730,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 					
@@ -118707,6 +129031,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -118727,6 +129089,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -119355,6 +129755,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 				<!--
@@ -119373,6 +129789,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -120141,6 +130565,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -120417,6 +130849,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -120437,6 +130907,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -120759,6 +131267,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -121052,6 +131568,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -121072,6 +131626,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -121415,6 +132007,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -121708,6 +132308,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -121728,6 +132366,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -122356,6 +133032,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -122374,6 +133066,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -123601,6 +134301,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 									<assignedEntity>
@@ -123877,6 +134585,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -123897,6 +134643,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -124219,6 +135003,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -124512,6 +135304,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -124532,6 +135362,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -124875,6 +135743,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 									
@@ -125168,6 +136044,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -125188,6 +136102,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -125816,6 +136768,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 								<!--
@@ -125834,6 +136802,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -126602,6 +137578,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 										<assignedEntity>
@@ -126878,6 +137862,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -126898,6 +137920,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -127220,6 +138280,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -127513,6 +138581,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -127533,6 +138639,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -127876,6 +139020,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 										
@@ -128169,6 +139321,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -128189,6 +139379,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -128817,6 +140045,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 									<!--
@@ -128835,6 +140079,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -130031,6 +141283,14 @@ ${/*
 					incomplete performer without function slot. Do not invent function.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 								
 					<!--
@@ -130323,6 +141583,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -130343,6 +141641,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -130670,6 +142006,14 @@ ${/*
 				participation mode separately — do not invent a fake mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 								
 					<!--
@@ -130962,6 +142306,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -130982,6 +142364,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -131331,7 +142751,15 @@ ${/*
 							-->
 							<informant>
 								<time value="${visitTime}"/>
-								${params.doctorPosition && params.doctorPosition.trim()
+													<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
+${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
 								
@@ -131625,6 +143053,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -131645,6 +143111,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -132268,6 +143772,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 							<!--
@@ -132295,6 +143815,14 @@ ${/*
 				participation without mode slot. Do not invent mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
@@ -132970,6 +144498,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -133228,6 +144764,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -133248,6 +144822,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -133570,6 +145182,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -133845,6 +145465,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -133865,6 +145523,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -134208,6 +145904,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -134483,6 +146187,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -134503,6 +146245,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -135131,6 +146911,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -135149,6 +146945,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -136008,6 +147812,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 					<assignedEntity>
@@ -136284,6 +148096,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -136304,6 +148154,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -136626,6 +148514,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -136919,6 +148815,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -136939,6 +148873,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -137282,6 +149254,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 					
@@ -137575,6 +149555,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -137595,6 +149613,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -138223,6 +150279,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 				<!--
@@ -138241,6 +150313,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -139009,6 +151089,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -139285,6 +151373,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -139305,6 +151431,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -139627,6 +151791,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -139920,6 +152092,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -139940,6 +152150,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -140283,6 +152531,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -140576,6 +152832,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -140596,6 +152890,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -141224,6 +153556,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -141242,6 +153590,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -142469,6 +154825,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 									<assignedEntity>
@@ -142745,6 +155109,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -142765,6 +155167,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -143087,6 +155527,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -143380,6 +155828,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -143400,6 +155886,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -143743,6 +156267,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 									
@@ -144036,6 +156568,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -144056,6 +156626,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -144684,6 +157292,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 								<!--
@@ -144702,6 +157326,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -145470,6 +158102,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 										<assignedEntity>
@@ -145746,6 +158386,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -145766,6 +158444,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -146088,6 +158804,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -146381,6 +159105,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -146401,6 +159163,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -146744,6 +159544,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 										
@@ -147037,6 +159845,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -147057,6 +159903,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -147685,6 +160569,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 									<!--
@@ -147703,6 +160603,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -149061,6 +161969,14 @@ ${/*
 					incomplete performer without function slot. Do not invent function.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 								
 					<!--
@@ -149353,6 +162269,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -149373,6 +162327,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -149700,6 +162692,14 @@ ${/*
 				participation mode separately — do not invent a fake mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 								
 					<!--
@@ -149992,6 +162992,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -150012,6 +163050,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -150361,7 +163437,15 @@ ${/*
 							-->
 							<informant>
 								<time value="${visitTime}"/>
-								${params.doctorPosition && params.doctorPosition.trim()
+													<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
+${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
 									: `<functionCode nullFlavor="NI"/>`}
 								
@@ -150655,6 +163739,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -150675,6 +163797,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -151298,6 +164458,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 							<!--
@@ -151325,6 +164501,14 @@ ${/*
 				participation without mode slot. Do not invent mode code.
 				NOW: modeCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<modeCode nullFlavor="NI"/>
 								${params.doctorPosition && params.doctorPosition.trim()
 									? `<functionCode nullFlavor="NI" displayName="${escapeXml(params.doctorPosition.trim())}"/>`
@@ -152000,6 +165184,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -152258,6 +165450,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -152278,6 +165508,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -152600,6 +165868,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -152875,6 +166151,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -152895,6 +166209,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -153238,6 +166590,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -153513,6 +166873,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -153533,6 +166931,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -154161,6 +167597,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -154179,6 +167631,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -155038,6 +168498,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 					<assignedEntity>
@@ -155314,6 +168782,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -155334,6 +168840,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -155656,6 +169200,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -155949,6 +169501,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -155969,6 +169559,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -156312,6 +169940,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 					
@@ -156605,6 +170241,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -156625,6 +170299,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -157253,6 +170965,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 				<!--
@@ -157271,6 +170999,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
@@ -158039,6 +171775,14 @@ ${/*
 					performer mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: performer/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 						<assignedEntity>
@@ -158315,6 +172059,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -158335,6 +172117,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -158657,6 +172477,14 @@ ${/*
 					author mode — do not invent.
 					NOW: modeCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: author/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<modeCode nullFlavor="NI"/>
 
 				<!--
@@ -158950,6 +172778,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -158970,6 +172836,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -159313,6 +173217,14 @@ ${/*
 					informant function code — do not invent.
 					NOW: functionCode nullFlavor NI.
 				-->
+					<!--
+						DEFECT #2620: informant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 				<functionCode nullFlavor="NI"/>
 
 						
@@ -159606,6 +173518,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2617: groupOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</groupOrganization>
 					</asMember>
 					<!--
@@ -159626,6 +173576,44 @@ ${/*
 							<telecom nullFlavor="NI"/>
 							<addr nullFlavor="NI"/>
 							<standardIndustryClassCode nullFlavor="NI"/>
+							<!--
+								DEFECT #2618: affiliateOrganization/asOrganizationPartOf.
+								WAS: organization missing asOrganizationPartOf hierarchy shell.
+								HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+								SEMD often flags bare org without part-of slot.
+								Form 043/u does not collect parent-MO linkage for this nested org — do not invent.
+								NOW: asOrganizationPartOf id/code/statusCode/effectiveTime NI +
+								wholeOrganization id/name/addr/telecom/standardIndustryClassCode NI (no nested AOP).
+							-->
+							<asOrganizationPartOf>
+								<!--
+									DEFECT #2567: asOrganizationPartOf/id.
+									WAS: asOrganizationPartOf missing id.
+									HL7 CDA R2 Role has id 0..*.
+									Form 043/u does not collect this field — do not invent.
+									NOW: id nullFlavor NI.
+								-->
+								<id nullFlavor="NI"/>
+								<code nullFlavor="NI"/>
+								<statusCode nullFlavor="NI"/>
+								<effectiveTime nullFlavor="NI"/>
+								<wholeOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<!--
+										DEFECT #2506: wholeOrganization/standardIndustryClassCode.
+										WAS: wholeOrganization had id/name/(addr/telecom) only — no standardIndustryClassCode.
+										HL7 CDA R2 Organization may carry standardIndustryClassCode 0..1 (OKVED).
+										SEMD often flags incomplete org without industry-class slot.
+										Form 043/u has no OKVED for this nested org — do not invent.
+										NOW: standardIndustryClassCode nullFlavor NI.
+									-->
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</wholeOrganization>
+							</asOrganizationPartOf>
+
 						</affiliateOrganization>
 					</asAffiliate>
 
@@ -160254,6 +174242,22 @@ ${/*
 					</asOrganizationPartOf>
 </affiliateOrganization>
 				</asAffiliate>
+					<!--
+						DEFECT #2619: relatedEntity/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 </relatedEntity>
 		</informant>
 					<!--
@@ -160272,6 +174276,14 @@ ${/*
 				participant function code for every clone — do not invent.
 				NOW: functionCode nullFlavor NI.
 			-->
+					<!--
+						DEFECT #2620: participant/signatureCode.
+						WAS: participation missing signatureCode.
+						HL7 CDA R2 Participation may carry signatureCode 0..1 (e.g. S/I).
+						Form 043/u does not collect electronic signature code for every participation — do not invent.
+						NOW: signatureCode nullFlavor NI.
+					-->
+					<signatureCode nullFlavor="NI"/>
 			<functionCode nullFlavor="NI"/>
 			<!--
 				DEFECT #2448: participant/modeCode.
