@@ -118,21 +118,38 @@ const diaryReviseBodySchema = z.object({
 	/*
 	 * complications / comorbidities — поля visit_diaries и UI 043/у.
 	 * БЫЛО: схема revise их не принимала, handler не писал. Админ правил
-	 * «Осложнения» в режиме Исправить — после сохранения оставался старый
+	 * «Осложнения»/«Сопутствующие» — после сохранения оставался старый
 	 * текст; в подписанной 043/у ошибка не исправлялась.
 	 */
 	complications: z.unknown().optional(),
 	comorbidities: z.unknown().optional(),
 	/*
-	 * instrumentTrayBarcode — сегмент diary_hash и печать 043/у.
-	 * БЫЛО: revise схему/handler не принимали лоток; sterilization/link
-	 * при is_locked отвечал 409 «правку вносит администратор через
+	 * instrumentTrayBarcode — элемент diary_hash и печать 043/у.
+	 * БЫЛО: revise схема/handler не принимали лоток; sterilization/link
+	 * при is_locked отвечал 409 «лоток можно править через
 	 * ревизию», но /revise лоток не менял — неверный штрихкод в
-	 * подписанной 043/у исправить было нечем.
+	 * подписанной 043/у исправить было нельзя.
 	 */
 	instrumentTrayBarcode: z.unknown().optional(),
 	revisionReason: z.unknown().optional(),
 });
+
+/**
+ * Route params for e-signature diary paths.
+ * БЫЛО: bare cast `req.params as { visitId|id: string }` on GET visit,
+ * GET revisions, POST lock, POST revise. Non-UUID junk hit the DB and
+ * returned 404 NotFound, masking bad route input as “missing diary”.
+ * Zod after clinical access gates → 400 ValidationError; existing
+ * 404 for well-formed unknown ids is unchanged.
+ */
+const diaryVisitParamsSchema = z.object({
+	visitId: z.string().uuid(),
+});
+
+const diaryIdParamsSchema = z.object({
+	id: z.string().uuid(),
+});
+
 
 /**
  * SHA-256 печать содержимого дневника 043/у.
@@ -879,7 +896,15 @@ async function syncVisitEmkFromDiarySoap(
 export default async function registerDiaryRoutes(app: FastifyInstance) {
 	app.get("/api/diaries/visit/:visitId", async (req, reply) => {
 		if (!(await requireClinicalReadAccess(req, reply, "read diary"))) return;
-		const { visitId } = req.params as { visitId: string };
+		const parsedVisitParams = diaryVisitParamsSchema.safeParse(req.params);
+		if (!parsedVisitParams.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					"Идентификатор приёма в адресе должен быть UUID (visitId).",
+			});
+		}
+		const { visitId } = parsedVisitParams.data;
 		const orgId = await resolveOrganizationId(req);
 		if (!orgId)
 			return reply
@@ -978,7 +1003,15 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 	app.get("/api/diaries/:id/revisions", async (req, reply) => {
 		if (!(await requireClinicalReadAccess(req, reply, "read diary revisions")))
 			return;
-		const { id } = req.params as { id: string };
+		const parsedIdParams = diaryIdParamsSchema.safeParse(req.params);
+		if (!parsedIdParams.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					"Идентификатор дневника в адресе должен быть UUID (id).",
+			});
+		}
+		const { id } = parsedIdParams.data;
 		const orgId = await resolveOrganizationId(req);
 		if (!orgId)
 			return reply.code(403).send({
@@ -1446,7 +1479,15 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 	app.post("/api/diaries/:id/lock", async (req, reply) => {
 		if (!(await requireClinicalMutationAccess(req, reply, "lock diary")))
 			return;
-		const { id } = req.params as { id: string };
+		const parsedIdParams = diaryIdParamsSchema.safeParse(req.params);
+		if (!parsedIdParams.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					"Идентификатор дневника в адресе должен быть UUID (id).",
+			});
+		}
+		const { id } = parsedIdParams.data;
 		const parsedLockBody = diaryLockBodySchema.safeParse(req.body ?? {});
 		if (!parsedLockBody.success) {
 			return reply.code(400).send({
@@ -1841,7 +1882,15 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			!(await requireClinicalMutationAccess(req, reply, "revise locked diary"))
 		)
 			return;
-		const { id } = req.params as { id: string };
+		const parsedIdParams = diaryIdParamsSchema.safeParse(req.params);
+		if (!parsedIdParams.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					"Идентификатор дневника в адресе должен быть UUID (id).",
+			});
+		}
+		const { id } = parsedIdParams.data;
 		/* Body Zod before role gate (как /lock): non-object → 400, не 403 oracle. */
 		const parsedReviseBody = diaryReviseBodySchema.safeParse(req.body ?? {});
 		if (!parsedReviseBody.success) {

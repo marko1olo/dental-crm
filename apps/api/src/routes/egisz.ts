@@ -22,6 +22,19 @@ const validateDoctorSnilsBodySchema = z.object({
 });
 
 /**
+ * GET /api/egisz/visits/:visitId/cda: было bare cast
+ * `request.params as { visitId: string }`.
+ * Non-object params or non-UUID visitId → cast still yields a string that
+ * hits the DB and returns VisitNotFound (404), masking bad route input.
+ * Zod safeParse after AUTH → 400 ValidationError with a clear message;
+ * existing 404 VisitNotFound for unknown-but-well-formed ids is unchanged.
+ */
+const visitCdaParamsSchema = z.object({
+	visitId: z.string().uuid(),
+});
+
+
+/**
  * Модуль ЕГИСЗ (ФРМО / ФРМР / РЭМД).
  *
  * ЧТО ЗДЕСЬ ИЗМЕНИЛОСЬ И ПОЧЕМУ
@@ -220,7 +233,16 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
 
-			const { visitId } = request.params as { visitId: string };
+			const parsedParams = visitCdaParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
+				return reply.status(400).send({
+					ok: false,
+					error: "ValidationError",
+					message:
+						"Идентификатор приёма в адресе должен быть UUID (visitId).",
+				});
+			}
+			const { visitId } = parsedParams.data;
 
 			const [row] = await db
 				.select({
@@ -787,7 +809,30 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				...(treatmentPlan ? { treatmentDescription: treatmentPlan } : {}),
 			};
 
-			const xml = generateDentalCdaXml(params);
+						const xml = generateDentalCdaXml(params);
+			/*
+			 * JJ1: forensic trail for CDA export into tenant-scoped egisz_logs.
+			 * BYLO: successful GET .../cda returned XML only — zero insert call sites
+			 * for egisz_logs, so the clinic journal never recorded an export attempt.
+			 * STALO: after generate, insert Pending row with organizationId +
+			 * patientId + visitId. Soft-fail: export XML is primary; log failure must
+			 * not block the download (column may be missing until 0145 applied).
+			 */
+			try {
+				await db.insert(schema.egiszLogs).values({
+					organizationId: orgId,
+					patientId: row.patient.id,
+					visitId: row.visit.id,
+					status: "Pending",
+				});
+			} catch (logErr) {
+				const detail =
+					logErr instanceof Error ? logErr.message : String(logErr);
+				console.error(
+					"[egisz] failed to write egisz_logs on CDA export:",
+					detail,
+				);
+			}
 			return reply
 				.header("content-type", "application/xml; charset=utf-8")
 				.header(
