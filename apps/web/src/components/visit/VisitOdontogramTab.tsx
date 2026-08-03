@@ -4,6 +4,7 @@ import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { EgiszMonitor } from "../EgiszMonitor";
 import { OdontogramModule } from "../odontogram/OdontogramModule";
 import { VisitDiaryEditor } from "../VisitDiaryEditor";
+import { realVisitFieldId } from "./visitIdentity";
 
 export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointment?: any; dashboard?: any }) {
 	let ctx: any = null;
@@ -12,6 +13,45 @@ export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointm
 	const activeAppointment = props?.activeAppointment ?? ctx?.activeAppointment;
 	const dashboard = props?.dashboard ?? ctx?.dashboard;
 	const workspaceFlags = useWorkspaceProfile();
+
+	/*
+	 * ПРИЁМ ≠ ВИЗИТ.
+	 *
+	 * БЫЛО: visitId={activeAppointment.id} — в VisitDiaryEditor и EgiszMonitor
+	 * уходил UUID записи расписания (appointments.id). GET /api/diaries/visit/:id
+	 * и CDA/EGISZ ждут visits.id. Дневник не находился (404/empty), подпись и
+	 * экспорт CDA били в чужой или несуществующий ключ.
+	 *
+	 * СТАЛО: только открытый визит из dashboard.activeVisit, и только если он
+	 * привязан к выбранному приёму (appointmentId === activeAppointment.id).
+	 * Тот же realVisitFieldId, что VisitEmkTab — отсекает NIL_UUID гидратации.
+	 */
+	const activeVisit =
+		dashboard?.activeVisit ??
+		ctx?.dashboard?.activeVisit ??
+		null;
+	const openVisitId = realVisitFieldId(
+		activeVisit && typeof activeVisit === "object"
+			? (activeVisit as { id?: unknown }).id
+			: null,
+	);
+	const openVisitAppointmentId = realVisitFieldId(
+		activeVisit && typeof activeVisit === "object"
+			? (activeVisit as { appointmentId?: unknown }).appointmentId
+			: null,
+	);
+	const appointmentId = realVisitFieldId(activeAppointment?.id);
+	const diaryVisitId =
+		openVisitId &&
+		appointmentId &&
+		openVisitAppointmentId === appointmentId
+			? openVisitId
+			: null;
+	const diaryPatientId = realVisitFieldId(
+		activeVisit && typeof activeVisit === "object"
+			? (activeVisit as { patientId?: unknown }).patientId
+			: null,
+	) ?? realVisitFieldId(activePatient?.id);
 
 	if (!activePatient?.id) {
 		return (
@@ -63,15 +103,15 @@ export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointm
 
 					Зубная карта приёма не требует — она принадлежит пациенту и
 					показывается всегда. Дневник приёма и мониторинг ЕГИСЗ без
-					приёма показывать нечего, поэтому вместо них честное объяснение.
+					открытого визита (visits.id) показывать нечего.
 				*/}
-				{activeAppointment?.id ? (
+				{diaryVisitId && diaryPatientId ? (
 					<>
 						{/*
-							КЛЮЧ ПО ПРИЁМУ — ЧТОБЫ ОКНО ПОДПИСАНИЯ НЕ ПЕРЕЕХАЛО НА ДРУГОГО
+							КЛЮЧ ПО ВИЗИТУ — ЧТОБЫ ОКНО ПОДПИСАНИЯ НЕ ПЕРЕЕХАЛО НА ДРУГОГО
 							ПАЦИЕНТА.
 
-							БЫЛО: дневник приёма получал новые visitId/patientId без
+							БЫЛО: дневник приёма получал appointment.id как visitId без
 							перемонтирования (вкладка «Зубная формула» сознательно не
 							размонтируется, чтобы не терять набранный текст, — см. VisitView).
 							Сам дневник свои поля при смене приёма сбрасывает
@@ -84,21 +124,21 @@ export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointm
 							ставило подпись под записью не того человека, и снять её нельзя:
 							правка подписанного идёт только ревизией.
 
-							Ключ по идентификатору приёма монтирует дневник заново на новом
-							приёме. Терять нечего: при смене visitId дневник и так читается с
-							сервера с нуля, а внутри одного приёма ключ не меняется, поэтому
+							Ключ по visits.id монтирует дневник заново на новом визите.
+							Терять нечего: при смене visitId дневник и так читается с
+							сервера с нуля, а внутри одного визита ключ не меняется, поэтому
 							набранный текст и автосохранение живут как раньше.
 						*/}
 						<VisitDiaryEditor
-							key={activeAppointment.id}
-							visitId={activeAppointment.id}
-							patientId={activePatient.id}
+							key={diaryVisitId}
+							visitId={diaryVisitId}
+							patientId={diaryPatientId}
 						/>
 						{workspaceFlags.hasEngineeringStatus && (
 							<div style={{ marginTop: "16px" }}>
 								<EgiszMonitor
-									visitId={activeAppointment.id}
-									patientId={activePatient.id}
+									visitId={diaryVisitId}
+									patientId={diaryPatientId}
 								/>
 							</div>
 						)}
@@ -107,12 +147,15 @@ export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointm
 					<div className="text-center py-10 px-6 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400">
 						<div className="text-3xl mb-2">📝</div>
 						<h4 className="text-base font-semibold text-slate-900 dark:text-white m-0">
-							Дневник приёма появится, когда приём откроют
+							{appointmentId
+								? "Дневник приёма появится, когда визит откроют"
+								: "Дневник приёма появится, когда приём откроют"}
 						</h4>
 						<p className="text-sm m-0 mt-1">
 							Зубную карту слева можно заполнять уже сейчас: она хранится у пациента.
-							Дневник записывается в конкретный приём — запишите пациента и начните
-							приём в разделе «Записи».
+							{appointmentId
+								? " Дневник и ЕГИСЗ привязаны к открытому визиту — начните приём в разделе «Записи», чтобы появилась запись 043/у."
+								: " Дневник записывается в конкретный приём — запишите пациента и начните приём в разделе «Записи»."}
 						</p>
 					</div>
 				)}
