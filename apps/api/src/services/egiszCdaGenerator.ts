@@ -582,6 +582,14 @@ ${/*
 							NOW: administrativeGenderCode nullFlavor NI.
 						-->
 						<!--
+							DEFECT #2584: guardianPerson/religiousAffiliationCode.
+							WAS: guardianPerson missing religiousAffiliationCode.
+							HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+							Form 043/u does not collect this field — do not invent.
+							NOW: religiousAffiliationCode nullFlavor NI.
+						-->
+						<religiousAffiliationCode nullFlavor="NI"/>
+						<!--
 							DEFECT #2576: guardianPerson/desc.
 							WAS: guardianPerson missing desc.
 							HL7 CDA R2 Person/Entity has desc 0..1.
@@ -675,6 +683,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+						<!--
+							DEFECT #2602: guardianPerson/asEntityWithGeneric.
+							WAS: person/entity missing asEntityWithGeneric role shell.
+							HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+							Form 043/u does not collect generic entity ids — do not invent.
+							NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+						-->
+						<asEntityWithGeneric>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2603: guardianPerson/asOtherIDs.
+							WAS: person/entity missing asOtherIDs role shell.
+							HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+							Form 043/u does not collect alternate entity ids — do not invent.
+							NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+						-->
+						<asOtherIDs>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+						</asOtherIDs>
+
+
 				</guardianPerson>
 				
 					<!--
@@ -687,6 +721,15 @@ ${/*
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
 						<telecom nullFlavor="NI"/>
+						<!--
+							DEFECT #2585: guardianOrganization/standardIndustryClassCode.
+							WAS: guardianOrganization missing standardIndustryClassCode.
+							HL7 CDA R2 Organization has standardIndustryClassCode 0..1 (OKVED).
+							Form 043/u does not collect this field — do not invent.
+							NOW: standardIndustryClassCode nullFlavor NI.
+						-->
+						<standardIndustryClassCode nullFlavor="NI"/>
+
 					</guardianOrganization>
 					<!--
 						DEFECT #970: patient/guardian/time.
@@ -930,6 +973,32 @@ ${/*
 
 					</place>
 				</birthplace>
+					<!--
+						DEFECT #2604: patient/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2605: patient/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 
 
 			</patient>
@@ -1208,7 +1277,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -1263,6 +1356,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+				<!--
+					DEFECT #2596: assignedPerson/asEntityWithGeneric.
+					WAS: person/entity missing asEntityWithGeneric role shell.
+					HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+					Form 043/u does not collect generic entity ids — do not invent.
+					NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+				-->
+				<asEntityWithGeneric>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<name nullFlavor="NI"/>
+					<desc nullFlavor="NI"/>
+				</asEntityWithGeneric>
+				<!--
+					DEFECT #2597: assignedPerson/asOtherIDs.
+					WAS: person/entity missing asOtherIDs role shell.
+					HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+					Form 043/u does not collect alternate entity ids — do not invent.
+					NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+				-->
+				<asOtherIDs>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+				</asOtherIDs>
+
+
 			</assignedPerson>
 			${/*
 			 * DEFECT #83: assignedAuthor must carry representedOrganization.
@@ -1807,7 +1926,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -1862,6 +2005,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+				<!--
+					DEFECT #2596: assignedPerson/asEntityWithGeneric.
+					WAS: person/entity missing asEntityWithGeneric role shell.
+					HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+					Form 043/u does not collect generic entity ids — do not invent.
+					NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+				-->
+				<asEntityWithGeneric>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<name nullFlavor="NI"/>
+					<desc nullFlavor="NI"/>
+				</asEntityWithGeneric>
+				<!--
+					DEFECT #2597: assignedPerson/asOtherIDs.
+					WAS: person/entity missing asOtherIDs role shell.
+					HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+					Form 043/u does not collect alternate entity ids — do not invent.
+					NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+				-->
+				<asOtherIDs>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+				</asOtherIDs>
+
+
 			</assignedPerson>
 			${`<representedOrganization>
 				${
@@ -2377,7 +2546,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -2432,6 +2625,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+				<!--
+					DEFECT #2596: assignedPerson/asEntityWithGeneric.
+					WAS: person/entity missing asEntityWithGeneric role shell.
+					HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+					Form 043/u does not collect generic entity ids — do not invent.
+					NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+				-->
+				<asEntityWithGeneric>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<name nullFlavor="NI"/>
+					<desc nullFlavor="NI"/>
+				</asEntityWithGeneric>
+				<!--
+					DEFECT #2597: assignedPerson/asOtherIDs.
+					WAS: person/entity missing asOtherIDs role shell.
+					HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+					Form 043/u does not collect alternate entity ids — do not invent.
+					NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+				-->
+				<asOtherIDs>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+				</asOtherIDs>
+
+
 			</assignedPerson>
 			${`<representedOrganization>
 				${
@@ -2765,6 +2984,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -2852,6 +3079,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -3358,7 +3611,31 @@ ${/*
 		NOW: receiver shell with nullFlavor NI children.
 	-->
 	<receiver typeCode="RCV">
-		<!--
+					<!--
+				DEFECT #2592: receiver/time.
+				WAS: receiver missing time.
+				HL7 CDA R2 participation may carry time 0..1.
+				Form 043/u does not collect this field — do not invent.
+				NOW: time nullFlavor NI.
+			-->
+			<!--
+				DEFECT #2594: receiver/functionCode.
+				WAS: receiver missing functionCode.
+				HL7 CDA R2 participation may carry functionCode 0..1.
+				Form 043/u does not collect this field — do not invent.
+				NOW: functionCode nullFlavor NI.
+			-->
+			<functionCode nullFlavor="NI"/>
+			<!--
+				DEFECT #2593: receiver/modeCode.
+				WAS: receiver missing modeCode.
+				HL7 CDA R2 participation may carry modeCode 0..1.
+				Form 043/u does not collect this field — do not invent.
+				NOW: modeCode nullFlavor NI.
+			-->
+			<modeCode nullFlavor="NI"/>
+			<time nullFlavor="NI"/>
+<!--
 			DEFECT #2538: receiver/device.
 			WAS: no receiving device entity under receiver.
 			HL7 CDA R2 Receiver has device 1..1 (or organization).
@@ -3618,7 +3895,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -3673,6 +3974,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+				<!--
+					DEFECT #2596: assignedPerson/asEntityWithGeneric.
+					WAS: person/entity missing asEntityWithGeneric role shell.
+					HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+					Form 043/u does not collect generic entity ids — do not invent.
+					NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+				-->
+				<asEntityWithGeneric>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<name nullFlavor="NI"/>
+					<desc nullFlavor="NI"/>
+				</asEntityWithGeneric>
+				<!--
+					DEFECT #2597: assignedPerson/asOtherIDs.
+					WAS: person/entity missing asOtherIDs role shell.
+					HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+					Form 043/u does not collect alternate entity ids — do not invent.
+					NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+				-->
+				<asOtherIDs>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+				</asOtherIDs>
+
+
 			</assignedPerson>
 			<representedOrganization>
 				${/*
@@ -4209,7 +4536,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -4264,6 +4615,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+				<!--
+					DEFECT #2596: assignedPerson/asEntityWithGeneric.
+					WAS: person/entity missing asEntityWithGeneric role shell.
+					HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+					Form 043/u does not collect generic entity ids — do not invent.
+					NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+				-->
+				<asEntityWithGeneric>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+					<name nullFlavor="NI"/>
+					<desc nullFlavor="NI"/>
+				</asEntityWithGeneric>
+				<!--
+					DEFECT #2597: assignedPerson/asOtherIDs.
+					WAS: person/entity missing asOtherIDs role shell.
+					HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+					Form 043/u does not collect alternate entity ids — do not invent.
+					NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+				-->
+				<asOtherIDs>
+					<id nullFlavor="NI"/>
+					<code nullFlavor="NI"/>
+				</asOtherIDs>
+
+
 			</assignedPerson>
 			<representedOrganization>
 				${/*
@@ -5091,7 +5468,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -5146,6 +5547,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+						<!--
+							DEFECT #2596: assignedPerson/asEntityWithGeneric.
+							WAS: person/entity missing asEntityWithGeneric role shell.
+							HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+							Form 043/u does not collect generic entity ids — do not invent.
+							NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+						-->
+						<asEntityWithGeneric>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2597: assignedPerson/asOtherIDs.
+							WAS: person/entity missing asOtherIDs role shell.
+							HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+							Form 043/u does not collect alternate entity ids — do not invent.
+							NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+						-->
+						<asOtherIDs>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+						</asOtherIDs>
+
+
 			</assignedPerson>
 					<representedOrganization>
 						${/*
@@ -5642,7 +6069,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -5697,6 +6148,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+						<!--
+							DEFECT #2596: assignedPerson/asEntityWithGeneric.
+							WAS: person/entity missing asEntityWithGeneric role shell.
+							HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+							Form 043/u does not collect generic entity ids — do not invent.
+							NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+						-->
+						<asEntityWithGeneric>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2597: assignedPerson/asOtherIDs.
+							WAS: person/entity missing asOtherIDs role shell.
+							HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+							Form 043/u does not collect alternate entity ids — do not invent.
+							NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+						-->
+						<asOtherIDs>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+						</asOtherIDs>
+
+
 			</assignedPerson>
 					<representedOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
@@ -6182,7 +6659,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -6237,6 +6738,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+						<!--
+							DEFECT #2596: assignedPerson/asEntityWithGeneric.
+							WAS: person/entity missing asEntityWithGeneric role shell.
+							HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+							Form 043/u does not collect generic entity ids — do not invent.
+							NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+						-->
+						<asEntityWithGeneric>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2597: assignedPerson/asOtherIDs.
+							WAS: person/entity missing asOtherIDs role shell.
+							HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+							Form 043/u does not collect alternate entity ids — do not invent.
+							NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+						-->
+						<asOtherIDs>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+						</asOtherIDs>
+
+
 			</assignedPerson>
 					<representedOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
@@ -6559,6 +7086,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -6646,6 +7181,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -6881,6 +7442,14 @@ ${/*
 							NOW: administrativeGenderCode nullFlavor NI.
 						-->
 						<!--
+							DEFECT #2582: associatedPerson/religiousAffiliationCode.
+							WAS: associatedPerson missing religiousAffiliationCode.
+							HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+							Form 043/u does not collect this field — do not invent.
+							NOW: religiousAffiliationCode nullFlavor NI.
+						-->
+						<religiousAffiliationCode nullFlavor="NI"/>
+						<!--
 							DEFECT #2574: associatedPerson/desc.
 							WAS: associatedPerson missing desc.
 							HL7 CDA R2 Person/Entity has desc 0..1.
@@ -6977,6 +7546,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+						<!--
+							DEFECT #2598: associatedPerson/asEntityWithGeneric.
+							WAS: person/entity missing asEntityWithGeneric role shell.
+							HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+							Form 043/u does not collect generic entity ids — do not invent.
+							NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+						-->
+						<asEntityWithGeneric>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2599: associatedPerson/asOtherIDs.
+							WAS: person/entity missing asOtherIDs role shell.
+							HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+							Form 043/u does not collect alternate entity ids — do not invent.
+							NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+						-->
+						<asOtherIDs>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+						</asOtherIDs>
+
+
 				</associatedPerson>
 					<scopingOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
@@ -7611,7 +8206,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -7666,6 +8285,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -8084,7 +8729,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -8139,6 +8808,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -8599,7 +9294,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -8654,6 +9373,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -8943,6 +9688,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -9030,6 +9783,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -9254,6 +10033,14 @@ ${/*
 						Form 043/u does not collect this field — do not invent.
 						NOW: desc nullFlavor NI.
 					-->
+					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
 					<desc nullFlavor="NI"/>
 <administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
@@ -9332,6 +10119,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -9644,7 +10457,47 @@ ${/*
 						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
 					-->
 					<entryRelationship typeCode="COMP">
-						<act classCode="ACT" moodCode="EVN">
+													<!--
+								DEFECT #2586: entryRelationship/seperatableInd.
+								WAS: entryRelationship missing seperatableInd.
+								HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+								Form 043/u does not collect this field — do not invent.
+								NOW: seperatableInd nullFlavor NI.
+							-->
+							<!--
+								DEFECT #2590: entryRelationship/contextConductionInd.
+								WAS: entryRelationship missing contextConductionInd.
+								HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: contextConductionInd nullFlavor NI.
+							-->
+							<contextConductionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2589: entryRelationship/negationInd.
+								WAS: entryRelationship missing negationInd.
+								HL7 CDA R2 EntryRelationship has negationInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: negationInd nullFlavor NI.
+							-->
+							<negationInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2588: entryRelationship/inversionInd.
+								WAS: entryRelationship missing inversionInd.
+								HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: inversionInd nullFlavor NI.
+							-->
+							<inversionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2587: entryRelationship/sequenceNumber.
+								WAS: entryRelationship missing sequenceNumber.
+								HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: sequenceNumber nullFlavor NI.
+							-->
+							<sequenceNumber nullFlavor="NI"/>
+							<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<text nullFlavor="NI"/>
@@ -9665,6 +10518,14 @@ ${/*
 								Form 043/u does not collect this coded slot — do not invent.
 								NOW: approachSiteCode nullFlavor NI until chart field exists.
 							-->
+							<!--
+								DEFECT #2591: act/independenceInd.
+								WAS: act missing independenceInd.
+								HL7 CDA R2 Act has independenceInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: independenceInd nullFlavor NI.
+							-->
+							<independenceInd nullFlavor="NI"/>
 							<approachSiteCode nullFlavor="NI"/>
 							<!--
 								DEFECT #2534: act/repeatNumber.
@@ -10140,7 +11001,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -10195,6 +11080,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -10631,7 +11542,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -10686,6 +11621,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -11164,7 +12125,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -11219,6 +12204,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -11508,6 +12519,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -11595,6 +12614,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -11819,6 +12864,14 @@ ${/*
 								NOW: administrativeGenderCode nullFlavor NI.
 							-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -11915,6 +12968,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 					
 					<!--
@@ -12227,7 +13306,47 @@ ${/*
 					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
 				-->
 				<entryRelationship typeCode="COMP">
-					<act classCode="ACT" moodCode="EVN">
+										<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
@@ -12239,6 +13358,14 @@ ${/*
 						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
 						NOW: languageCode code=ru-RU.
 					-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 					<languageCode code="ru-RU"/>
 					<!--
 						DEFECT #1155: entryRelationship/act/confidentialityCode.
@@ -12614,7 +13741,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -12669,6 +13820,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -13105,7 +14282,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -13160,6 +14361,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -13638,7 +14865,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -13693,6 +14944,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -13982,6 +15259,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -14069,6 +15354,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -14293,6 +15604,14 @@ ${/*
 									NOW: administrativeGenderCode nullFlavor NI.
 								-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -14389,6 +15708,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -15018,6 +16363,20 @@ ${/*
 							NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
 						-->
 						<expirationTime nullFlavor="NI"/>
+						<!--
+							DEFECT #2606: manufacturedMaterial/asEntityWithGeneric.
+							WAS: person/entity missing asEntityWithGeneric role shell.
+							HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+							Form 043/u does not collect generic entity ids — do not invent.
+							NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+						-->
+						<asEntityWithGeneric>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+						</asEntityWithGeneric>
+
 					</manufacturedMaterial>
 				<!--
 
@@ -15197,7 +16556,47 @@ ${/*
 				NI / completed shell until chart field exists.
 			-->
 			<entryRelationship typeCode="COMP">
-				<act classCode="ACT" moodCode="EVN">
+									<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
 					<!--
@@ -15205,6 +16604,14 @@ ${/*
 						WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
 						NOW: text nullFlavor NI.
 					-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 					<text nullFlavor="NI"/>
 					<statusCode code="completed"/>
 					<!--
@@ -15585,7 +16992,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -15640,6 +17071,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					<!--
 						DEFECT #910: inFulfillmentOf/order/author/assignedAuthor/representedOrganization.
@@ -16251,7 +17708,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -16306,6 +17787,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 			
 				<!--
@@ -16741,7 +18248,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -16796,6 +18327,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 			
 				<!--
@@ -17085,6 +18642,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -17172,6 +18737,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -17396,6 +18987,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -17492,6 +19091,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 			
 					<!--
@@ -17804,7 +19429,47 @@ ${/*
 			NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI.
 		-->
 		<entryRelationship typeCode="COMP">
-			<act classCode="ACT" moodCode="EVN">
+								<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 				<id nullFlavor="NI"/>
 				<code nullFlavor="NI"/>
 				<text nullFlavor="NI"/>
@@ -17816,6 +19481,14 @@ ${/*
 				WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
 				NOW: languageCode code=ru-RU.
 			-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 			<languageCode code="ru-RU"/>
 			<!--
 				DEFECT #1156: entryRelationship/act/confidentialityCode.
@@ -18191,7 +19864,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -18246,6 +19943,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 				
 				<!--
@@ -18682,7 +20405,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -18737,6 +20484,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -19215,7 +20988,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -19270,6 +21067,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 				
 				<!--
@@ -19559,6 +21382,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -19646,6 +21477,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -19870,6 +21727,14 @@ ${/*
 							NOW: administrativeGenderCode nullFlavor NI.
 						-->
 						<!--
+							DEFECT #2582: associatedPerson/religiousAffiliationCode.
+							WAS: associatedPerson missing religiousAffiliationCode.
+							HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+							Form 043/u does not collect this field — do not invent.
+							NOW: religiousAffiliationCode nullFlavor NI.
+						-->
+						<religiousAffiliationCode nullFlavor="NI"/>
+						<!--
 							DEFECT #2574: associatedPerson/desc.
 							WAS: associatedPerson missing desc.
 							HL7 CDA R2 Person/Entity has desc 0..1.
@@ -19966,6 +21831,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+						<!--
+							DEFECT #2598: associatedPerson/asEntityWithGeneric.
+							WAS: person/entity missing asEntityWithGeneric role shell.
+							HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+							Form 043/u does not collect generic entity ids — do not invent.
+							NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+						-->
+						<asEntityWithGeneric>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2599: associatedPerson/asOtherIDs.
+							WAS: person/entity missing asOtherIDs role shell.
+							HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+							Form 043/u does not collect alternate entity ids — do not invent.
+							NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+						-->
+						<asOtherIDs>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+						</asOtherIDs>
+
+
 				</associatedPerson>
 				
 					<!--
@@ -20569,6 +22460,14 @@ ${/*
 					NOW: administrativeGenderCode nullFlavor NI.
 				-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -20665,6 +22564,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 			${`<scopingOrganization>
 				${
@@ -21239,7 +23164,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -21294,6 +23243,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 
 			
@@ -21740,7 +23715,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -21795,6 +23794,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 			
 				<!--
@@ -22249,7 +24274,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -22304,6 +24353,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 			
 				<!--
@@ -22593,6 +24668,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -22680,6 +24763,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -22917,6 +25026,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -23012,6 +25129,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 				<!--
 					DEFECT #908: consent/participant/WIT/associatedEntity/scopingOrganization.
@@ -23461,7 +25604,47 @@ ${/*
 			NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
 		-->
 		<entryRelationship typeCode="COMP">
-			<act classCode="ACT" moodCode="EVN">
+								<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 				<id nullFlavor="NI"/>
 				<code nullFlavor="NI"/>
 				<text nullFlavor="NI"/>
@@ -23473,6 +25656,14 @@ ${/*
 				WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
 				NOW: languageCode code=ru-RU.
 			-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 			<languageCode code="ru-RU"/>
 			<!--
 				DEFECT #1157: entryRelationship/act/confidentialityCode.
@@ -23848,7 +26039,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -23903,6 +26118,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 				
 				<!--
@@ -24339,7 +26580,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -24394,6 +26659,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -24872,7 +27163,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -24927,6 +27242,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 				
 				<!--
@@ -25216,6 +27557,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -25303,6 +27652,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -25527,6 +27902,14 @@ ${/*
 							NOW: administrativeGenderCode nullFlavor NI.
 						-->
 						<!--
+							DEFECT #2582: associatedPerson/religiousAffiliationCode.
+							WAS: associatedPerson missing religiousAffiliationCode.
+							HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+							Form 043/u does not collect this field — do not invent.
+							NOW: religiousAffiliationCode nullFlavor NI.
+						-->
+						<religiousAffiliationCode nullFlavor="NI"/>
+						<!--
 							DEFECT #2574: associatedPerson/desc.
 							WAS: associatedPerson missing desc.
 							HL7 CDA R2 Person/Entity has desc 0..1.
@@ -25623,6 +28006,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+						<!--
+							DEFECT #2598: associatedPerson/asEntityWithGeneric.
+							WAS: person/entity missing asEntityWithGeneric role shell.
+							HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+							Form 043/u does not collect generic entity ids — do not invent.
+							NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+						-->
+						<asEntityWithGeneric>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2599: associatedPerson/asOtherIDs.
+							WAS: person/entity missing asOtherIDs role shell.
+							HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+							Form 043/u does not collect alternate entity ids — do not invent.
+							NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+						-->
+						<asOtherIDs>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+						</asOtherIDs>
+
+
 				</associatedPerson>
 				
 					<!--
@@ -26609,7 +29018,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -26664,6 +29097,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+						<!--
+							DEFECT #2596: assignedPerson/asEntityWithGeneric.
+							WAS: person/entity missing asEntityWithGeneric role shell.
+							HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+							Form 043/u does not collect generic entity ids — do not invent.
+							NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+						-->
+						<asEntityWithGeneric>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2597: assignedPerson/asOtherIDs.
+							WAS: person/entity missing asOtherIDs role shell.
+							HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+							Form 043/u does not collect alternate entity ids — do not invent.
+							NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+						-->
+						<asOtherIDs>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+						</asOtherIDs>
+
+
 			</assignedPerson>
 					<representedOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
@@ -26962,7 +29421,15 @@ ${/*
 			<responsibleParty>
 
 				
-					<!--
+										<!--
+						DEFECT #2595: responsibleParty/time.
+						WAS: responsibleParty missing time.
+						HL7 CDA R2 participation may carry time 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: time nullFlavor NI.
+					-->
+					<time nullFlavor="NI"/>
+<!--
 						DEFECT #2531: responsibleParty/modeCode.
 						WAS: responsibleParty participation missing modeCode at top level.
 						HL7 CDA R2 participation may carry modeCode 0..1 (electronic/written/verbal). SEMD often flags incomplete participation without mode slot.
@@ -27145,7 +29612,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -27200,6 +29691,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+						<!--
+							DEFECT #2596: assignedPerson/asEntityWithGeneric.
+							WAS: person/entity missing asEntityWithGeneric role shell.
+							HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+							Form 043/u does not collect generic entity ids — do not invent.
+							NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+						-->
+						<asEntityWithGeneric>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2597: assignedPerson/asOtherIDs.
+							WAS: person/entity missing asOtherIDs role shell.
+							HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+							Form 043/u does not collect alternate entity ids — do not invent.
+							NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+						-->
+						<asOtherIDs>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+						</asOtherIDs>
+
+
 			</assignedPerson>
 					<representedOrganization>
 	${/*
@@ -27890,7 +30407,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -27945,6 +30486,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+						<!--
+							DEFECT #2596: assignedPerson/asEntityWithGeneric.
+							WAS: person/entity missing asEntityWithGeneric role shell.
+							HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+							Form 043/u does not collect generic entity ids — do not invent.
+							NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+						-->
+						<asEntityWithGeneric>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2597: assignedPerson/asOtherIDs.
+							WAS: person/entity missing asOtherIDs role shell.
+							HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+							Form 043/u does not collect alternate entity ids — do not invent.
+							NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+						-->
+						<asOtherIDs>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+						</asOtherIDs>
+
+
 			</assignedPerson>
 					<representedOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
@@ -28430,7 +30997,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -28485,6 +31076,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+						<!--
+							DEFECT #2596: assignedPerson/asEntityWithGeneric.
+							WAS: person/entity missing asEntityWithGeneric role shell.
+							HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+							Form 043/u does not collect generic entity ids — do not invent.
+							NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+						-->
+						<asEntityWithGeneric>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2597: assignedPerson/asOtherIDs.
+							WAS: person/entity missing asOtherIDs role shell.
+							HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+							Form 043/u does not collect alternate entity ids — do not invent.
+							NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+						-->
+						<asOtherIDs>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+						</asOtherIDs>
+
+
 			</assignedPerson>
 					<representedOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
@@ -28807,6 +31424,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -28894,6 +31519,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -29129,6 +31780,14 @@ ${/*
 							NOW: administrativeGenderCode nullFlavor NI.
 						-->
 						<!--
+							DEFECT #2582: associatedPerson/religiousAffiliationCode.
+							WAS: associatedPerson missing religiousAffiliationCode.
+							HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+							Form 043/u does not collect this field — do not invent.
+							NOW: religiousAffiliationCode nullFlavor NI.
+						-->
+						<religiousAffiliationCode nullFlavor="NI"/>
+						<!--
 							DEFECT #2574: associatedPerson/desc.
 							WAS: associatedPerson missing desc.
 							HL7 CDA R2 Person/Entity has desc 0..1.
@@ -29225,6 +31884,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+						<!--
+							DEFECT #2598: associatedPerson/asEntityWithGeneric.
+							WAS: person/entity missing asEntityWithGeneric role shell.
+							HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+							Form 043/u does not collect generic entity ids — do not invent.
+							NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+						-->
+						<asEntityWithGeneric>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+						</asEntityWithGeneric>
+						<!--
+							DEFECT #2599: associatedPerson/asOtherIDs.
+							WAS: person/entity missing asOtherIDs role shell.
+							HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+							Form 043/u does not collect alternate entity ids — do not invent.
+							NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+						-->
+						<asOtherIDs>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+						</asOtherIDs>
+
+
 				</associatedPerson>
 					<scopingOrganization>
 						${params.clinicOid && String(params.clinicOid).trim()
@@ -29859,7 +32544,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -29914,6 +32623,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -30332,7 +33067,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -30387,6 +33146,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -30847,7 +33632,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -30902,6 +33711,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -31191,6 +34026,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -31278,6 +34121,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -31502,6 +34371,14 @@ ${/*
 						Form 043/u does not collect this field — do not invent.
 						NOW: desc nullFlavor NI.
 					-->
+					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
 					<desc nullFlavor="NI"/>
 <administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
@@ -31580,6 +34457,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -31892,7 +34795,47 @@ ${/*
 						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
 					-->
 					<entryRelationship typeCode="COMP">
-						<act classCode="ACT" moodCode="EVN">
+													<!--
+								DEFECT #2586: entryRelationship/seperatableInd.
+								WAS: entryRelationship missing seperatableInd.
+								HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+								Form 043/u does not collect this field — do not invent.
+								NOW: seperatableInd nullFlavor NI.
+							-->
+							<!--
+								DEFECT #2590: entryRelationship/contextConductionInd.
+								WAS: entryRelationship missing contextConductionInd.
+								HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: contextConductionInd nullFlavor NI.
+							-->
+							<contextConductionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2589: entryRelationship/negationInd.
+								WAS: entryRelationship missing negationInd.
+								HL7 CDA R2 EntryRelationship has negationInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: negationInd nullFlavor NI.
+							-->
+							<negationInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2588: entryRelationship/inversionInd.
+								WAS: entryRelationship missing inversionInd.
+								HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: inversionInd nullFlavor NI.
+							-->
+							<inversionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2587: entryRelationship/sequenceNumber.
+								WAS: entryRelationship missing sequenceNumber.
+								HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: sequenceNumber nullFlavor NI.
+							-->
+							<sequenceNumber nullFlavor="NI"/>
+							<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<text nullFlavor="NI"/>
@@ -31913,6 +34856,14 @@ ${/*
 								Form 043/u does not collect this coded slot — do not invent.
 								NOW: approachSiteCode nullFlavor NI until chart field exists.
 							-->
+							<!--
+								DEFECT #2591: act/independenceInd.
+								WAS: act missing independenceInd.
+								HL7 CDA R2 Act has independenceInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: independenceInd nullFlavor NI.
+							-->
+							<independenceInd nullFlavor="NI"/>
 							<approachSiteCode nullFlavor="NI"/>
 							<!--
 								DEFECT #2534: act/repeatNumber.
@@ -32388,7 +35339,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -32443,6 +35418,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -32879,7 +35880,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -32934,6 +35959,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					<representedOrganization>
 						<id nullFlavor="NI"/>
@@ -33412,7 +36463,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -33467,6 +36542,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -33756,6 +36857,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -33843,6 +36952,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -34067,6 +37202,14 @@ ${/*
 								NOW: administrativeGenderCode nullFlavor NI.
 							-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -34163,6 +37306,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 					
 					<!--
@@ -34475,7 +37644,47 @@ ${/*
 					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
 				-->
 				<entryRelationship typeCode="COMP">
-					<act classCode="ACT" moodCode="EVN">
+										<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
@@ -34487,6 +37696,14 @@ ${/*
 						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
 						NOW: languageCode code=ru-RU.
 					-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 					<languageCode code="ru-RU"/>
 					<!--
 						DEFECT #1158: entryRelationship/act/confidentialityCode.
@@ -34862,7 +38079,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -34917,6 +38158,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -35353,7 +38620,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -35408,6 +38699,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					<representedOrganization>
 						<id nullFlavor="NI"/>
@@ -35886,7 +39203,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -35941,6 +39282,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -36230,6 +39597,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -36317,6 +39692,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -36541,6 +39942,14 @@ ${/*
 									NOW: administrativeGenderCode nullFlavor NI.
 								-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -36637,6 +40046,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -37266,6 +40701,20 @@ ${/*
 							NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
 						-->
 						<expirationTime nullFlavor="NI"/>
+						<!--
+							DEFECT #2606: manufacturedMaterial/asEntityWithGeneric.
+							WAS: person/entity missing asEntityWithGeneric role shell.
+							HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+							Form 043/u does not collect generic entity ids — do not invent.
+							NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+						-->
+						<asEntityWithGeneric>
+							<id nullFlavor="NI"/>
+							<code nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<desc nullFlavor="NI"/>
+						</asEntityWithGeneric>
+
 					</manufacturedMaterial>
 				<!--
 
@@ -37420,7 +40869,47 @@ ${/*
 				NI / completed shell until chart field exists.
 			-->
 			<entryRelationship typeCode="COMP">
-				<act classCode="ACT" moodCode="EVN">
+									<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 					<id nullFlavor="NI"/>
 					<code nullFlavor="NI"/>
 					<!--
@@ -37428,6 +40917,14 @@ ${/*
 						WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
 						NOW: text nullFlavor NI.
 					-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 					<text nullFlavor="NI"/>
 					<statusCode code="completed"/>
 					<!--
@@ -38073,7 +41570,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -38128,6 +41649,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -38606,7 +42153,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -38661,6 +42232,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -39146,7 +42743,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -39201,6 +42822,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -39523,6 +43170,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -39610,6 +43265,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -39845,6 +43526,14 @@ ${/*
 											NOW: administrativeGenderCode nullFlavor NI.
 										-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -39941,6 +43630,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -40575,7 +44290,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -40630,6 +44369,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -41048,7 +44813,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -41103,6 +44892,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -41563,7 +45378,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -41618,6 +45457,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -41907,6 +45772,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -41994,6 +45867,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -42218,6 +46117,14 @@ ${/*
 						Form 043/u does not collect this field — do not invent.
 						NOW: desc nullFlavor NI.
 					-->
+					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
 					<desc nullFlavor="NI"/>
 <administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
@@ -42296,6 +46203,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -42608,7 +46541,47 @@ ${/*
 						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
 					-->
 					<entryRelationship typeCode="COMP">
-						<act classCode="ACT" moodCode="EVN">
+													<!--
+								DEFECT #2586: entryRelationship/seperatableInd.
+								WAS: entryRelationship missing seperatableInd.
+								HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+								Form 043/u does not collect this field — do not invent.
+								NOW: seperatableInd nullFlavor NI.
+							-->
+							<!--
+								DEFECT #2590: entryRelationship/contextConductionInd.
+								WAS: entryRelationship missing contextConductionInd.
+								HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: contextConductionInd nullFlavor NI.
+							-->
+							<contextConductionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2589: entryRelationship/negationInd.
+								WAS: entryRelationship missing negationInd.
+								HL7 CDA R2 EntryRelationship has negationInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: negationInd nullFlavor NI.
+							-->
+							<negationInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2588: entryRelationship/inversionInd.
+								WAS: entryRelationship missing inversionInd.
+								HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: inversionInd nullFlavor NI.
+							-->
+							<inversionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2587: entryRelationship/sequenceNumber.
+								WAS: entryRelationship missing sequenceNumber.
+								HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: sequenceNumber nullFlavor NI.
+							-->
+							<sequenceNumber nullFlavor="NI"/>
+							<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<text nullFlavor="NI"/>
@@ -42629,6 +46602,14 @@ ${/*
 								Form 043/u does not collect this coded slot — do not invent.
 								NOW: approachSiteCode nullFlavor NI until chart field exists.
 							-->
+							<!--
+								DEFECT #2591: act/independenceInd.
+								WAS: act missing independenceInd.
+								HL7 CDA R2 Act has independenceInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: independenceInd nullFlavor NI.
+							-->
+							<independenceInd nullFlavor="NI"/>
 							<approachSiteCode nullFlavor="NI"/>
 							<!--
 								DEFECT #2534: act/repeatNumber.
@@ -43104,7 +47085,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -43159,6 +47164,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -43595,7 +47626,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -43650,6 +47705,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -44128,7 +48209,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -44183,6 +48288,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -44472,6 +48603,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -44559,6 +48698,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -44783,6 +48948,14 @@ ${/*
 								NOW: administrativeGenderCode nullFlavor NI.
 							-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -44879,6 +49052,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 					
 					<!--
@@ -45191,7 +49390,47 @@ ${/*
 					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
 				-->
 				<entryRelationship typeCode="COMP">
-					<act classCode="ACT" moodCode="EVN">
+										<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
@@ -45203,6 +49442,14 @@ ${/*
 						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
 						NOW: languageCode code=ru-RU.
 					-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 					<languageCode code="ru-RU"/>
 					<!--
 						DEFECT #1159: entryRelationship/act/confidentialityCode.
@@ -45578,7 +49825,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -45633,6 +49904,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -46069,7 +50366,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -46124,6 +50445,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -46602,7 +50949,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -46657,6 +51028,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -46946,6 +51343,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -47033,6 +51438,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -47257,6 +51688,14 @@ ${/*
 									NOW: administrativeGenderCode nullFlavor NI.
 								-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -47353,6 +51792,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -48065,6 +52530,20 @@ ${/*
 											NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
 										-->
 										<expirationTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2606: manufacturedMaterial/asEntityWithGeneric.
+											WAS: person/entity missing asEntityWithGeneric role shell.
+											HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+											Form 043/u does not collect generic entity ids — do not invent.
+											NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+										-->
+										<asEntityWithGeneric>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<desc nullFlavor="NI"/>
+										</asEntityWithGeneric>
+
 									</manufacturedMaterial>
 								<!--
 
@@ -48507,7 +52986,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -48562,6 +53065,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									
 				<!--
@@ -48998,7 +53527,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -49053,6 +53606,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -49531,7 +54110,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -49586,6 +54189,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									
 				<!--
@@ -49875,6 +54504,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -49962,6 +54599,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -50186,6 +54849,14 @@ ${/*
 												NOW: administrativeGenderCode nullFlavor NI.
 											-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -50282,6 +54953,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 									
 					<!--
@@ -50594,7 +55291,47 @@ ${/*
 									NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI.
 								-->
 								<entryRelationship typeCode="COMP">
-									<act classCode="ACT" moodCode="EVN">
+														<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<text nullFlavor="NI"/>
@@ -50606,6 +55343,14 @@ ${/*
 										WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
 										NOW: languageCode code=ru-RU.
 									-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 									<languageCode code="ru-RU"/>
 									<!--
 										DEFECT #1160: entryRelationship/act/confidentialityCode.
@@ -50981,7 +55726,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -51036,6 +55805,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 										
 				<!--
@@ -51472,7 +56267,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -51527,6 +56346,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 											<representedOrganization>
 												<id nullFlavor="NI"/>
@@ -52005,7 +56850,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -52060,6 +56929,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 										
 				<!--
@@ -52349,6 +57244,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -52436,6 +57339,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -52660,6 +57589,14 @@ ${/*
 													NOW: administrativeGenderCode nullFlavor NI.
 												-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -52756,6 +57693,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 										
 					<!--
@@ -53278,7 +58241,47 @@ ${/*
 								NI / completed shell until chart field exists.
 							-->
 							<entryRelationship typeCode="COMP">
-								<act classCode="ACT" moodCode="EVN">
+																	<!--
+										DEFECT #2586: entryRelationship/seperatableInd.
+										WAS: entryRelationship missing seperatableInd.
+										HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+										Form 043/u does not collect this field — do not invent.
+										NOW: seperatableInd nullFlavor NI.
+									-->
+									<!--
+										DEFECT #2590: entryRelationship/contextConductionInd.
+										WAS: entryRelationship missing contextConductionInd.
+										HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: contextConductionInd nullFlavor NI.
+									-->
+									<contextConductionInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2589: entryRelationship/negationInd.
+										WAS: entryRelationship missing negationInd.
+										HL7 CDA R2 EntryRelationship has negationInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: negationInd nullFlavor NI.
+									-->
+									<negationInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2588: entryRelationship/inversionInd.
+										WAS: entryRelationship missing inversionInd.
+										HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: inversionInd nullFlavor NI.
+									-->
+									<inversionInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2587: entryRelationship/sequenceNumber.
+										WAS: entryRelationship missing sequenceNumber.
+										HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: sequenceNumber nullFlavor NI.
+									-->
+									<sequenceNumber nullFlavor="NI"/>
+									<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
 									<!--
@@ -53286,6 +58289,14 @@ ${/*
 										WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
 										NOW: text nullFlavor NI.
 									-->
+									<!--
+										DEFECT #2591: act/independenceInd.
+										WAS: act missing independenceInd.
+										HL7 CDA R2 Act has independenceInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: independenceInd nullFlavor NI.
+									-->
+									<independenceInd nullFlavor="NI"/>
 									<text nullFlavor="NI"/>
 									<statusCode code="completed"/>
 									<!--
@@ -53886,7 +58897,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -53941,6 +58976,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -54419,7 +59480,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -54474,6 +59559,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -54959,7 +60070,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -55014,6 +60149,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -55336,6 +60497,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -55423,6 +60592,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -55658,6 +60853,14 @@ ${/*
 											NOW: administrativeGenderCode nullFlavor NI.
 										-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -55754,6 +60957,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -56388,7 +61617,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -56443,6 +61696,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -56861,7 +62140,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -56916,6 +62219,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -57376,7 +62705,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -57431,6 +62784,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -57720,6 +63099,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -57807,6 +63194,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -58031,6 +63444,14 @@ ${/*
 						Form 043/u does not collect this field — do not invent.
 						NOW: desc nullFlavor NI.
 					-->
+					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
 					<desc nullFlavor="NI"/>
 <administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
@@ -58109,6 +63530,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -58421,7 +63868,47 @@ ${/*
 						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
 					-->
 					<entryRelationship typeCode="COMP">
-						<act classCode="ACT" moodCode="EVN">
+													<!--
+								DEFECT #2586: entryRelationship/seperatableInd.
+								WAS: entryRelationship missing seperatableInd.
+								HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+								Form 043/u does not collect this field — do not invent.
+								NOW: seperatableInd nullFlavor NI.
+							-->
+							<!--
+								DEFECT #2590: entryRelationship/contextConductionInd.
+								WAS: entryRelationship missing contextConductionInd.
+								HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: contextConductionInd nullFlavor NI.
+							-->
+							<contextConductionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2589: entryRelationship/negationInd.
+								WAS: entryRelationship missing negationInd.
+								HL7 CDA R2 EntryRelationship has negationInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: negationInd nullFlavor NI.
+							-->
+							<negationInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2588: entryRelationship/inversionInd.
+								WAS: entryRelationship missing inversionInd.
+								HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: inversionInd nullFlavor NI.
+							-->
+							<inversionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2587: entryRelationship/sequenceNumber.
+								WAS: entryRelationship missing sequenceNumber.
+								HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: sequenceNumber nullFlavor NI.
+							-->
+							<sequenceNumber nullFlavor="NI"/>
+							<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<text nullFlavor="NI"/>
@@ -58442,6 +63929,14 @@ ${/*
 								Form 043/u does not collect this coded slot — do not invent.
 								NOW: approachSiteCode nullFlavor NI until chart field exists.
 							-->
+							<!--
+								DEFECT #2591: act/independenceInd.
+								WAS: act missing independenceInd.
+								HL7 CDA R2 Act has independenceInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: independenceInd nullFlavor NI.
+							-->
+							<independenceInd nullFlavor="NI"/>
 							<approachSiteCode nullFlavor="NI"/>
 							<!--
 								DEFECT #2534: act/repeatNumber.
@@ -58917,7 +64412,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -58972,6 +64491,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -59408,7 +64953,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -59463,6 +65032,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -59941,7 +65536,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -59996,6 +65615,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -60285,6 +65930,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -60372,6 +66025,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -60596,6 +66275,14 @@ ${/*
 								NOW: administrativeGenderCode nullFlavor NI.
 							-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -60692,6 +66379,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 					
 					<!--
@@ -61004,7 +66717,47 @@ ${/*
 					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
 				-->
 				<entryRelationship typeCode="COMP">
-					<act classCode="ACT" moodCode="EVN">
+										<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
@@ -61016,6 +66769,14 @@ ${/*
 						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
 						NOW: languageCode code=ru-RU.
 					-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 					<languageCode code="ru-RU"/>
 					<!--
 						DEFECT #1161: entryRelationship/act/confidentialityCode.
@@ -61391,7 +67152,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -61446,6 +67231,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -61882,7 +67693,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -61937,6 +67772,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -62415,7 +68276,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -62470,6 +68355,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -62759,6 +68670,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -62846,6 +68765,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -63070,6 +69015,14 @@ ${/*
 									NOW: administrativeGenderCode nullFlavor NI.
 								-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -63166,6 +69119,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -63878,6 +69857,20 @@ ${/*
 											NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
 										-->
 										<expirationTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2606: manufacturedMaterial/asEntityWithGeneric.
+											WAS: person/entity missing asEntityWithGeneric role shell.
+											HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+											Form 043/u does not collect generic entity ids — do not invent.
+											NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+										-->
+										<asEntityWithGeneric>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<desc nullFlavor="NI"/>
+										</asEntityWithGeneric>
+
 									</manufacturedMaterial>
 								<!--
 
@@ -64320,7 +70313,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -64375,6 +70392,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									
 				<!--
@@ -64811,7 +70854,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -64866,6 +70933,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 										<representedOrganization>
 											<id nullFlavor="NI"/>
@@ -65344,7 +71437,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -65399,6 +71516,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									
 				<!--
@@ -65688,6 +71831,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -65775,6 +71926,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -65999,6 +72176,14 @@ ${/*
 												NOW: administrativeGenderCode nullFlavor NI.
 											-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -66095,6 +72280,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 									
 					<!--
@@ -66407,7 +72618,47 @@ ${/*
 									NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI.
 								-->
 								<entryRelationship typeCode="COMP">
-									<act classCode="ACT" moodCode="EVN">
+														<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<text nullFlavor="NI"/>
@@ -66419,6 +72670,14 @@ ${/*
 										WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
 										NOW: languageCode code=ru-RU.
 									-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 									<languageCode code="ru-RU"/>
 									<!--
 										DEFECT #1162: entryRelationship/act/confidentialityCode.
@@ -66794,7 +73053,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -66849,6 +73132,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 										
 				<!--
@@ -67285,7 +73594,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -67340,6 +73673,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 											<representedOrganization>
 												<id nullFlavor="NI"/>
@@ -67818,7 +74177,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -67873,6 +74256,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 										
 				<!--
@@ -68162,6 +74571,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -68249,6 +74666,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -68473,6 +74916,14 @@ ${/*
 													NOW: administrativeGenderCode nullFlavor NI.
 												-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -68569,6 +75020,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 										
 					<!--
@@ -69091,7 +75568,47 @@ ${/*
 								NI / completed shell until chart field exists.
 							-->
 							<entryRelationship typeCode="COMP">
-								<act classCode="ACT" moodCode="EVN">
+																	<!--
+										DEFECT #2586: entryRelationship/seperatableInd.
+										WAS: entryRelationship missing seperatableInd.
+										HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+										Form 043/u does not collect this field — do not invent.
+										NOW: seperatableInd nullFlavor NI.
+									-->
+									<!--
+										DEFECT #2590: entryRelationship/contextConductionInd.
+										WAS: entryRelationship missing contextConductionInd.
+										HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: contextConductionInd nullFlavor NI.
+									-->
+									<contextConductionInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2589: entryRelationship/negationInd.
+										WAS: entryRelationship missing negationInd.
+										HL7 CDA R2 EntryRelationship has negationInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: negationInd nullFlavor NI.
+									-->
+									<negationInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2588: entryRelationship/inversionInd.
+										WAS: entryRelationship missing inversionInd.
+										HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: inversionInd nullFlavor NI.
+									-->
+									<inversionInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2587: entryRelationship/sequenceNumber.
+										WAS: entryRelationship missing sequenceNumber.
+										HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: sequenceNumber nullFlavor NI.
+									-->
+									<sequenceNumber nullFlavor="NI"/>
+									<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
 									<!--
@@ -69099,6 +75616,14 @@ ${/*
 										WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
 										NOW: text nullFlavor NI.
 									-->
+									<!--
+										DEFECT #2591: act/independenceInd.
+										WAS: act missing independenceInd.
+										HL7 CDA R2 Act has independenceInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: independenceInd nullFlavor NI.
+									-->
+									<independenceInd nullFlavor="NI"/>
 									<text nullFlavor="NI"/>
 									<statusCode code="completed"/>
 									<!--
@@ -69713,7 +76238,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -69768,6 +76317,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -70246,7 +76821,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -70301,6 +76900,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -70786,7 +77411,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -70841,6 +77490,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -71163,6 +77838,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -71250,6 +77933,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -71485,6 +78194,14 @@ ${/*
 											NOW: administrativeGenderCode nullFlavor NI.
 										-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -71581,6 +78298,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -72215,7 +78958,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -72270,6 +79037,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -72688,7 +79481,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -72743,6 +79560,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -73203,7 +80046,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -73258,6 +80125,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -73547,6 +80440,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -73634,6 +80535,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -73858,6 +80785,14 @@ ${/*
 						Form 043/u does not collect this field — do not invent.
 						NOW: desc nullFlavor NI.
 					-->
+					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
 					<desc nullFlavor="NI"/>
 <administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
@@ -73936,6 +80871,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -74248,7 +81209,47 @@ ${/*
 						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
 					-->
 					<entryRelationship typeCode="COMP">
-						<act classCode="ACT" moodCode="EVN">
+													<!--
+								DEFECT #2586: entryRelationship/seperatableInd.
+								WAS: entryRelationship missing seperatableInd.
+								HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+								Form 043/u does not collect this field — do not invent.
+								NOW: seperatableInd nullFlavor NI.
+							-->
+							<!--
+								DEFECT #2590: entryRelationship/contextConductionInd.
+								WAS: entryRelationship missing contextConductionInd.
+								HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: contextConductionInd nullFlavor NI.
+							-->
+							<contextConductionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2589: entryRelationship/negationInd.
+								WAS: entryRelationship missing negationInd.
+								HL7 CDA R2 EntryRelationship has negationInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: negationInd nullFlavor NI.
+							-->
+							<negationInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2588: entryRelationship/inversionInd.
+								WAS: entryRelationship missing inversionInd.
+								HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: inversionInd nullFlavor NI.
+							-->
+							<inversionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2587: entryRelationship/sequenceNumber.
+								WAS: entryRelationship missing sequenceNumber.
+								HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: sequenceNumber nullFlavor NI.
+							-->
+							<sequenceNumber nullFlavor="NI"/>
+							<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<text nullFlavor="NI"/>
@@ -74269,6 +81270,14 @@ ${/*
 								Form 043/u does not collect this coded slot — do not invent.
 								NOW: approachSiteCode nullFlavor NI until chart field exists.
 							-->
+							<!--
+								DEFECT #2591: act/independenceInd.
+								WAS: act missing independenceInd.
+								HL7 CDA R2 Act has independenceInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: independenceInd nullFlavor NI.
+							-->
+							<independenceInd nullFlavor="NI"/>
 							<approachSiteCode nullFlavor="NI"/>
 							<!--
 								DEFECT #2534: act/repeatNumber.
@@ -74744,7 +81753,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -74799,6 +81832,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -75235,7 +82294,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -75290,6 +82373,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -75768,7 +82877,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -75823,6 +82956,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -76112,6 +83271,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -76199,6 +83366,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -76423,6 +83616,14 @@ ${/*
 								NOW: administrativeGenderCode nullFlavor NI.
 							-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -76519,6 +83720,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 					
 					<!--
@@ -76831,7 +84058,47 @@ ${/*
 					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
 				-->
 				<entryRelationship typeCode="COMP">
-					<act classCode="ACT" moodCode="EVN">
+										<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
@@ -76843,6 +84110,14 @@ ${/*
 						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
 						NOW: languageCode code=ru-RU.
 					-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 					<languageCode code="ru-RU"/>
 					<!--
 						DEFECT #1163: entryRelationship/act/confidentialityCode.
@@ -77218,7 +84493,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -77273,6 +84572,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -77709,7 +85034,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -77764,6 +85113,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -78242,7 +85617,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -78297,6 +85696,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -78586,6 +86011,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -78673,6 +86106,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -78897,6 +86356,14 @@ ${/*
 									NOW: administrativeGenderCode nullFlavor NI.
 								-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -78993,6 +86460,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -79705,6 +87198,20 @@ ${/*
 											NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
 										-->
 										<expirationTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2606: manufacturedMaterial/asEntityWithGeneric.
+											WAS: person/entity missing asEntityWithGeneric role shell.
+											HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+											Form 043/u does not collect generic entity ids — do not invent.
+											NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+										-->
+										<asEntityWithGeneric>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<desc nullFlavor="NI"/>
+										</asEntityWithGeneric>
+
 									</manufacturedMaterial>
 								<!--
 
@@ -80147,7 +87654,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -80202,6 +87733,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									
 				<!--
@@ -80638,7 +88195,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -80693,6 +88274,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 										<representedOrganization>
 											<id nullFlavor="NI"/>
@@ -81171,7 +88778,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -81226,6 +88857,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									
 				<!--
@@ -81515,6 +89172,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -81602,6 +89267,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -81826,6 +89517,14 @@ ${/*
 												NOW: administrativeGenderCode nullFlavor NI.
 											-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -81922,6 +89621,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 									
 					<!--
@@ -82234,7 +89959,47 @@ ${/*
 									NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI.
 								-->
 								<entryRelationship typeCode="COMP">
-									<act classCode="ACT" moodCode="EVN">
+														<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<text nullFlavor="NI"/>
@@ -82246,6 +90011,14 @@ ${/*
 										WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
 										NOW: languageCode code=ru-RU.
 									-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 									<languageCode code="ru-RU"/>
 									<!--
 										DEFECT #1164: entryRelationship/act/confidentialityCode.
@@ -82621,7 +90394,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -82676,6 +90473,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 										
 				<!--
@@ -83112,7 +90935,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -83167,6 +91014,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 											<representedOrganization>
 												<id nullFlavor="NI"/>
@@ -83645,7 +91518,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -83700,6 +91597,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 										
 				<!--
@@ -83989,6 +91912,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -84076,6 +92007,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -84300,6 +92257,14 @@ ${/*
 													NOW: administrativeGenderCode nullFlavor NI.
 												-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -84396,6 +92361,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 										
 					<!--
@@ -84918,7 +92909,47 @@ ${/*
 								NI / completed shell until chart field exists.
 							-->
 							<entryRelationship typeCode="COMP">
-								<act classCode="ACT" moodCode="EVN">
+																	<!--
+										DEFECT #2586: entryRelationship/seperatableInd.
+										WAS: entryRelationship missing seperatableInd.
+										HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+										Form 043/u does not collect this field — do not invent.
+										NOW: seperatableInd nullFlavor NI.
+									-->
+									<!--
+										DEFECT #2590: entryRelationship/contextConductionInd.
+										WAS: entryRelationship missing contextConductionInd.
+										HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: contextConductionInd nullFlavor NI.
+									-->
+									<contextConductionInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2589: entryRelationship/negationInd.
+										WAS: entryRelationship missing negationInd.
+										HL7 CDA R2 EntryRelationship has negationInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: negationInd nullFlavor NI.
+									-->
+									<negationInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2588: entryRelationship/inversionInd.
+										WAS: entryRelationship missing inversionInd.
+										HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: inversionInd nullFlavor NI.
+									-->
+									<inversionInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2587: entryRelationship/sequenceNumber.
+										WAS: entryRelationship missing sequenceNumber.
+										HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: sequenceNumber nullFlavor NI.
+									-->
+									<sequenceNumber nullFlavor="NI"/>
+									<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
 									<!--
@@ -84926,6 +92957,14 @@ ${/*
 										WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
 										NOW: text nullFlavor NI.
 									-->
+									<!--
+										DEFECT #2591: act/independenceInd.
+										WAS: act missing independenceInd.
+										HL7 CDA R2 Act has independenceInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: independenceInd nullFlavor NI.
+									-->
+									<independenceInd nullFlavor="NI"/>
 									<text nullFlavor="NI"/>
 									<statusCode code="completed"/>
 									<!--
@@ -85179,6 +93218,14 @@ ${/*
 						-->
 						<act classCode="ACT" moodCode="EVN" negationInd="false">
 							<!-- DEFECT #153: entry Act/id (treatment) -->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 							<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-treatment"/>
 							<code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Проведенное лечение">
 								<!--
@@ -85542,7 +93589,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -85597,6 +93668,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -86075,7 +94172,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -86130,6 +94251,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -86615,7 +94762,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -86670,6 +94841,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -86992,6 +95189,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -87079,6 +95284,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -87314,6 +95545,14 @@ ${/*
 											NOW: administrativeGenderCode nullFlavor NI.
 										-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -87410,6 +95649,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -88044,7 +96309,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -88099,6 +96388,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -88517,7 +96832,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -88572,6 +96911,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -89032,7 +97397,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -89087,6 +97476,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -89376,6 +97791,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -89463,6 +97886,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -89687,6 +98136,14 @@ ${/*
 						Form 043/u does not collect this field — do not invent.
 						NOW: desc nullFlavor NI.
 					-->
+					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
 					<desc nullFlavor="NI"/>
 <administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
@@ -89765,6 +98222,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -90077,7 +98560,47 @@ ${/*
 						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
 					-->
 					<entryRelationship typeCode="COMP">
-						<act classCode="ACT" moodCode="EVN">
+													<!--
+								DEFECT #2586: entryRelationship/seperatableInd.
+								WAS: entryRelationship missing seperatableInd.
+								HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+								Form 043/u does not collect this field — do not invent.
+								NOW: seperatableInd nullFlavor NI.
+							-->
+							<!--
+								DEFECT #2590: entryRelationship/contextConductionInd.
+								WAS: entryRelationship missing contextConductionInd.
+								HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: contextConductionInd nullFlavor NI.
+							-->
+							<contextConductionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2589: entryRelationship/negationInd.
+								WAS: entryRelationship missing negationInd.
+								HL7 CDA R2 EntryRelationship has negationInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: negationInd nullFlavor NI.
+							-->
+							<negationInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2588: entryRelationship/inversionInd.
+								WAS: entryRelationship missing inversionInd.
+								HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: inversionInd nullFlavor NI.
+							-->
+							<inversionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2587: entryRelationship/sequenceNumber.
+								WAS: entryRelationship missing sequenceNumber.
+								HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: sequenceNumber nullFlavor NI.
+							-->
+							<sequenceNumber nullFlavor="NI"/>
+							<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<text nullFlavor="NI"/>
@@ -90524,7 +99047,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -90579,6 +99126,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -91015,7 +99588,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -91070,6 +99667,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -91548,7 +100171,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -91603,6 +100250,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -91892,6 +100565,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -91979,6 +100660,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -92203,6 +100910,14 @@ ${/*
 								NOW: administrativeGenderCode nullFlavor NI.
 							-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -92299,6 +101014,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 					
 					<!--
@@ -92611,7 +101352,47 @@ ${/*
 					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
 				-->
 				<entryRelationship typeCode="COMP">
-					<act classCode="ACT" moodCode="EVN">
+										<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
@@ -92806,6 +101587,20 @@ ${/*
 											NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
 										-->
 										<expirationTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2606: manufacturedMaterial/asEntityWithGeneric.
+											WAS: person/entity missing asEntityWithGeneric role shell.
+											HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+											Form 043/u does not collect generic entity ids — do not invent.
+											NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+										-->
+										<asEntityWithGeneric>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<desc nullFlavor="NI"/>
+										</asEntityWithGeneric>
+
 									</manufacturedMaterial>
 								<!--
 
@@ -93056,7 +101851,47 @@ ${/*
 								NI / completed shell until chart field exists.
 							-->
 							<entryRelationship typeCode="COMP">
-								<act classCode="ACT" moodCode="EVN">
+																	<!--
+										DEFECT #2586: entryRelationship/seperatableInd.
+										WAS: entryRelationship missing seperatableInd.
+										HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+										Form 043/u does not collect this field — do not invent.
+										NOW: seperatableInd nullFlavor NI.
+									-->
+									<!--
+										DEFECT #2590: entryRelationship/contextConductionInd.
+										WAS: entryRelationship missing contextConductionInd.
+										HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: contextConductionInd nullFlavor NI.
+									-->
+									<contextConductionInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2589: entryRelationship/negationInd.
+										WAS: entryRelationship missing negationInd.
+										HL7 CDA R2 EntryRelationship has negationInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: negationInd nullFlavor NI.
+									-->
+									<negationInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2588: entryRelationship/inversionInd.
+										WAS: entryRelationship missing inversionInd.
+										HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: inversionInd nullFlavor NI.
+									-->
+									<inversionInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2587: entryRelationship/sequenceNumber.
+										WAS: entryRelationship missing sequenceNumber.
+										HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: sequenceNumber nullFlavor NI.
+									-->
+									<sequenceNumber nullFlavor="NI"/>
+									<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
 									<!--
@@ -93621,7 +102456,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -93676,6 +102535,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -94154,7 +103039,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -94209,6 +103118,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -94694,7 +103629,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -94749,6 +103708,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -95071,6 +104056,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -95158,6 +104151,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -95393,6 +104412,14 @@ ${/*
 											NOW: administrativeGenderCode nullFlavor NI.
 										-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -95489,6 +104516,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -96123,7 +105176,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -96178,6 +105255,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -96596,7 +105699,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -96651,6 +105778,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -97111,7 +106264,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -97166,6 +106343,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -97455,6 +106658,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -97542,6 +106753,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -97766,6 +107003,14 @@ ${/*
 						Form 043/u does not collect this field — do not invent.
 						NOW: desc nullFlavor NI.
 					-->
+					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
 					<desc nullFlavor="NI"/>
 <administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
@@ -97844,6 +107089,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -98156,7 +107427,47 @@ ${/*
 						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
 					-->
 					<entryRelationship typeCode="COMP">
-						<act classCode="ACT" moodCode="EVN">
+													<!--
+								DEFECT #2586: entryRelationship/seperatableInd.
+								WAS: entryRelationship missing seperatableInd.
+								HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+								Form 043/u does not collect this field — do not invent.
+								NOW: seperatableInd nullFlavor NI.
+							-->
+							<!--
+								DEFECT #2590: entryRelationship/contextConductionInd.
+								WAS: entryRelationship missing contextConductionInd.
+								HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: contextConductionInd nullFlavor NI.
+							-->
+							<contextConductionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2589: entryRelationship/negationInd.
+								WAS: entryRelationship missing negationInd.
+								HL7 CDA R2 EntryRelationship has negationInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: negationInd nullFlavor NI.
+							-->
+							<negationInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2588: entryRelationship/inversionInd.
+								WAS: entryRelationship missing inversionInd.
+								HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: inversionInd nullFlavor NI.
+							-->
+							<inversionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2587: entryRelationship/sequenceNumber.
+								WAS: entryRelationship missing sequenceNumber.
+								HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: sequenceNumber nullFlavor NI.
+							-->
+							<sequenceNumber nullFlavor="NI"/>
+							<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<text nullFlavor="NI"/>
@@ -98177,6 +107488,14 @@ ${/*
 								Form 043/u does not collect this coded slot — do not invent.
 								NOW: approachSiteCode nullFlavor NI until chart field exists.
 							-->
+							<!--
+								DEFECT #2591: act/independenceInd.
+								WAS: act missing independenceInd.
+								HL7 CDA R2 Act has independenceInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: independenceInd nullFlavor NI.
+							-->
+							<independenceInd nullFlavor="NI"/>
 							<approachSiteCode nullFlavor="NI"/>
 							<!--
 								DEFECT #2534: act/repeatNumber.
@@ -98652,7 +107971,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -98707,6 +108050,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -99143,7 +108512,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -99198,6 +108591,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -99676,7 +109095,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -99731,6 +109174,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -100020,6 +109489,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -100107,6 +109584,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -100331,6 +109834,14 @@ ${/*
 								NOW: administrativeGenderCode nullFlavor NI.
 							-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -100427,6 +109938,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 					
 					<!--
@@ -100739,7 +110276,47 @@ ${/*
 					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
 				-->
 				<entryRelationship typeCode="COMP">
-					<act classCode="ACT" moodCode="EVN">
+										<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
@@ -100751,6 +110328,14 @@ ${/*
 						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
 						NOW: languageCode code=ru-RU.
 					-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 					<languageCode code="ru-RU"/>
 					<!--
 						DEFECT #1166: entryRelationship/act/confidentialityCode.
@@ -101126,7 +110711,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -101181,6 +110790,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -101617,7 +111252,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -101672,6 +111331,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -102150,7 +111835,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -102205,6 +111914,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -102494,6 +112229,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -102581,6 +112324,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -102805,6 +112574,14 @@ ${/*
 									NOW: administrativeGenderCode nullFlavor NI.
 								-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -102901,6 +112678,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -103613,6 +113416,20 @@ ${/*
 											NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
 										-->
 										<expirationTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2606: manufacturedMaterial/asEntityWithGeneric.
+											WAS: person/entity missing asEntityWithGeneric role shell.
+											HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+											Form 043/u does not collect generic entity ids — do not invent.
+											NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+										-->
+										<asEntityWithGeneric>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<desc nullFlavor="NI"/>
+										</asEntityWithGeneric>
+
 									</manufacturedMaterial>
 								<!--
 
@@ -104055,7 +113872,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -104110,6 +113951,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									
 				<!--
@@ -104546,7 +114413,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -104601,6 +114492,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 										<representedOrganization>
 											<id nullFlavor="NI"/>
@@ -105079,7 +114996,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -105134,6 +115075,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									
 				<!--
@@ -105423,6 +115390,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -105510,6 +115485,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -105734,6 +115735,14 @@ ${/*
 												NOW: administrativeGenderCode nullFlavor NI.
 											-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -105830,6 +115839,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 									
 					<!--
@@ -106142,7 +116177,47 @@ ${/*
 									NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI.
 								-->
 								<entryRelationship typeCode="COMP">
-									<act classCode="ACT" moodCode="EVN">
+														<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<text nullFlavor="NI"/>
@@ -106154,6 +116229,14 @@ ${/*
 										WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
 										NOW: languageCode code=ru-RU.
 									-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 									<languageCode code="ru-RU"/>
 									<!--
 										DEFECT #1167: entryRelationship/act/confidentialityCode.
@@ -106529,7 +116612,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -106584,6 +116691,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 										
 				<!--
@@ -107020,7 +117153,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -107075,6 +117232,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -107553,7 +117736,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -107608,6 +117815,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 										
 				<!--
@@ -107897,6 +118130,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -107984,6 +118225,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -108208,6 +118475,14 @@ ${/*
 													NOW: administrativeGenderCode nullFlavor NI.
 												-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -108304,6 +118579,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 										
 					<!--
@@ -108826,7 +119127,47 @@ ${/*
 								NI / completed shell until chart field exists.
 							-->
 							<entryRelationship typeCode="COMP">
-								<act classCode="ACT" moodCode="EVN">
+																	<!--
+										DEFECT #2586: entryRelationship/seperatableInd.
+										WAS: entryRelationship missing seperatableInd.
+										HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+										Form 043/u does not collect this field — do not invent.
+										NOW: seperatableInd nullFlavor NI.
+									-->
+									<!--
+										DEFECT #2590: entryRelationship/contextConductionInd.
+										WAS: entryRelationship missing contextConductionInd.
+										HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: contextConductionInd nullFlavor NI.
+									-->
+									<contextConductionInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2589: entryRelationship/negationInd.
+										WAS: entryRelationship missing negationInd.
+										HL7 CDA R2 EntryRelationship has negationInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: negationInd nullFlavor NI.
+									-->
+									<negationInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2588: entryRelationship/inversionInd.
+										WAS: entryRelationship missing inversionInd.
+										HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: inversionInd nullFlavor NI.
+									-->
+									<inversionInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2587: entryRelationship/sequenceNumber.
+										WAS: entryRelationship missing sequenceNumber.
+										HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: sequenceNumber nullFlavor NI.
+									-->
+									<sequenceNumber nullFlavor="NI"/>
+									<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
 									<!--
@@ -108834,6 +119175,14 @@ ${/*
 										WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
 										NOW: text nullFlavor NI.
 									-->
+									<!--
+										DEFECT #2591: act/independenceInd.
+										WAS: act missing independenceInd.
+										HL7 CDA R2 Act has independenceInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: independenceInd nullFlavor NI.
+									-->
+									<independenceInd nullFlavor="NI"/>
 									<text nullFlavor="NI"/>
 									<statusCode code="completed"/>
 									<!--
@@ -109447,7 +119796,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -109502,6 +119875,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -109980,7 +120379,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -110035,6 +120458,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -110520,7 +120969,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -110575,6 +121048,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -110897,6 +121396,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -110984,6 +121491,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -111219,6 +121752,14 @@ ${/*
 											NOW: administrativeGenderCode nullFlavor NI.
 										-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -111315,6 +121856,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -111949,7 +122516,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -112004,6 +122595,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -112422,7 +123039,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -112477,6 +123118,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -112937,7 +123604,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -112992,6 +123683,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -113281,6 +123998,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -113368,6 +124093,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -113592,6 +124343,14 @@ ${/*
 						Form 043/u does not collect this field — do not invent.
 						NOW: desc nullFlavor NI.
 					-->
+					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
 					<desc nullFlavor="NI"/>
 <administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
@@ -113670,6 +124429,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -113982,7 +124767,47 @@ ${/*
 						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
 					-->
 					<entryRelationship typeCode="COMP">
-						<act classCode="ACT" moodCode="EVN">
+													<!--
+								DEFECT #2586: entryRelationship/seperatableInd.
+								WAS: entryRelationship missing seperatableInd.
+								HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+								Form 043/u does not collect this field — do not invent.
+								NOW: seperatableInd nullFlavor NI.
+							-->
+							<!--
+								DEFECT #2590: entryRelationship/contextConductionInd.
+								WAS: entryRelationship missing contextConductionInd.
+								HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: contextConductionInd nullFlavor NI.
+							-->
+							<contextConductionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2589: entryRelationship/negationInd.
+								WAS: entryRelationship missing negationInd.
+								HL7 CDA R2 EntryRelationship has negationInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: negationInd nullFlavor NI.
+							-->
+							<negationInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2588: entryRelationship/inversionInd.
+								WAS: entryRelationship missing inversionInd.
+								HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: inversionInd nullFlavor NI.
+							-->
+							<inversionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2587: entryRelationship/sequenceNumber.
+								WAS: entryRelationship missing sequenceNumber.
+								HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: sequenceNumber nullFlavor NI.
+							-->
+							<sequenceNumber nullFlavor="NI"/>
+							<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<text nullFlavor="NI"/>
@@ -114003,6 +124828,14 @@ ${/*
 								Form 043/u does not collect this coded slot — do not invent.
 								NOW: approachSiteCode nullFlavor NI until chart field exists.
 							-->
+							<!--
+								DEFECT #2591: act/independenceInd.
+								WAS: act missing independenceInd.
+								HL7 CDA R2 Act has independenceInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: independenceInd nullFlavor NI.
+							-->
+							<independenceInd nullFlavor="NI"/>
 							<approachSiteCode nullFlavor="NI"/>
 							<!--
 								DEFECT #2534: act/repeatNumber.
@@ -114478,7 +125311,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -114533,6 +125390,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -114969,7 +125852,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -115024,6 +125931,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -115502,7 +126435,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -115557,6 +126514,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -115846,6 +126829,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -115933,6 +126924,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -116157,6 +127174,14 @@ ${/*
 								NOW: administrativeGenderCode nullFlavor NI.
 							-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -116253,6 +127278,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 					
 					<!--
@@ -116565,7 +127616,47 @@ ${/*
 					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
 				-->
 				<entryRelationship typeCode="COMP">
-					<act classCode="ACT" moodCode="EVN">
+										<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
@@ -116577,6 +127668,14 @@ ${/*
 						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
 						NOW: languageCode code=ru-RU.
 					-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 					<languageCode code="ru-RU"/>
 					<!--
 						DEFECT #1168: entryRelationship/act/confidentialityCode.
@@ -116952,7 +128051,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -117007,6 +128130,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -117443,7 +128592,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -117498,6 +128671,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -117976,7 +129175,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -118031,6 +129254,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -118320,6 +129569,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -118407,6 +129664,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -118631,6 +129914,14 @@ ${/*
 									NOW: administrativeGenderCode nullFlavor NI.
 								-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -118727,6 +130018,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -119439,6 +130756,20 @@ ${/*
 											NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
 										-->
 										<expirationTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2606: manufacturedMaterial/asEntityWithGeneric.
+											WAS: person/entity missing asEntityWithGeneric role shell.
+											HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+											Form 043/u does not collect generic entity ids — do not invent.
+											NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+										-->
+										<asEntityWithGeneric>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<desc nullFlavor="NI"/>
+										</asEntityWithGeneric>
+
 									</manufacturedMaterial>
 								<!--
 
@@ -119881,7 +131212,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -119936,6 +131291,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									
 				<!--
@@ -120372,7 +131753,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -120427,6 +131832,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 										<representedOrganization>
 											<id nullFlavor="NI"/>
@@ -120905,7 +132336,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -120960,6 +132415,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									
 				<!--
@@ -121249,6 +132730,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -121336,6 +132825,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -121560,6 +133075,14 @@ ${/*
 												NOW: administrativeGenderCode nullFlavor NI.
 											-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -121656,6 +133179,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 									
 					<!--
@@ -121968,7 +133517,47 @@ ${/*
 									NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI.
 								-->
 								<entryRelationship typeCode="COMP">
-									<act classCode="ACT" moodCode="EVN">
+														<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 										<id nullFlavor="NI"/>
 										<code nullFlavor="NI"/>
 										<text nullFlavor="NI"/>
@@ -121980,6 +133569,14 @@ ${/*
 										WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
 										NOW: languageCode code=ru-RU.
 									-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 									<languageCode code="ru-RU"/>
 									<!--
 										DEFECT #1169: entryRelationship/act/confidentialityCode.
@@ -122355,7 +133952,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -122410,6 +134031,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 										
 				<!--
@@ -122846,7 +134493,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -122901,6 +134572,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -123379,7 +135076,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -123434,6 +135155,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 										
 				<!--
@@ -123723,6 +135470,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -123810,6 +135565,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -124034,6 +135815,14 @@ ${/*
 													NOW: administrativeGenderCode nullFlavor NI.
 												-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -124130,6 +135919,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 										
 					<!--
@@ -124652,7 +136467,47 @@ ${/*
 								NI / completed shell until chart field exists.
 							-->
 							<entryRelationship typeCode="COMP">
-								<act classCode="ACT" moodCode="EVN">
+																	<!--
+										DEFECT #2586: entryRelationship/seperatableInd.
+										WAS: entryRelationship missing seperatableInd.
+										HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+										Form 043/u does not collect this field — do not invent.
+										NOW: seperatableInd nullFlavor NI.
+									-->
+									<!--
+										DEFECT #2590: entryRelationship/contextConductionInd.
+										WAS: entryRelationship missing contextConductionInd.
+										HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: contextConductionInd nullFlavor NI.
+									-->
+									<contextConductionInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2589: entryRelationship/negationInd.
+										WAS: entryRelationship missing negationInd.
+										HL7 CDA R2 EntryRelationship has negationInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: negationInd nullFlavor NI.
+									-->
+									<negationInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2588: entryRelationship/inversionInd.
+										WAS: entryRelationship missing inversionInd.
+										HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: inversionInd nullFlavor NI.
+									-->
+									<inversionInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2587: entryRelationship/sequenceNumber.
+										WAS: entryRelationship missing sequenceNumber.
+										HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: sequenceNumber nullFlavor NI.
+									-->
+									<sequenceNumber nullFlavor="NI"/>
+									<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
 									<!--
@@ -124660,6 +136515,14 @@ ${/*
 										WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
 										NOW: text nullFlavor NI.
 									-->
+									<!--
+										DEFECT #2591: act/independenceInd.
+										WAS: act missing independenceInd.
+										HL7 CDA R2 Act has independenceInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: independenceInd nullFlavor NI.
+									-->
+									<independenceInd nullFlavor="NI"/>
 									<text nullFlavor="NI"/>
 									<statusCode code="completed"/>
 									<!--
@@ -125158,6 +137021,20 @@ ${/*
 										NOW: expirationTime nullFlavor NI until chart field exists.
 									-->
 									<expirationTime nullFlavor="NI"/>
+									<!--
+										DEFECT #2606: manufacturedMaterial/asEntityWithGeneric.
+										WAS: person/entity missing asEntityWithGeneric role shell.
+										HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+										Form 043/u does not collect generic entity ids — do not invent.
+										NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+									-->
+									<asEntityWithGeneric>
+										<id nullFlavor="NI"/>
+										<code nullFlavor="NI"/>
+										<name nullFlavor="NI"/>
+										<desc nullFlavor="NI"/>
+									</asEntityWithGeneric>
+
 								</manufacturedMaterial>
 								
 								<!--
@@ -125383,7 +137260,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -125438,6 +137339,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -125916,7 +137843,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -125971,6 +137922,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -126456,7 +138433,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -126511,6 +138512,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 									<representedOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -126833,6 +138860,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -126920,6 +138955,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -127155,6 +139216,14 @@ ${/*
 											NOW: administrativeGenderCode nullFlavor NI.
 										-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -127251,6 +139320,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 									<scopingOrganization>
 										${params.clinicOid && String(params.clinicOid).trim()
@@ -127885,7 +139980,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -127940,6 +140059,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -128358,7 +140503,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -128413,6 +140582,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -128873,7 +141068,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -128928,6 +141147,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -129217,6 +141462,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -129304,6 +141557,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -129528,6 +141807,14 @@ ${/*
 						Form 043/u does not collect this field — do not invent.
 						NOW: desc nullFlavor NI.
 					-->
+					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
 					<desc nullFlavor="NI"/>
 <administrativeGenderCode nullFlavor="NI"/>
 								<birthTime nullFlavor="NI"/>
@@ -129606,6 +141893,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -129918,7 +142231,47 @@ ${/*
 						NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime/languageCode/confidentialityCode/interp/method/target/unc NI shells.
 					-->
 					<entryRelationship typeCode="COMP">
-						<act classCode="ACT" moodCode="EVN">
+													<!--
+								DEFECT #2586: entryRelationship/seperatableInd.
+								WAS: entryRelationship missing seperatableInd.
+								HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+								Form 043/u does not collect this field — do not invent.
+								NOW: seperatableInd nullFlavor NI.
+							-->
+							<!--
+								DEFECT #2590: entryRelationship/contextConductionInd.
+								WAS: entryRelationship missing contextConductionInd.
+								HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: contextConductionInd nullFlavor NI.
+							-->
+							<contextConductionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2589: entryRelationship/negationInd.
+								WAS: entryRelationship missing negationInd.
+								HL7 CDA R2 EntryRelationship has negationInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: negationInd nullFlavor NI.
+							-->
+							<negationInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2588: entryRelationship/inversionInd.
+								WAS: entryRelationship missing inversionInd.
+								HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: inversionInd nullFlavor NI.
+							-->
+							<inversionInd nullFlavor="NI"/>
+							<!--
+								DEFECT #2587: entryRelationship/sequenceNumber.
+								WAS: entryRelationship missing sequenceNumber.
+								HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: sequenceNumber nullFlavor NI.
+							-->
+							<sequenceNumber nullFlavor="NI"/>
+							<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 							<id nullFlavor="NI"/>
 							<code nullFlavor="NI"/>
 							<text nullFlavor="NI"/>
@@ -129939,6 +142292,14 @@ ${/*
 								Form 043/u does not collect this coded slot — do not invent.
 								NOW: approachSiteCode nullFlavor NI until chart field exists.
 							-->
+							<!--
+								DEFECT #2591: act/independenceInd.
+								WAS: act missing independenceInd.
+								HL7 CDA R2 Act has independenceInd 0..1.
+								Form 043/u does not collect this field — do not invent.
+								NOW: independenceInd nullFlavor NI.
+							-->
+							<independenceInd nullFlavor="NI"/>
 							<approachSiteCode nullFlavor="NI"/>
 							<!--
 								DEFECT #2534: act/repeatNumber.
@@ -130414,7 +142775,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -130469,6 +142854,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -130905,7 +143316,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -130960,6 +143395,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						<representedOrganization>
 							<id nullFlavor="NI"/>
@@ -131438,7 +143899,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -131493,6 +143978,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 					
 				<!--
@@ -131782,6 +144293,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -131869,6 +144388,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -132093,6 +144638,14 @@ ${/*
 								NOW: administrativeGenderCode nullFlavor NI.
 							-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -132189,6 +144742,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 					
 					<!--
@@ -132501,7 +145080,47 @@ ${/*
 					NOW: entryRelationship typeCode=COMP with nested act classCode=ACT moodCode=EVN id/code/text/statusCode/priorityCode/effectiveTime NI shells.
 				-->
 				<entryRelationship typeCode="COMP">
-					<act classCode="ACT" moodCode="EVN">
+										<!--
+						DEFECT #2586: entryRelationship/seperatableInd.
+						WAS: entryRelationship missing seperatableInd.
+						HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+						Form 043/u does not collect this field — do not invent.
+						NOW: seperatableInd nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2590: entryRelationship/contextConductionInd.
+						WAS: entryRelationship missing contextConductionInd.
+						HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: contextConductionInd nullFlavor NI.
+					-->
+					<contextConductionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2589: entryRelationship/negationInd.
+						WAS: entryRelationship missing negationInd.
+						HL7 CDA R2 EntryRelationship has negationInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: negationInd nullFlavor NI.
+					-->
+					<negationInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2588: entryRelationship/inversionInd.
+						WAS: entryRelationship missing inversionInd.
+						HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: inversionInd nullFlavor NI.
+					-->
+					<inversionInd nullFlavor="NI"/>
+					<!--
+						DEFECT #2587: entryRelationship/sequenceNumber.
+						WAS: entryRelationship missing sequenceNumber.
+						HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: sequenceNumber nullFlavor NI.
+					-->
+					<sequenceNumber nullFlavor="NI"/>
+					<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 						<id nullFlavor="NI"/>
 						<code nullFlavor="NI"/>
 						<text nullFlavor="NI"/>
@@ -132513,6 +145132,14 @@ ${/*
 						WAS: nested COMP act had id/code/text/status/priority/effectiveTime — no languageCode. Parent body acts emit languageCode ru-RU. SEMD often flags missing language under nested COMP acts. Form 043/u has no separate nested-act language; do not invent.
 						NOW: languageCode code=ru-RU.
 					-->
+					<!--
+						DEFECT #2591: act/independenceInd.
+						WAS: act missing independenceInd.
+						HL7 CDA R2 Act has independenceInd 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: independenceInd nullFlavor NI.
+					-->
+					<independenceInd nullFlavor="NI"/>
 					<languageCode code="ru-RU"/>
 					<!--
 						DEFECT #1170: entryRelationship/act/confidentialityCode.
@@ -132888,7 +145515,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -132943,6 +145594,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -133379,7 +146056,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -133434,6 +146135,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 							<representedOrganization>
 								<id nullFlavor="NI"/>
@@ -133912,7 +146639,31 @@ ${/*
 					<code nullFlavor="NI"/>
 					<statusCode nullFlavor="NI"/>
 					<effectiveTime nullFlavor="NI"/>
-					<employerOrganization>
+										<!--
+						DEFECT #2579: asEmployee/jobCode.
+						WAS: asEmployee missing jobCode.
+						HL7 CDA R2 Employee has jobCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobCode nullFlavor NI.
+					-->
+					<!--
+						DEFECT #2581: asEmployee/jobClassCode.
+						WAS: asEmployee missing jobClassCode.
+						HL7 CDA R2 Employee has jobClassCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobClassCode nullFlavor NI.
+					-->
+					<jobClassCode nullFlavor="NI"/>
+					<!--
+						DEFECT #2580: asEmployee/jobTitleName.
+						WAS: asEmployee missing jobTitleName.
+						HL7 CDA R2 Employee has jobTitleName 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: jobTitleName nullFlavor NI.
+					-->
+					<jobTitleName nullFlavor="NI"/>
+					<jobCode nullFlavor="NI"/>
+<employerOrganization>
 						<id nullFlavor="NI"/>
 						<name nullFlavor="NI"/>
 						<addr nullFlavor="NI"/>
@@ -133967,6 +146718,32 @@ ${/*
 					</asOrganizationPartOf>
 </employerOrganization>
 				</asEmployee>
+					<!--
+						DEFECT #2596: assignedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2597: assignedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 			</assignedPerson>
 						
 				<!--
@@ -134256,6 +147033,14 @@ ${/*
 						NOW: administrativeGenderCode nullFlavor NI.
 					-->
 					<!--
+						DEFECT #2583: relatedPerson/religiousAffiliationCode.
+						WAS: relatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2575: relatedPerson/desc.
 						WAS: relatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -134343,6 +147128,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2600: relatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2601: relatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</relatedPerson>
 			
 				<!--
@@ -134567,6 +147378,14 @@ ${/*
 									NOW: administrativeGenderCode nullFlavor NI.
 								-->
 					<!--
+						DEFECT #2582: associatedPerson/religiousAffiliationCode.
+						WAS: associatedPerson missing religiousAffiliationCode.
+						HL7 CDA R2 Person has religiousAffiliationCode 0..1.
+						Form 043/u does not collect this field — do not invent.
+						NOW: religiousAffiliationCode nullFlavor NI.
+					-->
+					<religiousAffiliationCode nullFlavor="NI"/>
+					<!--
 						DEFECT #2574: associatedPerson/desc.
 						WAS: associatedPerson missing desc.
 						HL7 CDA R2 Person/Entity has desc 0..1.
@@ -134663,6 +147482,32 @@ ${/*
 							<name nullFlavor="NI"/>
 						</politicalNation>
 					</asCitizen>
+					<!--
+						DEFECT #2598: associatedPerson/asEntityWithGeneric.
+						WAS: person/entity missing asEntityWithGeneric role shell.
+						HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+						Form 043/u does not collect generic entity ids — do not invent.
+						NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+					-->
+					<asEntityWithGeneric>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<desc nullFlavor="NI"/>
+					</asEntityWithGeneric>
+					<!--
+						DEFECT #2599: associatedPerson/asOtherIDs.
+						WAS: person/entity missing asOtherIDs role shell.
+						HL7 CDA R2 Entity may carry asOtherIDs 0..* (alternate ids).
+						Form 043/u does not collect alternate entity ids — do not invent.
+						NOW: minimal asOtherIDs id/code nullFlavor NI (no scopingOrganization).
+					-->
+					<asOtherIDs>
+						<id nullFlavor="NI"/>
+						<code nullFlavor="NI"/>
+					</asOtherIDs>
+
+
 				</associatedPerson>
 						
 					<!--
@@ -135199,6 +148044,20 @@ ${/*
 											NOW: expirationTime nullFlavor NI; do not invent expiry timestamps.
 										-->
 										<expirationTime nullFlavor="NI"/>
+										<!--
+											DEFECT #2606: manufacturedMaterial/asEntityWithGeneric.
+											WAS: person/entity missing asEntityWithGeneric role shell.
+											HL7 CDA R2 Entity may carry asEntityWithGeneric 0..* (generic id/code).
+											Form 043/u does not collect generic entity ids — do not invent.
+											NOW: minimal asEntityWithGeneric id/code/name/desc nullFlavor NI.
+										-->
+										<asEntityWithGeneric>
+											<id nullFlavor="NI"/>
+											<code nullFlavor="NI"/>
+											<name nullFlavor="NI"/>
+											<desc nullFlavor="NI"/>
+										</asEntityWithGeneric>
+
 									</manufacturedMaterial>
 								<!--
 
@@ -135449,7 +148308,47 @@ ${/*
 								NI / completed shell until chart field exists.
 							-->
 							<entryRelationship typeCode="COMP">
-								<act classCode="ACT" moodCode="EVN">
+																	<!--
+										DEFECT #2586: entryRelationship/seperatableInd.
+										WAS: entryRelationship missing seperatableInd.
+										HL7 CDA R2 EntryRelationship has seperatableInd 0..1 (CDA spelling seperatableInd).
+										Form 043/u does not collect this field — do not invent.
+										NOW: seperatableInd nullFlavor NI.
+									-->
+									<!--
+										DEFECT #2590: entryRelationship/contextConductionInd.
+										WAS: entryRelationship missing contextConductionInd.
+										HL7 CDA R2 EntryRelationship has contextConductionInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: contextConductionInd nullFlavor NI.
+									-->
+									<contextConductionInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2589: entryRelationship/negationInd.
+										WAS: entryRelationship missing negationInd.
+										HL7 CDA R2 EntryRelationship has negationInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: negationInd nullFlavor NI.
+									-->
+									<negationInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2588: entryRelationship/inversionInd.
+										WAS: entryRelationship missing inversionInd.
+										HL7 CDA R2 EntryRelationship has inversionInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: inversionInd nullFlavor NI.
+									-->
+									<inversionInd nullFlavor="NI"/>
+									<!--
+										DEFECT #2587: entryRelationship/sequenceNumber.
+										WAS: entryRelationship missing sequenceNumber.
+										HL7 CDA R2 EntryRelationship has sequenceNumber 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: sequenceNumber nullFlavor NI.
+									-->
+									<sequenceNumber nullFlavor="NI"/>
+									<seperatableInd nullFlavor="NI"/>
+<act classCode="ACT" moodCode="EVN">
 									<id nullFlavor="NI"/>
 									<code nullFlavor="NI"/>
 									<!--
@@ -135457,6 +148356,14 @@ ${/*
 										WAS: nested COMP act had id/code/statusCode only — no text. HL7 CDA R2 Act has text 0..1. SEMD validators often flag bare nested acts under entryRelationship when parent body acts emit text. Form 043/u has no separate nested-act narrative; do not invent prose.
 										NOW: text nullFlavor NI.
 									-->
+									<!--
+										DEFECT #2591: act/independenceInd.
+										WAS: act missing independenceInd.
+										HL7 CDA R2 Act has independenceInd 0..1.
+										Form 043/u does not collect this field — do not invent.
+										NOW: independenceInd nullFlavor NI.
+									-->
+									<independenceInd nullFlavor="NI"/>
 									<text nullFlavor="NI"/>
 									<statusCode code="completed"/>
 									<!--
