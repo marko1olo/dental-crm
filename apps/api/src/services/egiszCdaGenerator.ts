@@ -968,6 +968,22 @@ ${/*
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </guardian>
 
@@ -1618,6 +1634,22 @@ ${/*
 						</asOrganizationPartOf>
 
 					</affiliateOrganization>
+						<!--
+							DEFECT #2627: asAffiliate/scopingOrganization.
+							WAS: role missing scopingOrganization shell.
+							HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+							SEMD often flags bare role without scoping org slot.
+							Form 043/u does not collect scoping MO for this nested role — do not invent.
+							NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+						-->
+						<scopingOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</scopingOrganization>
+
 				</asAffiliate>
 
 
@@ -1998,6 +2030,22 @@ ${/*
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 	</author>
@@ -2472,6 +2520,22 @@ ${/*
 						</asOrganizationPartOf>
 
 					</affiliateOrganization>
+						<!--
+							DEFECT #2627: asAffiliate/scopingOrganization.
+							WAS: role missing scopingOrganization shell.
+							HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+							SEMD often flags bare role without scoping org slot.
+							Form 043/u does not collect scoping MO for this nested role — do not invent.
+							NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+						-->
+						<scopingOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</scopingOrganization>
+
 				</asAffiliate>
 
 
@@ -2797,6 +2861,22 @@ ${/*
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 	</dataEnterer>
@@ -3280,6 +3360,22 @@ ${/*
 						</asOrganizationPartOf>
 
 					</affiliateOrganization>
+						<!--
+							DEFECT #2627: asAffiliate/scopingOrganization.
+							WAS: role missing scopingOrganization shell.
+							HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+							SEMD often flags bare role without scoping org slot.
+							Form 043/u does not collect scoping MO for this nested role — do not invent.
+							NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+						-->
+						<scopingOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</scopingOrganization>
+
 				</asAffiliate>
 
 
@@ -3605,6 +3701,22 @@ ${/*
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 	
@@ -3944,6 +4056,22 @@ ${/*
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -4962,6 +5090,22 @@ ${/*
 						</asOrganizationPartOf>
 
 					</affiliateOrganization>
+						<!--
+							DEFECT #2627: asAffiliate/scopingOrganization.
+							WAS: role missing scopingOrganization shell.
+							HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+							SEMD often flags bare role without scoping org slot.
+							Form 043/u does not collect scoping MO for this nested role — do not invent.
+							NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+						-->
+						<scopingOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</scopingOrganization>
+
 				</asAffiliate>
 
 
@@ -5295,6 +5439,22 @@ ${/*
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 	</legalAuthenticator>
@@ -5783,6 +5943,22 @@ ${/*
 						</asOrganizationPartOf>
 
 					</affiliateOrganization>
+						<!--
+							DEFECT #2627: asAffiliate/scopingOrganization.
+							WAS: role missing scopingOrganization shell.
+							HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+							SEMD often flags bare role without scoping org slot.
+							Form 043/u does not collect scoping MO for this nested role — do not invent.
+							NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+						-->
+						<scopingOrganization>
+							<id nullFlavor="NI"/>
+							<name nullFlavor="NI"/>
+							<telecom nullFlavor="NI"/>
+							<addr nullFlavor="NI"/>
+							<standardIndustryClassCode nullFlavor="NI"/>
+						</scopingOrganization>
+
 				</asAffiliate>
 
 
@@ -6116,6 +6292,22 @@ ${/*
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 	</authenticator>
@@ -6903,6 +7095,22 @@ ${/*
 								</asOrganizationPartOf>
 
 							</affiliateOrganization>
+								<!--
+									DEFECT #2627: asAffiliate/scopingOrganization.
+									WAS: role missing scopingOrganization shell.
+									HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+									SEMD often flags bare role without scoping org slot.
+									Form 043/u does not collect scoping MO for this nested role — do not invent.
+									NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+								-->
+								<scopingOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</scopingOrganization>
+
 						</asAffiliate>
 
 
@@ -7236,6 +7444,22 @@ ${/*
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 			</performer>
@@ -7692,6 +7916,22 @@ ${/*
 								</asOrganizationPartOf>
 
 							</affiliateOrganization>
+								<!--
+									DEFECT #2627: asAffiliate/scopingOrganization.
+									WAS: role missing scopingOrganization shell.
+									HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+									SEMD often flags bare role without scoping org slot.
+									Form 043/u does not collect scoping MO for this nested role — do not invent.
+									NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+								-->
+								<scopingOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</scopingOrganization>
+
 						</asAffiliate>
 
 
@@ -8035,6 +8275,22 @@ ${/*
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 			</author>
@@ -8487,6 +8743,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 								</asOrganizationPartOf>
 
 							</affiliateOrganization>
+								<!--
+									DEFECT #2627: asAffiliate/scopingOrganization.
+									WAS: role missing scopingOrganization shell.
+									HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+									SEMD often flags bare role without scoping org slot.
+									Form 043/u does not collect scoping MO for this nested role — do not invent.
+									NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+								-->
+								<scopingOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</scopingOrganization>
+
 						</asAffiliate>
 
 
@@ -8801,6 +9073,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 			
@@ -9140,6 +9428,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -9721,6 +10025,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 			</participant>
@@ -10348,6 +10668,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -10614,6 +10950,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -11097,6 +11449,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -11438,6 +11806,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -11867,6 +12251,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -12133,6 +12533,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -12525,6 +12941,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -13086,6 +13518,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -13952,6 +14400,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -14218,6 +14682,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -14719,6 +15199,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -15060,6 +15556,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 				</author>
@@ -15507,6 +16019,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -15773,6 +16301,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -16165,6 +16709,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -16744,6 +17304,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 				</participant>
@@ -17475,6 +18051,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -17741,6 +18333,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -18242,6 +18850,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -18583,6 +19207,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -19030,6 +19670,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -19296,6 +19952,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -19688,6 +20360,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -20267,6 +20955,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -21573,6 +22277,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -21919,6 +22639,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 			</author>
@@ -22510,6 +23246,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -22776,6 +23528,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -23276,6 +24044,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -23542,6 +24326,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -23934,6 +24734,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -24513,6 +25329,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 		</participant>
@@ -25244,6 +26076,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -25510,6 +26358,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -26011,6 +26875,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -26352,6 +27232,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 			</author>
@@ -26799,6 +27695,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -27065,6 +27977,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -27457,6 +28385,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -28036,6 +28980,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 			</participant>
@@ -28854,6 +29814,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 	</participant>
@@ -29403,6 +30379,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -29670,6 +30662,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -30180,6 +31188,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -30475,6 +31499,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2555: assignedAuthor/representedOrganization.
@@ -30982,6 +32022,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -31248,6 +32304,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -31640,6 +32712,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -32225,6 +33313,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 		</participant>
@@ -33115,6 +34219,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -33381,6 +34501,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -33882,6 +35018,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -34223,6 +35375,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 			</author>
@@ -34670,6 +35838,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -34936,6 +36120,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -35328,6 +36528,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -35907,6 +37123,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 			</participant>
@@ -36913,6 +38145,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 								</asOrganizationPartOf>
 
 							</affiliateOrganization>
+								<!--
+									DEFECT #2627: asAffiliate/scopingOrganization.
+									WAS: role missing scopingOrganization shell.
+									HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+									SEMD often flags bare role without scoping org slot.
+									Form 043/u does not collect scoping MO for this nested role — do not invent.
+									NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+								-->
+								<scopingOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</scopingOrganization>
+
 						</asAffiliate>
 
 
@@ -37227,6 +38475,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 			</encounterParticipant>
@@ -37695,6 +38959,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 								</asOrganizationPartOf>
 
 							</affiliateOrganization>
+								<!--
+									DEFECT #2627: asAffiliate/scopingOrganization.
+									WAS: role missing scopingOrganization shell.
+									HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+									SEMD often flags bare role without scoping org slot.
+									Form 043/u does not collect scoping MO for this nested role — do not invent.
+									NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+								-->
+								<scopingOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</scopingOrganization>
+
 						</asAffiliate>
 
 
@@ -38028,6 +39308,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 			</responsibleParty>
@@ -38678,6 +39974,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 								</asOrganizationPartOf>
 
 							</affiliateOrganization>
+								<!--
+									DEFECT #2627: asAffiliate/scopingOrganization.
+									WAS: role missing scopingOrganization shell.
+									HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+									SEMD often flags bare role without scoping org slot.
+									Form 043/u does not collect scoping MO for this nested role — do not invent.
+									NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+								-->
+								<scopingOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</scopingOrganization>
+
 						</asAffiliate>
 
 
@@ -39021,6 +40333,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 			</author>
@@ -39473,6 +40801,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 								</asOrganizationPartOf>
 
 							</affiliateOrganization>
+								<!--
+									DEFECT #2627: asAffiliate/scopingOrganization.
+									WAS: role missing scopingOrganization shell.
+									HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+									SEMD often flags bare role without scoping org slot.
+									Form 043/u does not collect scoping MO for this nested role — do not invent.
+									NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+								-->
+								<scopingOrganization>
+									<id nullFlavor="NI"/>
+									<name nullFlavor="NI"/>
+									<telecom nullFlavor="NI"/>
+									<addr nullFlavor="NI"/>
+									<standardIndustryClassCode nullFlavor="NI"/>
+								</scopingOrganization>
+
 						</asAffiliate>
 
 
@@ -39787,6 +41131,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 			
@@ -40126,6 +41486,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -40707,6 +42083,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 			</participant>
@@ -41334,6 +42726,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -41600,6 +43008,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -42083,6 +43507,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -42424,6 +43864,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -42853,6 +44309,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -43119,6 +44591,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -43511,6 +44999,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -44072,6 +45576,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -44938,6 +46458,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -45204,6 +46740,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -45705,6 +47257,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -46046,6 +47614,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 				</author>
@@ -46493,6 +48077,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -46759,6 +48359,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -47151,6 +48767,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -47730,6 +49362,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 				</participant>
@@ -48461,6 +50109,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -48727,6 +50391,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -49228,6 +50908,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -49569,6 +51265,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -50016,6 +51728,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -50282,6 +52010,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -50674,6 +52418,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -51253,6 +53013,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -52799,6 +54575,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -53113,6 +54905,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 							</performer>
@@ -53570,6 +55378,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -53913,6 +55737,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 							</author>
@@ -54365,6 +56205,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -54679,6 +56535,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 							
@@ -55018,6 +56890,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -55599,6 +57487,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 							</participant>
@@ -56226,6 +58130,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -56492,6 +58412,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -56975,6 +58911,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -57316,6 +59268,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -57745,6 +59713,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -58011,6 +59995,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -58403,6 +60403,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -58964,6 +60980,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -59830,6 +61862,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -60096,6 +62144,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -60597,6 +62661,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -60938,6 +63018,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 				</author>
@@ -61385,6 +63481,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -61651,6 +63763,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -62043,6 +64171,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -62622,6 +64766,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 				</participant>
@@ -63353,6 +65513,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -63619,6 +65795,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -64120,6 +66312,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -64461,6 +66669,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -64908,6 +67132,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -65174,6 +67414,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -65566,6 +67822,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -66145,6 +68417,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -67377,6 +69665,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -67643,6 +69947,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -68144,6 +70464,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -68485,6 +70821,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 								</author>
@@ -68932,6 +71284,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -69198,6 +71566,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -69590,6 +71974,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -70169,6 +72569,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 								</participant>
@@ -70900,6 +73316,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -71166,6 +73598,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -71667,6 +74115,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -72008,6 +74472,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 									</author>
@@ -72455,6 +74935,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -72721,6 +75217,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -73113,6 +75625,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -73692,6 +76220,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 									</participant>
@@ -74890,6 +77434,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -75204,6 +77764,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 							</performer>
@@ -75661,6 +78237,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -76004,6 +78596,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 							</author>
@@ -76456,6 +79064,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -76770,6 +79394,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 							
@@ -77109,6 +79749,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -77690,6 +80346,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 							</participant>
@@ -78317,6 +80989,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -78583,6 +81271,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -79066,6 +81770,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -79407,6 +82127,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -79836,6 +82572,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -80102,6 +82854,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -80494,6 +83262,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -81055,6 +83839,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -81921,6 +84721,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -82187,6 +85003,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -82688,6 +85520,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -83029,6 +85877,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 				</author>
@@ -83476,6 +86340,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -83742,6 +86622,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -84134,6 +87030,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -84713,6 +87625,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 				</participant>
@@ -85444,6 +88372,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -85710,6 +88654,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -86211,6 +89171,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -86552,6 +89528,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -86999,6 +89991,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -87265,6 +90273,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -87657,6 +90681,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -88236,6 +91276,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -89468,6 +92524,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -89734,6 +92806,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -90235,6 +93323,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -90576,6 +93680,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 								</author>
@@ -91023,6 +94143,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -91289,6 +94425,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -91681,6 +94833,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -92260,6 +95428,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 								</participant>
@@ -92991,6 +96175,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -93257,6 +96457,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -93758,6 +96974,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -94099,6 +97331,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 									</author>
@@ -94546,6 +97794,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -94812,6 +98076,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -95204,6 +98484,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -95783,6 +99079,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 									</participant>
@@ -96995,6 +100307,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -97309,6 +100637,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 							</performer>
@@ -97766,6 +101110,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -98109,6 +101469,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 							</author>
@@ -98561,6 +101937,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -98875,6 +102267,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 							
@@ -99214,6 +102622,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -99795,6 +103219,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 							</participant>
@@ -100422,6 +103862,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -100688,6 +104144,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -101171,6 +104643,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -101512,6 +105000,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -101941,6 +105445,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -102207,6 +105727,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -102599,6 +106135,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -103160,6 +106712,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -104026,6 +107594,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -104292,6 +107876,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -104793,6 +108393,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -105134,6 +108750,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 				</author>
@@ -105581,6 +109213,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -105847,6 +109495,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -106239,6 +109903,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -106818,6 +110498,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 				</participant>
@@ -107549,6 +111245,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -107815,6 +111527,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -108316,6 +112044,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -108657,6 +112401,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -109104,6 +112864,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -109370,6 +113146,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -109762,6 +113554,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -110341,6 +114149,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -111573,6 +115397,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -111839,6 +115679,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -112340,6 +116196,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -112681,6 +116553,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 								</author>
@@ -113128,6 +117016,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -113394,6 +117298,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -113786,6 +117706,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -114365,6 +118301,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 								</participant>
@@ -115096,6 +119048,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -115362,6 +119330,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -115863,6 +119847,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -116204,6 +120204,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 									</author>
@@ -116651,6 +120667,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -116917,6 +120949,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -117309,6 +121357,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -117888,6 +121952,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 									</participant>
@@ -119110,6 +123190,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -119424,6 +123520,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 							</performer>
@@ -119881,6 +123993,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -120224,6 +124352,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 							</author>
@@ -120676,6 +124820,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -120990,6 +125150,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 							
@@ -121329,6 +125505,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -121910,6 +126102,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 							</participant>
@@ -122537,6 +126745,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -122803,6 +127027,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -123286,6 +127526,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -123627,6 +127883,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -124056,6 +128328,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -124322,6 +128610,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -124714,6 +129018,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -125275,6 +129595,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -126084,6 +130420,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -126350,6 +130702,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -126851,6 +131219,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -127192,6 +131576,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 				</author>
@@ -127639,6 +132039,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -127905,6 +132321,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -128297,6 +132729,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -128876,6 +133324,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 				</participant>
@@ -130340,6 +134804,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -130654,6 +135134,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 							</performer>
@@ -131111,6 +135607,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -131454,6 +135966,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 							</author>
@@ -131906,6 +136434,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -132220,6 +136764,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 							
@@ -132559,6 +137119,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -133140,6 +137716,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 							</participant>
@@ -133767,6 +138359,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -134033,6 +138641,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -134516,6 +139140,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -134857,6 +139497,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -135286,6 +139942,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -135552,6 +140224,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -135944,6 +140632,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -136505,6 +141209,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -137371,6 +142091,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -137637,6 +142373,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -138138,6 +142890,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -138479,6 +143247,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 				</author>
@@ -138926,6 +143710,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -139192,6 +143992,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -139584,6 +144400,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -140163,6 +144995,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 				</participant>
@@ -140894,6 +145742,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -141160,6 +146024,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -141661,6 +146541,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -142002,6 +146898,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -142449,6 +147361,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -142715,6 +147643,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -143107,6 +148051,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -143686,6 +148646,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -144918,6 +149894,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -145184,6 +150176,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -145685,6 +150693,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -146026,6 +151050,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 								</author>
@@ -146473,6 +151513,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -146739,6 +151795,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -147131,6 +152203,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -147710,6 +152798,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 								</participant>
@@ -148441,6 +153545,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -148707,6 +153827,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -149208,6 +154344,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -149549,6 +154701,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 									</author>
@@ -149996,6 +155164,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -150262,6 +155446,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -150654,6 +155854,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -151233,6 +156449,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 									</participant>
@@ -152444,6 +157676,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -152758,6 +158006,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 							</performer>
@@ -153215,6 +158479,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -153558,6 +158838,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 							</author>
@@ -154010,6 +159306,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -154324,6 +159636,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 							
@@ -154663,6 +159991,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -155244,6 +160588,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 							</participant>
@@ -155871,6 +161231,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -156137,6 +161513,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -156620,6 +162012,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -156961,6 +162369,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -157390,6 +162814,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -157656,6 +163096,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -158048,6 +163504,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -158609,6 +164081,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -159475,6 +164963,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -159741,6 +165245,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -160242,6 +165762,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -160583,6 +166119,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 				</author>
@@ -161030,6 +166582,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -161296,6 +166864,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -161688,6 +167272,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -162267,6 +167867,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 				</participant>
@@ -162998,6 +168614,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -163264,6 +168896,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -163765,6 +169413,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -164106,6 +169770,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -164553,6 +170233,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -164819,6 +170515,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -165211,6 +170923,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -165790,6 +171518,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -167022,6 +172766,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -167288,6 +173048,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -167789,6 +173565,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -168130,6 +173922,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 								</author>
@@ -168577,6 +174385,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -168843,6 +174667,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -169235,6 +175075,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -169814,6 +175670,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 								</participant>
@@ -170545,6 +176417,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -170811,6 +176699,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -171312,6 +177216,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -171653,6 +177573,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 									</author>
@@ -172100,6 +178036,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -172366,6 +178318,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -172758,6 +178726,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -173337,6 +179321,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 									</participant>
@@ -174710,6 +180710,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -175024,6 +181040,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 							</performer>
@@ -175481,6 +181513,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -175824,6 +181872,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 							</author>
@@ -176276,6 +182340,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -176590,6 +182670,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedEntity>
 							
@@ -176929,6 +183025,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -177510,6 +183622,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 							</participant>
@@ -178137,6 +184265,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -178403,6 +184547,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -178886,6 +185046,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -179227,6 +185403,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -179656,6 +185848,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -179922,6 +186130,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -180314,6 +186538,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -180875,6 +187115,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
@@ -181741,6 +187997,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -182007,6 +188279,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -182508,6 +188796,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -182849,6 +189153,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 				</author>
@@ -183296,6 +189616,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -183562,6 +189898,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -183954,6 +190306,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -184533,6 +190901,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 				</participant>
@@ -185264,6 +191648,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -185530,6 +191930,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -186031,6 +192447,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -186372,6 +192804,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </assignedAuthor>
 					</author>
@@ -186819,6 +193267,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 							</asOrganizationPartOf>
 
 						</affiliateOrganization>
+							<!--
+								DEFECT #2627: asAffiliate/scopingOrganization.
+								WAS: role missing scopingOrganization shell.
+								HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+								SEMD often flags bare role without scoping org slot.
+								Form 043/u does not collect scoping MO for this nested role — do not invent.
+								NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+							-->
+							<scopingOrganization>
+								<id nullFlavor="NI"/>
+								<name nullFlavor="NI"/>
+								<telecom nullFlavor="NI"/>
+								<addr nullFlavor="NI"/>
+								<standardIndustryClassCode nullFlavor="NI"/>
+							</scopingOrganization>
+
 					</asAffiliate>
 
 
@@ -187085,6 +193549,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2556: assignedEntity/representedOrganization.
@@ -187477,6 +193957,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 					<!--
 						DEFECT #2619: relatedEntity/scopingOrganization.
@@ -188056,6 +194552,22 @@ ${params.doctorPosition && params.doctorPosition.trim()
 </wholeOrganization>
 					</asOrganizationPartOf>
 </affiliateOrganization>
+					<!--
+						DEFECT #2627: asAffiliate/scopingOrganization.
+						WAS: role missing scopingOrganization shell.
+						HL7 CDA R2 Role may carry scopingOrganization 0..1 (issuing/scoping MO).
+						SEMD often flags bare role without scoping org slot.
+						Form 043/u does not collect scoping MO for this nested role — do not invent.
+						NOW: minimal scopingOrganization id/name/telecom/addr/SIC NI (no nested AOP).
+					-->
+					<scopingOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<standardIndustryClassCode nullFlavor="NI"/>
+					</scopingOrganization>
+
 				</asAffiliate>
 </associatedEntity>
 					</participant>
