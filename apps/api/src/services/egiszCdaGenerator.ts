@@ -621,6 +621,38 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<addr nullFlavor="NI"/>
 				<telecom nullFlavor="NI"/>
 				<name>${escapeXml(params.clinicName)}</name>
+				<!--
+					DEFECT #2401: providerOrganization/standardIndustryClassCode.
+					WAS: providerOrganization had id/addr/telecom/name only — no
+					standardIndustryClassCode. HL7 CDA R2 Organization may carry
+					standardIndustryClassCode 0..1 (OKVED/industry class). SEMD
+					validators often flag incomplete MO org under patientRole
+					without industry-class slot. Form 043/u has no OKVED for the
+					clinic — do not invent a fake industry code.
+					NOW: standardIndustryClassCode nullFlavor NI.
+				-->
+				<standardIndustryClassCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2402: providerOrganization/asOrganizationPartOf.
+					WAS: providerOrganization missing asOrganizationPartOf hierarchy
+					shell. HL7 CDA R2 Organization may nest asOrganizationPartOf
+					(parent MO / holding). SEMD often flags bare MO org without
+					part-of slot under patientRole.providerOrganization. Form 043/u
+					does not collect parent-MO linkage — do not invent parent id/name.
+					NOW: asOrganizationPartOf code/statusCode/effectiveTime NI +
+					wholeOrganization id/name/addr/telecom NI.
+				-->
+				<asOrganizationPartOf>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<wholeOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</wholeOrganization>
+				</asOrganizationPartOf>
 			</providerOrganization>
 		</patientRole>
 	</recordTarget>
@@ -982,6 +1014,36 @@ export function generateDentalCdaXml(params: EgiszCdaParams): string {
 				<addr nullFlavor="NI"/>
 				<telecom nullFlavor="NI"/>
 				<name>${escapeXml(params.clinicName)}</name>
+				<!--
+					DEFECT #2403: representedCustodianOrganization/standardIndustryClassCode.
+					WAS: custodian org had id/addr/telecom/name only — no
+					standardIndustryClassCode. HL7 CDA R2 Organization may carry
+					standardIndustryClassCode 0..1. SEMD validators often flag
+					incomplete custodian MO without industry-class slot. Form 043/u
+					has no OKVED — do not invent.
+					NOW: standardIndustryClassCode nullFlavor NI.
+				-->
+				<standardIndustryClassCode nullFlavor="NI"/>
+				<!--
+					DEFECT #2404: representedCustodianOrganization/asOrganizationPartOf.
+					WAS: custodian org missing asOrganizationPartOf hierarchy shell.
+					HL7 CDA R2 Organization may nest asOrganizationPartOf (parent MO).
+					SEMD often flags bare custodian without part-of slot. Form 043/u
+					does not collect parent-MO linkage — do not invent parent id/name.
+					NOW: asOrganizationPartOf code/statusCode/effectiveTime NI +
+					wholeOrganization id/name/addr/telecom NI.
+				-->
+				<asOrganizationPartOf>
+					<code nullFlavor="NI"/>
+					<statusCode nullFlavor="NI"/>
+					<effectiveTime nullFlavor="NI"/>
+					<wholeOrganization>
+						<id nullFlavor="NI"/>
+						<name nullFlavor="NI"/>
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+					</wholeOrganization>
+				</asOrganizationPartOf>
 			</representedCustodianOrganization>
 
 		</assignedCustodian>
