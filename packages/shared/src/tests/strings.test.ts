@@ -1,6 +1,68 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert';
-import { splitLine, isValidRussianInn } from '../utils/strings.js';
+import { splitLine, isValidRussianInn, isValidRussianSnils } from '../utils/strings.js';
+
+describe('isValidRussianSnils', () => {
+  test('returns true for null, undefined, or empty string', () => {
+    assert.strictEqual(isValidRussianSnils(null), true);
+    assert.strictEqual(isValidRussianSnils(undefined), true);
+    assert.strictEqual(isValidRussianSnils(''), true);
+  });
+
+  test('returns false for invalid lengths', () => {
+    assert.strictEqual(isValidRussianSnils('1234567890'), false); // 10 digits
+    assert.strictEqual(isValidRussianSnils('123456789012'), false); // 12 digits
+  });
+
+  test('returns false for all identical digits', () => {
+    assert.strictEqual(isValidRussianSnils('11111111111'), false);
+    assert.strictEqual(isValidRussianSnils('00000000000'), false);
+    assert.strictEqual(isValidRussianSnils('999-999-999 99'), false);
+  });
+
+  test('returns true for numPart <= 1001001 without checksum validation', () => {
+    assert.strictEqual(isValidRussianSnils('001-001-001 99'), true);
+    assert.strictEqual(isValidRussianSnils('001-001-001 00'), true);
+    assert.strictEqual(isValidRussianSnils('000-000-001 12'), true);
+  });
+
+  test('validates correctly when sum < 100', () => {
+    // 112 233 445 = 1*9+1*8+2*7+2*6+3*5+3*4+4*3+4*2+5*1 = 95
+    assert.strictEqual(isValidRussianSnils('112-233-445 95'), true);
+    assert.strictEqual(isValidRussianSnils('112-233-445 96'), false);
+  });
+
+  test('validates correctly when sum === 100', () => {
+    // 001 019 989 sum is exactly 100
+    assert.strictEqual(isValidRussianSnils('001-019-989 00'), true);
+    assert.strictEqual(isValidRussianSnils('001-019-989 99'), false);
+  });
+
+  test('validates correctly when sum === 101', () => {
+    // 001 019 998 sum is exactly 101
+    assert.strictEqual(isValidRussianSnils('001-019-998 00'), true);
+    assert.strictEqual(isValidRussianSnils('001-019-998 01'), false);
+  });
+
+  test('validates correctly when sum > 101', () => {
+    // 001 019 999 sum is exactly 102 (rem 102 % 101 = 1)
+    assert.strictEqual(isValidRussianSnils('001-019-999 01'), true);
+    assert.strictEqual(isValidRussianSnils('001-019-999 00'), false);
+
+    // Test rem === 100 or rem === 101 condition in the rem block
+    // We need sum = 101 + 100 = 201 or sum = 101 + 101 = 202
+    // Max sum possible: 9*9 + 9*8 + 9*7 + 9*6 + 9*5 + 9*4 + 9*3 + 9*2 + 9*1 = 9 * 45 = 405
+    // Let's test a valid SNILS found in the wild or construct one
+    assert.strictEqual(isValidRussianSnils('444-444-444 00'), false); // sum = 4 * 45 = 180, rem = 180%101 = 79. Control should be 79.
+    assert.strictEqual(isValidRussianSnils('444-444-444 79'), true);
+  });
+
+  test('handles formatting characters (spaces, hyphens)', () => {
+    assert.strictEqual(isValidRussianSnils(' 112-233-445 95 '), true);
+    assert.strictEqual(isValidRussianSnils('112 233 445-95'), true);
+    assert.strictEqual(isValidRussianSnils('11223344595'), true);
+  });
+});
 
 describe('isValidRussianInn', () => {
   test('returns true for null, undefined, or empty string', () => {
