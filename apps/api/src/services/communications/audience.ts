@@ -45,7 +45,7 @@ import { normalizeWhatsappRecipient } from "../../whatsappTransport.js";
 import type { CommunicationChannelCode, CommunicationConsentScope } from "./channelRouter.js";
 import { loadConsentsByPatient } from "./consentLoader.js";
 import { decideConsent, type ConsentRecord } from "./deliveryPolicy.js";
-import { resolveTelegramChatId } from "./channelRouter.js";
+import { resolveTelegramChatId, resolveTelegramChatIds } from "./channelRouter.js";
 import { describeSmsPayload } from "./templateRenderer.js";
 
 /**
@@ -432,6 +432,11 @@ export async function resolveAudience(input: ResolveAudienceInput): Promise<Audi
 	// это тысяча запросов на тысячную рассылку.
 	const consentsByPatient = await loadConsents(input.organizationId, matchedIds);
 
+	const telegramChatsByPatientId =
+		input.channel === "telegram" && matchedIds.length > 0
+			? await resolveTelegramChatIds(input.organizationId, matchedIds)
+			: undefined;
+
 	const candidates: AudienceCandidate[] = [];
 	for (const patientId of matchedIds) {
 		const row = matchedById.get(patientId);
@@ -442,7 +447,7 @@ export async function resolveAudience(input: ResolveAudienceInput): Promise<Audi
 			continue;
 		}
 
-		const address = await recipientAddressFor(input.organizationId, input.channel, row);
+		const address = await recipientAddressFor(input.organizationId, input.channel, row, telegramChatsByPatientId);
 		if (!address) {
 			excluded.no_contact += 1;
 			continue;
@@ -481,9 +486,15 @@ async function loadConsents(organizationId: string, patientIds: string[]): Promi
 async function recipientAddressFor(
 	organizationId: string,
 	channel: CommunicationChannelCode,
-	row: { id: string; phone: string | null; email: string | null }
+	row: { id: string; phone: string | null; email: string | null },
+	telegramChatsByPatientId?: Map<string, string>
 ): Promise<string | null> {
-	if (channel === "telegram") return resolveTelegramChatId(organizationId, row.id);
+	if (channel === "telegram") {
+		if (telegramChatsByPatientId) {
+			return telegramChatsByPatientId.get(row.id) ?? null;
+		}
+		return resolveTelegramChatId(organizationId, row.id);
+	}
 	if (channel === "email") {
 		const email = row.email?.trim() ?? "";
 		return isValidEmailAddress(email) ? email : null;
