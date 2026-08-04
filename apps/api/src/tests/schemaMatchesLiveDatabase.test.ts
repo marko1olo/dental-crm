@@ -682,8 +682,6 @@ const KNOWN_DIVERGENCES: Readonly<Record<DivergenceClass, readonly string[]>> = 
 		users.updated_at
 		users.version
 		visit_diaries.diagnosis_text
-		visit_diary_revisions.previous_diagnosis_tooth
-		visit_diary_revisions.revision_reason
 		visit_examination_photo_links.examination_form_id
 		visit_examination_photo_links.patient_name
 		visits.is_synced
@@ -701,7 +699,7 @@ const KNOWN_DIVERGENCES: Readonly<Record<DivergenceClass, readonly string[]>> = 
  * охраняется не числом, а сообщением коммита: запись в реестр видна в diff
  * поимённо.
  */
-const REGISTERED_DIVERGENCE_COUNT = 269;
+const REGISTERED_DIVERGENCE_COUNT = 267;
 
 /** Найденное расхождение: устойчивый ключ для реестра плюс подробности для человека. */
 type Divergence = { readonly key: string; readonly detail: string };

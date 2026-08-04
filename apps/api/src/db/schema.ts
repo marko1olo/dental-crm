@@ -13,7 +13,8 @@ import {
   unique,
   index,
   uniqueIndex,
-  uuid
+  uuid,
+  varchar
 } from "drizzle-orm/pg-core";
 import type {
   DocumentIssueSignatureAttestation,
@@ -1694,7 +1695,7 @@ export const visitDiaryRevisions = pgTable("visit_diary_revisions", {
    * previousDiagnosisTooth в теле, но insert в visit_diary_revisions их не
    * писал. Причина правки и прежний зуб пропадали из forensic-истории 043/у.
    */
-  previousDiagnosisTooth: text("previous_diagnosis_tooth"),
+  previousDiagnosisTooth: varchar("previous_diagnosis_tooth", { length: 10 }),
   /*
    * Forensic 043/у (миграция 0149).
    * БЫЛО: revise принимал complications/comorbidities и писал их в visit_diaries,
