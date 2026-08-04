@@ -153,6 +153,13 @@ describe("splitKopecks", () => {
 	test("долг делится с сохранением знака", () => {
 		assert.strictEqual(sumKopecks(splitKopecks(-10000, 3)), -10000);
 	});
+
+	test("отклоняет невалидное количество частей (меньше 1 или не целое)", () => {
+		assert.throws(() => splitKopecks(10000, 0));
+		assert.throws(() => splitKopecks(10000, -1));
+		assert.throws(() => splitKopecks(10000, 1.5));
+		assert.throws(() => splitKopecks(10000, Number.NaN));
+	});
 });
 
 describe("formatKopecksRu", () => {
