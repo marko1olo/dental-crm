@@ -44,9 +44,18 @@ describe("parseKopecks", () => {
 		assert.strictEqual(parseKopecks(1500), 150000);
 	});
 
+	test("дробные числа типа float проходят через toFixed(2)", () => {
+		assert.strictEqual(parseKopecks(150.5), 15050);
+		assert.strictEqual(parseKopecks(0.01), 1);
+	});
+
+	test("строки с дробной частью длиннее двух знаков бросают ошибку", () => {
+		assert.throws(() => parseKopecks("12.345"));
+		assert.throws(() => parseKopecks("150.505"));
+	});
+
 	test("мусор не превращается молча в ноль", () => {
 		assert.throws(() => parseKopecks("сто рублей"));
-		assert.throws(() => parseKopecks("12.345"));
 		assert.throws(() => parseKopecks(Number.NaN));
 	});
 
