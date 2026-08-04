@@ -44,6 +44,11 @@ describe("parseKopecks", () => {
 		assert.strictEqual(parseKopecks(1500), 150000);
 	});
 
+	test("нецелое число из базы проходит без потерь через string", () => {
+		assert.strictEqual(parseKopecks(150.5), 15050);
+		assert.strictEqual(parseKopecks(-42.75), -4275);
+	});
+
 	test("мусор не превращается молча в ноль", () => {
 		assert.throws(() => parseKopecks("сто рублей"));
 		assert.throws(() => parseKopecks("12.345"));
@@ -92,7 +97,23 @@ describe("rublesToKopecks / kopecksToWholeRubles", () => {
 	});
 
 	test("сумма с копейками не выдаёт себя за целые рубли", () => {
-		assert.throws(() => kopecksToWholeRubles(15050));
+		assert.throws(() => kopecksToWholeRubles(15050), {
+			message: "Сумма 150.50 руб. содержит копейки и не может быть выражена целыми рублями",
+		});
+	});
+
+	test("обрабатывает ноль и отрицательные суммы", () => {
+		assert.strictEqual(kopecksToWholeRubles(0), 0);
+		assert.strictEqual(kopecksToWholeRubles(-150000), -1500);
+	});
+
+	test("отклоняет нецелые числа и суммы за пределами Number.MAX_SAFE_INTEGER", () => {
+		assert.throws(() => kopecksToWholeRubles(10.5), {
+			message: "Копейки должны быть целым числом, получено 10.5. Похоже, сумма прошла через плавающую точку.",
+		});
+		assert.throws(() => kopecksToWholeRubles(Number.MAX_SAFE_INTEGER + 1), {
+			message: `Сумма ${Number.MAX_SAFE_INTEGER + 1} копеек выходит за пределы точного целого`,
+		});
 	});
 });
 
@@ -118,6 +139,15 @@ describe("percentageOfKopecks", () => {
 		// 33.33% от 0.10 — меньше копейки, значит ноль.
 		assert.strictEqual(percentageOfKopecks(10, 3333), 3);
 		assert.ok(percentageOfKopecks(12345, 10000) <= 12345);
+	});
+
+	test("отклоняет невалидные базисные пункты", () => {
+		assert.throws(() => percentageOfKopecks(1000, -100), {
+			message: "Процент должен быть целым в базисных пунктах, получено -100",
+		});
+		assert.throws(() => percentageOfKopecks(1000, 10.5), {
+			message: "Процент должен быть целым в базисных пунктах, получено 10.5",
+		});
 	});
 });
 
@@ -152,6 +182,18 @@ describe("splitKopecks", () => {
 
 	test("долг делится с сохранением знака", () => {
 		assert.strictEqual(sumKopecks(splitKopecks(-10000, 3)), -10000);
+	});
+
+	test("отклоняет невалидное количество частей", () => {
+		assert.throws(() => splitKopecks(10000, 0), {
+			message: "Число частей должно быть целым положительным, получено 0",
+		});
+		assert.throws(() => splitKopecks(10000, -5), {
+			message: "Число частей должно быть целым положительным, получено -5",
+		});
+		assert.throws(() => splitKopecks(10000, 2.5), {
+			message: "Число частей должно быть целым положительным, получено 2.5",
+		});
 	});
 });
 
