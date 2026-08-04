@@ -28,7 +28,7 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 	} = ctx;
 
 	const facilityId = clinicOidEscaped
-		? `<id root="${DEFAULT_MO_ROOT}" extension="${clinicOidEscaped}"/>`
+		? `<id root="${clinicOidEscaped}" extension="${clinicOidEscaped}"/>`
 		: `<id nullFlavor="NI"/>`;
 
 	const signatureCode = `<signatureCode code="S"/>`;
@@ -41,49 +41,204 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 
 	const assignedEntity = flatAssignedEntity(ctx);
 	const clinicName = escapeXml(params.clinicName);
+	const middleGiven = params.doctorName.middle
+		? `\n\t\t\t\t\t\t\t<given>${escapeXml(params.doctorName.middle)}</given>`
+		: "";
 	const encExt = escapeXml(encounterExtension);
 
 	return `
 	<author>
 		<time value="${effectiveTime}"/>
 		<assignedAuthor>
-			${assignedEntity}
+			${doctorIdXml(ctx)}
+			${doctorCodeXml(ctx)}
+			<!--
+				DEFECT #99: assignedAuthor addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+				\u0411\u042b\u041b\u041e: assignedAuthor had id/code/person/org only \u2014 no addr/telecom.
+				SEMD validators expect contact structure under assignedAuthor
+				(mirror of patientRole #98). We do not invent clinic/doctor
+				street or phone numbers.
+				\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI" until real
+				MO contact fields are wired (no schema lie).
+			-->
+			<addr nullFlavor="NI"/>
+			<telecom nullFlavor="NI"/>
+			<assignedPerson>
+				${doctorNameXml(ctx)}
+			</assignedPerson>
+			<representedOrganization>
+				
+				<!--
+					DEFECT #106: assignedAuthor representedOrganization
+					addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+					\u0411\u042b\u041b\u041e: representedOrganization had only name child \u2014 no
+					addr/telecom. SEMD validators expect MO contact under
+					author org (mirror of custodian #102 / recipient #103).
+					We do not invent clinic street or phone.
+					\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+				-->
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<name>${clinicName}</name>
+			</representedOrganization>
 		</assignedAuthor>
 	</author>
+
+
 	<custodian>
 		<assignedCustodian>
 			<representedCustodianOrganization>
 				${orgIdXml(ctx)}
+				<!--
+					DEFECT #102: custodian representedCustodianOrganization
+					addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+					\u0411\u042b\u041b\u041e: custodian had id + name only \u2014 no addr/telecom.
+					SEMD validators expect MO contact under custodian org
+					(mirror of patientRole #98 / assignedAuthor #99).
+					We do not invent clinic street or phone.
+					\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+				-->
 				<addr nullFlavor="NI"/>
 				<telecom nullFlavor="NI"/>
 				<name>${clinicName}</name>
 			</representedCustodianOrganization>
+
 		</assignedCustodian>
 	</custodian>
+	<!--
+		DEFECT #96: informationRecipient (intended receiver of the SEMD).
+		\u0411\u042b\u041b\u041e: CDA had author + custodian + legalAuthenticator + authenticator
+		but no informationRecipient. HL7 CDA R2 and EGISZ REMD expect the
+		intended recipient organization (clinic MO / REMD registry) so the
+		document is addressed for registration, not an orphan payload.
+		\u0421\u0422\u0410\u041b\u041e: informationRecipient/intendedRecipient/receivedOrganization
+		with clinicOid (or default MO root) + clinicName \u2014 same identity
+		scheme as custodian representedCustodianOrganization.
+	-->
 	<informationRecipient>
 		<intendedRecipient>
 			<receivedOrganization>
 				${orgIdXml(ctx)}
+				<!--
+					DEFECT #103: informationRecipient receivedOrganization
+					addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+					\u0411\u042b\u041b\u041e: receivedOrganization had id + name only \u2014 no
+					addr/telecom. SEMD validators expect MO contact under
+					the intended recipient (mirror of custodian #102).
+					We do not invent clinic street or phone.
+					\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+				-->
 				<addr nullFlavor="NI"/>
 				<telecom nullFlavor="NI"/>
 				<name>${clinicName}</name>
 			</receivedOrganization>
 		</intendedRecipient>
 	</informationRecipient>
+
+
+	<!--
+		DEFECT #75: legalAuthenticator (who signed / locks Form 043/\u0443).
+
+		\u0411\u042b\u041b\u041e: CDA had author + custodian only \u2014 no legalAuthenticator.
+		EGISZ REMD / SEMD validators require the signing physician block;
+		without it the document has no legal signature party distinct from
+		author time. \u0421\u0422\u0410\u041b\u041e: legalAuthenticator mirrors doctorName (+ optional
+		SNILS/position) with time = documentClock (lockedAt when provided).
+	-->
 	<legalAuthenticator>
 		<time value="${effectiveTime}"/>
 		${signatureCode}
 		<assignedEntity>
-			${assignedEntity}
+			${doctorIdXml(ctx)}
+			${doctorCodeXml(ctx)}
+			<!--
+				DEFECT #100: legalAuthenticator assignedEntity addr + telecom.
+				\u0411\u042b\u041b\u041e: legalAuthenticator had id/code/person/org only \u2014 no
+				addr/telecom. SEMD validators expect contact structure under
+				assignedEntity (mirror of assignedAuthor #99 / patientRole #98).
+				We do not invent doctor/clinic street or phone.
+				\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+			-->
+			<addr nullFlavor="NI"/>
+			<telecom nullFlavor="NI"/>
+			<assignedPerson>
+
+				${doctorNameXml(ctx)}
+			</assignedPerson>
+			<representedOrganization>
+				
+				<!--
+					DEFECT #107: legalAuthenticator representedOrganization
+					addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+					\u0411\u042b\u041b\u041e: representedOrganization had only name child \u2014 no
+					addr/telecom. SEMD validators expect MO contact under
+					legal signer org (mirror of assignedAuthor org #106).
+					We do not invent clinic street or phone.
+					\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+				-->
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<name>${clinicName}</name>
+			</representedOrganization>
 		</assignedEntity>
 	</legalAuthenticator>
+	<!--
+		DEFECT #95: authenticator (who attested the clinical content).
+		\u0411\u042b\u041b\u041e: legalAuthenticator (#75) only \u2014 HL7 CDA R2 also allows/expects
+		authenticator for the clinician who authenticates the document content
+		(distinct role from legal signature party). EGISZ SEMD validators that
+		check both blocks reject documents with legalAuthenticator alone when
+		the authoring physician is the same person who attests the SOAP text.
+		\u0421\u0422\u0410\u041b\u041e: authenticator mirrors doctor identity + signatureCode S and
+		time = documentClock (lockedAt), same scheme as legalAuthenticator.
+	-->
 	<authenticator>
 		<time value="${effectiveTime}"/>
 		${signatureCode}
 		<assignedEntity>
-			${assignedEntity}
+			${doctorIdXml(ctx)}
+			${doctorCodeXml(ctx)}
+			<!--
+				DEFECT #101: authenticator assignedEntity addr + telecom.
+				\u0411\u042b\u041b\u041e: authenticator had id/code/person/org only \u2014 no addr/telecom.
+				SEMD validators expect contact under assignedEntity (mirror of
+				legalAuthenticator #100 / assignedAuthor #99). No invented contact.
+				\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+			-->
+			<addr nullFlavor="NI"/>
+			<telecom nullFlavor="NI"/>
+			<assignedPerson>
+
+				${doctorNameXml(ctx)}
+			</assignedPerson>
+			<representedOrganization>
+				<!--
+					DEFECT #108: authenticator representedOrganization
+					addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+					\u0411\u042b\u041b\u041e: representedOrganization had only name child \u2014 no
+					addr/telecom. SEMD validators expect MO contact under
+					authenticator org (mirror of legalAuthenticator org #107).
+					We do not invent clinic street or phone.
+					\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+				-->
+				<addr nullFlavor="NI"/>
+				<telecom nullFlavor="NI"/>
+				<name>${clinicName}</name>
+			</representedOrganization>
 		</assignedEntity>
 	</authenticator>
+	<!-- DEFECT #55/#65: encounter datetime (params.visitDate / appointment.startsAt) -->
+
+	<!--
+		DEFECT #93: documentationOf/serviceEvent/performer (treating physician).
+		\u0411\u042b\u041b\u041e: serviceEvent carried only effectiveTime \u2014 no performer. HL7 CDA R2
+		and EGISZ SEMD expect the clinician who performed the care event under
+		documentationOf (distinct from author/legalAuthenticator document roles
+		and from encompassingEncounter/responsibleParty). Without performer,
+		validators treat the care event as unattributed.
+		\u0421\u0422\u0410\u041b\u041e: performer typeCode="PRF" with assignedEntity (doctor SNILS/name
+		+ clinic), same identity scheme as assignedAuthor / responsibleParty.
+	-->
 	<documentationOf>
 		<serviceEvent classCode="PCPR">
 			<effectiveTime value="${visitTime}"/>
@@ -91,52 +246,48 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 				<assignedEntity>
 					${doctorIdXml(ctx)}
 					${doctorCodeXml(ctx)}
+										<!--
+						DEFECT #104: documentationOf/serviceEvent/performer
+						assignedEntity addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+						\u0411\u042b\u041b\u041e: performer assignedEntity had id/code/person/org
+						only \u2014 no addr/telecom. SEMD validators expect contact
+						under the care-event performer (mirror of
+						legalAuthenticator #100 / authenticator #101 /
+						assignedAuthor #99). We do not invent doctor/clinic
+						street or phone.
+						\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+					-->
 					<addr nullFlavor="NI"/>
 					<telecom nullFlavor="NI"/>
 					<assignedPerson>
-						${doctorNameXml(ctx)}
+						<name>
+							<family>${escapeXml(params.doctorName.last)}</family>
+							<given>${escapeXml(params.doctorName.first)}</given>${middleGiven}
+						</name>
 					</assignedPerson>
-					${flatRepresentedOrganization(ctx)}
+					<representedOrganization>
+						<!--
+							DEFECT #109: documentationOf/serviceEvent/performer
+							representedOrganization addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+							\u0411\u042b\u041b\u041e: representedOrganization had only name child \u2014 no
+							addr/telecom. SEMD validators expect MO contact under
+							performer org (mirror of authenticator org #108).
+							We do not invent clinic street or phone.
+							\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+						-->
+						<addr nullFlavor="NI"/>
+						<telecom nullFlavor="NI"/>
+						<name>${clinicName}</name>
+					</representedOrganization>
 				</assignedEntity>
 			</performer>
 		</serviceEvent>
 	</documentationOf>
-	<inFulfillmentOf>
-		<order>
-			<id root="${docIdRoot}" extension="${encExt}"/>
-			<code nullFlavor="NI"/>
-			<statusCode code="completed"/>
-		</order>
-	</inFulfillmentOf>
-	<participant typeCode="REF">
-		<time value="${effectiveTime}"/>
-		<associatedEntity classCode="PROV">
-			${doctorIdXml(ctx)}
-			${doctorCodeXml(ctx)}
-			<addr nullFlavor="NI"/>
-			<telecom nullFlavor="NI"/>
-			<associatedPerson>
-				${doctorNameXml(ctx)}
-			</associatedPerson>
-			${flatScopingOrganization(ctx)}
-		</associatedEntity>
-	</participant>
-	<authorization>
-		<consent>
-			<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}-consent"/>
-			<code nullFlavor="NI"/>
-			<statusCode code="completed"/>
-			<effectiveTime value="${effectiveTime}"/>
-		</consent>
-	</authorization>
 	<componentOf>
 		<encompassingEncounter>
 			<id root="${docIdRoot}" extension="${encExt}"/>
 			${ambCode}
-			<statusCode code="completed"/>
-			<effectiveTime xsi:type="IVL_TS">
-				<low value="${visitTime}"/>
-			</effectiveTime>
+			<effectiveTime value="${visitTime}"/>
 			<responsibleParty>
 				<assignedEntity>
 					${doctorIdXml(ctx)}
@@ -152,13 +303,11 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 			<location>
 				<healthCareFacility>
 					${facilityId}
-					${ambCode}
 					<location>
 						<addr nullFlavor="NI"/>
 						<name>${clinicName}</name>
 					</location>
 					<serviceProviderOrganization>
-						${orgIdXml(ctx)}
 						<addr nullFlavor="NI"/>
 						<telecom nullFlavor="NI"/>
 						<name>${clinicName}</name>

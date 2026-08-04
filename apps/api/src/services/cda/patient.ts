@@ -39,22 +39,48 @@ export function generateCdaPatient(ctx: CdaContext): string {
 
 	return `
 	<recordTarget>
+
 		<patientRole>
 			${idsXml}
+			<!--
+				DEFECT #98: patientRole addr + telecom (HL7 CDA R2 / EGISZ SEMD).
+				\u0411\u042b\u041b\u041e: patientRole had only id(s) + patient demographics \u2014 no
+				addr/telecom. SEMD validators expect contact structure under
+				patientRole; without it REMD flags incomplete recordTarget.
+				We do not invent address/phone (no fake streets/numbers).
+				\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI" until real
+				patient contact fields are wired from the chart (no schema lie).
+			-->
 			<addr nullFlavor="NI"/>
 			<telecom nullFlavor="NI"/>
 			<patient>
+
+
+
 				<name>
 					<family>${escapeXml(params.patientName.last)}</family>
 					<given>${escapeXml(params.patientName.first)}</given>${middle}
 				</name>
 				${genderXml}
+
 				${birthXml}
+				<!--
+					DEFECT #97: patient/languageCommunication (preferred language).
+					\u0411\u042b\u041b\u041e: patient had name + gender + birthTime only. HL7 CDA R2
+					and EGISZ SEMD expect languageCommunication so the record
+					declares the language of care/communication (ru-RU for RF
+					ambulatory dentistry). Without it validators flag incomplete
+					patient demographics and REMD cannot route interpreter needs.
+					\u0421\u0422\u0410\u041b\u041e: languageCode ru-RU + preferenceInd true (primary).
+				-->
 				<languageCommunication>
 					<languageCode code="ru-RU"/>
 					<preferenceInd value="true"/>
 				</languageCommunication>
+
 			</patient>
+
+
 		</patientRole>
 	</recordTarget>`;
 }

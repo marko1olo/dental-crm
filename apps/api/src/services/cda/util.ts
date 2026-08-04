@@ -169,7 +169,7 @@ export function doctorCodeXml(ctx: CdaContext): string {
 export function doctorNameXml(ctx: CdaContext): string {
 	const n = ctx.params.doctorName;
 	const middle = n.middle
-		? `\n\t\t\t\t\t\t<given>${escapeXml(n.middle)}</given>`
+		? `\n\t\t\t\t\t<given>${escapeXml(n.middle)}</given>`
 		: "";
 	return `<name>
 					<family>${escapeXml(n.last)}</family>
