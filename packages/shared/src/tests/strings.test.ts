@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert';
-import { splitLine, isValidRussianInn } from '../utils/strings.js';
+import { splitLine, isValidRussianInn, isValidRussianPassport } from '../utils/strings.js';
 
 describe('isValidRussianInn', () => {
   test('returns true for null, undefined, or empty string', () => {
@@ -144,4 +144,29 @@ describe('splitLine', () => {
   });
 
 
+});
+
+describe('isValidRussianPassport', () => {
+  test('returns true for null, undefined, or empty string', () => {
+    assert.strictEqual(isValidRussianPassport(null), true);
+    assert.strictEqual(isValidRussianPassport(undefined), true);
+    assert.strictEqual(isValidRussianPassport(''), true);
+  });
+
+  test('returns true for valid 10-digit passports', () => {
+    assert.strictEqual(isValidRussianPassport('1234567890'), true);
+    assert.strictEqual(isValidRussianPassport('9876543210'), true);
+  });
+
+  test('returns false for invalid lengths', () => {
+    assert.strictEqual(isValidRussianPassport('123456789'), false); // 9 digits
+    assert.strictEqual(isValidRussianPassport('12345678901'), false); // 11 digits
+  });
+
+  test('handles formatting characters (spaces, hyphens)', () => {
+    assert.strictEqual(isValidRussianPassport(' 1234567890 '), true);
+    assert.strictEqual(isValidRussianPassport('12 34 567890'), true);
+    assert.strictEqual(isValidRussianPassport('12-34-567890'), true);
+    assert.strictEqual(isValidRussianPassport('12 34 56789'), false); // 9 digits with spaces
+  });
 });
