@@ -30,7 +30,7 @@ export function generateCdaPatient(ctx: CdaContext): string {
 		: "";
 
 	const genderXml = genderCode
-		? `<administrativeGenderCode code="${genderCode}" codeSystem="1.2.643.5.1.13.13.11.1040" codeSystemName="\u041f\u043e\u043b \u043f\u0430\u0446\u0438\u0435\u043d\u0442\u0430" displayName="${genderCode === "1" ? "\u041c\u0443\u0436\u0441\u043a\u043e\u0439" : "\u0416\u0435\u043d\u0441\u043a\u0438\u0439"}"/>`
+		? `<administrativeGenderCode code="${genderCode}" codeSystem="1.2.643.5.1.13.13.11.1040"/>`
 		: `<administrativeGenderCode nullFlavor="UNK"/>`;
 
 	const birthXml = birthTimeValue
@@ -52,8 +52,6 @@ export function generateCdaPatient(ctx: CdaContext): string {
 				${birthXml}
 				<languageCommunication>
 					<languageCode code="ru-RU"/>
-					<modeCode code="SPK" codeSystem="2.16.840.1.113883.5.60" codeSystemName="LanguageAbilityMode" displayName="\u0423\u0441\u0442\u043d\u0430\u044f \u0440\u0435\u0447\u044c"/>
-					<proficiencyLevelCode code="E" codeSystem="2.16.840.1.113883.5.61" codeSystemName="LanguageAbilityProficiency" displayName="\u0421\u0432\u043e\u0431\u043e\u0434\u043d\u043e"/>
 					<preferenceInd value="true"/>
 				</languageCommunication>
 			</patient>

@@ -30,7 +30,7 @@ export function generateCdaHeader(ctx: CdaContext): string {
 	<code code="74208-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="\u041f\u0440\u043e\u0442\u043e\u043a\u043e\u043b \u0441\u0442\u043e\u043c\u0430\u0442\u043e\u043b\u043e\u0433\u0438\u0447\u0435\u0441\u043a\u043e\u0433\u043e \u043e\u0441\u043c\u043e\u0442\u0440\u0430"/>
 	<title>\u041f\u0440\u043e\u0442\u043e\u043a\u043e\u043b \u0441\u0442\u043e\u043c\u0430\u0442\u043e\u043b\u043e\u0433\u0438\u0447\u0435\u0441\u043a\u043e\u0433\u043e \u043e\u0441\u043c\u043e\u0442\u0440\u0430</title>
 	<effectiveTime value="${effectiveTime}"/>
-	<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="\u041e\u0431\u044b\u0447\u043d\u044b\u0439"/>
+	<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25"/>
 	<languageCode code="ru-RU"/>
 	<setId root="${docIdRoot}" extension="${escapeXml(setIdExtension)}"/>
 	<versionNumber value="${documentVersion}"/>

@@ -128,7 +128,6 @@ export function orgIdXml(ctx: CdaContext): string {
 export function flatRepresentedOrganization(ctx: CdaContext): string {
 	const name = escapeXml(ctx.params.clinicName);
 	return `<representedOrganization>
-				${orgIdXml(ctx)}
 				<addr nullFlavor="NI"/>
 				<telecom nullFlavor="NI"/>
 				<name>${name}</name>
