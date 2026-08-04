@@ -32,6 +32,16 @@ export function generateCdaBody(ctx: CdaContext): string {
 		? escapeXml(params.diagnosisText)
 		: "";
 
+	const diagnosisEntry = params.icd10Code && params.icd10Code.trim()
+		? `
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" displayName="\u0414\u0438\u0430\u0433\u043d\u043e\u0437"/>
+							<value xsi:type="CD" code="${escapeXml(params.icd10Code)}" codeSystem="1.2.643.5.1.13.13.11.1005" displayName="${escapeXml(params.diagnosisText || "")}"/>
+						</observation>
+					</entry>`
+		: "";
+
 	const diagnosisSection = `
 			<!-- \u0414\u0438\u0430\u0433\u043d\u043e\u0437 -->
 			<component>
@@ -40,13 +50,7 @@ export function generateCdaBody(ctx: CdaContext): string {
 					<title>\u0414\u0438\u0430\u0433\u043d\u043e\u0437</title>
 					<text>
 						<paragraph>${escapeXml(params.diagnosisText || "")} (\u041c\u041a\u0411-10: ${escapeXml(params.icd10Code || "")})</paragraph>
-					</text>
-					<entry>
-						<observation classCode="OBS" moodCode="EVN">
-							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" displayName="\u0414\u0438\u0430\u0433\u043d\u043e\u0437"/>
-							<value xsi:type="CD" code="${escapeXml(params.icd10Code || "")}" codeSystem="1.2.643.5.1.13.13.11.1005" displayName="${escapeXml(params.diagnosisText || "")}"/>
-						</observation>
-					</entry>
+					</text>${diagnosisEntry}
 				</section>
 			</component>`;
 
@@ -57,15 +61,14 @@ export function generateCdaBody(ctx: CdaContext): string {
 		paragraph: params.anamnesis || "",
 	});
 
-	const objective = section({
-		loinc: "29545-1",
-		displayName: "Physical findings",
-		title: "\u041e\u0431\u044a\u0435\u043a\u0442\u0438\u0432\u043d\u044b\u0439 \u0441\u0442\u0430\u0442\u0443\u0441",
-		paragraph:
-			params.objectiveStatus && params.objectiveStatus.trim()
-				? params.objectiveStatus
-				: "\u0411\u0435\u0437 \u043e\u0441\u043e\u0431\u0435\u043d\u043d\u043e\u0441\u0442\u0435\u0439",
-	});
+	const objective = params.objectiveStatus && params.objectiveStatus.trim()
+		? section({
+				loinc: "29545-1",
+				displayName: "Physical findings",
+				title: "\u041e\u0431\u044a\u0435\u043a\u0442\u0438\u0432\u043d\u044b\u0439 \u0441\u0442\u0430\u0442\u0443\u0441",
+				paragraph: params.objectiveStatus,
+			})
+		: "";
 
 	const treatment = section({
 		loinc: "47519-4",
@@ -74,25 +77,23 @@ export function generateCdaBody(ctx: CdaContext): string {
 		paragraph: params.treatmentDescription || "",
 	});
 
-	const complications = section({
-		loinc: "55109-3",
-		displayName: "Complications",
-		title: "\u041e\u0441\u043b\u043e\u0436\u043d\u0435\u043d\u0438\u044f",
-		paragraph:
-			params.complications && params.complications.trim()
-				? params.complications
-				: "\u041d\u0435 \u043e\u0442\u043c\u0435\u0447\u0435\u043d\u044b",
-	});
+	const complications = params.complications && params.complications.trim()
+		? section({
+				loinc: "55109-3",
+				displayName: "Complications",
+				title: "\u041e\u0441\u043b\u043e\u0436\u043d\u0435\u043d\u0438\u044f",
+				paragraph: params.complications,
+			})
+		: "";
 
-	const comorbidities = section({
-		loinc: "11348-0",
-		displayName: "History of Past illness",
-		title: "\u0421\u043e\u043f\u0443\u0442\u0441\u0442\u0432\u0443\u044e\u0449\u0438\u0435 \u0437\u0430\u0431\u043e\u043b\u0435\u0432\u0430\u043d\u0438\u044f",
-		paragraph:
-			params.comorbidities && params.comorbidities.trim()
-				? params.comorbidities
-				: "\u041d\u0435 \u043e\u0442\u043c\u0435\u0447\u0435\u043d\u044b",
-	});
+	const comorbidities = params.comorbidities && params.comorbidities.trim()
+		? section({
+				loinc: "11348-0",
+				displayName: "History of Past illness",
+				title: "\u0421\u043e\u043f\u0443\u0442\u0441\u0442\u0432\u0443\u044e\u0449\u0438\u0435 \u0437\u0430\u0431\u043e\u043b\u0435\u0432\u0430\u043d\u0438\u044f",
+				paragraph: params.comorbidities,
+			})
+		: "";
 
 	const traySection =
 		params.instrumentTrayBarcode && params.instrumentTrayBarcode.trim()
