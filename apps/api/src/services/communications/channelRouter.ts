@@ -11,7 +11,7 @@
  * `not_configured`, а не «отправлено».
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	denteMaxBotConfigs,
@@ -137,6 +137,37 @@ export async function resolveTelegramChatId(organizationId: string, patientId: s
 		.limit(1);
 
 	return decryptTelegramChatId(link?.chatTransportRef ?? null);
+}
+
+/**
+ * Идентификаторы чатов Telegram по пациентам. Пакетная версия для предпросмотра
+ * и рассылки аудитории, чтобы избежать проблемы N+1 запросов.
+ */
+export async function resolveTelegramChatIds(organizationId: string, patientIds: string[]): Promise<Map<string, string>> {
+	if (patientIds.length === 0) return new Map();
+
+	const links = await db
+		.select({
+			subjectId: denteTelegramChatLinks.subjectId,
+			chatTransportRef: denteTelegramChatLinks.chatTransportRef
+		})
+		.from(denteTelegramChatLinks)
+		.where(
+			and(
+				eq(denteTelegramChatLinks.organizationId, organizationId),
+				inArray(denteTelegramChatLinks.subjectId, patientIds),
+				eq(denteTelegramChatLinks.status, "active")
+			)
+		);
+
+	const result = new Map<string, string>();
+	for (const link of links) {
+		const decrypted = decryptTelegramChatId(link.chatTransportRef ?? null);
+		if (decrypted) {
+			result.set(link.subjectId, decrypted);
+		}
+	}
+	return result;
 }
 
 export type ChannelSendRequest = {
