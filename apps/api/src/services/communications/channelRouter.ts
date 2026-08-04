@@ -11,7 +11,7 @@
  * `not_configured`, а не «отправлено».
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	denteMaxBotConfigs,
@@ -124,19 +124,38 @@ export async function resolveChannelCredentials(
  * `not_configured`, а не как молчаливый пропуск.
  */
 export async function resolveTelegramChatId(organizationId: string, patientId: string): Promise<string | null> {
-	const [link] = await db
-		.select({ chatTransportRef: denteTelegramChatLinks.chatTransportRef })
+	const map = await resolveTelegramChatIds(organizationId, [patientId]);
+	return map.get(patientId) ?? null;
+}
+
+export async function resolveTelegramChatIds(
+	organizationId: string,
+	patientIds: string[]
+): Promise<Map<string, string>> {
+	if (patientIds.length === 0) return new Map();
+
+	const links = await db
+		.select({
+			subjectId: denteTelegramChatLinks.subjectId,
+			chatTransportRef: denteTelegramChatLinks.chatTransportRef
+		})
 		.from(denteTelegramChatLinks)
 		.where(
 			and(
 				eq(denteTelegramChatLinks.organizationId, organizationId),
-				eq(denteTelegramChatLinks.subjectId, patientId),
+				inArray(denteTelegramChatLinks.subjectId, patientIds),
 				eq(denteTelegramChatLinks.status, "active")
 			)
-		)
-		.limit(1);
+		);
 
-	return decryptTelegramChatId(link?.chatTransportRef ?? null);
+	const result = new Map<string, string>();
+	for (const link of links) {
+		if (!result.has(link.subjectId)) {
+			const decrypted = decryptTelegramChatId(link.chatTransportRef ?? null);
+			if (decrypted) result.set(link.subjectId, decrypted);
+		}
+	}
+	return result;
 }
 
 export type ChannelSendRequest = {

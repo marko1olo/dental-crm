@@ -45,7 +45,7 @@ import { normalizeWhatsappRecipient } from "../../whatsappTransport.js";
 import type { CommunicationChannelCode, CommunicationConsentScope } from "./channelRouter.js";
 import { loadConsentsByPatient } from "./consentLoader.js";
 import { decideConsent, type ConsentRecord } from "./deliveryPolicy.js";
-import { resolveTelegramChatId } from "./channelRouter.js";
+import { resolveTelegramChatId, resolveTelegramChatIds } from "./channelRouter.js";
 import { describeSmsPayload } from "./templateRenderer.js";
 
 /**
@@ -432,6 +432,11 @@ export async function resolveAudience(input: ResolveAudienceInput): Promise<Audi
 	// это тысяча запросов на тысячную рассылку.
 	const consentsByPatient = await loadConsents(input.organizationId, matchedIds);
 
+	const telegramChatIds =
+		input.channel === "telegram"
+			? await resolveTelegramChatIds(input.organizationId, matchedIds)
+			: new Map<string, string>();
+
 	const candidates: AudienceCandidate[] = [];
 	for (const patientId of matchedIds) {
 		const row = matchedById.get(patientId);
@@ -442,7 +447,13 @@ export async function resolveAudience(input: ResolveAudienceInput): Promise<Audi
 			continue;
 		}
 
-		const address = await recipientAddressFor(input.organizationId, input.channel, row);
+		let address: string | null = null;
+		if (input.channel === "telegram") {
+			address = telegramChatIds.get(row.id) ?? null;
+		} else {
+			address = await recipientAddressFor(input.organizationId, input.channel, row);
+		}
+
 		if (!address) {
 			excluded.no_contact += 1;
 			continue;
