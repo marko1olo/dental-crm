@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
+import * as path from "node:path";
 import { parse as parseDotEnvFile } from "dotenv";
 
 const loadedEnvFiles: string[] = [];
