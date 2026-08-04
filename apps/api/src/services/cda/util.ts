@@ -117,6 +117,21 @@ export function buildCdaContext(params: EgiszCdaParams): CdaContext {
 	};
 }
 
+/** Contact helpers: emit real XML text node if available, else nullFlavor NI. */
+export function addrXml(address?: string): string {
+	const trimmed = address ? address.trim() : "";
+	return trimmed
+		? `<addr><streetAddressLine>${escapeXml(trimmed)}</streetAddressLine></addr>`
+		: `<addr nullFlavor="NI"/>`;
+}
+
+export function telecomXml(phone?: string): string {
+	const trimmed = phone ? phone.trim() : "";
+	return trimmed
+		? `<telecom value="tel:${escapeXml(trimmed)}"/>`
+		: `<telecom nullFlavor="NI"/>`;
+}
+
 /** Flat MO organization id: real OID extension or nullFlavor NI. */
 export function orgIdXml(ctx: CdaContext): string {
 	return ctx.clinicOidEscaped
@@ -124,12 +139,12 @@ export function orgIdXml(ctx: CdaContext): string {
 		: `<id nullFlavor="NI"/>`;
 }
 
-/** Flat representedOrganization shell (id + addr/telecom NI + name). No recursion. */
+/** Flat representedOrganization shell (id + addr/telecom + name). No recursion. */
 export function flatRepresentedOrganization(ctx: CdaContext): string {
 	const name = escapeXml(ctx.params.clinicName);
 	return `<representedOrganization>
-				<addr nullFlavor="NI"/>
-				<telecom nullFlavor="NI"/>
+				${addrXml(ctx.params.clinicAddress)}
+				${telecomXml(ctx.params.clinicPhone)}
 				<name>${name}</name>
 			</representedOrganization>`;
 }
@@ -139,8 +154,8 @@ export function flatScopingOrganization(ctx: CdaContext): string {
 	const name = escapeXml(ctx.params.clinicName);
 	return `<scopingOrganization>
 				${orgIdXml(ctx)}
-				<addr nullFlavor="NI"/>
-				<telecom nullFlavor="NI"/>
+				${addrXml(ctx.params.clinicAddress)}
+				${telecomXml(ctx.params.clinicPhone)}
 				<name>${name}</name>
 			</scopingOrganization>`;
 }
@@ -181,8 +196,8 @@ export function doctorNameXml(ctx: CdaContext): string {
 export function flatAssignedEntity(ctx: CdaContext): string {
 	return `${doctorIdXml(ctx)}
 			${doctorCodeXml(ctx)}
-			<addr nullFlavor="NI"/>
-			<telecom nullFlavor="NI"/>
+			${addrXml(ctx.params.clinicAddress)}
+			${telecomXml(ctx.params.clinicPhone)}
 			<assignedPerson>
 				${doctorNameXml(ctx)}
 			</assignedPerson>

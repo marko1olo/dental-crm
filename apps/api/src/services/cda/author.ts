@@ -7,6 +7,8 @@
 import type { CdaContext } from "./util.js";
 import {
 	DEFAULT_MO_ROOT,
+	addrXml,
+	telecomXml,
 	doctorCodeXml,
 	doctorIdXml,
 	doctorNameXml,
@@ -61,24 +63,14 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 				\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI" until real
 				MO contact fields are wired (no schema lie).
 			-->
-			<addr nullFlavor="NI"/>
-			<telecom nullFlavor="NI"/>
+			${addrXml(params.clinicAddress)}
+			${telecomXml(params.clinicPhone)}
 			<assignedPerson>
 				${doctorNameXml(ctx)}
 			</assignedPerson>
 			<representedOrganization>
-				
-				<!--
-					DEFECT #106: assignedAuthor representedOrganization
-					addr + telecom (HL7 CDA R2 / EGISZ SEMD).
-					\u0411\u042b\u041b\u041e: representedOrganization had only name child \u2014 no
-					addr/telecom. SEMD validators expect MO contact under
-					author org (mirror of custodian #102 / recipient #103).
-					We do not invent clinic street or phone.
-					\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
-				-->
-				<addr nullFlavor="NI"/>
-				<telecom nullFlavor="NI"/>
+				${addrXml(params.clinicAddress)}
+				${telecomXml(params.clinicPhone)}
 				<name>${clinicName}</name>
 			</representedOrganization>
 		</assignedAuthor>
