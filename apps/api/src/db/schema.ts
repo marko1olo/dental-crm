@@ -658,7 +658,8 @@ export const payments = pgTable("payments", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
 }, (table) => {
   return {
-    idxPaymentsOrgPaidAt: index("idx_payments_org_paid_at").on(table.organizationId, table.paidAt)
+    idxPaymentsOrgPaidAt: index("idx_payments_org_paid_at").on(table.organizationId, table.paidAt),
+    paymentsOrgClientMutationUnique: unique("payments_org_client_mutation_unique").on(table.organizationId, table.clientMutationId)
   };
 });
 
