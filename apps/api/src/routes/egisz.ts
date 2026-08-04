@@ -370,6 +370,11 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			};
 			/* DEFECT #58: specialty for CDA assignedAuthor — was never loaded */
 			let doctorPosition: string | undefined;
+			/* Real physician contact (users.phone/email) resolved alongside the
+			 * signer user row; generator emits nullFlavor only when absent. */
+			let doctorContact:
+				| { phone?: string | null; email?: string | null }
+				| undefined;
 			/*
 			 * DEFECT #56: CDA documentationOf/serviceEvent must use encounter time.
 			 * БЫЛО: visitDate: row.visit.createdAt — момент создания строки EMK
@@ -406,6 +411,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 						.select({
 							fullName: schema.users.fullName,
 							specialties: schema.users.specialties,
+							phone: schema.users.phone,
+							email: schema.users.email,
 						})
 						.from(schema.users)
 						.where(
@@ -419,6 +426,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 						doctorName = splitFullName(doctor.fullName);
 						const pos = formatDoctorSpecialtyLabelForCda(doctor.specialties);
 						if (pos) doctorPosition = pos;
+						doctorContact = { phone: doctor.phone, email: doctor.email };
 					}
 				}
 			}
@@ -524,6 +532,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					.select({
 						fullName: schema.users.fullName,
 						specialties: schema.users.specialties,
+						phone: schema.users.phone,
+						email: schema.users.email,
 					})
 					.from(schema.users)
 					.where(
@@ -537,6 +547,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					doctorName = splitFullName(diaryDoctor.fullName);
 					const pos = formatDoctorSpecialtyLabelForCda(diaryDoctor.specialties);
 					if (pos) doctorPosition = pos;
+					doctorContact = { phone: diaryDoctor.phone, email: diaryDoctor.email };
 				}
 			}
 
@@ -561,6 +572,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 						.select({
 							fullName: schema.users.fullName,
 							specialties: schema.users.specialties,
+							phone: schema.users.phone,
+							email: schema.users.email,
 						})
 						.from(schema.users)
 						.where(
@@ -574,6 +587,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 						doctorName = splitFullName(u.fullName);
 						const pos = formatDoctorSpecialtyLabelForCda(u.specialties);
 						if (pos) doctorPosition = pos;
+						doctorContact = { phone: u.phone, email: u.email };
 						break;
 					}
 				}
@@ -687,6 +701,14 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			 * РЭМД rejects unattributable MO name after clinic downloaded XML.
 			 * СТАЛО: 422 ClinicNameRequired when trimmed name empty.
 			 */
+			const [clinicRow] = await db
+				.select({
+					address: schema.clinics.address,
+					phone: schema.clinics.phone,
+				})
+				.from(schema.clinics)
+				.where(eq(schema.clinics.organizationId, orgId))
+				.limit(1);
 			const clinicNameRaw =
 				typeof row.organization.name === "string" ? row.organization.name : "";
 			const clinicName = clinicNameRaw.trim();
@@ -698,6 +720,49 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				});
 			}
 
+			/*
+			 * Real contact model wiring (see HAMMER MANDATE — no nullFlavor spam):
+			 * pull patient / clinic (MO) / doctor contact from the DB where it
+			 * exists; the generator falls back to nullFlavor ONLY when absent.
+			 * We never invent an address, phone, or email here.
+			 */
+			const patientContact = row.patient.administrativeProfile
+				? (row.patient.administrativeProfile as {
+						residentialAddress?: string | null;
+						registrationAddress?: string | null;
+				  })
+				: undefined;
+			const patientPhone =
+				typeof row.patient.phone === "string" ? row.patient.phone : undefined;
+			const patientEmail =
+				typeof row.patient.email === "string" ? row.patient.email : undefined;
+			const patientAddress =
+				patientContact?.residentialAddress ||
+				patientContact?.registrationAddress ||
+				undefined;
+
+			const clinicPhone =
+				typeof clinicRow?.phone === "string" ? clinicRow.phone : undefined;
+			const clinicAddress =
+				typeof clinicRow?.address === "string" ? clinicRow.address : undefined;
+			const clinicEmail =
+				typeof row.organization.email === "string"
+					? row.organization.email
+					: undefined;
+			const clinicLegalAddress =
+				typeof row.organization.legalAddress === "string"
+					? row.organization.legalAddress
+					: undefined;
+
+			/*
+			 * The physician's own contact comes from the same user row resolved
+			 * for the CDA signer/author above (users.phone / users.email).
+			 */
+			const doctorPhone =
+				typeof doctorContact?.phone === "string" ? doctorContact.phone : undefined;
+			const doctorEmail =
+				typeof doctorContact?.email === "string" ? doctorContact.email : undefined;
+
 			const params: EgiszCdaParams = {
 				patientId: row.patient.id,
 				patientName: patientNameParts,
@@ -705,8 +770,30 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				patientSnils: patientSnilsDigits,
 				patientBirthDate: birthStr,
 				patientGender,
+				/*
+				 * Real patient contact (patients.phone/email + administrativeProfile
+				 * residential/registration address). Generator emits nullFlavor
+				 * only when the chart has none of these.
+				 */
+				...(patientPhone ? { patientPhone } : {}),
+				...(patientEmail ? { patientEmail } : {}),
+				...(patientAddress ? { patientAddress } : {}),
 				clinicName,
+				/*
+				 * Real MO contact (clinics.address/phone + organizations.email).
+				 * Generator emits nullFlavor only when the DB has none.
+				 */
+				...(clinicAddress ? { clinicAddress } : {}),
+				...(clinicPhone ? { clinicPhone } : {}),
+				...(clinicEmail ? { clinicEmail } : {}),
+				...(clinicLegalAddress ? { clinicLegalAddress } : {}),
 				doctorName,
+				/*
+				 * Real physician contact (users.phone/email). Doctor has no
+				 * address column, so only telecom is wired.
+				 */
+				...(doctorPhone ? { doctorPhone } : {}),
+				...(doctorEmail ? { doctorEmail } : {}),
 				...(doctorPosition ? { doctorPosition } : {}),
 				icd10Code: resolvedIcd10,
 				diagnosisText: effectiveDiagnosis,

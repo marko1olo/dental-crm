@@ -28,38 +28,60 @@ function section(opts: {
 export function generateCdaBody(ctx: CdaContext): string {
 	const { params } = ctx;
 
-	const diagnosis = params.diagnosisText && params.diagnosisText.trim()
-		? escapeXml(params.diagnosisText)
+	/*
+	 * Every clinical-data section is structurally optional: if a field is
+	 * missing we omit the whole <component> rather than inventing a value
+	 * or emitting an empty paragraph. We never fabricate clinical facts.
+	 */
+
+	const diagnosisText = params.diagnosisText && params.diagnosisText.trim()
+		? params.diagnosisText
+		: "";
+	const icd10Code = params.icd10Code && params.icd10Code.trim()
+		? params.icd10Code
+		: "";
+	// ISO 3950 tooth number straight from visit_diaries.diagnosis_tooth (real DB
+	// column). Rendered only when a real value is present; never fabricated.
+	const diagnosisTooth = params.diagnosisTooth && params.diagnosisTooth.trim()
+		? params.diagnosisTooth.trim()
 		: "";
 
-	const diagnosisEntry = params.icd10Code && params.icd10Code.trim()
-		? `
-					<entry>
-						<observation classCode="OBS" moodCode="EVN">
-							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" displayName="\u0414\u0438\u0430\u0433\u043d\u043e\u0437"/>
-							<value xsi:type="CD" code="${escapeXml(params.icd10Code)}" codeSystem="1.2.643.5.1.13.13.11.1005" displayName="${escapeXml(params.diagnosisText || "")}"/>
-						</observation>
-					</entry>`
-		: "";
-
-	const diagnosisSection = `
+	// Only emit the diagnosis section when we have at least one real fact.
+	const diagnosisSection =
+		diagnosisText || icd10Code || diagnosisTooth
+			? `
 			<!-- \u0414\u0438\u0430\u0433\u043d\u043e\u0437 -->
 			<component>
 				<section>
 					<code code="29548-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="\u0414\u0438\u0430\u0433\u043d\u043e\u0437\u044b"/>
 					<title>\u0414\u0438\u0430\u0433\u043d\u043e\u0437</title>
 					<text>
-						<paragraph>${escapeXml(params.diagnosisText || "")} (\u041c\u041a\u0411-10: ${escapeXml(params.icd10Code || "")})</paragraph>
-					</text>${diagnosisEntry}
+						<paragraph>${escapeXml(diagnosisText)}${icd10Code ? ` (\u041c\u041a\u0411-10: ${escapeXml(icd10Code)})` : ""}${diagnosisTooth ? ` \u00b7 \u0437\u0443\u0431 ${escapeXml(diagnosisTooth)}` : ""}</paragraph>
+					</text>${
+						icd10Code || diagnosisTooth
+							? `
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" displayName="\u0414\u0438\u0430\u0433\u043d\u043e\u0437"/>
+							<value xsi:type="CD" code="${escapeXml(icd10Code)}" codeSystem="1.2.643.5.1.13.13.11.1005" displayName="${escapeXml(diagnosisText)}"/>
+							${diagnosisTooth ? `<targetSiteCode code="${escapeXml(diagnosisTooth)}" codeSystem="1.2.643.5.1.13.13.11.1466" displayName="\u0417\u0443\u0431 ${escapeXml(diagnosisTooth)}"/>` : ""}
+						</observation>
+					</entry>`
+							: ""
+					}
 				</section>
-			</component>`;
+			</component>`
+			: "";
 
-	const anamnesis = section({
-		loinc: "10164-2",
-		displayName: "\u0410\u043d\u0430\u043c\u043d\u0435\u0437",
-		title: "\u0410\u043d\u0430\u043c\u043d\u0435\u0437",
-		paragraph: params.anamnesis || "",
-	});
+	const anamnesis =
+		params.anamnesis && params.anamnesis.trim()
+			? section({
+					loinc: "10164-2",
+					displayName: "\u0410\u043d\u0430\u043c\u043d\u0435\u0437",
+					title: "\u0410\u043d\u0430\u043c\u043d\u0435\u0437",
+					paragraph: params.anamnesis,
+				})
+			: "";
 
 	const objective = params.objectiveStatus && params.objectiveStatus.trim()
 		? section({
@@ -70,12 +92,15 @@ export function generateCdaBody(ctx: CdaContext): string {
 			})
 		: "";
 
-	const treatment = section({
-		loinc: "47519-4",
-		displayName: "\u041c\u0435\u0434\u0438\u0446\u0438\u043d\u0441\u043a\u0438\u0435 \u0443\u0441\u043b\u0443\u0433\u0438",
-		title: "\u041f\u0440\u043e\u0432\u0435\u0434\u0435\u043d\u043d\u043e\u0435 \u043b\u0435\u0447\u0435\u043d\u0438\u0435",
-		paragraph: params.treatmentDescription || "",
-	});
+	const treatment =
+		params.treatmentDescription && params.treatmentDescription.trim()
+			? section({
+					loinc: "47519-4",
+					displayName: "\u041c\u0435\u0434\u0438\u0446\u0438\u043d\u0441\u043a\u0438\u0435 \u0443\u0441\u043b\u0443\u0433\u0438",
+					title: "\u041f\u0440\u043e\u0432\u0435\u0434\u0435\u043d\u043d\u043e\u0435 \u043b\u0435\u0447\u0435\u043d\u0438\u0435",
+					paragraph: params.treatmentDescription,
+				})
+			: "";
 
 	const complications = params.complications && params.complications.trim()
 		? section({

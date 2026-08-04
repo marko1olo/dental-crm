@@ -6,12 +6,12 @@
 
 import type { CdaContext } from "./util.js";
 import {
-	DEFAULT_MO_ROOT,
-	addrXml,
-	telecomXml,
+	clinicAddrXml,
+	clinicTelecomXml,
 	doctorCodeXml,
 	doctorIdXml,
 	doctorNameXml,
+	doctorTelecomXml,
 	escapeXml,
 	flatAssignedEntity,
 	flatRepresentedOrganization,
@@ -56,21 +56,19 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 			${doctorCodeXml(ctx)}
 			<!--
 				DEFECT #99: assignedAuthor addr + telecom (HL7 CDA R2 / EGISZ SEMD).
-				\u0411\u042b\u041b\u041e: assignedAuthor had id/code/person/org only \u2014 no addr/telecom.
-				SEMD validators expect contact structure under assignedAuthor
-				(mirror of patientRole #98). We do not invent clinic/doctor
-				street or phone numbers.
-				\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI" until real
-				MO contact fields are wired (no schema lie).
+				Real doctor/clinic contact is wired (users.phone/email for the
+				physician, clinics.address/phone + organizations.legalAddress/email
+				for the MO). We emit the real <addr>/<telecom> when present and
+				nullFlavor="NI" only when the DB has no data (no invented values).
 			-->
-			${addrXml(params.clinicAddress)}
-			${telecomXml(params.clinicPhone)}
+			${clinicAddrXml(ctx)}
+			${doctorTelecomXml(ctx)}
 			<assignedPerson>
 				${doctorNameXml(ctx)}
 			</assignedPerson>
 			<representedOrganization>
-				${addrXml(params.clinicAddress)}
-				${telecomXml(params.clinicPhone)}
+				${clinicAddrXml(ctx)}
+				${clinicTelecomXml(ctx)}
 				<name>${clinicName}</name>
 			</representedOrganization>
 		</assignedAuthor>
@@ -84,14 +82,11 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 				<!--
 					DEFECT #102: custodian representedCustodianOrganization
 					addr + telecom (HL7 CDA R2 / EGISZ SEMD).
-					\u0411\u042b\u041b\u041e: custodian had id + name only \u2014 no addr/telecom.
-					SEMD validators expect MO contact under custodian org
-					(mirror of patientRole #98 / assignedAuthor #99).
-					We do not invent clinic street or phone.
-					\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+					Real MO contact is wired (clinics.address/phone +
+					organizations.legalAddress/email); nullFlavor only when absent.
 				-->
-				<addr nullFlavor="NI"/>
-				<telecom nullFlavor="NI"/>
+				${clinicAddrXml(ctx)}
+				${clinicTelecomXml(ctx)}
 				<name>${clinicName}</name>
 			</representedCustodianOrganization>
 
@@ -114,14 +109,10 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 				<!--
 					DEFECT #103: informationRecipient receivedOrganization
 					addr + telecom (HL7 CDA R2 / EGISZ SEMD).
-					\u0411\u042b\u041b\u041e: receivedOrganization had id + name only \u2014 no
-					addr/telecom. SEMD validators expect MO contact under
-					the intended recipient (mirror of custodian #102).
-					We do not invent clinic street or phone.
-					\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+					Real MO contact is wired; nullFlavor only when absent.
 				-->
-				<addr nullFlavor="NI"/>
-				<telecom nullFlavor="NI"/>
+				${clinicAddrXml(ctx)}
+				${clinicTelecomXml(ctx)}
 				<name>${clinicName}</name>
 			</receivedOrganization>
 		</intendedRecipient>
@@ -145,31 +136,23 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 			${doctorCodeXml(ctx)}
 			<!--
 				DEFECT #100: legalAuthenticator assignedEntity addr + telecom.
-				\u0411\u042b\u041b\u041e: legalAuthenticator had id/code/person/org only \u2014 no
-				addr/telecom. SEMD validators expect contact structure under
-				assignedEntity (mirror of assignedAuthor #99 / patientRole #98).
-				We do not invent doctor/clinic street or phone.
-				\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+				Real doctor contact is wired (users.phone/email); clinic addr
+				is used as the physician's work address. nullFlavor only when absent.
 			-->
-			<addr nullFlavor="NI"/>
-			<telecom nullFlavor="NI"/>
+			${clinicAddrXml(ctx)}
+			${doctorTelecomXml(ctx)}
 			<assignedPerson>
 
 				${doctorNameXml(ctx)}
 			</assignedPerson>
 			<representedOrganization>
-				
 				<!--
 					DEFECT #107: legalAuthenticator representedOrganization
 					addr + telecom (HL7 CDA R2 / EGISZ SEMD).
-					\u0411\u042b\u041b\u041e: representedOrganization had only name child \u2014 no
-					addr/telecom. SEMD validators expect MO contact under
-					legal signer org (mirror of assignedAuthor org #106).
-					We do not invent clinic street or phone.
-					\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+					Real MO contact is wired; nullFlavor only when absent.
 				-->
-				<addr nullFlavor="NI"/>
-				<telecom nullFlavor="NI"/>
+				${clinicAddrXml(ctx)}
+				${clinicTelecomXml(ctx)}
 				<name>${clinicName}</name>
 			</representedOrganization>
 		</assignedEntity>
@@ -192,13 +175,10 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 			${doctorCodeXml(ctx)}
 			<!--
 				DEFECT #101: authenticator assignedEntity addr + telecom.
-				\u0411\u042b\u041b\u041e: authenticator had id/code/person/org only \u2014 no addr/telecom.
-				SEMD validators expect contact under assignedEntity (mirror of
-				legalAuthenticator #100 / assignedAuthor #99). No invented contact.
-				\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+				Real doctor contact is wired; nullFlavor only when absent.
 			-->
-			<addr nullFlavor="NI"/>
-			<telecom nullFlavor="NI"/>
+			${clinicAddrXml(ctx)}
+			${doctorTelecomXml(ctx)}
 			<assignedPerson>
 
 				${doctorNameXml(ctx)}
@@ -207,14 +187,10 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 				<!--
 					DEFECT #108: authenticator representedOrganization
 					addr + telecom (HL7 CDA R2 / EGISZ SEMD).
-					\u0411\u042b\u041b\u041e: representedOrganization had only name child \u2014 no
-					addr/telecom. SEMD validators expect MO contact under
-					authenticator org (mirror of legalAuthenticator org #107).
-					We do not invent clinic street or phone.
-					\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+					Real MO contact is wired; nullFlavor only when absent.
 				-->
-				<addr nullFlavor="NI"/>
-				<telecom nullFlavor="NI"/>
+				${clinicAddrXml(ctx)}
+				${clinicTelecomXml(ctx)}
 				<name>${clinicName}</name>
 			</representedOrganization>
 		</assignedEntity>
@@ -247,10 +223,10 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 						legalAuthenticator #100 / authenticator #101 /
 						assignedAuthor #99). We do not invent doctor/clinic
 						street or phone.
-						\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+						Real doctor contact is wired; nullFlavor only when absent.
 					-->
-					<addr nullFlavor="NI"/>
-					<telecom nullFlavor="NI"/>
+					${clinicAddrXml(ctx)}
+					${doctorTelecomXml(ctx)}
 					<assignedPerson>
 						<name>
 							<family>${escapeXml(params.doctorName.last)}</family>
@@ -265,10 +241,10 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 							addr/telecom. SEMD validators expect MO contact under
 							performer org (mirror of authenticator org #108).
 							We do not invent clinic street or phone.
-							\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI".
+							Real MO contact is wired; nullFlavor only when absent.
 						-->
-						<addr nullFlavor="NI"/>
-						<telecom nullFlavor="NI"/>
+						${clinicAddrXml(ctx)}
+						${clinicTelecomXml(ctx)}
 						<name>${clinicName}</name>
 					</representedOrganization>
 				</assignedEntity>
@@ -284,8 +260,8 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 				<assignedEntity>
 					${doctorIdXml(ctx)}
 					${doctorCodeXml(ctx)}
-					<addr nullFlavor="NI"/>
-					<telecom nullFlavor="NI"/>
+					${clinicAddrXml(ctx)}
+					${doctorTelecomXml(ctx)}
 					<assignedPerson>
 						${doctorNameXml(ctx)}
 					</assignedPerson>
@@ -296,12 +272,12 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 				<healthCareFacility>
 					${facilityId}
 					<location>
-						<addr nullFlavor="NI"/>
+						${clinicAddrXml(ctx)}
 						<name>${clinicName}</name>
 					</location>
 					<serviceProviderOrganization>
-						<addr nullFlavor="NI"/>
-						<telecom nullFlavor="NI"/>
+						${clinicAddrXml(ctx)}
+						${clinicTelecomXml(ctx)}
 						<name>${clinicName}</name>
 					</serviceProviderOrganization>
 				</healthCareFacility>

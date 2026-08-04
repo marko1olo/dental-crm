@@ -1358,10 +1358,8 @@ describe("egiszCdaGenerator", () => {
 			noOid.indexOf("</encompassingEncounter>"),
 		);
 		assert.ok(
-			noEnc.includes(
-				`<id root="1.2.643.5.1.13.13.12.2" extension="unknown"/>`,
-			),
-			"missing clinicOid uses default MO root and unknown extension",
+			noEnc.includes(`<id nullFlavor="NI"/>`),
+			"missing clinicOid must emit nullFlavor NI (no invented extension)",
 		);
 		assert.ok(
 			noEnc.includes(
@@ -2491,5 +2489,96 @@ describe("egiszCdaGenerator", () => {
 		assert.ok(xml.includes("<paragraph>Treat &lt;t&gt; &amp; u</paragraph>"));
 		assert.ok(xml.includes("Штрихкод: TRAY&lt;1&gt;&amp;2"));
 		assert.ok(xml.includes('code="46264-8"'));
+	});
+	/*
+	 * Real-data path (HAMMER MANDATE — no nullFlavor spam): when the DB supplies
+	 * patient / clinic / doctor contact, the generator must emit the real
+	 * <addr>/<telecom> and NOT nullFlavor="NI".
+	 */
+	test("emits real patient/clinic/doctor addr+telecom when contact data present", (t) => {
+		t.mock.timers.enable({ apis: ["Date"] });
+		t.mock.timers.setTime(new Date("2024-05-15T12:00:00.000Z").getTime());
+
+		const params: EgiszCdaParams = {
+			patientId: "pat-123",
+			patientName: { first: "Иван", last: "Иванов", middle: "Иванович" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			patientAddress: "г. Москва, ул. Тверская, д. 1",
+			patientPhone: "+7 495 123-45-67",
+			patientEmail: "ivan@example.ru",
+			clinicOid: "1.2.643.5.1.13.13.12.2.888",
+			clinicName: "ООО Стоматология",
+			clinicAddress: "г. Москва, ул. Клиническая, д. 10",
+			clinicPhone: "+7 495 000-11-22",
+			clinicEmail: "clinic@example.ru",
+			clinicLegalAddress: "г. Москва, юр. адрес, д. 5",
+			doctorName: { first: "Петр", last: "Петров", middle: "Петрович" },
+			doctorSnils: "987-654-321 00",
+			doctorPosition: "Врач-стоматолог",
+			doctorPhone: "+7 495 555-66-77",
+			doctorEmail: "doctor@example.ru",
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес дентина",
+			anamnesis: "Жалобы на боли от сладкого",
+			treatmentDescription: "Препарирование, пломба",
+			visitDate: new Date("2024-05-15T10:00:00.000Z"),
+			documentId: "doc-real",
+		};
+
+		const xml = generateDentalCdaXml(params);
+
+		assert.ok(
+			xml.includes('<streetAddressLine>г. Москва, ул. Тверская, д. 1</streetAddressLine>'),
+			"patient addr must be real",
+		);
+		assert.ok(xml.includes('<telecom value="tel:+7 495 123-45-67"/>'), "patient phone must be real");
+		assert.ok(xml.includes('<telecom value="mailto:ivan@example.ru"/>'), "patient email must be real");
+
+		assert.ok(
+			xml.includes('<streetAddressLine>г. Москва, ул. Клиническая, д. 10</streetAddressLine>'),
+			"clinic addr must be real",
+		);
+		assert.ok(xml.includes('<telecom value="tel:+7 495 000-11-22"/>'), "clinic phone must be real");
+		assert.ok(xml.includes('<telecom value="mailto:clinic@example.ru"/>'), "clinic email must be real");
+
+		assert.ok(xml.includes('<telecom value="tel:+7 495 555-66-77"/>'), "doctor phone must be real");
+		assert.ok(xml.includes('<telecom value="mailto:doctor@example.ru"/>'), "doctor email must be real");
+
+		assert.ok(!xml.includes('<addr nullFlavor="NI"/>'), "must not emit nullFlavor addr when contact data present");
+		assert.ok(!xml.includes('<telecom nullFlavor="NI"/>'), "must not emit nullFlavor telecom when contact data present");
+	});
+
+	/*
+	 * Fallback path (no invented data): when the DB supplies NO contact values,
+	 * the generator must still emit a valid (nullFlavor="NI") addr/telecom —
+	 * never fabricate a street or phone.
+	 */
+	test("emits nullFlavor addr/telecom when no contact data present", (t) => {
+		t.mock.timers.enable({ apis: ["Date"] });
+		t.mock.timers.setTime(new Date("2024-05-15T12:00:00.000Z").getTime());
+
+		const params: EgiszCdaParams = {
+			patientId: "pat-123",
+			patientName: { first: "Иван", last: "Иванов", middle: "Иванович" },
+			patientSnils: "123-456-789 00",
+			patientBirthDate: "1980-01-01T00:00:00.000Z",
+			patientGender: "male",
+			clinicOid: "1.2.643.5.1.13.13.12.2.888",
+			clinicName: "ООО Стоматология",
+			doctorName: { first: "Петр", last: "Петров", middle: "Петрович" },
+			doctorSnils: "987-654-321 00",
+			doctorPosition: "Врач-стоматолог",
+			icd10Code: "K02.1",
+			diagnosisText: "Кариес дентина",
+			visitDate: new Date("2024-05-15T10:00:00.000Z"),
+			documentId: "doc-none",
+		};
+
+		const xml = generateDentalCdaXml(params);
+
+		assert.ok(xml.includes('<addr nullFlavor="NI"/>'), "must emit nullFlavor addr when no contact data");
+		assert.ok(xml.includes('<telecom nullFlavor="NI"/>'), "must emit nullFlavor telecom when no contact data");
 	});
 });

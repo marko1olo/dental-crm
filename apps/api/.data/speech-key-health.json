@@ -1,20 +1,12 @@
 {
   "version": 1,
-  "savedAt": "2026-08-01T21:15:13.177Z",
+  "savedAt": "2026-08-04T10:07:59.326Z",
   "health": {
     "google_speech:26987e457b44": {
       "cooldownUntil": 0,
       "failures": 0,
-      "successes": 275,
-      "lastUsedAt": 1785618913177,
-      "lastStatusCode": null,
-      "lastError": null
-    },
-    "google_speech:3e0ef4ad3f5a": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "successes": 280,
-      "lastUsedAt": 1783088934642,
+      "successes": 276,
+      "lastUsedAt": 1785838079325,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -34,22 +26,6 @@
       "lastStatusCode": 401,
       "lastError": "401 Unauthorized"
     },
-    "google_speech:c5b553420348": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "successes": 309,
-      "lastUsedAt": 1783088920752,
-      "lastStatusCode": null,
-      "lastError": null
-    },
-    "google_speech:c637bdf62cb7": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "successes": 284,
-      "lastUsedAt": 1783088884210,
-      "lastStatusCode": null,
-      "lastError": null
-    },
     "google_speech:c78fec9a5b53": {
       "cooldownUntil": 1785499372654,
       "failures": 1,
@@ -58,30 +34,6 @@
       "lastStatusCode": 401,
       "lastError": "401 Unauthorized"
     },
-    "groq_whisper:28098ef6adba": {
-      "cooldownUntil": 1783090246790,
-      "failures": 2,
-      "successes": 133,
-      "lastUsedAt": 1783090216790,
-      "lastStatusCode": null,
-      "lastError": "fetch failed"
-    },
-    "groq_whisper:3ac3d993a93f": {
-      "cooldownUntil": 1783090246809,
-      "failures": 2,
-      "successes": 129,
-      "lastUsedAt": 1783090262616,
-      "lastStatusCode": 400,
-      "lastError": "prompt length must be 896 characters or fewer, but provided prompt contains 1410 characters"
-    },
-    "groq_whisper:5e5573f5e9ab": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "successes": 128,
-      "lastUsedAt": 1783090388172,
-      "lastStatusCode": null,
-      "lastError": null
-    },
     "groq_whisper:6058314b22ec": {
       "cooldownUntil": 0,
       "failures": 0,
@@ -89,14 +41,6 @@
       "lastUsedAt": 1785239300896,
       "lastStatusCode": null,
       "lastError": null
-    },
-    "groq_whisper:a98543b30147": {
-      "cooldownUntil": 1783090267327,
-      "failures": 1,
-      "successes": 131,
-      "lastUsedAt": 1783090237327,
-      "lastStatusCode": null,
-      "lastError": "fetch failed"
     }
   }
 }

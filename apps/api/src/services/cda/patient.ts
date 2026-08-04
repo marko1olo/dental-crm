@@ -3,7 +3,7 @@
  */
 
 import type { CdaContext } from "./util.js";
-import { DEFAULT_MO_ROOT, escapeXml } from "./util.js";
+import { DEFAULT_MO_ROOT, escapeXml, patientAddrXml, patientTelecomXml } from "./util.js";
 
 export function generateCdaPatient(ctx: CdaContext): string {
 	const { params, birthTimeValue, genderCode, clinicOidEscaped } = ctx;
@@ -44,15 +44,13 @@ export function generateCdaPatient(ctx: CdaContext): string {
 			${idsXml}
 			<!--
 				DEFECT #98: patientRole addr + telecom (HL7 CDA R2 / EGISZ SEMD).
-				\u0411\u042b\u041b\u041e: patientRole had only id(s) + patient demographics \u2014 no
-				addr/telecom. SEMD validators expect contact structure under
-				patientRole; without it REMD flags incomplete recordTarget.
-				We do not invent address/phone (no fake streets/numbers).
-				\u0421\u0422\u0410\u041b\u041e: emit addr and telecom with nullFlavor="NI" until real
-				patient contact fields are wired from the chart (no schema lie).
+				Real patient contact is wired from the chart (patients.phone/email +
+				administrativeProfile residential/registration address). We emit the
+				real <addr>/<telecom> when present and nullFlavor="NI" only when the
+				chart has no contact data (we never invent an address/phone).
 			-->
-			<addr nullFlavor="NI"/>
-			<telecom nullFlavor="NI"/>
+			${patientAddrXml(ctx)}
+			${patientTelecomXml(ctx)}
 			<patient>
 
 

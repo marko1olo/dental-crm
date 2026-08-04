@@ -60,8 +60,8 @@ describe("generateDentalCdaXml", () => {
 		const {
 			clinicOid: _clinicOid, // Should fallback to default
 			doctorSnils: _doctorSnils, // Should omit id
-			anamnesis: _anamnesis, // Should fallback to "Без особенностей"
-			treatmentDescription: _treatmentDescription, // Should fallback to "Осмотр и консультация"
+			anamnesis: _anamnesis, // Should omit the section
+			treatmentDescription: _treatmentDescription, // Should omit the section
 			...withoutOptionalParams
 		} = baseParams;
 
@@ -82,22 +82,32 @@ describe("generateDentalCdaXml", () => {
 		assert.ok(xml.includes(`<family>Соколова</family>`));
 		assert.ok(xml.includes(`<given>Елена</given>`));
 
-		assert.ok(xml.includes(`value="19000101"`)); // Fallback birth date
-		assert.ok(xml.includes(`code="2"`)); // Female gender code
+		// No fabricated birth date: an absent DOB is expressed as HL7 nullFlavor
+		// UNK, never a fake value="19000101".
+		assert.ok(!xml.includes(`value="19000101"`));
+		assert.ok(xml.includes(`<birthTime nullFlavor="UNK"/>`));
+		assert.ok(xml.includes(`code="2"`)); // Real female gender code from DB
 
-		assert.ok(xml.includes(`root="1.2.643.5.1.13.13.12.2" extension="doc-123"`)); // Default clinic OID
+		assert.ok(xml.includes(`root="1.2.643.5.1.13.13.12.2" extension="doc-123"`)); // EGDIS default MO root
 		assert.ok(!xml.includes(`extension="undefined"`)); // Missing doctorSnils should not render the whole tag
 
-		assert.ok(xml.includes(`Без особенностей`)); // Fallback anamnesis
-		assert.ok(xml.includes(`Осмотр и консультация`)); // Fallback treatment description
+		// No fabricated clinical text: an absent anamnesis / treatment description
+		// omits the section entirely rather than inventing "Без особенностей" or
+		// "Осмотр и консультация".
+		assert.ok(!xml.includes(`Без особенностей`));
+		assert.ok(!xml.includes(`Осмотр и консультация`));
 	});
 
 	test("handles 'other' or null gender code", () => {
+		// Unknown/absent gender is expressed as HL7 nullFlavor UNK, never a fake
+		// administrativeGenderCode code="0".
 		let xml = generateDentalCdaXml({ ...baseParams, patientGender: "other" });
-		assert.ok(xml.includes(`code="0"`));
+		assert.ok(xml.includes(`<administrativeGenderCode nullFlavor="UNK"/>`));
+		assert.ok(!xml.includes(`code="0"`));
 
 		xml = generateDentalCdaXml({ ...baseParams, patientGender: null });
-		assert.ok(xml.includes(`code="0"`));
+		assert.ok(xml.includes(`<administrativeGenderCode nullFlavor="UNK"/>`));
+		assert.ok(!xml.includes(`code="0"`));
 	});
 
 	test("DEFECT #72: documentTime (lockedAt) sets ClinicalDocument and author effectiveTime", () => {
@@ -133,4 +143,3 @@ describe("generateDentalCdaXml", () => {
 		assert.notStrictEqual(expected, visitExpected);
 	});
 });
-

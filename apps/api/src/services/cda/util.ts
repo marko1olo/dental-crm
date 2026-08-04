@@ -117,19 +117,69 @@ export function buildCdaContext(params: EgiszCdaParams): CdaContext {
 	};
 }
 
-/** Contact helpers: emit real XML text node if available, else nullFlavor NI. */
-export function addrXml(address?: string): string {
-	const trimmed = address ? address.trim() : "";
+/**
+ * Contact helpers: emit real XML text node if available, else nullFlavor NI.
+ * We never invent an address/phone — if the DB has none, emit nullFlavor.
+ */
+
+/** Build a CDA R2 <addr> node from a real free-text address. */
+export function addrXml(address?: string | null): string {
+	const trimmed = address ? String(address).trim() : "";
 	return trimmed
 		? `<addr><streetAddressLine>${escapeXml(trimmed)}</streetAddressLine></addr>`
 		: `<addr nullFlavor="NI"/>`;
 }
 
-export function telecomXml(phone?: string): string {
-	const trimmed = phone ? phone.trim() : "";
-	return trimmed
-		? `<telecom value="tel:${escapeXml(trimmed)}"/>`
-		: `<telecom nullFlavor="NI"/>`;
+/**
+ * Build one or more CDA R2 <telecom> nodes from real contact values.
+ * Phone strings become `tel:…`, email strings become `mailto:…`.
+ * If none of the inputs resolve to a real value, emit a single nullFlavor.
+ */
+export function telecomXml(
+	...values: Array<string | null | undefined>
+): string {
+	const parts: string[] = [];
+	for (const raw of values) {
+		const v = raw ? String(raw).trim() : "";
+		if (!v) continue;
+		if (/^tel:/i.test(v)) {
+			parts.push(`<telecom value="${escapeXml(v)}"/>`);
+		} else if (/^mailto:/i.test(v)) {
+			parts.push(`<telecom value="${escapeXml(v)}"/>`);
+		} else if (/@/.test(v)) {
+			parts.push(`<telecom value="mailto:${escapeXml(v)}"/>`);
+		} else if (/^\+?[\d\s\-()/.]+$/.test(v)) {
+			parts.push(`<telecom value="tel:${escapeXml(v)}"/>`);
+		} else {
+			parts.push(`<telecom value="${escapeXml(v)}"/>`);
+		}
+	}
+	return parts.length ? parts.join("\n") : `<telecom nullFlavor="NI"/>`;
+}
+
+/** Patient <addr>: chart residential/registration address, else nullFlavor. */
+export function patientAddrXml(ctx: CdaContext): string {
+	return addrXml(ctx.params.patientAddress);
+}
+
+/** Patient <telecom>: phone + email from patients table. */
+export function patientTelecomXml(ctx: CdaContext): string {
+	return telecomXml(ctx.params.patientPhone, ctx.params.patientEmail);
+}
+
+/** Doctor <telecom>: phone + email from users table (no doctor address column). */
+export function doctorTelecomXml(ctx: CdaContext): string {
+	return telecomXml(ctx.params.doctorPhone, ctx.params.doctorEmail);
+}
+
+/** Clinic <addr>: clinics.address preferred, else organizations.legalAddress. */
+export function clinicAddrXml(ctx: CdaContext): string {
+	return addrXml(ctx.params.clinicAddress || ctx.params.clinicLegalAddress);
+}
+
+/** Clinic <telecom>: clinics.phone + organizations.email. */
+export function clinicTelecomXml(ctx: CdaContext): string {
+	return telecomXml(ctx.params.clinicPhone, ctx.params.clinicEmail);
 }
 
 /** Flat MO organization id: real OID extension or nullFlavor NI. */
@@ -139,12 +189,12 @@ export function orgIdXml(ctx: CdaContext): string {
 		: `<id nullFlavor="NI"/>`;
 }
 
-/** Flat representedOrganization shell (id + addr/telecom + name). No recursion. */
+/** Flat representedOrganization shell (real clinic addr/telecom + name). No recursion. */
 export function flatRepresentedOrganization(ctx: CdaContext): string {
 	const name = escapeXml(ctx.params.clinicName);
 	return `<representedOrganization>
-				${addrXml(ctx.params.clinicAddress)}
-				${telecomXml(ctx.params.clinicPhone)}
+				${clinicAddrXml(ctx)}
+				${clinicTelecomXml(ctx)}
 				<name>${name}</name>
 			</representedOrganization>`;
 }
@@ -154,8 +204,8 @@ export function flatScopingOrganization(ctx: CdaContext): string {
 	const name = escapeXml(ctx.params.clinicName);
 	return `<scopingOrganization>
 				${orgIdXml(ctx)}
-				${addrXml(ctx.params.clinicAddress)}
-				${telecomXml(ctx.params.clinicPhone)}
+				${clinicAddrXml(ctx)}
+				${clinicTelecomXml(ctx)}
 				<name>${name}</name>
 			</scopingOrganization>`;
 }
@@ -192,12 +242,16 @@ export function doctorNameXml(ctx: CdaContext): string {
 				</name>`;
 }
 
-/** Assigned entity block reused by author-side roles (flat org only). */
+/**
+ * Assigned entity block reused by author-side roles (flat org only).
+ * The physician's own contact is telecom (phone/email); the org carries
+ * the clinic addr/telecom.
+ */
 export function flatAssignedEntity(ctx: CdaContext): string {
 	return `${doctorIdXml(ctx)}
 			${doctorCodeXml(ctx)}
-			${addrXml(ctx.params.clinicAddress)}
-			${telecomXml(ctx.params.clinicPhone)}
+			${clinicAddrXml(ctx)}
+			${doctorTelecomXml(ctx)}
 			<assignedPerson>
 				${doctorNameXml(ctx)}
 			</assignedPerson>
