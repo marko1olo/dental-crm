@@ -119,6 +119,11 @@ describe("percentageOfKopecks", () => {
 		assert.strictEqual(percentageOfKopecks(10, 3333), 3);
 		assert.ok(percentageOfKopecks(12345, 10000) <= 12345);
 	});
+
+	test("нецелые или отрицательные проценты отклоняются", () => {
+		assert.throws(() => percentageOfKopecks(1000, 1.5));
+		assert.throws(() => percentageOfKopecks(1000, -100));
+	});
 });
 
 describe("splitKopecks", () => {
