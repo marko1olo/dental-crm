@@ -46,25 +46,36 @@ export function generateCdaBody(ctx: CdaContext): string {
 		? params.diagnosisTooth.trim()
 		: "";
 
+	/*
+	 * Never emit a fabricated/empty ICD10 value. If the code is missing,
+	 * structurally omit the code attribute and the "(МКБ-10: …)" suffix
+	 * rather than writing code="" or an empty parenthetical.
+	 */
+	const icd10Escaped = icd10Code ? escapeXml(icd10Code) : "";
+	const diagnosisIcd10Attr = icd10Escaped ? ` code="${icd10Escaped}"` : "";
+	const diagnosisIcd10Suffix = icd10Escaped
+		? ` (МКБ-10: ${icd10Escaped})`
+		: "";
+
 	// Only emit the diagnosis section when we have at least one real fact.
 	const diagnosisSection =
 		diagnosisText || icd10Code || diagnosisTooth
 			? `
-			<!-- \u0414\u0438\u0430\u0433\u043d\u043e\u0437 -->
+			<!-- Диагноз -->
 			<component>
 				<section>
-					<code code="29548-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="\u0414\u0438\u0430\u0433\u043d\u043e\u0437\u044b"/>
-					<title>\u0414\u0438\u0430\u0433\u043d\u043e\u0437</title>
+					<code code="29548-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Диагнозы"/>
+					<title>Диагноз</title>
 					<text>
-						<paragraph>${escapeXml(diagnosisText)}${icd10Code ? ` (\u041c\u041a\u0411-10: ${escapeXml(icd10Code)})` : ""}${diagnosisTooth ? ` \u00b7 \u0437\u0443\u0431 ${escapeXml(diagnosisTooth)}` : ""}</paragraph>
+						<paragraph>${escapeXml(diagnosisText)}${diagnosisIcd10Suffix}${diagnosisTooth ? ` · зуб ${escapeXml(diagnosisTooth)}` : ""}</paragraph>
 					</text>${
 						icd10Code || diagnosisTooth
 							? `
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
-							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" displayName="\u0414\u0438\u0430\u0433\u043d\u043e\u0437"/>
-							<value xsi:type="CD" code="${escapeXml(icd10Code)}" codeSystem="1.2.643.5.1.13.13.11.1005" displayName="${escapeXml(diagnosisText)}"/>
-							${diagnosisTooth ? `<targetSiteCode code="${escapeXml(diagnosisTooth)}" codeSystem="1.2.643.5.1.13.13.11.1466" displayName="\u0417\u0443\u0431 ${escapeXml(diagnosisTooth)}"/>` : ""}
+							<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" displayName="Диагноз"/>
+							<value xsi:type="CD"${diagnosisIcd10Attr} codeSystem="1.2.643.5.1.13.13.11.1005" displayName="${escapeXml(diagnosisText)}"/>
+							${diagnosisTooth ? `<targetSiteCode code="${escapeXml(diagnosisTooth)}" codeSystem="1.2.643.5.1.13.13.11.1466" displayName="Зуб ${escapeXml(diagnosisTooth)}"/>` : ""}
 						</observation>
 					</entry>`
 							: ""
@@ -77,56 +88,59 @@ export function generateCdaBody(ctx: CdaContext): string {
 		params.anamnesis && params.anamnesis.trim()
 			? section({
 					loinc: "10164-2",
-					displayName: "\u0410\u043d\u0430\u043c\u043d\u0435\u0437",
-					title: "\u0410\u043d\u0430\u043c\u043d\u0435\u0437",
+					displayName: "Анамнез",
+					title: "Анамнез",
 					paragraph: params.anamnesis,
 				})
 			: "";
 
-	const objective = params.objectiveStatus && params.objectiveStatus.trim()
-		? section({
-				loinc: "29545-1",
-				displayName: "Physical findings",
-				title: "\u041e\u0431\u044a\u0435\u043a\u0442\u0438\u0432\u043d\u044b\u0439 \u0441\u0442\u0430\u0442\u0443\u0441",
-				paragraph: params.objectiveStatus,
-			})
-		: "";
+	const objective =
+		params.objectiveStatus && params.objectiveStatus.trim()
+			? section({
+					loinc: "29545-1",
+					displayName: "Physical findings",
+					title: "Объективный статус",
+					paragraph: params.objectiveStatus,
+				})
+			: "";
 
 	const treatment =
 		params.treatmentDescription && params.treatmentDescription.trim()
 			? section({
 					loinc: "47519-4",
-					displayName: "\u041c\u0435\u0434\u0438\u0446\u0438\u043d\u0441\u043a\u0438\u0435 \u0443\u0441\u043b\u0443\u0433\u0438",
-					title: "\u041f\u0440\u043e\u0432\u0435\u0434\u0435\u043d\u043d\u043e\u0435 \u043b\u0435\u0447\u0435\u043d\u0438\u0435",
+					displayName: "Медицинские услуги",
+					title: "Проведенное лечение",
 					paragraph: params.treatmentDescription,
 				})
 			: "";
 
-	const complications = params.complications && params.complications.trim()
-		? section({
-				loinc: "55109-3",
-				displayName: "Complications",
-				title: "\u041e\u0441\u043b\u043e\u0436\u043d\u0435\u043d\u0438\u044f",
-				paragraph: params.complications,
-			})
-		: "";
+	const complications =
+		params.complications && params.complications.trim()
+			? section({
+					loinc: "55109-3",
+					displayName: "Complications",
+					title: "Осложнения",
+					paragraph: params.complications,
+				})
+			: "";
 
-	const comorbidities = params.comorbidities && params.comorbidities.trim()
-		? section({
-				loinc: "11348-0",
-				displayName: "History of Past illness",
-				title: "\u0421\u043e\u043f\u0443\u0442\u0441\u0442\u0432\u0443\u044e\u0449\u0438\u0435 \u0437\u0430\u0431\u043e\u043b\u0435\u0432\u0430\u043d\u0438\u044f",
-				paragraph: params.comorbidities,
-			})
-		: "";
+	const comorbidities =
+		params.comorbidities && params.comorbidities.trim()
+			? section({
+					loinc: "11348-0",
+					displayName: "History of Past illness",
+					title: "Сопутствующие заболевания",
+					paragraph: params.comorbidities,
+				})
+			: "";
 
 	const traySection =
 		params.instrumentTrayBarcode && params.instrumentTrayBarcode.trim()
 			? section({
 					loinc: "46264-8",
 					displayName: "Medical device identifier",
-					title: "\u0418\u043d\u0441\u0442\u0440\u0443\u043c\u0435\u043d\u0442\u0430\u043b\u044c\u043d\u044b\u0439 \u043b\u043e\u0442\u043e\u043a",
-					paragraph: `\u0428\u0442\u0440\u0438\u0445\u043a\u043e\u0434: ${params.instrumentTrayBarcode}`,
+					title: "Инструментальный лоток",
+					paragraph: `Штрихкод: ${params.instrumentTrayBarcode}`,
 				})
 			: "";
 
