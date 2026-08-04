@@ -44,10 +44,16 @@ describe("parseKopecks", () => {
 		assert.strictEqual(parseKopecks(1500), 150000);
 	});
 
+	test("нецелое число из базы разбирается как рубли с копейками", () => {
+		assert.strictEqual(parseKopecks(150.5), 15050);
+	});
+
 	test("мусор не превращается молча в ноль", () => {
 		assert.throws(() => parseKopecks("сто рублей"));
 		assert.throws(() => parseKopecks("12.345"));
-		assert.throws(() => parseKopecks(Number.NaN));
+		assert.throws(() => parseKopecks(Number.NaN), /не является числом/);
+		assert.throws(() => parseKopecks(Number.POSITIVE_INFINITY), /не является числом/);
+		assert.throws(() => parseKopecks(Number.NEGATIVE_INFINITY), /не является числом/);
 	});
 
 	test("не теряет копейки там, где ошибается плавающая точка", () => {
@@ -119,6 +125,11 @@ describe("percentageOfKopecks", () => {
 		assert.strictEqual(percentageOfKopecks(10, 3333), 3);
 		assert.ok(percentageOfKopecks(12345, 10000) <= 12345);
 	});
+
+	test("отклоняет некорректный процент", () => {
+		assert.throws(() => percentageOfKopecks(100000, 10.5), /целым/);
+		assert.throws(() => percentageOfKopecks(100000, -100), /целым/);
+	});
 });
 
 describe("splitKopecks", () => {
@@ -153,6 +164,12 @@ describe("splitKopecks", () => {
 	test("долг делится с сохранением знака", () => {
 		assert.strictEqual(sumKopecks(splitKopecks(-10000, 3)), -10000);
 	});
+
+	test("отклоняет некорректное число частей", () => {
+		assert.throws(() => splitKopecks(10000, 0), /положительным/);
+		assert.throws(() => splitKopecks(10000, -2), /положительным/);
+		assert.throws(() => splitKopecks(10000, 2.5), /положительным/);
+	});
 });
 
 describe("formatKopecksRu", () => {
@@ -174,5 +191,10 @@ describe("formatKopecksRu", () => {
 
 	test("долг показывается типографским минусом", () => {
 		assert.strictEqual(formatKopecksRu(-4275), `${RU_MONEY_MINUS}${money("42,75")}`);
+	});
+
+	test("отклоняет некорректные копейки (дробные или слишком большие)", () => {
+		assert.throws(() => formatKopecksRu(100.5), /целым числом/);
+		assert.throws(() => formatKopecksRu(Number.MAX_SAFE_INTEGER + 1), /пределы точного целого/);
 	});
 });
