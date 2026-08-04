@@ -431,3 +431,44 @@ visit_templates.specialty               NULL разрешён — в базу т
 * **Реестр `KNOWN_DIVERGENCES` работает в обе стороны.** Новое расхождение валит прогон с именем
   колонки. Исчезнувшее — тоже, с требованием убрать запись тем же коммитом. Так реестр не превращается
   в место, куда сметают новые расхождения, и не начинает врать.
+
+
+---
+
+## 11. `patient_invoices`: корневая причина обнуления выручки — у таблицы НЕТ писателя
+
+Дополнение от сверки 2026-08-04 (статическая, без живой базы). В разделе 4 и в
+`schema.ts:1685-1704` дефект описан как «аналитика читает `total_amount_rub`, а drizzle пишет
+`total_rub`». Сверка по всему дереву уточняет картину жёстче:
+
+**В `patient_invoices` не пишет НИКТО — ни drizzle, ни сырой SQL.**
+
+*   `patientInvoices` импортируется ровно в двух местах, и оба читают:
+    `routes/portal.ts:639` (список счетов в личном кабинете) и
+    `scripts/cronAnalyticsWorker.ts:5` (выручка).
+*   Ни одного `db.insert(patientInvoices)`, `insertInto(patientInvoices)`, `into patient_invoices`
+    или `INSERT INTO patient_invoices` в `apps/api/src`, `scripts/` и миграциях нет.
+*   Счета реально заводятся как `generated_documents` с `kind = 'payment_invoice'`
+    (`schema.ts:217`); самоподписанный контур проверяет именно `generated_documents.total_amount_rub`
+    (`tests/chains/moneyChainProof.ts`, `tests/routes/invoiceKeepsItsAmount.test.ts`).
+
+**Что это значит для отчётов.** `cronAnalyticsWorker.ts` считает выручку когорт LTV (строка ~155) и
+выручку по врачам (строка ~250) сырым SQL по `patient_invoices.total_amount_rub WHERE status='paid'`.
+Поскольку таблица никогда не наполняется, **оба отчёта всегда показывают ноль**, независимо от того,
+какую колонку читать. Это не «аналитика читает не ту колонку» — это «таблица-сирота без источника».
+
+**Почему не «простых решений».** Два честных направления, и каждое требует решения ведущего:
+
+1.  *Переключить аналитику на `generated_documents`.* Это источник правды для созданных счетов.
+    Нужно: переписать оба запроса (`total_amount_rub` → `generated_documents`, фильтр по `kind =
+    'payment_invoice'` и `status = 'issued'`/оплаченным), затем живая сверка сумм по двум таблицам.
+2.  *Наполнять `patient_invoices` при создании счёта.* Это восстанавливает задуманную денормализацию
+    (состав счёта `items_json`, `patient_amount_rub`, `insurance_amount_rub`). Нужно: писатель на пути
+    создания `generated_documents` kind=`payment_invoice`, миграция на недостающие колонки объявления
+    (`items_json`, `patient_amount_rub`, `insurance_amount_rub`, `updated_at`) и сведение `total_rub` /
+    `total_amount_rub` в один столбец.
+
+Любое из двух — отдельный пакет с живой проверкой сумм до и после; обнуление выручки у руководителя —
+прямая цена бездействия. Замок на это место уже стоит: `KNOWN_DIVERGENCES` держит
+`patient_invoices.total_rub` (nullable), `patient_invoices.status` (тип) и `items_json`/
+`patient_amount_rub`/`insurance_amount_rub`/`updated_at` (undeclared).
