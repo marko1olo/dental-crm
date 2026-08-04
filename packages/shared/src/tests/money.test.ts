@@ -44,6 +44,10 @@ describe("parseKopecks", () => {
 		assert.strictEqual(parseKopecks(1500), 150000);
 	});
 
+	test("нецелое число приводится через строку", () => {
+		assert.strictEqual(parseKopecks(150.5), 15050);
+	});
+
 	test("мусор не превращается молча в ноль", () => {
 		assert.throws(() => parseKopecks("сто рублей"));
 		assert.throws(() => parseKopecks("12.345"));
@@ -104,6 +108,18 @@ describe("multiplyKopecks", () => {
 	test("дробное количество отклоняется", () => {
 		assert.throws(() => multiplyKopecks(1000, 1.5));
 	});
+
+	test("отрицательное количество отклоняется", () => {
+		assert.throws(() => multiplyKopecks(1000, -1));
+	});
+
+	test("нулевое количество даёт ноль", () => {
+		assert.strictEqual(multiplyKopecks(1000, 0), 0);
+	});
+
+	test("отрицательная цена за единицу поддерживается", () => {
+		assert.strictEqual(multiplyKopecks(-1000, 3), -3000);
+	});
 });
 
 describe("percentageOfKopecks", () => {
@@ -118,6 +134,11 @@ describe("percentageOfKopecks", () => {
 		// 33.33% от 0.10 — меньше копейки, значит ноль.
 		assert.strictEqual(percentageOfKopecks(10, 3333), 3);
 		assert.ok(percentageOfKopecks(12345, 10000) <= 12345);
+	});
+
+	test("отклоняется отрицательный или дробный процент", () => {
+		assert.throws(() => percentageOfKopecks(1000, -100));
+		assert.throws(() => percentageOfKopecks(1000, 100.5));
 	});
 });
 
@@ -153,6 +174,12 @@ describe("splitKopecks", () => {
 	test("долг делится с сохранением знака", () => {
 		assert.strictEqual(sumKopecks(splitKopecks(-10000, 3)), -10000);
 	});
+
+	test("отклоняется нецелое или неположительное число частей", () => {
+		assert.throws(() => splitKopecks(1000, 0));
+		assert.throws(() => splitKopecks(1000, -3));
+		assert.throws(() => splitKopecks(1000, 3.5));
+	});
 });
 
 describe("formatKopecksRu", () => {
@@ -174,5 +201,9 @@ describe("formatKopecksRu", () => {
 
 	test("долг показывается типографским минусом", () => {
 		assert.strictEqual(formatKopecksRu(-4275), `${RU_MONEY_MINUS}${money("42,75")}`);
+	});
+
+	test("отклоняется значение вне границ безопасного целого числа", () => {
+		assert.throws(() => formatKopecksRu(1e16)); // unsafe integer
 	});
 });
