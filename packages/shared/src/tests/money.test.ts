@@ -21,6 +21,17 @@ import {
  */
 const money = (digits: string) => `${digits}${RU_MONEY_NBSP}₽`;
 
+describe("Constants", () => {
+	test("RU_MONEY_NBSP является неразрывным пробелом (U+00A0)", () => {
+		assert.strictEqual(RU_MONEY_NBSP, "\u00A0");
+	});
+
+	test("RU_MONEY_MINUS является типографским минусом (U+2212), а не дефисом", () => {
+		assert.strictEqual(RU_MONEY_MINUS, "\u2212");
+		assert.notStrictEqual(RU_MONEY_MINUS, "-");
+	});
+});
+
 describe("parseKopecks", () => {
 	test("разбирает строку numeric из драйвера точно", () => {
 		assert.strictEqual(parseKopecks("150.50"), 15050);
