@@ -22,6 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 
 type CommissionRate = {
@@ -149,7 +150,7 @@ export const StaffCommissionsPanel: React.FC = () => {
 		try {
 			const response = await fetch("/api/settings/staff/commissions", {
 				method: "GET",
-				headers: denteAdminSecretRequestHeaders(),
+				headers: denteAdminSecretRequestHeaders(undefined, authRef.current?.settingsAdminSecretSession),
 			});
 			const payload = (await response.json().catch(() => null)) as unknown;
 			if (!response.ok) {
@@ -232,7 +233,7 @@ export const StaffCommissionsPanel: React.FC = () => {
 				method: "PUT",
 				headers: denteAdminSecretRequestHeaders({
 					"Content-Type": "application/json",
-				}),
+				}, authRef.current?.settingsAdminSecretSession),
 				body: JSON.stringify({ commissionPct: pct }),
 			});
 			const payload = (await response.json().catch(() => null)) as unknown;
