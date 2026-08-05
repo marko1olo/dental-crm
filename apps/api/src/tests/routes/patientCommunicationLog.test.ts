@@ -123,15 +123,26 @@ describe("журнал обращений пациента", () => {
 	let foreignToken = "";
 	let databaseAvailable = true;
 
-	/** Одна и та же уборка до засева и после прогона — иначе она не уборка. */
+	/**
+	 * Одна и та же уборка до засева и после прогона — иначе она не уборка.
+	 *
+	 * Двум организациям — два контекста: `app.current_tenant` держит РОВНО одного
+	 * арендатора, списком его не задать. Без контекста `DELETE` не видит ни одной
+	 * своей строки и снимает ноль, ошибкой это не считается — уборка отчитывалась
+	 * бы об успехе, оставив обращения прошлого прогона в живой базе.
+	 */
 	async function purgeFixtures(): Promise<void> {
-		await db.delete(communicationEvents).where(eq(communicationEvents.organizationId, ORG_MINE));
-		await db.delete(communicationEvents).where(eq(communicationEvents.organizationId, ORG_FOREIGN));
-		await db.delete(patients).where(eq(patients.organizationId, ORG_MINE));
-		await db.delete(patients).where(eq(patients.organizationId, ORG_FOREIGN));
-		await db.delete(users).where(eq(users.organizationId, ORG_MINE));
-		await db.delete(organizations).where(eq(organizations.id, ORG_MINE));
-		await db.delete(organizations).where(eq(organizations.id, ORG_FOREIGN));
+		await withFixtureTenant(ORG_MINE, async () => {
+			await db.delete(communicationEvents).where(eq(communicationEvents.organizationId, ORG_MINE));
+			await db.delete(patients).where(eq(patients.organizationId, ORG_MINE));
+			await db.delete(users).where(eq(users.organizationId, ORG_MINE));
+			await db.delete(organizations).where(eq(organizations.id, ORG_MINE));
+		});
+		await withFixtureTenant(ORG_FOREIGN, async () => {
+			await db.delete(communicationEvents).where(eq(communicationEvents.organizationId, ORG_FOREIGN));
+			await db.delete(patients).where(eq(patients.organizationId, ORG_FOREIGN));
+			await db.delete(organizations).where(eq(organizations.id, ORG_FOREIGN));
+		});
 	}
 
 	before(async () => {

@@ -13,18 +13,18 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import Fastify from "fastify";
 import { db } from "../../db/client.js";
 import { organizations, patients, users } from "../../db/schema.js";
 import { registerLabRoutes } from "../../routes/lab.js";
 import { authTokenSecret } from "../../security/authSecret.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,
 	purgeFixtureOrganizations,
+	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "labOrderMoney";
 const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);

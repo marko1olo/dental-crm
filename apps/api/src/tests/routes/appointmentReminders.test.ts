@@ -61,15 +61,22 @@ function isMissingDatabase(error: unknown): boolean {
  * Порядок удаления — от зависимых строк к организации.
  */
 async function purgeFixtures(): Promise<void> {
-	await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-	await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
-	await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-	await db.delete(communicationTemplates).where(eq(communicationTemplates.organizationId, ORG_ID));
-	await db.delete(communicationSettings).where(eq(communicationSettings.organizationId, ORG_ID));
-	await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-	await db.delete(users).where(eq(users.organizationId, ORG_ID));
-	await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	/*
+	 * Уборка идёт под тенант-контекстом клиники: под FORCE RLS DELETE без
+	 * `app.current_tenant` не видит ни одной строки и снимает НОЛЬ, ошибкой это
+	 * не считается — приём прошлого прогона со своим временем пережил бы уборку.
+	 */
+	await withFixtureTenant(ORG_ID, async () => {
+		await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+		await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
+		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+		await db.delete(communicationTemplates).where(eq(communicationTemplates.organizationId, ORG_ID));
+		await db.delete(communicationSettings).where(eq(communicationSettings.organizationId, ORG_ID));
+		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+		await db.delete(users).where(eq(users.organizationId, ORG_ID));
+		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
+		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	});
 }
 
 describe("автоматические напоминания о приёме", () => {

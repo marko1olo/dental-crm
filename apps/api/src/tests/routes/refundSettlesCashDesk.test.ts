@@ -251,29 +251,34 @@ describe("выданное заявление на возврат снимает
 		// Уборка следов прерванного прогона ДО посева: см. докстринг фикстуры.
 		await purgeFixtureOrganizations([ORGANIZATION_ID]);
 
-		await db.execute(sql`
-			insert into organizations (id, name)
-			values (${ORGANIZATION_ID}::uuid, ${"Сторож шва возврат → касса"})`);
-		await db.execute(sql`
-			insert into clinics (id, organization_id, name, timezone)
-			values (${CLINIC_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Кабинет сторожа возврата"}, 'Europe/Moscow')`);
-		await db.execute(sql`
-			insert into users (id, organization_id, full_name, role, is_active)
-			values (${OWNER_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Владелец сторожа возврата"}, 'owner', true)`);
-		/*
-		 * ДАТА РОЖДЕНИЯ И ТЕЛЕФОН В КАРТЕ ОБЯЗАТЕЛЬНЫ. Шапка документа печатает их, а
-		 * при пустом значении подставляет «не указана»/«не указан» — ровно те строки,
-		 * по которым сторож выдачи считает документ незаполненным и отвечает 409, не
-		 * называя поле.
-		 */
-		await db.execute(sql`
-			insert into patients (id, organization_id, full_name, birth_date, phone, status)
-			values (${PATIENT_FULL}::uuid, ${ORGANIZATION_ID}::uuid, ${"Пациент полного возврата"}, '1990-05-17', '+79000000021', 'active'),
-			       (${PATIENT_PARTIAL}::uuid, ${ORGANIZATION_ID}::uuid, ${"Пациент частичного возврата"}, '1988-02-03', '+79000000022', 'active')`);
-		await db.execute(sql`
-			insert into visits (id, organization_id, patient_id, status)
-			values (${VISIT_FULL}::uuid, ${ORGANIZATION_ID}::uuid, ${PATIENT_FULL}::uuid, 'draft'),
-			       (${VISIT_PARTIAL}::uuid, ${ORGANIZATION_ID}::uuid, ${PATIENT_PARTIAL}::uuid, 'draft')`);
+		// Весь сев — под контекстом своей клиники: в WITH CHECK тенант-таблиц стоит
+		// только `organization_id = current_tenant`, без дизъюнкта обхода, поэтому
+		// вставка без контекста (и вставка под обходом RLS) отвергается кодом 42501.
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			await db.execute(sql`
+				insert into organizations (id, name)
+				values (${ORGANIZATION_ID}::uuid, ${"Сторож шва возврат → касса"})`);
+			await db.execute(sql`
+				insert into clinics (id, organization_id, name, timezone)
+				values (${CLINIC_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Кабинет сторожа возврата"}, 'Europe/Moscow')`);
+			await db.execute(sql`
+				insert into users (id, organization_id, full_name, role, is_active)
+				values (${OWNER_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Владелец сторожа возврата"}, 'owner', true)`);
+			/*
+			 * ДАТА РОЖДЕНИЯ И ТЕЛЕФОН В КАРТЕ ОБЯЗАТЕЛЬНЫ. Шапка документа печатает их, а
+			 * при пустом значении подставляет «не указана»/«не указан» — ровно те строки,
+			 * по которым сторож выдачи считает документ незаполненным и отвечает 409, не
+			 * называя поле.
+			 */
+			await db.execute(sql`
+				insert into patients (id, organization_id, full_name, birth_date, phone, status)
+				values (${PATIENT_FULL}::uuid, ${ORGANIZATION_ID}::uuid, ${"Пациент полного возврата"}, '1990-05-17', '+79000000021', 'active'),
+				       (${PATIENT_PARTIAL}::uuid, ${ORGANIZATION_ID}::uuid, ${"Пациент частичного возврата"}, '1988-02-03', '+79000000022', 'active')`);
+			await db.execute(sql`
+				insert into visits (id, organization_id, patient_id, status)
+				values (${VISIT_FULL}::uuid, ${ORGANIZATION_ID}::uuid, ${PATIENT_FULL}::uuid, 'draft'),
+				       (${VISIT_PARTIAL}::uuid, ${ORGANIZATION_ID}::uuid, ${PATIENT_PARTIAL}::uuid, 'draft')`);
+		});
 
 		const staffToken = signToken(
 			{ organizationId: ORGANIZATION_ID, userId: OWNER_ID, role: "owner" },
@@ -286,11 +291,7 @@ describe("выданное заявление на возврат снимает
 			"content-type": "application/json",
 		};
 
-		app = Fastify();
-		// Тот же хук, что в apps/api/src/server.ts: он наполняет request.user.
-		app.addHook("onRequest", async (request) => {
-			getRequestIdentity(request);
-		});
+		app = createTenantTestApp();
 		await registerSettingsRoutes(app);
 		await registerBillingRoutes(app);
 		await registerDocumentRoutes(app);

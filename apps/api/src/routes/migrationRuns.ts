@@ -462,12 +462,13 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
         mappingOverrides: []
       });
       const counts = await countStagingByStatus(request.params.runId);
-      return reply.code(200).send({
+      reply.code(200);
+      return {
         runId: request.params.runId,
         sourceRows: result.sourceRows,
         staging: counts,
         nextStep: "POST /api/migration/:runId/execute"
-      });
+      };
     } catch (error) {
       return failFromPhaseError(reply, error);
     }
@@ -524,7 +525,8 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
     }
 
     const queuedRun = await findRun(request.params.runId, context.organizationId);
-    return reply.code(202).send({
+    reply.code(202);
+    return {
       accepted: true,
       runId: request.params.runId,
       status: queuedRun?.status ?? "queued",
@@ -534,7 +536,7 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
         : "Выполнение принято. Загрузка идёт в фоне.",
       poll: `GET /api/migration/${request.params.runId}`,
       worker: migrationWorkerStatus()
-    });
+    };
   });
 
   /** Состояние прогона для опроса клиентом. */
