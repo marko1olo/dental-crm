@@ -45,16 +45,19 @@ import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { after, before, describe, test } from "node:test";
 import { sql } from "drizzle-orm";
-import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
 import { db, pool } from "../../db/client.js";
 import { registerBillingRoutes } from "../../routes/billing.js";
 import { registerDocumentRoutes } from "../../routes/documents.js";
 import { registerSettingsRoutes } from "../../routes/settings.js";
 import { authTokenSecret } from "../../security/authSecret.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { fixtureUuid, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "refundSettlesCashDesk";
 const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);
@@ -90,19 +93,26 @@ type Injected = { statusCode: number; body: string; json: any };
  * вещи, и в квитанции они напечатаются по-разному.
  */
 async function revenueText(): Promise<string> {
-	const result = await db.execute<{ paid: string }>(sql`
-		select coalesce(sum(amount_rub), 0)::numeric(12,2)::text as paid
-		  from payments
-		 where organization_id = ${ORGANIZATION_ID}::uuid and status = 'paid'
-	`);
+	// Сверка идёт под тенант-контекстом клиники: под FORCE RLS запрос без
+	// `app.current_tenant` не падает, а возвращает НОЛЬ строк, и выручка вышла бы
+	// «0.00» независимо от того, что в кассе на самом деле.
+	const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
+		db.execute<{ paid: string }>(sql`
+			select coalesce(sum(amount_rub), 0)::numeric(12,2)::text as paid
+			  from payments
+			 where organization_id = ${ORGANIZATION_ID}::uuid and status = 'paid'
+		`),
+	);
 	return (result.rows as { paid: string }[])[0]?.paid ?? "нет строки";
 }
 
 async function paymentStatus(paymentId: string): Promise<string> {
-	const result = await db.execute<{ status: string }>(sql`
-		select status::text as status from payments
-		 where id = ${paymentId}::uuid and organization_id = ${ORGANIZATION_ID}::uuid
-	`);
+	const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
+		db.execute<{ status: string }>(sql`
+			select status::text as status from payments
+			 where id = ${paymentId}::uuid and organization_id = ${ORGANIZATION_ID}::uuid
+		`),
+	);
 	const row = (result.rows as { status: string }[])[0];
 	assert.ok(row, `платёж ${paymentId} не найден в базе — сверять нечего`);
 	return row.status;

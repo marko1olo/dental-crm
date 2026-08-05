@@ -376,7 +376,8 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
         encodingConfidence: shape.encodingConfidence
       });
 
-      return reply.code(201).send({
+      reply.code(201);
+      return {
         runId: run.id,
         sourceName: run.sourceName,
         fileName: stored.fileName,
@@ -400,7 +401,7 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
             ? null
             : { runId: previous[0].id, uploadedAt: previous[0].createdAt.toISOString() },
         nextStep: "POST /api/migration/:runId/map"
-      });
+      };
     }
   );
 
@@ -425,7 +426,8 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
         mappingOverrides: parsed.data.mappingOverrides
       });
 
-      return reply.code(200).send({
+      reply.code(200);
+      return {
         runId: request.params.runId,
         mapping: result.mapping,
         profile: result.analyze.profile,
@@ -434,7 +436,7 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
         qualityFindings: result.analyze.qualityFindings,
         llm: { calls: result.llmCalls, rejectedSuggestions: result.llmRejected },
         nextStep: "POST /api/migration/:runId/execute"
-      });
+      };
     } catch (error) {
       return failFromPhaseError(reply, error);
     }

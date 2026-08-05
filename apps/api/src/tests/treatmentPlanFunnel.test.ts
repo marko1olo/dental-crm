@@ -13,6 +13,7 @@ import {
 	fixtureUuid,
 	isDatabaseUnavailable,
 	purgeFixtureOrganizations,
+	withFixtureTenant,
 } from "./support/fixtureOrganizations.js";
 
 /**

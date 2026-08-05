@@ -12,7 +12,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
-import Fastify from "fastify";
 import { db } from "../../db/client.js";
 import {
 	insuranceContracts,
@@ -21,13 +20,14 @@ import {
 } from "../../db/schema.js";
 import { registerInsuranceRoutes } from "../../routes/insurance.js";
 import { authTokenSecret } from "../../security/authSecret.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,
 	purgeFixtureOrganizations,
+	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "insuranceBody";
 const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);
@@ -127,21 +127,28 @@ describe("ДМС договоры — Zod body (null → 400, не 500)", () => 
 		}
 
 		if (databaseReady) {
-			await db.insert(organizations).values({
-				id: ORGANIZATION_ID,
-				name: "Клиника сторожа тела ДМС",
-			});
-			await db.insert(users).values({
-				id: STAFF_ID,
-				organizationId: ORGANIZATION_ID,
-				fullName: "Админ сторожа тела ДМС",
-				role: "admin",
-			});
-			await db.insert(insuranceContracts).values({
-				id: CONTRACT_ID,
-				organizationId: ORGANIZATION_ID,
-				companyName: "СОГАЗ",
-				isActive: true,
+			/*
+			 * Сев под тенант-контекстом: у `users` и `insurance_contracts` в WITH CHECK
+			 * стоит только `organization_id = current_tenant`, без дизъюнкта обхода,
+			 * поэтому вставка без контекста отвергается кодом 42501.
+			 */
+			await withFixtureTenant(ORGANIZATION_ID, async () => {
+				await db.insert(organizations).values({
+					id: ORGANIZATION_ID,
+					name: "Клиника сторожа тела ДМС",
+				});
+				await db.insert(users).values({
+					id: STAFF_ID,
+					organizationId: ORGANIZATION_ID,
+					fullName: "Админ сторожа тела ДМС",
+					role: "admin",
+				});
+				await db.insert(insuranceContracts).values({
+					id: CONTRACT_ID,
+					organizationId: ORGANIZATION_ID,
+					companyName: "СОГАЗ",
+					isActive: true,
+				});
 			});
 		}
 
@@ -154,10 +161,9 @@ describe("ДМС договоры — Zod body (null → 400, не 500)", () => 
 			authTokenSecret(),
 		);
 
-		app = Fastify();
-		app.addHook("onRequest", async (request) => {
-			getRequestIdentity(request);
-		});
+		// Оба хука изоляции боевого server.ts: без обёртки `withTenantCtx` маршрут
+		// договоров не видит ни одной строки своей же клиники.
+		app = createTenantTestApp();
 		await registerInsuranceRoutes(app);
 		await app.ready();
 	});
