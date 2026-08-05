@@ -93,41 +93,48 @@ describe("автоматические напоминания о приёме", 
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
 		process.env.NODE_ENV = "development";
 
-		app = Fastify();
+		app = createTenantTestApp();
 		await registerCommunicationOutboxRoutes(app);
 
 		try {
 			// Сначала расчистить место за оборванным прогоном, потом сеять.
 			await purgeFixtures();
 
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника напоминаний" });
-			await db.insert(clinics).values({
-				id: CLINIC_ID,
-				organizationId: ORG_ID,
-				name: "Клиника на Ленина",
-				phone: "+7 495 000-00-00",
-				timezone: "Europe/Moscow"
-			});
-			await db
-				.insert(users)
-				.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Иванов Иван Иванович", role: "doctor" });
-			await db.insert(patients).values({
-				id: PATIENT_ID,
-				organizationId: ORG_ID,
-				fullName: "Орлова Марина Петровна",
-				phone: "+7 916 000-00-02"
-			});
-			// Время приёма отсчитывается от «сейчас», поэтому строка обязана быть
-			// СВОЕЙ: onConflictDoNothing здесь оставил бы приём прошлого прогона с
-			// его временем, и окно напоминания считалось бы по чужой дате.
-			await db.insert(appointments).values({
-				id: APPOINTMENT_ID,
-				organizationId: ORG_ID,
-				patientId: PATIENT_ID,
-				doctorUserId: DOCTOR_ID,
-				status: "planned",
-				startsAt: appointmentStart,
-				endsAt: new Date(appointmentStart.getTime() + 60 * 60 * 1000)
+			/*
+			 * Сев под тенант-контекстом. В WITH CHECK тенант-таблиц стоит только
+			 * `organization_id = current_tenant`, поэтому INSERT без контекста
+			 * отвергается кодом 42501 — и обход RLS здесь не помогает вовсе.
+			 */
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника напоминаний" });
+				await db.insert(clinics).values({
+					id: CLINIC_ID,
+					organizationId: ORG_ID,
+					name: "Клиника на Ленина",
+					phone: "+7 495 000-00-00",
+					timezone: "Europe/Moscow"
+				});
+				await db
+					.insert(users)
+					.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Иванов Иван Иванович", role: "doctor" });
+				await db.insert(patients).values({
+					id: PATIENT_ID,
+					organizationId: ORG_ID,
+					fullName: "Орлова Марина Петровна",
+					phone: "+7 916 000-00-02"
+				});
+				// Время приёма отсчитывается от «сейчас», поэтому строка обязана быть
+				// СВОЕЙ: onConflictDoNothing здесь оставил бы приём прошлого прогона с
+				// его временем, и окно напоминания считалось бы по чужой дате.
+				await db.insert(appointments).values({
+					id: APPOINTMENT_ID,
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					doctorUserId: DOCTOR_ID,
+					status: "planned",
+					startsAt: appointmentStart,
+					endsAt: new Date(appointmentStart.getTime() + 60 * 60 * 1000)
+				});
 			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;

@@ -341,9 +341,14 @@ describe("выданное заявление на возврат снимает
 	after(async () => {
 		await app?.close();
 		await purgeFixtureOrganizations([ORGANIZATION_ID]);
-		const leftovers = await db.execute<{ n: number }>(sql`
-			select count(*)::int as n from payments where organization_id = ${ORGANIZATION_ID}::uuid
-		`);
+		// Счёт остатка — под тенант-контекстом: политика оставляет видимыми ровно
+		// строки этой клиники, поэтому уцелевший платёж был бы виден. Без контекста
+		// запрос вернул бы ноль в любом случае и подтвердил бы уборку, ничего не измерив.
+		const leftovers = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db.execute<{ n: number }>(sql`
+				select count(*)::int as n from payments where organization_id = ${ORGANIZATION_ID}::uuid
+			`),
+		);
 		assert.equal((leftovers.rows as { n: number }[])[0]?.n, 0, "сторож не убрал свои платежи из живой базы");
 		process.env = originalEnv;
 		await pool.end();
@@ -438,14 +443,18 @@ describe("выданное заявление на возврат снимает
 		 * а новый возврат по тому же чеку упирался бы в отказ «уже выполнен полный
 		 * возврат средств» — то есть чек стал бы невозвратным навсегда.
 		 */
-		const issuedRefund = await db.execute<{ id: string }>(sql`
-			select id::text as id from generated_documents
-			 where organization_id = ${ORGANIZATION_ID}::uuid
-			   and patient_id = ${PATIENT_FULL}::uuid
-			   and kind = 'payment_refund_correction_request'
-			   and status = 'issued'
-			 order by issued_at desc limit 1
-		`);
+		// Поиск выданного заявления — тоже под контекстом клиники: без него список
+		// документов пуст, и «аннулировать нечего» стало бы ложным выводом.
+		const issuedRefund = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db.execute<{ id: string }>(sql`
+				select id::text as id from generated_documents
+				 where organization_id = ${ORGANIZATION_ID}::uuid
+				   and patient_id = ${PATIENT_FULL}::uuid
+				   and kind = 'payment_refund_correction_request'
+				   and status = 'issued'
+				 order by issued_at desc limit 1
+			`),
+		);
 		const refundDocumentId = (issuedRefund.rows as { id: string }[])[0]?.id;
 		assert.ok(refundDocumentId, "выданного заявления на возврат нет — аннулировать нечего");
 

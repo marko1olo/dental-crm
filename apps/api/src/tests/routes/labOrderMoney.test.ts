@@ -65,21 +65,28 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 			return;
 		}
 
-		await db.insert(organizations).values({
-			id: ORGANIZATION_ID,
-			name: "Клиника сторожа денег ЗТЛ",
-		});
-		await db.insert(users).values({
-			id: DOCTOR_ID,
-			organizationId: ORGANIZATION_ID,
-			fullName: "Врач сторожа денег ЗТЛ",
-			role: "doctor",
-		});
-		await db.insert(patients).values({
-			id: PATIENT_ID,
-			organizationId: ORGANIZATION_ID,
-			fullName: "Пациент заказа ЗТЛ",
-			status: "active",
+		/*
+		 * Сев под тенант-контекстом: у `users` и `patients` в WITH CHECK стоит только
+		 * `organization_id = current_tenant`, без дизъюнкта обхода, поэтому вставка
+		 * без контекста отвергается кодом 42501.
+		 */
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			await db.insert(organizations).values({
+				id: ORGANIZATION_ID,
+				name: "Клиника сторожа денег ЗТЛ",
+			});
+			await db.insert(users).values({
+				id: DOCTOR_ID,
+				organizationId: ORGANIZATION_ID,
+				fullName: "Врач сторожа денег ЗТЛ",
+				role: "doctor",
+			});
+			await db.insert(patients).values({
+				id: PATIENT_ID,
+				organizationId: ORGANIZATION_ID,
+				fullName: "Пациент заказа ЗТЛ",
+				status: "active",
+			});
 		});
 
 		staffToken = signToken(
@@ -87,10 +94,9 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 			authTokenSecret(),
 		);
 
-		app = Fastify();
-		app.addHook("onRequest", async (request) => {
-			getRequestIdentity(request);
-		});
+		// Оба хука изоляции боевого server.ts: без обёртки `withTenantCtx` маршрут
+		// заказов ЗТЛ не видит ни пациента, ни врача своей же клиники.
+		app = createTenantTestApp();
 		await registerLabRoutes(app);
 		await app.ready();
 	});
@@ -122,11 +128,18 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 			`ожидали ValidationError, получили ${String(refused.json.error)}`,
 		);
 
-		const count = await db.execute<{ n: number }>(sql`
-			select count(*)::int as n from lab_orders
-			 where organization_id = ${ORGANIZATION_ID}::uuid
-			   and patient_id = ${PATIENT_ID}::uuid
-		`);
+		/*
+		 * Сверка тоже под тенант-контекстом: SELECT без него не ошибается, а молча
+		 * отдаёт ноль строк — проверка «отклонённый заказ не записался» зеленела бы,
+		 * даже если бы заказ на самом деле лёг в базу.
+		 */
+		const count = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db.execute<{ n: number }>(sql`
+				select count(*)::int as n from lab_orders
+				 where organization_id = ${ORGANIZATION_ID}::uuid
+				   and patient_id = ${PATIENT_ID}::uuid
+			`),
+		);
 		assert.equal(
 			count.rows[0]?.n,
 			0,

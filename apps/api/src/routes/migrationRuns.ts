@@ -549,7 +549,8 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
       return fail(reply, 404, "RunNotFound", "Прогон переноса не найден в этой организации.");
     }
     const staging = await countStagingByStatus(run.id);
-    return reply.code(200).send({ run: runStatusPayload(run), staging, mapping: run.mappingJson });
+    reply.code(200);
+    return { run: runStatusPayload(run), staging, mapping: run.mappingJson };
   });
 
   /** Акт сверки: то, что передаётся клинике как доказательство переноса. */
@@ -581,7 +582,8 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
 
     const quarantinePreview = await listQuarantine(context.organizationId, run.id, 50);
 
-    return reply.code(200).send({
+    reply.code(200);
+    return {
       runId: run.id,
       generatedAt: reconciliation.generatedAt.toISOString(),
       balanced: reconciliation.balanced,
@@ -594,7 +596,7 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
       },
       run: runStatusPayload(run),
       quarantinePreview
-    });
+    };
   });
 
   /** Акт сверки в CSV с BOM: без него русский Excel показывает вопросительные знаки. */
