@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { organizations, patients } from "../../db/schema.js";
@@ -11,8 +11,10 @@ import {
 	LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
 	fixtureUuid,
 	isDatabaseUnavailable,
-	purgeFixtureOrganizations
+	purgeFixtureOrganizations,
+	withFixtureTenant
 } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /**
  * СОЗДАНИЕ КАРТЫ ПАЦИЕНТА ОДНИМ ФИО ОБХОДИЛО СЕРВЕРНЫЙ ЗАПРЕТ ДУБЛЕЙ.

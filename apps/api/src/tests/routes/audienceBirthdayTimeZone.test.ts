@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { organizations, patients } from "../../db/schema.js";
 import { resolveAudience } from "../../services/communications/audience.js";
-import { fixtureUuid, isDatabaseUnavailable, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
+import { fixtureUuid, isDatabaseUnavailable, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
 
 /**
  * ДЕНЬ РОЖДЕНИЯ И ВОЗРАСТ — В ПОЯСЕ КЛИНИКИ, А НЕ В UTC.
@@ -49,18 +49,26 @@ describe("отбор получателей рассылки: день рожд�
 	before(async () => {
 		try {
 			await purgeFixtureOrganizations([ORG]);
-			await db.insert(organizations).values({ id: ORG, name: "Клиника поздравлений" }).onConflictDoNothing();
-			await db
-				.insert(patients)
-				.values({
-					id: PATIENT,
-					organizationId: ORG,
-					fullName: "Именинников Ночной Поясович",
-					phone: "+79990000429",
-					birthDate: BIRTH_DATE,
-					status: "active"
-				})
-				.onConflictDoNothing();
+			/*
+			 * Сев и отбор идут под тенант-контекстом клиники. Под FORCE RLS вставка
+			 * без `app.current_tenant` отвергается кодом 42501, а чтение без него
+			 * возвращает ноль строк молча: отбор не нашёл бы пациента ни в одном
+			 * поясе, и проверка часового дефекта выродилась бы в проверку пустоты.
+			 */
+			await withFixtureTenant(ORG, async () => {
+				await db.insert(organizations).values({ id: ORG, name: "Клиника поздравлений" }).onConflictDoNothing();
+				await db
+					.insert(patients)
+					.values({
+						id: PATIENT,
+						organizationId: ORG,
+						fullName: "Именинников Ночной Поясович",
+						phone: "+79990000429",
+						birthDate: BIRTH_DATE,
+						status: "active"
+					})
+					.onConflictDoNothing();
+			});
 		} catch (error) {
 			if (isDatabaseUnavailable(error)) {
 				databaseAvailable = false;
@@ -89,26 +97,30 @@ describe("отбор получателей рассылки: день рожд�
 	 * признак ПРОШЁЛ), при UTC — как `excluded_by_criteria` (не прошёл).
 	 */
 	async function rejectedByCalendar(timeZone: string | null, withinDays: number): Promise<boolean> {
-		const preview = await resolveAudience({
-			organizationId: ORG,
-			criteria: { birthdayWithinDays: withinDays },
-			channel: "sms",
-			scope: "marketing",
-			now: NOW,
-			timeZone
-		});
+		const preview = await withFixtureTenant(ORG, async () =>
+			resolveAudience({
+				organizationId: ORG,
+				criteria: { birthdayWithinDays: withinDays },
+				channel: "sms",
+				scope: "marketing",
+				now: NOW,
+				timeZone
+			})
+		);
 		return preview.excluded.excluded_by_criteria > 0;
 	}
 
 	async function rejectedByAge(timeZone: string | null, ageFrom: number): Promise<boolean> {
-		const preview = await resolveAudience({
-			organizationId: ORG,
-			criteria: { ageFrom },
-			channel: "sms",
-			scope: "marketing",
-			now: NOW,
-			timeZone
-		});
+		const preview = await withFixtureTenant(ORG, async () =>
+			resolveAudience({
+				organizationId: ORG,
+				criteria: { ageFrom },
+				channel: "sms",
+				scope: "marketing",
+				now: NOW,
+				timeZone
+			})
+		);
 		return preview.excluded.excluded_by_criteria > 0;
 	}
 
