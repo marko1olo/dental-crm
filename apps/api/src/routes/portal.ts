@@ -3,6 +3,7 @@ import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { requireAuthTokenSecret } from "../accessGuard.js";
 import { db } from "../db/client.js";
+import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
 	generatedDocuments,
 	patientInvoices,
@@ -189,17 +190,19 @@ async function findUniquePatientByPhone(rawPhone: string): Promise<{
 	const digits = rawPhone.replace(/\D/g, "");
 	if (digits.length < 10) return null;
 	const suffix = digits.slice(-10);
-	const found = await db
-		.select({
-			id: patients.id,
-			organizationId: patients.organizationId,
-			phone: patients.phone,
-		})
-		.from(patients)
-		.where(
-			sql`regexp_replace(${patients.phone}, '\\D', '', 'g') LIKE ${`%${suffix}`}`,
-		)
-		.limit(2);
+	const found = await withSuperuserBypass(async (tx) => {
+		return tx
+			.select({
+				id: patients.id,
+				organizationId: patients.organizationId,
+				phone: patients.phone,
+			})
+			.from(patients)
+			.where(
+				sql`regexp_replace(${patients.phone}, '\\D', '', 'g') LIKE ${`%${suffix}`}`,
+			)
+			.limit(2);
+	});
 	return found.length === 1 ? (found[0] ?? null) : null;
 }
 
@@ -332,143 +335,145 @@ export const portalRoutes: FastifyPluginAsync = async (
 			if (!patient) return reply.status(202).send(neutralAccepted);
 
 			const now = new Date();
-			if (
-				await isIssuanceThrottled(
-					patient.organizationId,
-					patient.id,
-					policy,
-					now,
-				)
-			) {
-				// Тоже нейтральный ответ: 429 именно здесь снова отличал бы
-				// существующего пациента от несуществующего.
-				return reply.status(202).send(neutralAccepted);
-			}
+			return withTenantCtx(patient.organizationId, async () => {
+				if (
+					await isIssuanceThrottled(
+						patient.organizationId,
+						patient.id,
+						policy,
+						now,
+					)
+				) {
+					// Тоже нейтральный ответ: 429 именно здесь снова отличал бы
+					// существующего пациента от несуществующего.
+					return reply.status(202).send(neutralAccepted);
+				}
 
-			const code = generateNumericCode(policy.codeLength);
-			const codeHash = await hashCredential(code);
+				const code = generateNumericCode(policy.codeLength);
+				const codeHash = await hashCredential(code);
 
-			// Уборка старья по этому же пациенту: без неё таблица растёт вечно.
-			await db
-				.delete(portalOtpCodes)
-				.where(
-					and(
-						eq(portalOtpCodes.organizationId, patient.organizationId),
-						eq(portalOtpCodes.patientId, patient.id),
-						lt(
-							portalOtpCodes.createdAt,
-							new Date(now.getTime() - policy.retentionSeconds * 1000),
+				// Уборка старья по этому же пациенту: без неё таблица растёт вечно.
+				await db
+					.delete(portalOtpCodes)
+					.where(
+						and(
+							eq(portalOtpCodes.organizationId, patient.organizationId),
+							eq(portalOtpCodes.patientId, patient.id),
+							lt(
+								portalOtpCodes.createdAt,
+								new Date(now.getTime() - policy.retentionSeconds * 1000),
+							),
 						),
-					),
-				);
+					);
 
-			// Прежние действующие коды гасятся. Иначе у пациента одновременно живёт
-			// несколько кодов, у каждого свой счётчик попыток, и потолок попыток
-			// умножается на число нажатий «отправить ещё раз».
-			await db
-				.update(portalOtpCodes)
-				.set({ consumedAt: now })
-				.where(
-					and(
-						eq(portalOtpCodes.organizationId, patient.organizationId),
-						eq(portalOtpCodes.patientId, patient.id),
-						isNull(portalOtpCodes.consumedAt),
-					),
-				);
+				// Прежние действующие коды гасятся. Иначе у пациента одновременно живёт
+				// несколько кодов, у каждого свой счётчик попыток, и потолок попыток
+				// умножается на число нажатий «отправить ещё раз».
+				await db
+					.update(portalOtpCodes)
+					.set({ consumedAt: now })
+					.where(
+						and(
+							eq(portalOtpCodes.organizationId, patient.organizationId),
+							eq(portalOtpCodes.patientId, patient.id),
+							isNull(portalOtpCodes.consumedAt),
+						),
+					);
 
-			// Строка заводится ДО обращения к шлюзу и только со статусом pending:
-			// если процесс упадёт на отправке, код не окажется «отправленным».
-			const inserted = await db
-				.insert(portalOtpCodes)
-				.values({
-					organizationId: patient.organizationId,
-					patientId: patient.id,
-					codeHash,
-					channel: developerLogFallback ? "developer_log" : "sms",
-					deliveryStatus: "pending",
-					expiresAt: new Date(now.getTime() + policy.ttlSeconds * 1000),
-				})
-				.returning({ id: portalOtpCodes.id });
-			const issuedId = inserted[0]?.id;
-			if (!issuedId) {
-				return reply.status(500).send({
-					error: "OtpNotIssued",
-					message: "Не удалось выдать код входа. Повторите попытку.",
-				});
-			}
+				// Строка заводится ДО обращения к шлюзу и только со статусом pending:
+				// если процесс упадёт на отправке, код не окажется «отправленным».
+				const inserted = await db
+					.insert(portalOtpCodes)
+					.values({
+						organizationId: patient.organizationId,
+						patientId: patient.id,
+						codeHash,
+						channel: developerLogFallback ? "developer_log" : "sms",
+						deliveryStatus: "pending",
+						expiresAt: new Date(now.getTime() + policy.ttlSeconds * 1000),
+					})
+					.returning({ id: portalOtpCodes.id });
+				const issuedId = inserted[0]?.id;
+				if (!issuedId) {
+					return reply.status(500).send({
+						error: "OtpNotIssued",
+						message: "Не удалось выдать код входа. Повторите попытку.",
+					});
+				}
 
-			if (developerLogFallback) {
-				request.log.warn(
-					{ portalOtpDeveloperCode: code, patientId: patient.id },
-					"РЕЖИМ РАЗРАБОТКИ: SMS-шлюз не настроен, одноразовый код входа в личный кабинет выведен в журнал сервера и никому не отправлен. При NODE_ENV=production эта ветка недостижима.",
+				if (developerLogFallback) {
+					request.log.warn(
+						{ portalOtpDeveloperCode: code, patientId: patient.id },
+						"РЕЖИМ РАЗРАБОТКИ: SMS-шлюз не настроен, одноразовый код входа в личный кабинет выведен в журнал сервера и никому не отправлен. При NODE_ENV=production эта ветка недостижима.",
+					);
+					await db
+						.update(portalOtpCodes)
+						.set({ deliveryStatus: "sent" })
+						.where(eq(portalOtpCodes.id, issuedId));
+					return reply.status(202).send(neutralAccepted);
+				}
+
+				const msisdn = normalizeRussianMsisdn(patient.phone);
+				const credentials = await resolveChannelCredentials(
+					patient.organizationId,
 				);
+				const delivery =
+					msisdn === null
+						? {
+								ok: false as const,
+								errorClass: "recipient_unavailable" as const,
+								errorMessage:
+									"Номер в карточке пациента не приводится к формату оператора.",
+							}
+						: await sendThroughChannel(
+								{
+									channel: "sms",
+									recipientAddress: msisdn,
+									subject: null,
+									body: renderOtpMessage(policy, code),
+									idempotencyKey: `portal-otp:${issuedId}`,
+								},
+								credentials,
+							);
+
+				if (!delivery.ok) {
+					await db
+						.update(portalOtpCodes)
+						.set({
+							deliveryStatus: "failed",
+							deliveryErrorClass: delivery.errorClass,
+						})
+						.where(eq(portalOtpCodes.id, issuedId));
+					request.log.error(
+						{ patientId: patient.id, errorClass: delivery.errorClass },
+						"Код входа в личный кабинет не отправлен: шлюз отказал",
+					);
+					/*
+					 * Честный отказ вместо «отправлено». Пациент, смотрящий на «код
+					 * отправлен» при пустом счету шлюза, — это и есть та самая обманка,
+					 * ради устранения которой переписан этот маршрут.
+					 *
+					 * ОСТАТОЧНЫЙ РИСК, НАЗЫВАЮ ЯВНО: до шлюза доходят только запросы по
+					 * реально существующему пациенту, поэтому в момент аварии шлюза
+					 * разница между 502 и 202 отличает существующий номер от
+					 * несуществующего. Это состояние аварии, а не штатное; молчать
+					 * пациенту о том, что SMS не ушла, — хуже.
+					 */
+					return reply
+						.status(delivery.errorClass === "not_configured" ? 503 : 502)
+						.send({
+							error: "OtpDeliveryFailed",
+							errorClass: delivery.errorClass,
+							message: `Не удалось отправить код: ${delivery.errorMessage}`,
+						});
+				}
+
 				await db
 					.update(portalOtpCodes)
 					.set({ deliveryStatus: "sent" })
 					.where(eq(portalOtpCodes.id, issuedId));
 				return reply.status(202).send(neutralAccepted);
-			}
-
-			const msisdn = normalizeRussianMsisdn(patient.phone);
-			const credentials = await resolveChannelCredentials(
-				patient.organizationId,
-			);
-			const delivery =
-				msisdn === null
-					? {
-							ok: false as const,
-							errorClass: "recipient_unavailable" as const,
-							errorMessage:
-								"Номер в карточке пациента не приводится к формату оператора.",
-						}
-					: await sendThroughChannel(
-							{
-								channel: "sms",
-								recipientAddress: msisdn,
-								subject: null,
-								body: renderOtpMessage(policy, code),
-								idempotencyKey: `portal-otp:${issuedId}`,
-							},
-							credentials,
-						);
-
-			if (!delivery.ok) {
-				await db
-					.update(portalOtpCodes)
-					.set({
-						deliveryStatus: "failed",
-						deliveryErrorClass: delivery.errorClass,
-					})
-					.where(eq(portalOtpCodes.id, issuedId));
-				request.log.error(
-					{ patientId: patient.id, errorClass: delivery.errorClass },
-					"Код входа в личный кабинет не отправлен: шлюз отказал",
-				);
-				/*
-				 * Честный отказ вместо «отправлено». Пациент, смотрящий на «код
-				 * отправлен» при пустом счету шлюза, — это и есть та самая обманка,
-				 * ради устранения которой переписан этот маршрут.
-				 *
-				 * ОСТАТОЧНЫЙ РИСК, НАЗЫВАЮ ЯВНО: до шлюза доходят только запросы по
-				 * реально существующему пациенту, поэтому в момент аварии шлюза
-				 * разница между 502 и 202 отличает существующий номер от
-				 * несуществующего. Это состояние аварии, а не штатное; молчать
-				 * пациенту о том, что SMS не ушла, — хуже.
-				 */
-				return reply
-					.status(delivery.errorClass === "not_configured" ? 503 : 502)
-					.send({
-						error: "OtpDeliveryFailed",
-						errorClass: delivery.errorClass,
-						message: `Не удалось отправить код: ${delivery.errorMessage}`,
-					});
-			}
-
-			await db
-				.update(portalOtpCodes)
-				.set({ deliveryStatus: "sent" })
-				.where(eq(portalOtpCodes.id, issuedId));
-			return reply.status(202).send(neutralAccepted);
+			});
 		},
 	);
 
@@ -504,41 +509,64 @@ export const portalRoutes: FastifyPluginAsync = async (
 			if (!patient) return reply.status(401).send(invalidOtp);
 
 			const now = new Date();
-			const active = await db
-				.select({
-					id: portalOtpCodes.id,
-					codeHash: portalOtpCodes.codeHash,
-				})
-				.from(portalOtpCodes)
-				.where(
-					and(
-						eq(portalOtpCodes.organizationId, patient.organizationId),
-						eq(portalOtpCodes.patientId, patient.id),
-						// Только реально доставленные: код из строки, на которой шлюз
-						// отказал, пациенту не приходил и приниматься не должен.
-						eq(portalOtpCodes.deliveryStatus, "sent"),
-						isNull(portalOtpCodes.consumedAt),
-						gte(portalOtpCodes.expiresAt, now),
-					),
-				)
-				.orderBy(desc(portalOtpCodes.createdAt))
-				.limit(1);
-			const candidate = active[0];
-			if (!candidate) return reply.status(401).send(invalidOtp);
+			return withTenantCtx(patient.organizationId, async () => {
+				const active = await db
+					.select({
+						id: portalOtpCodes.id,
+						codeHash: portalOtpCodes.codeHash,
+					})
+					.from(portalOtpCodes)
+					.where(
+						and(
+							eq(portalOtpCodes.organizationId, patient.organizationId),
+							eq(portalOtpCodes.patientId, patient.id),
+							// Только реально доставленные: код из строки, на которой шлюз
+							// отказал, пациенту не приходил и приниматься не должен.
+							eq(portalOtpCodes.deliveryStatus, "sent"),
+							isNull(portalOtpCodes.consumedAt),
+							gte(portalOtpCodes.expiresAt, now),
+						),
+					)
+					.orderBy(desc(portalOtpCodes.createdAt))
+					.limit(1);
+				const candidate = active[0];
+				if (!candidate) return reply.status(401).send(invalidOtp);
 
-			// Счётчик растёт ДО сверки. Если увеличивать после, оборванное на
-			// середине соединение даёт бесплатную попытку, и потолок обходится.
-			const counted = await db
-				.update(portalOtpCodes)
-				.set({ attemptCount: sql`${portalOtpCodes.attemptCount} + 1` })
-				.where(eq(portalOtpCodes.id, candidate.id))
-				.returning({ attemptCount: portalOtpCodes.attemptCount });
-			const attemptNumber = counted[0]?.attemptCount ?? policy.maxAttempts + 1;
+				// Счётчик растёт ДО сверки. Если увеличивать после, оборванное на
+				// середине соединение даёт бесплатную попытку, и потолок обходится.
+				const counted = await db
+					.update(portalOtpCodes)
+					.set({ attemptCount: sql`${portalOtpCodes.attemptCount} + 1` })
+					.where(eq(portalOtpCodes.id, candidate.id))
+					.returning({ attemptCount: portalOtpCodes.attemptCount });
+				const attemptNumber = counted[0]?.attemptCount ?? policy.maxAttempts + 1;
 
-			if (attemptNumber > policy.maxAttempts) {
-				// Код сжигается целиком: после исчерпания попыток он не примется
-				// даже верным. Пауза не помогла бы — перебор продолжился бы после неё.
-				await db
+				if (attemptNumber > policy.maxAttempts) {
+					// Код сжигается целиком: после исчерпания попыток он не примется
+					// даже верным. Пауза не помогла бы — перебор продолжился бы после неё.
+					await db
+						.update(portalOtpCodes)
+						.set({ consumedAt: now })
+						.where(
+							and(
+								eq(portalOtpCodes.id, candidate.id),
+								isNull(portalOtpCodes.consumedAt),
+							),
+						);
+					return reply.status(401).send(invalidOtp);
+				}
+
+				if (!(await verifyCredential(code, candidate.codeHash))) {
+					return reply.status(401).send(invalidOtp);
+				}
+
+				/*
+				 * Однократность обеспечивается условным UPDATE, а не проверкой перед
+				 * ним: два одновременных запроса с верным кодом иначе оба прошли бы
+				 * проверку «ещё не использован» и оба получили бы сессию. Здесь
+				 * выигрывает ровно один — второй не увидит ни одной обновлённой строки.
+				 */
+				const consumed = await db
 					.update(portalOtpCodes)
 					.set({ consumedAt: now })
 					.where(
@@ -546,46 +574,25 @@ export const portalRoutes: FastifyPluginAsync = async (
 							eq(portalOtpCodes.id, candidate.id),
 							isNull(portalOtpCodes.consumedAt),
 						),
-					);
-				return reply.status(401).send(invalidOtp);
-			}
+					)
+					.returning({ id: portalOtpCodes.id });
+				if (consumed.length !== 1) return reply.status(401).send(invalidOtp);
 
-			if (!(await verifyCredential(code, candidate.codeHash))) {
-				return reply.status(401).send(invalidOtp);
-			}
+				// Signed, expiring session token. Replaces the previous unsigned
+				// base64(`DENTE_TOKEN:<id>`) payload, which any caller could forge to read
+				// another patient's medical record (IDOR).
+				const token = signToken(
+					{
+						sub: patient.id,
+						organizationId: patient.organizationId,
+						kind: PORTAL_TOKEN_KIND,
+					},
+					requireAuthTokenSecret(),
+					PORTAL_TOKEN_TTL_SECONDS,
+				);
 
-			/*
-			 * Однократность обеспечивается условным UPDATE, а не проверкой перед
-			 * ним: два одновременных запроса с верным кодом иначе оба прошли бы
-			 * проверку «ещё не использован» и оба получили бы сессию. Здесь
-			 * выигрывает ровно один — второй не увидит ни одной обновлённой строки.
-			 */
-			const consumed = await db
-				.update(portalOtpCodes)
-				.set({ consumedAt: now })
-				.where(
-					and(
-						eq(portalOtpCodes.id, candidate.id),
-						isNull(portalOtpCodes.consumedAt),
-					),
-				)
-				.returning({ id: portalOtpCodes.id });
-			if (consumed.length !== 1) return reply.status(401).send(invalidOtp);
-
-			// Signed, expiring session token. Replaces the previous unsigned
-			// base64(`DENTE_TOKEN:<id>`) payload, which any caller could forge to read
-			// another patient's medical record (IDOR).
-			const token = signToken(
-				{
-					sub: patient.id,
-					organizationId: patient.organizationId,
-					kind: PORTAL_TOKEN_KIND,
-				},
-				requireAuthTokenSecret(),
-				PORTAL_TOKEN_TTL_SECONDS,
-			);
-
-			return { success: true, token, patientId: patient.id };
+				return { success: true, token, patientId: patient.id };
+			});
 		},
 	);
 
@@ -610,51 +617,53 @@ export const portalRoutes: FastifyPluginAsync = async (
 		const patientId = payload.sub;
 		const organizationId = payload.organizationId as string;
 
-		// Defence-in-depth: even though the token is signed and can't be forged,
-		// we explicitly scope the query to the org recorded in the token so a
-		// stolen token from org A cannot read org B's data if IDs ever collide.
-		const pResult = await db
-			.select()
-			.from(patients)
-			.where(
-				and(
-					eq(patients.id, patientId),
-					eq(patients.organizationId, organizationId),
-				),
-			)
-			.limit(1);
-		const patient = pResult[0];
-		if (!patient) return reply.status(404).send({ error: "Not found" });
+		return withTenantCtx(organizationId, async () => {
+			// Defence-in-depth: even though the token is signed and can't be forged,
+			// we explicitly scope the query to the org recorded in the token so a
+			// stolen token from org A cannot read org B's data if IDs ever collide.
+			const pResult = await db
+				.select()
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, patientId),
+						eq(patients.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			const patient = pResult[0];
+			if (!patient) return reply.status(404).send({ error: "Not found" });
 
-		const visits = await db
-			.select()
-			.from(visitDiaries)
-			.where(eq(visitDiaries.patientId, patient.id));
-		const plans = await db
-			.select()
-			.from(treatmentPlans)
-			.where(eq(treatmentPlans.patientId, patient.id));
-		const invoices = await db
-			.select()
-			.from(patientInvoices)
-			.where(eq(patientInvoices.patientId, patient.id));
-		const documents = await db
-			.select()
-			.from(generatedDocuments)
-			.where(
-				and(
-					eq(generatedDocuments.patientId, patient.id),
-					eq(generatedDocuments.status, "issued"),
-				),
-			);
+			const visits = await db
+				.select()
+				.from(visitDiaries)
+				.where(eq(visitDiaries.patientId, patient.id));
+			const plans = await db
+				.select()
+				.from(treatmentPlans)
+				.where(eq(treatmentPlans.patientId, patient.id));
+			const invoices = await db
+				.select()
+				.from(patientInvoices)
+				.where(eq(patientInvoices.patientId, patient.id));
+			const documents = await db
+				.select()
+				.from(generatedDocuments)
+				.where(
+					and(
+						eq(generatedDocuments.patientId, patient.id),
+						eq(generatedDocuments.status, "issued"),
+					),
+				);
 
-		return {
-			patient,
-			visits,
-			plans,
-			invoices,
-			documents,
-		};
+			return {
+				patient,
+				visits,
+				plans,
+				invoices,
+				documents,
+			};
+		});
 	});
 
 	// 4. View Document HTML (Protected)

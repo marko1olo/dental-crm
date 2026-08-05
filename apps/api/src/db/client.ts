@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
+import { AsyncLocalStorage } from "node:async_hooks";
 import * as schema from "./schema.js";
 import { loadAdditionalServerEnv } from "../env/loadServerEnv.js";
 import { registerMoneyTypeParsers } from "./moneyTypeParsers.js";
@@ -41,4 +42,17 @@ registerMoneyTypeParsers();
 
 export const pool = new pg.Pool({ connectionString: requireDatabaseUrl() });
 
-export const db = drizzle(pool, { schema });
+export const dbRaw = drizzle(pool, { schema });
+type TenantDb = typeof dbRaw;
+
+export const transactionStorage = new AsyncLocalStorage<any>();
+
+export const db = new Proxy(dbRaw, {
+  get(target, prop, receiver) {
+    const tx = transactionStorage.getStore();
+    if (tx) {
+      return Reflect.get(tx, prop, tx);
+    }
+    return Reflect.get(target, prop, receiver);
+  }
+});

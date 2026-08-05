@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
+import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import { organizations, users, userInvitations, auditEvents } from "../db/schema.js";
 import { hashCredential, verifyCredential, signToken, verifyToken } from "../utils/cryptoHelper.js";
 import { authTokenSecret } from "../security/authSecret.js";
@@ -423,13 +424,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }
 
     const orgId = clinicPayload.organizationId as string;
-
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(and(eq(users.id, userId), eq(users.organizationId, orgId), eq(users.isActive, true)))
-      .limit(1);
-
+    
+    const [user] = await withTenantCtx(orgId, async (tx) => {
+      return tx
+        .select()
+        .from(users)
+        .where(and(eq(users.id, userId), eq(users.organizationId, orgId), eq(users.isActive, true)))
+        .limit(1);
+    });
     if (!user) {
       await authFailureDelay();
       // Единый ответ для "нет сотрудника" и "неверный PIN": иначе endpoint
@@ -761,7 +763,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const [existingOrg] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.loginId, loginId)).limit(1);
     if (existingOrg) return reply.code(409).send({ error: 'Conflict', message: 'Организация с таким логином уже существует.' });
     
-    const [existingUser] = await db.select({ id: users.id }).from(users).where(eq(users.email, loginId)).limit(1);
+    const [existingUser] = await withSuperuserBypass(async (tx) => {
+      return tx.select({ id: users.id }).from(users).where(eq(users.email, loginId)).limit(1);
+    });
     if (existingUser) return reply.code(409).send({ error: 'Conflict', message: 'Пользователь с таким email уже существует.' });
 
     // БЫЛО: PIN владельца всегда '0000' — предсказуемый вход в любую свежую клинику.
@@ -771,15 +775,19 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
     const [org] = await db.insert(organizations).values({ name: clinicName, loginId, passwordHash, email: loginId }).returning();
     if (!org) return reply.code(500).send({ error: 'InternalError', message: 'Не удалось создать организацию.' });
-    const [user] = await db.insert(users).values({
-      organizationId: org.id,
-      fullName: ownerName,
-      role: 'owner',
-      email: loginId,
-      passwordHash,
-      pinCodeHash,
-      isActive: true
-    }).returning();
+    
+    const user = await withTenantCtx(org.id, async (tx) => {
+      const [u] = await tx.insert(users).values({
+        organizationId: org.id,
+        fullName: ownerName,
+        role: 'owner',
+        email: loginId,
+        passwordHash,
+        pinCodeHash,
+        isActive: true
+      }).returning();
+      return u;
+    });
     if (!user) return reply.code(500).send({ error: 'InternalError', message: 'Не удалось создать профиль владельца.' });
 
     resetRateLimit(request);
@@ -799,7 +807,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const loginEmail = email.toLowerCase().trim();
     let user: any = null;
     try {
-      const [u] = await db.select().from(users).where(and(eq(users.email, loginEmail), eq(users.isActive, true))).limit(1);
+      const [u] = await withSuperuserBypass(async (tx) => {
+        return tx.select().from(users).where(and(eq(users.email, loginEmail), eq(users.isActive, true))).limit(1);
+      });
       user = u;
     } catch (e) {
       console.warn("[AUTH_USER_DB_WARN]", e);

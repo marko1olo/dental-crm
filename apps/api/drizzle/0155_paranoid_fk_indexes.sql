@@ -74,10 +74,7 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_imaging_annotations_patient_id" ON 
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_xray_scans_organization_id" ON "xray_scans" ("organization_id");
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_xray_scans_patient_id" ON "xray_scans" ("patient_id");
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_xray_scans_visit_id" ON "xray_scans" ("visit_id");
-CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_xray_scans_organization_id" ON "xray_scans" ("organization_id");
-CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_xray_scans_study_id" ON "xray_scans" ("study_id");
-CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_xray_scans_patient_id" ON "xray_scans" ("patient_id");
-CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_xray_scans_visit_id" ON "xray_scans" ("visit_id");
+
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_dicom_workbench_bundles_organization_id" ON "dicom_workbench_bundles" ("organization_id");
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_dicom_workbench_bundles_patient_id" ON "dicom_workbench_bundles" ("patient_id");
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_recent_patient_history_organization_id" ON "recent_patient_history" ("organization_id");

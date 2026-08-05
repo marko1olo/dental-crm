@@ -211,6 +211,27 @@
       "when": 1783200000000,
       "tag": "0151_dental_medical_card_043u",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1785929447332,
+      "tag": "0157_rls_tenant_isolation",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1785932000000,
+      "tag": "0158_rls_superuser_bypass",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1785945360000,
+      "tag": "0159_rls_force_and_write_check",
+      "breakpoints": true
     }
   ]
 }
