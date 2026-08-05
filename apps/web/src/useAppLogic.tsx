@@ -2843,14 +2843,6 @@ export function useAppLogic(): any {
 
 	function reconcileDashboardScopedUiSelections() {
 		if (!dashboard) return;
-		const activePatientIds = new Set(
-			(dashboard.patients || [])
-				.filter((patient) => patient.status === "active")
-				.map((patient) => patient.id),
-		);
-		const firstActivePatientId =
-			dashboard?.patients?.find((patient) => patient.status === "active")?.id ??
-			null;
 		const doctorIds = new Set(
 			(dashboard?.clinicSettings?.staff || [])
 				.filter(
@@ -2879,8 +2871,6 @@ export function useAppLogic(): any {
 			dashboard?.protocolTemplates?.map((template) => template.id),
 		);
 
-		if (selectedPatientId && !activePatientIds.has(selectedPatientId))
-			setSelectedPatientId(firstActivePatientId);
 		if (selectedProtocolId && !protocolIds.has(selectedProtocolId))
 			setSelectedProtocolId(null);
 		if (scheduleDoctorFilterId && !doctorIds.has(scheduleDoctorFilterId))
@@ -4112,7 +4102,6 @@ export function useAppLogic(): any {
 		scheduleDefaultDoctorUserId,
 		scheduleDoctorFilterId,
 		selectedProtocolId,
-		selectedPatientId,
 		telegramLinkStaffId,
 	]);
 
@@ -4666,15 +4655,6 @@ export function useAppLogic(): any {
 		scheduleDoctorFilterId,
 		scheduleStatusFilter,
 	]);
-	useEffect(() => {
-		if (!dashboard) return;
-		setSelectedPatientId((current: any) =>
-			current &&
-			(dashboard?.patients ?? []).some((patient) => patient.id === current)
-				? current
-				: (activePatient?.id ?? null),
-		);
-	}, [activePatient?.id, dashboard?.patients?.length]);
 	useEffect(() => {
 		clinicProfileDraftRef.current = clinicProfileDraft;
 	}, [clinicProfileDraft]);

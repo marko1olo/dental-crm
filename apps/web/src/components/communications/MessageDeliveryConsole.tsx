@@ -24,6 +24,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useCommunicationsQueries } from "../../hooks/domains/useCommunicationsQueries";
 
 import {
 	describeDispatchReport,
@@ -203,31 +204,7 @@ async function readJson<T>(response: Response): Promise<T> {
  * браузере. Вынесенные чистые функции проверяются обычным тестом.
  */
 export function MessageDeliveryConsole() {
-	/*
-	 * ПОЧЕМУ У КАЖДОГО ВЫЗОВА ЗАГОЛОВКИ. БЫЛО СЛОМАНО ЦЕЛИКОМ, но только у заказчика.
-	 * Все адреса этого пульта закрыты охраной `apps/api/src/accessGuard.ts`
-	 * (`requireClinicalReadContext` / `requireClinicalMutationContext` в
-	 * communicationsOutbox.ts) — без заголовка `x-dente-admin-secret` она отвечает 403
-	 * даже при действительных токенах кабинета и сотрудника. На машине разработчика
-	 * секрет в корневом `.env` закомментирован, зато включены лазейки
-	 * DENTE_CLINICAL_ALLOW_UNGUARDED_READS/MUTATIONS, поэтому локально всё зелёное.
-	 * Лазейки живут только пока NODE_ENV !== "production", то есть в настоящей клинике
-	 * человек видел одну строку «Не удалось получить данные: Сервер ответил 403» вместо
-	 * состояния каналов, журнала очереди, шаблонов и правил рассылки; «Отправить из
-	 * очереди», «Поставить напоминания», сохранение шаблона и тихие часы отказывали.
-	 * Ни типы, ни тесты, ни глаза на этой машине такого не показывают.
-	 *
-	 * `auth` берётся ТОЛЬКО из useAppLogicContext(): одноимённые функции, вывезенные из
-	 * AppHelpers, сеансовый секрет сами НЕ подставляют — с ними код компилируется, гейт
-	 * молчит, а клиника по-прежнему получает 403. Контекстные подставляют
-	 * `clinicalAdminSecretSession` (hooks/domains/useAuthLogic.ts).
-	 *
-	 * Проверка на `auth` остаётся, но обоснование ей нужно другое, чем стояло здесь.
-	 * БЫЛО: «useAppLogicContext() вне провайдера возвращает пустой объект
-	 * (contexts/AppLogicContext.tsx:21)». Больше НЕ возвращает — вне провайдера хук
-	 * бросает исключение, пустого объекта он не выдумывает. Проверка нужна потому, что
-	 * провайдер может стоять, а раздела `auth` в его значении не быть.
-	 */
+	const commQueries = useCommunicationsQueries();
 	const appLogic = useAppLogicContext();
 	const auth = appLogic?.auth;
 
@@ -272,21 +249,14 @@ export function MessageDeliveryConsole() {
 		setLoadError(null);
 		try {
 			const query = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : "";
-			/*
-			 * Журнал очереди (`/api/communications/outbox`) охраняется так же, хотя гейт
-			 * check:guarded-headers его НЕ находит: строка запроса приклеена к адресу
-			 * подстановкой, и `…/outboxSEGMENT` у него ни с чем не совпадает (границы
-			 * проверки названы в её шапке). Живьём этот адрес 403 отдавал — он назван в
-			 * той же шапке среди проверенных.
-			 */
-			const readHeaders = auth ? auth.denteClinicalReadHeaders() : {};
+			
 			const [gatewayResponse, templateResponse, outboxResponse, settingsResponse, variablesResponse] =
 				await Promise.all([
-					fetch("/api/communications/gateway-status", { headers: readHeaders }),
-					fetch("/api/communications/templates", { headers: readHeaders }),
-					fetch(`/api/communications/outbox${query}`, { headers: readHeaders }),
-					fetch("/api/communications/settings", { headers: readHeaders }),
-					fetch("/api/communications/variables", { headers: readHeaders })
+					commQueries.getGatewayStatus(),
+					commQueries.getTemplates(),
+					commQueries.getOutbox(query),
+					commQueries.getSettings(),
+					commQueries.getVariables()
 				]);
 
 			const gatewayData = await readJson<GatewayStatus>(gatewayResponse);
@@ -315,10 +285,7 @@ export function MessageDeliveryConsole() {
 			// Пустой экран без объяснения — это то, от чего здесь уходим.
 			setLoadError(error instanceof Error ? error.message : String(error));
 		}
-		// `auth` в зависимостях: секрет живёт в сеансе и появляется после разблокировки
-		// раздела. Без него пульт навсегда остался бы с заголовками того первого
-		// отрисовывания, когда секрета ещё не было, — то есть с 403 до перезагрузки страницы.
-	}, [statusFilter, auth]);
+	}, [statusFilter, commQueries]);
 
 	useEffect(() => {
 		void loadAll();
@@ -336,17 +303,10 @@ export function MessageDeliveryConsole() {
 		const timer = setTimeout(() => {
 			void (async () => {
 				try {
-					const response = await fetch("/api/communications/templates/preview", {
-						method: "POST",
-						/*
-						 * Читающие заголовки, хотя метод POST: на сервере предпросмотр закрыт
-						 * именно `requireClinicalReadContext` (communicationsOutbox.ts:318) — он
-						 * ничего не меняет, текст шаблона просто передаётся телом. Секрет у чтения
-						 * и записи сейчас один, но совпадать с охраной маршрута надёжнее, чем
-						 * угадывать по методу.
-						 */
-						headers: { ...(auth ? auth.denteClinicalReadHeaders() : {}), "content-type": "application/json" },
-						body: JSON.stringify({ body: draftBody, channel: draftChannel, allowPhi: true })
+					const response = await commQueries.previewTemplate(null, {
+						body: draftBody,
+						channel: draftChannel,
+						allowPhi: true
 					});
 					setPreview(await readJson<PreviewResult>(response));
 					setPreviewError(null);
@@ -357,9 +317,7 @@ export function MessageDeliveryConsole() {
 			})();
 		}, 350);
 		return () => clearTimeout(timer);
-		// `auth` — по той же причине, что и у loadAll: иначе предпросмотр остался бы с
-		// заголовками без секрета и после разблокировки раздела считал бы 403.
-	}, [draftBody, draftChannel, auth]);
+	}, [draftBody, draftChannel, commQueries]);
 
 	const configuredChannels = useMemo(() => {
 		if (!gateways) return [];
@@ -409,21 +367,9 @@ export function MessageDeliveryConsole() {
 				body: draftBody,
 				allowPhi: true
 			};
-			const mutationHeaders = {
-				...(auth ? auth.denteClinicalMutationHeaders() : {}),
-				"content-type": "application/json"
-			};
 			const response = editingId
-				? await fetch(`/api/communications/templates/${editingId}`, {
-						method: "PATCH",
-						headers: mutationHeaders,
-						body: JSON.stringify(payload)
-					})
-				: await fetch("/api/communications/templates", {
-						method: "POST",
-						headers: mutationHeaders,
-						body: JSON.stringify(payload)
-					});
+				? await commQueries.updateTemplate(editingId, payload)
+				: await commQueries.createTemplate(payload);
 			await readJson(response);
 			setNotice({ kind: "done", text: editingId ? "Шаблон обновлён." : "Шаблон создан." });
 			resetDraft();
@@ -448,17 +394,7 @@ export function MessageDeliveryConsole() {
 		setBusy(true);
 		setNotice(null);
 		try {
-			/*
-			 * Гейт check:guarded-headers этот вызов НЕ находит — в адресе две подстановки
-			 * подряд, и `…/outbox/SEGMENT/SEGMENT` он с `:outboxId/cancel` не сводит. Охрана
-			 * же настоящая: requireClinicalMutationContext на cancel и retry
-			 * (communicationsOutbox.ts:636 и :667). Без секрета «Отменить» в клинике не
-			 * отменяло — сообщение оставалось в очереди и уходило пациенту.
-			 */
-			const response = await fetch(`/api/communications/outbox/${outboxId}/${action}`, {
-				method: "POST",
-				headers: auth ? auth.denteClinicalMutationHeaders() : {}
-			});
+			const response = await commQueries.outboxAction(outboxId, action);
 			await readJson(response);
 			setNotice({
 				kind: "done",
@@ -483,20 +419,8 @@ export function MessageDeliveryConsole() {
 		setBusy(true);
 		setNotice(null);
 		try {
-			const response = await fetch("/api/communications/outbox/dispatch", {
-				method: "POST",
-				headers: { ...(auth ? auth.denteClinicalMutationHeaders() : {}), "content-type": "application/json" },
-				body: JSON.stringify({ batchSize: 25 })
-			});
+			const response = await commQueries.dispatchOutbox();
 			const data = await readJson<{ report: DispatchReport }>(response);
-			/*
-			 * Весь разбор — в describeDispatchReport. Здесь нарочно не осталось ни одной
-			 * ветки: прежний код читал четыре поля из семи и вычислял вид итога как
-			 * `failed > 0 ? "fail" : "done"`. Самый частый отказ в жизни — недоступный
-			 * шлюз — даёт failed = 0 и retried = 5, то есть «done»: пять сообщений
-			 * взяты из очереди, ни одно не ушло, а на экране спокойная серая строка
-			 * «Отправлено: 0 сообщений.»
-			 */
 			setNotice(describeDispatchReport(data.report));
 			await loadAll();
 		} catch (error) {
@@ -515,21 +439,8 @@ export function MessageDeliveryConsole() {
 		setBusy(true);
 		setNotice(null);
 		try {
-			const response = await fetch("/api/communications/reminders/run", {
-				method: "POST",
-				headers: auth ? auth.denteClinicalMutationHeaders() : {}
-			});
+			const response = await commQueries.runReminders();
 			const data = await readJson<{ report: ReminderScheduleReport }>(response);
-			/*
-			 * БЫЛО ДВА ВРАНЬЯ. Первое: `skippedNoChannel` и `skippedNoTemplateData`
-			 * сервер считал, но на экран они не попадали никак — десять приёмов, трое
-			 * пациентов без телефона, и клиника читала спокойное «Поставлено
-			 * напоминаний: 7» без единого признака, что трое о приёме не узнают.
-			 * Второе: приставка «Но не для всех:» подставлялась и при `queued === 0`,
-			 * давая «Поставлено напоминаний: 0. Но не для всех: …».
-			 * Оба случая теперь разбирает describeReminderReport, и она же называет
-			 * пациентов по имени — чтобы администратор знал, кому звонить.
-			 */
 			setNotice(describeReminderReport(data.report));
 			await loadAll();
 		} catch (error) {
@@ -548,11 +459,7 @@ export function MessageDeliveryConsole() {
 		setBusy(true);
 		setNotice(null);
 		try {
-			const response = await fetch("/api/communications/settings", {
-				method: "PUT",
-				headers: { ...(auth ? auth.denteClinicalMutationHeaders() : {}), "content-type": "application/json" },
-				body: JSON.stringify(patch)
-			});
+			const response = await commQueries.saveSettings(patch);
 			const data = await readJson<{ settings: CommunicationSettings }>(response);
 			setSettings(data.settings);
 			setNotice({ kind: "done", text: "Правила рассылки сохранены." });
@@ -601,14 +508,7 @@ export function MessageDeliveryConsole() {
 			if (enqueueChannel === "email" && enqueueSubject.trim()) {
 				payload.subject = enqueueSubject.trim();
 			}
-			const response = await fetch("/api/communications/outbox", {
-				method: "POST",
-				headers: {
-					...(auth ? auth.denteClinicalMutationHeaders() : {}),
-					"content-type": "application/json"
-				},
-				body: JSON.stringify(payload)
-			});
+			const response = await commQueries.addOutboxMessage(payload);
 			const data = await readJson<{ outboxId: string; duplicate: boolean; message: string }>(response);
 			setNotice({
 				kind: "done",

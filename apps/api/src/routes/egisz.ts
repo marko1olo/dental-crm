@@ -895,8 +895,16 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				...(diagnosisTooth ? { diagnosisTooth } : {}),
 				...(treatmentPlan ? { treatmentDescription: treatmentPlan } : {}),
 			};
-
-						const xml = generateDentalCdaXml(params);
+			const cdaResult = generateDentalCdaXml(params);
+			if (!cdaResult.success) {
+				console.error("[egisz] generateDentalCdaXml safeParse failed:", cdaResult.error);
+				return reply.status(422).send({
+					error: "CdaGenerationFailed",
+					message: "Внутренняя ошибка генерации документа (ошибка схемы CDA).",
+					details: cdaResult.error.issues,
+				});
+			}
+			const xml = cdaResult.xml;
 			/*
 			 * JJ1: forensic trail for CDA export into tenant-scoped egisz_logs.
 			 * BYLO: successful GET .../cda returned XML only — zero insert call sites

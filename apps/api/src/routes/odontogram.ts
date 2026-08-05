@@ -27,6 +27,7 @@ import {
 } from "../money/patientDebt.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { wsBroker } from "../services/websocketBroker.js";
+import { evaluateClinicalRulesInDb } from "../db/clinicalQuery.js";
 
 /**
  * Создаёт таблицу истории, если миграция ещё не применена.
@@ -749,6 +750,45 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 											)
 									).map((row) => row.id),
 						);
+
+						/*
+						 * ПРОВЕРКА КЛИНИЧЕСКИХ ПРАВИЛ ДО ЗАПИСИ (Race Condition Fix)
+						 * Валидация Clinical Rules Engine ранее происходила только в `/evaluate`,
+						 * что позволяло сохранить план с противопоказаниями в обход блокировок.
+						 * Теперь мы принудительно проверяем правила внутри транзакции.
+						 */
+						const completedItems = await tx
+							.select({ serviceId: treatmentItems.serviceId })
+							.from(treatmentItems)
+							.where(
+								and(
+									eq(treatmentItems.organizationId, organizationId),
+									eq(treatmentItems.patientId, patientId),
+									eq(treatmentItems.status, "completed"),
+								),
+							);
+						
+						// NOTE: evaluateClinicalRulesInDb reads clinicalRules via global `db` (org-level config,
+						// not transactional data). Using global db here is intentional and safe — these rules
+						// are configuration, not rows mutated by this transaction. The dynamic import() was
+						// removed to eliminate cold-module-load latency and double pool connection on hot path.
+						const evaluation = await evaluateClinicalRulesInDb(organizationId, {
+							patientId,
+							serviceIds: Array.from(knownServiceIds),
+							completedServiceIds: completedItems.map((r) => r.serviceId).filter(Boolean) as string[],
+							enforceBlockers: true,
+						});
+
+						const blockingRule = evaluation.evaluations.find(
+							(e) => !e.resolved && e.severity === "blocker",
+						);
+						if (blockingRule) {
+							const err = new Error(
+								`Отказ: план содержит противопоказание. ${blockingRule.message}`,
+							);
+							(err as any).statusCode = 400;
+							throw err;
+						}
 
 						/*
 						 * Подписанный пациентом план — это согласие на лечение, поэтому

@@ -273,7 +273,7 @@ export function usePatientLogic({
 				? current
 				: (activePatient?.id ?? null),
 		);
-	}, [activePatient?.id, dashboard?.patients?.length]);
+	}, [activePatient?.id, dashboard?.patients]);
 
 	/*
 	 * СМЕНИЛСЯ ПАЦИЕНТ — ФОРМА ОПЛАТЫ ПУСТАЯ.

@@ -6,6 +6,13 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
+
+declare module "fastify" {
+	interface FastifyRequest {
+		user?: { id: string; [key: string]: any };
+	}
+}
+
 import {
 	inventoryItems,
 	inventoryTransactions,
@@ -315,7 +322,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 
 			// Log the transaction (same tx: the ledger entry commits atomically with the balance change)
 			if (actualAdjustment !== 0) {
-				const userContext = (request as any).user;
+				const userContext = request.user;
 				await tx.insert(inventoryTransactions).values({
 					organizationId,
 					inventoryItemId: itemId,

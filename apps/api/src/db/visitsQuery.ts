@@ -13,7 +13,6 @@ import { createHash } from "node:crypto";
 import { visitCloseChecklistFactsFor } from "../sampleData.js";
 import { buildVisitCloseChecklist } from "../visitCloseChecklist.js";
 import { recordAuditEventInDb } from "./auditQuery.js";
-import { withHydratedDomainState } from "./domainStateHydration.js";
 import { projectVisitRow } from "./visitsProjection.js";
 
 /**
@@ -295,29 +294,7 @@ export async function acceptVisitDraftInDb(
   await recordVisitDraftAcceptedAuditEvent(organizationId, signedVisit, input, previousRevision, saveReceipt.warning);
 
   try {
-    const visitCloseChecklist = await withHydratedDomainState(organizationId, (report) => {
-      /*
-       * Клиника не подтверждена — карточку собирать НЕЛЬЗЯ. Гидратация в этом
-       * случае сознательно не трогает общие коллекции, поэтому в них осталось то,
-       * что прочитал предыдущий запрос, то есть данные ДРУГОЙ клиники. Отдать их
-       * врачу хуже, чем не отдать ничего. По внешнему ключу visits ->
-       * organizations такого быть не должно; сюда попадает только сбой чтения
-       * самой строки клиники, и он обязан кончиться честным отказом.
-       */
-      if (!report.organizationFound) {
-        throw new Error("Клиника приема не подтверждена в базе: карточку закрытия собирать не по чему.");
-      }
-      /*
-       * Факты собирает ТА ЖЕ функция, что и на пути без базы
-       * (sampleData.ts, visitCloseChecklistFactsFor). Здесь стоял свой литерал с
-       * тем же набором полей, то есть сборка фактов жила в двух копиях при одном
-       * расчёте. Пока в фактах были только коллекции, копии совпадали; деньги ПО
-       * ПРИЁМУ появились бы в одной из них — и подписание отдавало бы врачу
-       * другое число, чем главный экран. Расхождение такого рода в этом дереве
-       * уже стоило четырёх разных ответов на вопрос о долге.
-       */
-      return buildVisitCloseChecklist(visitCloseChecklistFactsFor(signedVisit));
-    });
+    const visitCloseChecklist = buildVisitCloseChecklist(visitCloseChecklistFactsFor(signedVisit));
 
     return {
       visit: signedVisit,
@@ -581,3 +558,4 @@ export async function openVisitForAppointmentInDb(
     };
   });
 }
+

@@ -87,7 +87,6 @@ import type {
   DenteTelegramChatLinkListStatusFilter,
   DenteTelegramLinkCodeListStatusFilter
 } from "../sampleData.js";
-import { hydrateDomainStateFromDb } from "../db/domainStateHydration.js";
 import { repairMojibakeDeep, repairMojibakeText } from "../text/repairMojibake.js";
 import {
   answerTelegramCallbackQuery,
@@ -1491,14 +1490,6 @@ function resolveTelegramOutboxRuntimeScopeFromQuery(query: unknown):
  * и в итоге отключает адрес. Поэтому сбой только пишется в журнал.
  */
 async function hydrateTelegramDomainState(request: FastifyRequest, organizationId: string): Promise<void> {
-  try {
-    const report = await hydrateDomainStateFromDb(organizationId);
-    for (const warning of report.warnings) {
-      request.log.warn({ organizationId }, `[Telegram] ${warning}`);
-    }
-  } catch (error) {
-    request.log.error({ err: error, organizationId }, "[Telegram] Не удалось загрузить данные клиники из базы");
-  }
 }
 
 /**

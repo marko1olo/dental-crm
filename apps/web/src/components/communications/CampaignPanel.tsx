@@ -128,7 +128,10 @@ function formatMoment(value: string | null): string {
 		: parsed.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
+import { useCommunicationsQueries } from '../../hooks/domains/useCommunicationsQueries';
+
 export function CampaignPanel() {
+  const commQueries = useCommunicationsQueries();
 	/*
 	 * ПОЧЕМУ ЗДЕСЬ ЗАГОЛОВКИ, А НЕ ГОЛЫЙ fetch. БЫЛО СЛОМАНО НАСМЕРТЬ, но только у
 	 * заказчика. Все адреса этой панели закрыты охраной `apps/api/src/accessGuard.ts`
@@ -192,9 +195,9 @@ export function CampaignPanel() {
 		setLoadError(null);
 		try {
 			const [campaignResponse, templateResponse, variablesResponse] = await Promise.all([
-				fetch("/api/communications/campaigns", { headers: auth ? auth.denteClinicalReadHeaders() : {} }),
-				fetch("/api/communications/templates", { headers: auth ? auth.denteClinicalReadHeaders() : {} }),
-				fetch("/api/communications/variables", { headers: auth ? auth.denteClinicalReadHeaders() : {} })
+				commQueries.getCampaigns(),
+				commQueries.getCampaignsTemplates(),
+				commQueries.getCampaignsVariables()
 			]);
 			const campaignData = await readJson<{ campaigns: CampaignItem[] }>(campaignResponse);
 			const templateData = await readJson<{ templates: TemplateOption[] }>(templateResponse);
@@ -232,11 +235,7 @@ export function CampaignPanel() {
 		setBusy(true);
 		setNotice(null);
 		try {
-			const response = await fetch("/api/communications/campaigns", {
-				method: "POST",
-				headers: { ...(auth ? auth.denteClinicalMutationHeaders() : {}), "content-type": "application/json" },
-				body: JSON.stringify({ title, templateId, scope, criteria: buildCriteria() })
-			});
+			const response = await commQueries.createCampaign({ title, templateId, scope, criteria: buildCriteria() });
 			const data = await readJson<{ campaign: CampaignItem }>(response);
 			setNotice({ kind: "done", text: "Рассылка создана. Проверьте предпросмотр перед запуском." });
 			setTitle("");
@@ -270,9 +269,7 @@ export function CampaignPanel() {
 		setPreview(null);
 		setPreviewError(null);
 		try {
-			const response = await fetch(`/api/communications/campaigns/${campaignId}/preview`, {
-				headers: auth ? auth.denteClinicalReadHeaders() : {}
-			});
+			const response = await commQueries.previewCampaign(campaignId);
 			setPreview(await readJson<CampaignPreview>(response));
 		} catch (error) {
 			setPreviewError(error instanceof Error ? error.message : String(error));
@@ -292,9 +289,7 @@ export function CampaignPanel() {
 			setProgressLoading(true);
 			setProgressError(null);
 			try {
-				const response = await fetch(`/api/communications/campaigns/${campaignId}/progress`, {
-					headers: auth ? auth.denteClinicalReadHeaders() : {}
-				});
+				const response = await commQueries.getCampaignProgress(campaignId);
 				const data = await readJson<{
 					byStatus?: Record<string, number>;
 					total?: number;
@@ -339,10 +334,7 @@ export function CampaignPanel() {
 			 * «Остановить» в клинике отказывали, то есть остановить идущую рекламную
 			 * рассылку было нечем.
 			 */
-			const response = await fetch(`/api/communications/campaigns/${campaignId}/${action}`, {
-				method: "POST",
-				headers: auth ? auth.denteClinicalMutationHeaders() : {}
-			});
+			const response = await commQueries.campaignAction(campaignId, action);
 			const data = await readJson<{ queued?: number; alreadyQueued?: number; cancelledMessages?: number }>(response);
 			setNotice({
 				kind: "done",

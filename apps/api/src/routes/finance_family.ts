@@ -31,7 +31,7 @@ const familyPaymentSchema = z.object({
 	// баланс, вычитал и вставлял платёж, не проверяя, не сделал ли он это уже.
 	// Блокировка .for("update") защищает только от одновременных запросов,
 	// но не от повторной отправки.
-	clientMutationId: z.string().min(1).max(128).optional(),
+	clientMutationId: z.string().min(1).max(128),
 });
 
 /**
@@ -53,7 +53,7 @@ const familyTopupSchema = z.object({
 	comment: z.string().trim().max(500).optional(),
 	// Тот же ключ идемпотентности, что и при оплате: повтор после обрыва связи
 	// не должен зачислить деньги дважды.
-	clientMutationId: z.string().min(1).max(128).optional(),
+	clientMutationId: z.string().min(1).max(128),
 });
 
 class FamilyFinanceError extends Error {
@@ -557,24 +557,29 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				// ранее созданный платёж. Проверка внутри транзакции и после
 				// блокировки строки семьи, чтобы два параллельных повтора не
 				// проскочили одновременно.
-				if (payload.clientMutationId) {
-					const [duplicate] = await tx
-						.select()
-						.from(payments)
-						.where(
-							and(
-								eq(payments.organizationId, organizationId),
-								eq(payments.clientMutationId, payload.clientMutationId),
-							),
-						)
-						.limit(1);
-					if (duplicate) {
-						return {
-							payment: duplicate,
-							newBalance: kopecksToNumericString(parseKopecks(family.balance)),
-							duplicate: true,
-						};
+				const [duplicate] = await tx
+					.select()
+					.from(payments)
+					.where(
+						and(
+							eq(payments.organizationId, organizationId),
+							eq(payments.clientMutationId, payload.clientMutationId),
+						),
+					)
+					.limit(1);
+				if (duplicate) {
+					if (
+						duplicate.amountRub !== payload.amountRub ||
+						duplicate.patientId !== payload.patientId ||
+						duplicate.method !== "family_wallet"
+					) {
+						throw new FamilyFinanceError("Клиентская операция уже записала другую оплату.", 409);
 					}
+					return {
+						payment: duplicate,
+						newBalance: kopecksToNumericString(parseKopecks(family.balance)),
+						duplicate: true,
+					};
 				}
 
 				// Весь расчёт идёт целыми копейками. Раньше баланс читался через
@@ -713,24 +718,30 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				}
 
 				// Повтор с тем же ключом не зачисляет деньги второй раз.
-				if (payload.clientMutationId) {
-					const [duplicate] = await tx
-						.select()
-						.from(payments)
-						.where(
-							and(
-								eq(payments.organizationId, organizationId),
-								eq(payments.clientMutationId, payload.clientMutationId),
-							),
-						)
-						.limit(1);
-					if (duplicate) {
-						return {
-							payment: duplicate,
-							newBalance: kopecksToNumericString(parseKopecks(family.balance)),
-							duplicate: true,
-						};
+				const [duplicate] = await tx
+					.select()
+					.from(payments)
+					.where(
+						and(
+							eq(payments.organizationId, organizationId),
+							eq(payments.clientMutationId, payload.clientMutationId),
+						),
+					)
+					.limit(1);
+				if (duplicate) {
+					if (
+						duplicate.amountRub !== payload.amountRub ||
+						duplicate.patientId !== payload.patientId ||
+						duplicate.method !== payload.method ||
+						duplicate.status !== "planned"
+					) {
+						throw new FamilyFinanceError("Клиентская операция уже записала другое пополнение.", 409);
 					}
+					return {
+						payment: duplicate,
+						newBalance: kopecksToNumericString(parseKopecks(family.balance)),
+						duplicate: true,
+					};
 				}
 
 				// Пополнение считается там же в копейках. Раньше здесь складывались

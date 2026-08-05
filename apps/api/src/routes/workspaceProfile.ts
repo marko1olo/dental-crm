@@ -599,6 +599,37 @@ async function seedDemoDataForPreset(
 // ————————————————————————————————————————————————————————————————————————————
 // Route registration
 // ————————————————————————————————————————————————————————————————————————————
+const workspaceFeatureFlagsSchema = z.object({
+  hasAssistants: z.boolean(),
+  hasMultipleChairs: z.boolean(),
+  hasDentalLab: z.boolean(),
+  hasInsuranceCoPay: z.boolean(),
+  hasInstallments: z.boolean(),
+  hasOrthodontics: z.boolean(),
+  hasTasks: z.boolean(),
+  hasReclamations: z.boolean(),
+  hasPediatricMode: z.boolean(),
+  isOmniRole: z.boolean(),
+  workspacePreset: z.string(),
+  onboardingCompleted: z.boolean(),
+  hasPayrollModule: z.boolean(),
+  hasMarketingModule: z.boolean(),
+  hasAnalyticsModule: z.boolean(),
+  hasInventoryModule: z.boolean(),
+  aiEnableTreatmentPlan: z.boolean(),
+  aiEnableRecommendations: z.boolean(),
+  aiEnableDocuments: z.boolean(),
+  hasGnathology: z.boolean(),
+  hasCsoScanner: z.boolean(),
+  hasLeadsKanban: z.boolean(),
+  hasOmnichannel: z.boolean(),
+  hasEngineeringStatus: z.boolean(),
+  hasClinicalRules: z.boolean(),
+  hasReferralModule: z.boolean(),
+  hasBpmWorkflows: z.boolean(),
+  numberOfDoctors: z.number(),
+});
+
 export async function workspaceProfileRoutes(fastify: FastifyInstance) {
   /*
    * GET /api/workspace/profile — какие модули включены у ЭТОЙ клиники.
@@ -619,7 +650,14 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
    * ключи из базы отбрасываются, отсутствующие берутся из умолчаний — набор
    * признаков растёт вместе с продуктом, и старая запись не должна ронять ответ.
    */
-  fastify.get("/api/workspace/profile", async (req, reply) => {
+  fastify.get(
+    "/api/workspace/profile",
+    {
+      schema: {
+        response: { 200: workspaceFeatureFlagsSchema, 401: z.object({ error: z.string() }), 400: z.object({ error: z.string() }), 404: z.object({ error: z.string() }) }
+      }
+    },
+    async (req, reply) => {
     const organizationId = await resolveOrganizationId(req);
     if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
 
@@ -633,7 +671,14 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
   });
 
   // GET /api/workspace/chairs
-  fastify.get("/api/workspace/chairs", async (req, reply) => {
+  fastify.get(
+    "/api/workspace/chairs",
+    {
+      schema: {
+        response: { 200: z.object({ success: z.boolean(), data: z.array(z.object({ id: z.string().uuid(), name: z.string() })) }), 401: z.object({ error: z.string() }), 400: z.object({ error: z.string() }), 404: z.object({ error: z.string() }) }
+      }
+    },
+    async (req, reply) => {
     const organizationId = await resolveOrganizationId(req);
     if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
 
@@ -649,6 +694,12 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
   // POST /api/workspace/profile — save arbitrary flags
   fastify.post<{ Body: Partial<WorkspaceFeatureFlags> }>(
     "/api/workspace/profile",
+    {
+      schema: {
+        body: workspaceProfileBodySchema,
+        response: { 200: workspaceFeatureFlagsSchema.extend({ ok: z.boolean() }), 401: z.object({ error: z.string() }), 400: z.object({ error: z.string() }), 404: z.object({ error: z.string() }) }
+      }
+    },
     async (req, reply) => {
       const organizationId = await resolveOrganizationId(req);
       if (!organizationId)
@@ -730,7 +781,16 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { name: string };
     Body?: { numberOfChairs?: number; hasPediatricMode?: boolean };
-  }>("/api/workspace/preset/:name", async (req, reply) => {
+  }>(
+    "/api/workspace/preset/:name",
+    {
+      schema: {
+        params: z.object({ name: z.string() }),
+        body: workspacePresetBodySchema,
+        response: { 200: z.object({ ok: z.boolean(), preset: z.string(), flags: workspaceFeatureFlagsSchema }), 401: z.object({ error: z.string() }), 400: z.object({ error: z.string() }), 404: z.object({ error: z.string() }) }
+      }
+    },
+    async (req, reply) => {
     const organizationId = await resolveOrganizationId(req);
     if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
 
