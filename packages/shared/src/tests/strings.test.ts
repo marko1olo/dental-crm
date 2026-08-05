@@ -47,6 +47,12 @@ describe('isValidRussianInn', () => {
     assert.strictEqual(isValidRussianInn('5001 0073 2259'), true);
     assert.strictEqual(isValidRussianInn(' 5001 0073 22 58 '), false); // Invalid check digit with formatting
   });
+
+  test('filters out letters and non-numeric characters', () => {
+    assert.strictEqual(isValidRussianInn('INN: 7728168971'), true);
+    assert.strictEqual(isValidRussianInn('7728a168b971c'), true);
+    assert.strictEqual(isValidRussianInn('ID5001_0073_2259!'), true);
+  });
 });
 
 describe('splitLine', () => {
