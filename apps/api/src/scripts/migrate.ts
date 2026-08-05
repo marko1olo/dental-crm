@@ -42,6 +42,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { loadAdditionalServerEnv } from "../env/loadServerEnv.js";
+import { carriesConcurrently, splitSqlStatements } from "./sqlStatements.js";
 
 loadAdditionalServerEnv();
 
@@ -109,33 +110,30 @@ function readMigrations(): MigrationFile[] {
 /** Разбивает файл на выполняемые куски.
  *
  * В transactional-режиме — по маркеру statement-breakpoint (drizzle-kit формат).
- * В no-transaction-режиме — по точке с запятой: каждый CREATE INDEX CONCURRENTLY
- * должен быть отдельным вызовом client.query(), иначе node-postgres (simple query
- * protocol) выполнит только ПЕРВЫЙ оператор и молча проигнорирует остальные.
+ * Дальше кусок уходит в client.query() целиком, и если в нём несколько
+ * выражений, их выполнит сам Postgres: node-postgres отправляет запрос без
+ * параметров простым протоколом (Simple Query), а тот принимает несколько
+ * выражений через ';'. Ручное разбиение здесь не нужно и только добавляло бы
+ * класс ошибок, которого сейчас нет.
  *
- * КРИТИЧЕСКИЙ ИНВАРИАНТ (no-tx): фильтр должен отбрасывать ТОЛЬКО те куски,
- * которые не содержат НИКАКОГО SQL — исключительно пустые строки и комментарии.
- * Нельзя проверять только первый символ: первый чанк после split(';') содержит
- * заголовочные комментарии файла И первый DDL-оператор. Наивный !/^--/.test(s)
- * убивал бы первый CREATE INDEX в каждой индексной миграции молча.
+ * В no-transaction-режиме разбиение ОБЯЗАТЕЛЬНО, и причина не та, что была
+ * записана здесь раньше. Прежний комментарий утверждал, будто node-postgres
+ * «выполнит только ПЕРВЫЙ оператор и молча проигнорирует остальные»; это
+ * неверно, замерено на живом PostgreSQL 18.4: запрос
+ * «CREATE ROLE …; CREATE DATABASE …;» выполнил ОБА выражения и упал на втором
+ * сообщением «CREATE DATABASE cannot run inside a transaction block». Оно и
+ * называет настоящую причину: несколько выражений в одном сообщении Query
+ * Postgres оборачивает в НЕЯВНЫЙ транзакционный блок, а CREATE INDEX
+ * CONCURRENTLY внутри транзакционного блока запрещён. Поэтому каждое выражение
+ * такой миграции должно уйти отдельным вызовом client.query().
+ *
+ * КРИТИЧЕСКИЙ ИНВАРИАНТ (no-tx) описан в scripts/sqlStatements.ts: отбрасываются
+ * ТОЛЬКО куски без единого символа SQL. Первый кусок файла содержит заголовочные
+ * комментарии И первый DDL-оператор, поэтому проверяется проекция без
+ * комментариев, а не первый символ.
  */
 function statementsOf(migration: MigrationFile, noTransaction: boolean): string[] {
-	if (noTransaction) {
-		// Для no-transaction файлов (индексные миграции без statement-breakpoint):
-		// разбиваем по ';' — каждый CREATE INDEX CONCURRENTLY IF NOT EXISTS
-		// получает свой отдельный client.query() вызов.
-		return migration.sql
-			.split(/;/)
-			.filter((chunk) => {
-				// Отбрасываем только куски без единого SQL-слова после удаления
-				// всех однострочных комментариев (-- ...) и пробельных символов.
-				// Это корректно обрабатывает первый чанк: «-- header\nCREATE INDEX…»
-				// → после strip комментариев → «CREATE INDEX…» → length > 0 → оставить.
-				const withoutComments = chunk.replace(/--[^\n]*/g, "").trim();
-				return withoutComments.length > 0;
-			})
-			.map((chunk) => chunk.trim() + ";"); // восстанавливаем точку с запятой
-	}
+	if (noTransaction) return splitSqlStatements(migration.sql);
 	// Файлы, сгенерированные drizzle-kit, размечены маркером statement-breakpoint.
 	// Написанные руками — обычные скрипты, их Postgres выполняет целиком.
 	const parts = migration.sql
@@ -155,14 +153,58 @@ function isNoTransaction(migration: MigrationFile): boolean {
  * Проверяет что транзакционный файл не содержит CONCURRENTLY.
  * CONCURRENTLY внутри BEGIN/COMMIT даст ERROR от PostgreSQL — лучше
  * обнаружить это сразу с чёткой диагностикой, а не получить откат.
+ *
+ * ПОЧЕМУ ПРОВЕРЯЕТСЯ codeOnly, А НЕ ИСХОДНЫЙ ТЕКСТ. Прежняя реализация гоняла
+ * /\bCONCURRENTLY\b/i по сырому файлу вместе с комментариями и на этом сама себя
+ * заблокировала: 0134 и 0141 не содержат ни одного CREATE INDEX CONCURRENTLY, но
+ * у каждого есть раздел комментария «ПОЧЕМУ НЕ CONCURRENTLY», объясняющий, что
+ * CONCURRENTLY здесь сознательно НЕ используется. Проверка срабатывала на
+ * собственной документации файла и роняла раскатку чистой базы на 103-й
+ * миграции из 129.
+ *
+ * Проекция codeOnly не видит комментарии и содержимое литералов. Плата за это —
+ * CONCURRENTLY, спрятанный внутри строки или тела $$…$$ (например EXECUTE
+ * 'CREATE INDEX CONCURRENTLY …'), этой проверкой не ловится; о нём сообщит сам
+ * Postgres при выполнении, и его сообщение однозначно. Размен сознательный:
+ * ложное срабатывание блокирует релиз целиком, пропуск — деградирует до штатной
+ * ошибки базы.
  */
 function assertNoConcurrentInTransaction(migration: MigrationFile): void {
-	if (/\bCONCURRENTLY\b/i.test(migration.sql)) {
+	if (carriesConcurrently(migration.sql)) {
 		throw new Error(
 			`[migrate] КОНФЛИКТ: ${migration.name} содержит CONCURRENTLY, но не помечен ` +
 			`'-- no-transaction'. CREATE INDEX CONCURRENTLY нельзя использовать ` +
 			`внутри транзакции. Добавьте '-- no-transaction' в первую строку файла.`,
 		);
+	}
+}
+
+/**
+ * Проверки, ОДИНАКОВЫЕ для всех режимов, выполняемые ДО первого обращения к базе.
+ *
+ * ЗАЧЕМ ОТДЕЛЬНОЙ ФУНКЦИЕЙ. Раньше единственная проверка файла
+ * (assertNoConcurrentInTransaction) жила внутри ветки боевого применения, а
+ * --dry-run и --baseline до неё не доходили — в обеих ветках стоит continue
+ * выше. Из-за этого `npm run db:migrate:check` давал EXIT=0 и «к применению:
+ * 129» ровно на том корпусе, на котором `npm run db:migrate` падал с EXIT=1.
+ * Гейт, зеленеющий там, где боевой запуск падает, хуже отсутствующего гейта:
+ * .agents/DATABASE.md прямо предписывает запускать db:migrate:check перед
+ * db:migrate и приводить оба вывода.
+ *
+ * Второе следствие: проверка идёт по ВСЕМ недостающим файлам заранее, поэтому
+ * конфликт в 0134 обнаруживается до того, как в базу уедут первые 103 миграции,
+ * а не после.
+ */
+function assertMigrationsAreApplicable(pending: MigrationFile[]): void {
+	for (const migration of pending) {
+		const noTx = isNoTransaction(migration);
+		if (!noTx) assertNoConcurrentInTransaction(migration);
+		if (statementsOf(migration, noTx).length === 0) {
+			throw new Error(
+				`[migrate] ПУСТО: в ${migration.name} нет ни одного SQL-выражения. ` +
+				`Файл был бы отмечен применённым, не изменив базу.`,
+			);
+		}
 	}
 }
 
@@ -208,6 +250,23 @@ async function main(): Promise<void> {
 	try {
 		await ensureLedger(client);
 		const ledger = await readLedger(client);
+
+		// Проверка ВСЕХ недостающих файлов до первой записи в базу. Одинакова для
+		// --dry-run, --baseline и боевого прогона: режимы отличаются только тем,
+		// применяются ли изменения, и ничем иным.
+		const pending = migrations.filter(
+			(migration) => !ledger.has(migration.name),
+		);
+		try {
+			assertMigrationsAreApplicable(pending);
+		} catch (error) {
+			console.error((error as Error).message);
+			console.error(
+				"[migrate] Остановлено до применения. База не изменена.",
+			);
+			process.exitCode = 1;
+			return;
+		}
 
 		for (const migration of migrations) {
 			const known = ledger.get(migration.name);
@@ -275,7 +334,10 @@ async function main(): Promise<void> {
 				// ── transactional mode (стандартный) ────────────────────────────
 				// Файл целиком в одной транзакции: половина применённой миграции
 				// хуже, чем неприменённая — её нельзя ни докатить, ни откатить.
-				assertNoConcurrentInTransaction(migration);
+				// Проверка на CONCURRENTLY здесь НЕ повторяется: её выполняет
+				// assertMigrationsAreApplicable до открытия первой транзакции, и
+				// решение о применимости файла должно приниматься ровно в одном
+				// месте — раздвоение этой проверки и породило зелёный --dry-run.
 				await client.query("BEGIN");
 				try {
 					for (const statement of statements) {
