@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
 	appointments,
@@ -111,36 +111,56 @@ export interface CohortRevenuePoint {
  */
 export async function computeCohortLtvAll(organizationIds: readonly string[]) {
 	const map = new Map<string, CohortRevenuePoint[]>();
+	if (organizationIds.length === 0) return map;
 
-	for (const organizationId of organizationIds) {
-		const zone = await postgresKnowsTimeZone(await clinicTimeZone(organizationId));
-		// Выражение месяца объявлено ОДИН раз на SELECT, GROUP BY и ORDER BY.
-		// Через три отдельных фрагмента имя пояса ушло бы параметром трижды и
-		// получило РАЗНЫЕ номера — PostgreSQL считает такие выражения разными и
-		// отвергает запрос целиком с «column must appear in the GROUP BY clause».
-		// Приведение `::text` тут не спасает: дело не в типе, а в номере.
-		const monthBucket = sql`date_trunc('month', ${inClinicZone(payments.createdAt, zone)})`;
+	const zones = await Promise.all(
+		organizationIds.map(async (id) => ({
+			id,
+			zone: await postgresKnowsTimeZone(await clinicTimeZone(id)),
+		})),
+	);
 
-		const rows = await db
-			.select({
-				month: sql<string>`to_char(${monthBucket}, 'YYYY-MM')`,
-				total: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
-			})
-			.from(payments)
-			.where(and(eq(payments.organizationId, organizationId), PAID_PAYMENTS_ONLY))
-			.groupBy(monthBucket)
-			.orderBy(monthBucket);
-
-		if (!rows.length) continue;
-
-		map.set(
-			organizationId,
-			rows.map((r) => ({
-				cohort: r.month,
-				"Month 1": Number(r.total ?? 0),
-			})),
-		);
+	const byZone = new Map<string | null, string[]>();
+	for (const { id, zone } of zones) {
+		const list = byZone.get(zone) || [];
+		list.push(id);
+		byZone.set(zone, list);
 	}
+
+	await Promise.all(
+		Array.from(byZone.entries()).map(async ([zone, orgIds]) => {
+			// Выражение месяца объявлено ОДИН раз на SELECT, GROUP BY и ORDER BY.
+			// Через три отдельных фрагмента имя пояса ушло бы параметром трижды и
+			// получило РАЗНЫЕ номера — PostgreSQL считает такие выражения разными и
+			// отвергает запрос целиком с «column must appear in the GROUP BY clause».
+			// Приведение `::text` тут не спасает: дело не в типе, а в номере.
+			const monthBucket = sql`date_trunc('month', ${inClinicZone(payments.createdAt, zone)})`;
+
+			const rows = await db
+				.select({
+					organizationId: payments.organizationId,
+					month: sql<string>`to_char(${monthBucket}, 'YYYY-MM')`,
+					total: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
+				})
+				.from(payments)
+				.where(and(inArray(payments.organizationId, orgIds), PAID_PAYMENTS_ONLY))
+				.groupBy(payments.organizationId, monthBucket)
+				.orderBy(payments.organizationId, monthBucket);
+
+			for (const orgId of orgIds) {
+				const orgRows = rows.filter((r) => r.organizationId === orgId);
+				if (orgRows.length > 0) {
+					map.set(
+						orgId,
+						orgRows.map((r) => ({
+							cohort: r.month,
+							"Month 1": Number(r.total ?? 0),
+						})),
+					);
+				}
+			}
+		}),
+	);
 
 	return map;
 }
