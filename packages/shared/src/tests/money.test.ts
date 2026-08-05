@@ -76,8 +76,21 @@ describe("kopecksToNumericString", () => {
 		}
 	});
 
+	test("отрицательные суммы меньше рубля форматируются с нулём и минусом", () => {
+		assert.strictEqual(kopecksToNumericString(-1), "-0.01");
+		assert.strictEqual(kopecksToNumericString(-50), "-0.50");
+		assert.strictEqual(kopecksToNumericString(-99), "-0.99");
+	});
+
 	test("дробные копейки — признак прохода через float, это ошибка", () => {
 		assert.throws(() => kopecksToNumericString(50.5));
+	});
+
+	test("сумма выходит за пределы точного целого, это ошибка", () => {
+		assert.throws(
+			() => kopecksToNumericString(Number.MAX_SAFE_INTEGER + 1),
+			/выходит за пределы точного целого/,
+		);
 	});
 });
 
