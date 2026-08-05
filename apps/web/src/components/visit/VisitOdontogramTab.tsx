@@ -1,4 +1,5 @@
 import React from "react";
+import type { Appointment, Dashboard, Patient } from "@dental/shared";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { EgiszMonitor } from "../EgiszMonitor";
@@ -6,8 +7,14 @@ import { OdontogramModule } from "../odontogram/OdontogramModule";
 import { VisitDiaryEditor } from "../VisitDiaryEditor";
 import { realVisitFieldId } from "./visitIdentity";
 
-export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointment?: any; dashboard?: any }) {
-	let ctx: any = null;
+import type { AppLogicContextType } from "../../contexts/AppLogicContext";
+
+export function VisitOdontogramTab(props?: {
+	activePatient?: Patient | null;
+	activeAppointment?: Appointment | null;
+	dashboard?: Dashboard | null;
+}) {
+	let ctx: AppLogicContextType | null = null;
 	try { ctx = useAppLogicContext(); } catch { /* rendered outside AppLogic provider: fall back to props */ }
 	const activePatient = props?.activePatient ?? ctx?.activePatient;
 	const activeAppointment = props?.activeAppointment ?? ctx?.activeAppointment;
