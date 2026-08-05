@@ -23,10 +23,8 @@ export const TOKEN_SECRET = () => authTokenSecret();
  * Теперь он выключен по умолчанию и включается только явным флагом в dev.
  */
 function demoLoginAllowed(): boolean {
-  // Вне production демо-вход работает без всякой настройки .env.
-  // Отключить явно: DENTE_ALLOW_DEMO_LOGIN=0. В production — никогда.
   if (process.env.NODE_ENV === "production") return false;
-  return process.env.DENTE_ALLOW_DEMO_LOGIN !== "0";
+  return process.env.DENTE_ALLOW_DEMO_LOGIN === "1";
 }
 
 /**
@@ -332,8 +330,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
     const loginId = email.toLowerCase().trim();
 
+    const demoPassword = process.env.DENTE_DEMO_PASSWORD;
     const isDemoClinicLogin =
-      demoLoginAllowed() && loginId === "clinic@example.com" && password === "dente2026";
+      demoLoginAllowed() && loginId === "clinic@example.com" && demoPassword !== undefined && password === demoPassword;
 
     // Look up organization by login ID
     //
