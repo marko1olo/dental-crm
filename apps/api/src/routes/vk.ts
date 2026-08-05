@@ -1,6 +1,6 @@
 import { and, eq, ilike } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { communicationEvents, patients } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
 import { verifyWebhookSecret } from "../security/webhookAuth.js";
@@ -71,58 +71,73 @@ export async function registerVkRoutes(server: FastifyInstance) {
 
 			if (!vkId) return { success: true };
 
-			let patient: typeof patients.$inferSelect | null = null;
-			const searchResult = await db
-				.select()
-				.from(patients)
-				.where(
-					and(
-						eq(patients.organizationId, organizationId),
-						ilike(patients.notes, `%VK:${vkId}%`)
+			/*
+			 * КОНТЕКСТ АРЕНДАТОРА НА ПУБЛИЧНОМ ВЕБХУКЕ. Событие присылает
+			 * ВКонтакте, токена клиники в нём нет, поэтому `request.tenantId` не
+			 * выставлен и глобальная обёртка server.ts обработчик не
+			 * оборачивает. Под FORCE RLS поиск пациента отдавал ноль строк
+			 * ВСЕГДА — то есть на каждое сообщение уходила ветка «завести
+			 * нового», — а сама вставка падала с 42501, и ВКонтакте получал 500 и
+			 * повторял событие бесконечно.
+			 *
+			 * Обхода здесь не нужно: клиника названа в адресе вебхука (и уже
+			 * подтверждена общим секретом выше). Под контекстом чужую картотеку
+			 * этот обработчик не увидит и не тронет.
+			 */
+			await withTenantCtx(organizationId, async (tx) => {
+				let patient: typeof patients.$inferSelect | null = null;
+				const searchResult = await tx
+					.select()
+					.from(patients)
+					.where(
+						and(
+							eq(patients.organizationId, organizationId),
+							ilike(patients.notes, `%VK:${vkId}%`)
+						)
 					)
-				)
-				.limit(1);
+					.limit(1);
 
-			if (searchResult.length > 0) {
-				patient = searchResult[0] || null;
-			} else {
-				const insertedPatients = await db
-					.insert(patients)
-					.values({
-						organizationId,
-						fullName: `VK User ${vkId}`,
-						notes: `Создан автоматически из ВКонтакте. VK:${vkId}`,
-						status: "active",
-					})
-					.returning();
-				patient = insertedPatients[0] || null;
-			}
+				if (searchResult.length > 0) {
+					patient = searchResult[0] || null;
+				} else {
+					const insertedPatients = await tx
+						.insert(patients)
+						.values({
+							organizationId,
+							fullName: `VK User ${vkId}`,
+							notes: `Создан автоматически из ВКонтакте. VK:${vkId}`,
+							status: "active",
+						})
+						.returning();
+					patient = insertedPatients[0] || null;
+				}
 
-			if (!patient) return { success: false };
+				if (!patient) return;
 
-			const [newEvent] = await db.insert(communicationEvents).values({
-				organizationId,
-				patientId: patient.id,
-				channel: "vk", 
-				direction: "inbound",
-				status: "delivered",
-				message: text,
-			}).returning();
+				const [newEvent] = await tx.insert(communicationEvents).values({
+					organizationId,
+					patientId: patient.id,
+					channel: "vk",
+					direction: "inbound",
+					status: "delivered",
+					message: text,
+				}).returning();
 
-			if (newEvent) {
-				wsBroker.broadcastToOrganization(organizationId, {
-					type: "INBOX_NEW_MESSAGE",
-					payload: {
-						id: newEvent.id,
-						channel: "vk",
-						patientId: patient.id,
-						patientName: patient.fullName,
-						text,
-						direction: "inbound",
-						createdAt: newEvent.createdAt.toISOString()
-					},
-				});
-			}
+				if (newEvent) {
+					wsBroker.broadcastToOrganization(organizationId, {
+						type: "INBOX_NEW_MESSAGE",
+						payload: {
+							id: newEvent.id,
+							channel: "vk",
+							patientId: patient.id,
+							patientName: patient.fullName,
+							text,
+							direction: "inbound",
+							createdAt: newEvent.createdAt.toISOString()
+						},
+					});
+				}
+			});
 		}
 
 		return "ok"; // VK requires exact string "ok" to acknowledge message_new

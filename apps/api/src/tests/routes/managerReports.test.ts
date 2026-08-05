@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
@@ -16,6 +16,8 @@ import {
 } from "../../db/schema.js";
 import { registerReportRoutes } from "../../routes/reports.js";
 import { currentMonthPeriod } from "../../services/reports/managerReports.js";
+import { withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /**
  * Отчёты руководителю по живой базе.
@@ -56,17 +58,25 @@ function isMissingDatabase(error: unknown): boolean {
  * краснеет на данных, которых сам не заводил, а причина не видна в сообщении.
  * Префикс `dce70000-…-04xx` принадлежит только этому файлу, поэтому удаление по
  * organization_id ничьи чужие данные не задевает.
+ *
+ * ПОД ТЕНАНТ-КОНТЕКСТОМ, И БЕЗ НЕГО ЭТО БЫЛА ПУСТАЯ ФУНКЦИЯ. Под FORCE RLS
+ * запрос без `app.current_tenant` не видит ни одной строки клиники, а `DELETE`,
+ * не нашедший строк, ошибкой не является — уборка доходила до конца, снимала
+ * ноль и молчала. Контекст здесь ещё и сужает удаление до своего арендатора:
+ * чужую клинику этими девятью строками не задеть даже при ошибке в предикате.
  */
 async function removeFixtureRows(): Promise<void> {
-	await db.delete(treatmentItems).where(eq(treatmentItems.organizationId, ORG_ID));
-	await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
-	await db.delete(visits).where(eq(visits.organizationId, ORG_ID));
-	await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-	await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-	await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
-	await db.delete(users).where(eq(users.organizationId, ORG_ID));
-	await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	await withFixtureTenant(ORG_ID, async () => {
+		await db.delete(treatmentItems).where(eq(treatmentItems.organizationId, ORG_ID));
+		await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
+		await db.delete(visits).where(eq(visits.organizationId, ORG_ID));
+		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+		await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
+		await db.delete(users).where(eq(users.organizationId, ORG_ID));
+		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
+		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	});
 }
 
 describe("отчёты руководителю", () => {
@@ -85,148 +95,156 @@ describe("отчёты руководителю", () => {
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
 		process.env.NODE_ENV = "development";
 
-		app = Fastify();
+		app = createTenantTestApp();
 		await registerReportRoutes(app);
 
 		try {
 			// Сначала подчистить за упавшим прогоном, потом сеять: иначе к своим
 			// пяти приёмам добавятся чужие и все счётчики удвоятся.
 			await removeFixtureRows();
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника отчётов" }).onConflictDoNothing();
-			await db
-				.insert(clinics)
-				.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" })
-				.onConflictDoNothing();
-			await db
-				.insert(chairs)
-				.values({ id: CHAIR_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло 1" })
-				.onConflictDoNothing();
-			await db
-				.insert(users)
-				.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Петров Пётр Петрович", role: "doctor" })
-				.onConflictDoNothing();
-			await db
-				.insert(patients)
-				.values([
-					{ id: PATIENT_OLD, organizationId: ORG_ID, fullName: "Старый Пациент Иванович" },
-					{ id: PATIENT_NEW, organizationId: ORG_ID, fullName: "Новый Пациент Петрович" }
-				])
-				.onConflictDoNothing();
+			// Сев идёт под тенант-контекстом клиники. Под FORCE RLS вставка без
+			// `app.current_tenant` отвергается кодом 42501 на КАЖДОЙ таблице:
+			// дизъюнкт обхода есть только в USING политик, в WITH CHECK его нет
+			// нигде, кроме самой organizations. Контекст выставлен по заранее
+			// известному ORG_ID — тем же приёмом, каким создаёт клинику боевой
+			// маршрут регистрации (`routes/auth.ts`).
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника отчётов" }).onConflictDoNothing();
+				await db
+					.insert(clinics)
+					.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" })
+					.onConflictDoNothing();
+				await db
+					.insert(chairs)
+					.values({ id: CHAIR_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло 1" })
+					.onConflictDoNothing();
+				await db
+					.insert(users)
+					.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Петров Пётр Петрович", role: "doctor" })
+					.onConflictDoNothing();
+				await db
+					.insert(patients)
+					.values([
+						{ id: PATIENT_OLD, organizationId: ORG_ID, fullName: "Старый Пациент Иванович" },
+						{ id: PATIENT_NEW, organizationId: ORG_ID, fullName: "Новый Пациент Петрович" }
+					])
+					.onConflictDoNothing();
 
-			// Приёмы: один давний завершённый у «старого», один завершённый в
-			// периоде у каждого, один отменённый и один с неявкой.
-			await db
-				.insert(appointments)
-				.values([
-					{
-						organizationId: ORG_ID,
-						patientId: PATIENT_OLD,
-						doctorUserId: DOCTOR_ID,
-						chairId: CHAIR_ID,
-						status: "completed",
-						startsAt: longAgo,
-						endsAt: new Date(longAgo.getTime() + 60 * 60_000)
-					},
-					{
-						id: APPOINTMENT_ID,
-						organizationId: ORG_ID,
-						patientId: PATIENT_OLD,
-						doctorUserId: DOCTOR_ID,
-						chairId: CHAIR_ID,
-						status: "completed",
-						startsAt: inPeriod,
-						endsAt: new Date(inPeriod.getTime() + 90 * 60_000)
-					},
-					{
-						organizationId: ORG_ID,
-						patientId: PATIENT_NEW,
-						doctorUserId: DOCTOR_ID,
-						chairId: CHAIR_ID,
-						status: "completed",
-						startsAt: new Date(inPeriod.getTime() + 3 * 60 * 60_000),
-						endsAt: new Date(inPeriod.getTime() + 4 * 60 * 60_000)
-					},
-					{
-						organizationId: ORG_ID,
-						patientId: PATIENT_NEW,
-						doctorUserId: DOCTOR_ID,
-						chairId: CHAIR_ID,
-						status: "cancelled",
-						startsAt: new Date(inPeriod.getTime() + 6 * 60 * 60_000),
-						endsAt: new Date(inPeriod.getTime() + 7 * 60 * 60_000)
-					},
-					{
-						organizationId: ORG_ID,
-						patientId: PATIENT_NEW,
-						doctorUserId: DOCTOR_ID,
-						chairId: CHAIR_ID,
-						status: "no_show",
-						startsAt: new Date(inPeriod.getTime() + 8 * 60 * 60_000),
-						endsAt: new Date(inPeriod.getTime() + 9 * 60 * 60_000)
-					}
-				])
-				.onConflictDoNothing();
+				// Приёмы: один давний завершённый у «старого», один завершённый в
+				// периоде у каждого, один отменённый и один с неявкой.
+				await db
+					.insert(appointments)
+					.values([
+						{
+							organizationId: ORG_ID,
+							patientId: PATIENT_OLD,
+							doctorUserId: DOCTOR_ID,
+							chairId: CHAIR_ID,
+							status: "completed",
+							startsAt: longAgo,
+							endsAt: new Date(longAgo.getTime() + 60 * 60_000)
+						},
+						{
+							id: APPOINTMENT_ID,
+							organizationId: ORG_ID,
+							patientId: PATIENT_OLD,
+							doctorUserId: DOCTOR_ID,
+							chairId: CHAIR_ID,
+							status: "completed",
+							startsAt: inPeriod,
+							endsAt: new Date(inPeriod.getTime() + 90 * 60_000)
+						},
+						{
+							organizationId: ORG_ID,
+							patientId: PATIENT_NEW,
+							doctorUserId: DOCTOR_ID,
+							chairId: CHAIR_ID,
+							status: "completed",
+							startsAt: new Date(inPeriod.getTime() + 3 * 60 * 60_000),
+							endsAt: new Date(inPeriod.getTime() + 4 * 60 * 60_000)
+						},
+						{
+							organizationId: ORG_ID,
+							patientId: PATIENT_NEW,
+							doctorUserId: DOCTOR_ID,
+							chairId: CHAIR_ID,
+							status: "cancelled",
+							startsAt: new Date(inPeriod.getTime() + 6 * 60 * 60_000),
+							endsAt: new Date(inPeriod.getTime() + 7 * 60 * 60_000)
+						},
+						{
+							organizationId: ORG_ID,
+							patientId: PATIENT_NEW,
+							doctorUserId: DOCTOR_ID,
+							chairId: CHAIR_ID,
+							status: "no_show",
+							startsAt: new Date(inPeriod.getTime() + 8 * 60 * 60_000),
+							endsAt: new Date(inPeriod.getTime() + 9 * 60 * 60_000)
+						}
+					])
+					.onConflictDoNothing();
 
-			await db
-				.insert(visits)
-				.values({
-					id: VISIT_ID,
-					organizationId: ORG_ID,
-					patientId: PATIENT_OLD,
-					// Визит связан с приёмом: только через эту связь платёж
-					// доходит до врача, у визита своего поля «врач» нет.
-					appointmentId: APPOINTMENT_ID,
-					status: "signed",
-					createdAt: inPeriod
-				})
-				.onConflictDoNothing();
+				await db
+					.insert(visits)
+					.values({
+						id: VISIT_ID,
+						organizationId: ORG_ID,
+						patientId: PATIENT_OLD,
+						// Визит связан с приёмом: только через эту связь платёж
+						// доходит до врача, у визита своего поля «врач» нет.
+						appointmentId: APPOINTMENT_ID,
+						status: "signed",
+						createdAt: inPeriod
+					})
+					.onConflictDoNothing();
 
-			// Платежи: 10 000 полученных, 50 000 запланированных и 7 000
-			// возвращённых. В выручку должны попасть только 10 000.
-			await db
-				.insert(payments)
-				.values([
-					{
-						organizationId: ORG_ID,
-						patientId: PATIENT_OLD,
-						visitId: VISIT_ID,
-						amountRub: 10_000,
-						status: "paid",
-						paidAt: inPeriod
-					},
-					{ organizationId: ORG_ID, patientId: PATIENT_OLD, amountRub: 50_000, status: "planned", paidAt: inPeriod },
-					{ organizationId: ORG_ID, patientId: PATIENT_NEW, amountRub: 7_000, status: "refunded", paidAt: inPeriod }
-				])
-				.onConflictDoNothing();
+				// Платежи: 10 000 полученных, 50 000 запланированных и 7 000
+				// возвращённых. В выручку должны попасть только 10 000.
+				await db
+					.insert(payments)
+					.values([
+						{
+							organizationId: ORG_ID,
+							patientId: PATIENT_OLD,
+							visitId: VISIT_ID,
+							amountRub: 10_000,
+							status: "paid",
+							paidAt: inPeriod
+						},
+						{ organizationId: ORG_ID, patientId: PATIENT_OLD, amountRub: 50_000, status: "planned", paidAt: inPeriod },
+						{ organizationId: ORG_ID, patientId: PATIENT_NEW, amountRub: 7_000, status: "refunded", paidAt: inPeriod }
+					])
+					.onConflictDoNothing();
 
-			// Позиции лечения: назначено 30 000, из них скидка 2 000.
-			await db
-				.insert(treatmentItems)
-				.values([
-					{
-						organizationId: ORG_ID,
-						patientId: PATIENT_OLD,
-						visitId: VISIT_ID,
-						title: "Лечение кариеса",
-						quantity: "2",
-						priceRub: 8_000,
-						unitPriceRub: 8_000,
-						discountRub: 2_000,
-						status: "completed"
-					},
-					{
-						organizationId: ORG_ID,
-						patientId: PATIENT_OLD,
-						visitId: VISIT_ID,
-						title: "Гигиена",
-						quantity: "1",
-						priceRub: 16_000,
-						unitPriceRub: 16_000,
-						discountRub: 0,
-						status: "completed"
-					}
-				])
-				.onConflictDoNothing();
+				// Позиции лечения: назначено 30 000, из них скидка 2 000.
+				await db
+					.insert(treatmentItems)
+					.values([
+						{
+							organizationId: ORG_ID,
+							patientId: PATIENT_OLD,
+							visitId: VISIT_ID,
+							title: "Лечение кариеса",
+							quantity: "2",
+							priceRub: 8_000,
+							unitPriceRub: 8_000,
+							discountRub: 2_000,
+							status: "completed"
+						},
+						{
+							organizationId: ORG_ID,
+							patientId: PATIENT_OLD,
+							visitId: VISIT_ID,
+							title: "Гигиена",
+							quantity: "1",
+							priceRub: 16_000,
+							unitPriceRub: 16_000,
+							discountRub: 0,
+							status: "completed"
+						}
+					])
+					.onConflictDoNothing();
+			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;
@@ -298,10 +316,17 @@ describe("отчёты руководителю", () => {
 		// У визита нет поля «врач»: связь платежа с врачом идёт только через
 		// приём. Платёж без такой связи нельзя отнести никому, и придумывать
 		// пропорцию хуже, чем показать сумму отдельно с объяснением.
-		const [orphanPayment] = await db
-			.insert(payments)
-			.values({ organizationId: ORG_ID, patientId: PATIENT_NEW, amountRub: 3_000, status: "paid", paidAt: inPeriod })
-			.returning({ id: payments.id });
+		//
+		// Досев ВНУТРИ теста нуждается в тенант-контексте ровно так же, как сев в
+		// `before`: под FORCE RLS вставка без `app.current_tenant` отвергается
+		// кодом 42501, а `DELETE` без него не видит собственной строки и снимает
+		// ноль, не сообщая об этом.
+		const [orphanPayment] = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.insert(payments)
+				.values({ organizationId: ORG_ID, patientId: PATIENT_NEW, amountRub: 3_000, status: "paid", paidAt: inPeriod })
+				.returning({ id: payments.id })
+		);
 
 		const response = await app.inject({ method: "GET", url: "/api/reports/doctors", headers: ORG_HEADERS });
 		assert.equal(response.statusCode, 200, response.body);
@@ -313,7 +338,9 @@ describe("отчёты руководителю", () => {
 		// Врачу чужие 3 000 не приписаны.
 		assert.equal(doctor.revenueRub, 10_000);
 
-		await db.delete(payments).where(eq(payments.id, orphanPayment?.id ?? ""));
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.delete(payments).where(eq(payments.id, orphanPayment?.id ?? ""));
+		});
 	});
 
 	test("занятость кресла считается в минутах и от названной базы", async (context) => {
@@ -401,21 +428,27 @@ describe("отчёты руководителю", () => {
 		const clinicMonth = monthIn(FAR_ZONE, justAfterMonthStart);
 		const previousMonth = monthIn(FAR_ZONE, new Date(clinicMonthStart.getTime() - 60 * 60_000));
 
-		await db.update(clinics).set({ timezone: FAR_ZONE }).where(eq(clinics.id, CLINIC_ID));
-		const [boundaryPatient] = await db
-			.insert(patients)
-			.values({ organizationId: ORG_ID, fullName: "Ночной Пациент Границевич" })
-			.returning({ id: patients.id });
-		const [boundaryAppointment] = await db
-			.insert(appointments)
-			.values({
-				organizationId: ORG_ID,
-				patientId: boundaryPatient?.id ?? "",
-				status: "completed",
-				startsAt: justAfterMonthStart,
-				endsAt: new Date(justAfterMonthStart.getTime() + 30 * 60_000)
-			})
-			.returning({ id: appointments.id });
+		// Пояс клиники, пациент и приём заводятся одним севом под тенант-контекстом.
+		// Без `app.current_tenant` `UPDATE` не видит строки клиники и молча меняет
+		// ноль строк, а `INSERT` отвергается политикой кодом 42501.
+		const { boundaryPatient, boundaryAppointment } = await withFixtureTenant(ORG_ID, async () => {
+			await db.update(clinics).set({ timezone: FAR_ZONE }).where(eq(clinics.id, CLINIC_ID));
+			const [seededPatient] = await db
+				.insert(patients)
+				.values({ organizationId: ORG_ID, fullName: "Ночной Пациент Границевич" })
+				.returning({ id: patients.id });
+			const [seededAppointment] = await db
+				.insert(appointments)
+				.values({
+					organizationId: ORG_ID,
+					patientId: seededPatient?.id ?? "",
+					status: "completed",
+					startsAt: justAfterMonthStart,
+					endsAt: new Date(justAfterMonthStart.getTime() + 30 * 60_000)
+				})
+				.returning({ id: appointments.id });
+			return { boundaryPatient: seededPatient, boundaryAppointment: seededAppointment };
+		});
 
 		try {
 			/*
@@ -442,9 +475,14 @@ describe("отчёты руководителю", () => {
 				`приём попал в предыдущий месяц ${previousMonth}: месяц снова считается в поясе сессии — ${JSON.stringify(buckets)}`
 			);
 		} finally {
-			await db.delete(appointments).where(eq(appointments.id, boundaryAppointment?.id ?? ""));
-			await db.delete(patients).where(eq(patients.id, boundaryPatient?.id ?? ""));
-			await db.update(clinics).set({ timezone: "Europe/Moscow" }).where(eq(clinics.id, CLINIC_ID));
+			// Уборка тоже под контекстом: без него `DELETE` не видит собственных
+			// строк и снимает ноль без ошибки, а восстановление пояса не доходит до
+			// клиники — следующие тесты считали бы период в чужом поясе.
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.delete(appointments).where(eq(appointments.id, boundaryAppointment?.id ?? ""));
+				await db.delete(patients).where(eq(patients.id, boundaryPatient?.id ?? ""));
+				await db.update(clinics).set({ timezone: "Europe/Moscow" }).where(eq(clinics.id, CLINIC_ID));
+			});
 		}
 	});
 
@@ -491,21 +529,27 @@ describe("отчёты руководителю", () => {
 		const clinicMonth = monthIn(FAR_ZONE, justAfterMonthStart);
 		const previousMonth = monthIn(FAR_ZONE, new Date(clinicMonthStart.getTime() - 60 * 60_000));
 
-		await db.update(clinics).set({ timezone: FAR_ZONE }).where(eq(clinics.id, CLINIC_ID));
-		const [boundaryPatient] = await db
-			.insert(patients)
-			.values({ organizationId: ORG_ID, fullName: "Панельный Пациент Границевич" })
-			.returning({ id: patients.id });
-		const [boundaryAppointment] = await db
-			.insert(appointments)
-			.values({
-				organizationId: ORG_ID,
-				patientId: boundaryPatient?.id ?? "",
-				status: "completed",
-				startsAt: justAfterMonthStart,
-				endsAt: new Date(justAfterMonthStart.getTime() + 30 * 60_000)
-			})
-			.returning({ id: appointments.id });
+		// Тот же тенант-контекст, что и в севе `before`: без него `UPDATE` меняет
+		// ноль строк молча, а `INSERT` падает с 42501 — проверка поясов не дошла бы
+		// до запроса вовсе.
+		const { boundaryPatient, boundaryAppointment } = await withFixtureTenant(ORG_ID, async () => {
+			await db.update(clinics).set({ timezone: FAR_ZONE }).where(eq(clinics.id, CLINIC_ID));
+			const [seededPatient] = await db
+				.insert(patients)
+				.values({ organizationId: ORG_ID, fullName: "Панельный Пациент Границевич" })
+				.returning({ id: patients.id });
+			const [seededAppointment] = await db
+				.insert(appointments)
+				.values({
+					organizationId: ORG_ID,
+					patientId: seededPatient?.id ?? "",
+					status: "completed",
+					startsAt: justAfterMonthStart,
+					endsAt: new Date(justAfterMonthStart.getTime() + 30 * 60_000)
+				})
+				.returning({ id: appointments.id });
+			return { boundaryPatient: seededPatient, boundaryAppointment: seededAppointment };
+		});
 
 		try {
 			const from = new Date(clinicMonthStart.getTime() - 3 * 60 * 60_000).toISOString();
@@ -528,9 +572,14 @@ describe("отчёты руководителю", () => {
 				`приём попал в предыдущий месяц ${previousMonth}: с обеими границами месяц считается в поясе сессии — ${JSON.stringify(buckets)}`
 			);
 		} finally {
-			await db.delete(appointments).where(eq(appointments.id, boundaryAppointment?.id ?? ""));
-			await db.delete(patients).where(eq(patients.id, boundaryPatient?.id ?? ""));
-			await db.update(clinics).set({ timezone: "Europe/Moscow" }).where(eq(clinics.id, CLINIC_ID));
+			// Уборка тоже под контекстом: без него `DELETE` не видит собственных
+			// строк и снимает ноль без ошибки, а восстановление пояса не доходит до
+			// клиники — следующие тесты считали бы период в чужом поясе.
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.delete(appointments).where(eq(appointments.id, boundaryAppointment?.id ?? ""));
+				await db.delete(patients).where(eq(patients.id, boundaryPatient?.id ?? ""));
+				await db.update(clinics).set({ timezone: "Europe/Moscow" }).where(eq(clinics.id, CLINIC_ID));
+			});
 		}
 	});
 
@@ -574,21 +623,27 @@ describe("отчёты руководителю", () => {
 		// 00:30 первого мая на Камчатке (+12) — первая смена месяца.
 		const firstShift = new Date("2026-04-30T12:30:00.000Z");
 
-		await db.update(clinics).set({ timezone: FAR_ZONE }).where(eq(clinics.id, CLINIC_ID));
-		const [shiftPatient] = await db
-			.insert(patients)
-			.values({ organizationId: ORG_ID, fullName: "Первая Смена Месяцевна" })
-			.returning({ id: patients.id });
-		const [shiftAppointment] = await db
-			.insert(appointments)
-			.values({
-				organizationId: ORG_ID,
-				patientId: shiftPatient?.id ?? "",
-				status: "completed",
-				startsAt: firstShift,
-				endsAt: new Date(firstShift.getTime() + 30 * 60_000)
-			})
-			.returning({ id: appointments.id });
+		// Один сев под тенант-контекстом клиники: под FORCE RLS `INSERT` без
+		// `app.current_tenant` отвергается кодом 42501, а `UPDATE` пояса без него
+		// меняет ноль строк и об этом не сообщает.
+		const { shiftPatient, shiftAppointment } = await withFixtureTenant(ORG_ID, async () => {
+			await db.update(clinics).set({ timezone: FAR_ZONE }).where(eq(clinics.id, CLINIC_ID));
+			const [seededPatient] = await db
+				.insert(patients)
+				.values({ organizationId: ORG_ID, fullName: "Первая Смена Месяцевна" })
+				.returning({ id: patients.id });
+			const [seededAppointment] = await db
+				.insert(appointments)
+				.values({
+					organizationId: ORG_ID,
+					patientId: seededPatient?.id ?? "",
+					status: "completed",
+					startsAt: firstShift,
+					endsAt: new Date(firstShift.getTime() + 30 * 60_000)
+				})
+				.returning({ id: appointments.id });
+			return { shiftPatient: seededPatient, shiftAppointment: seededAppointment };
+		});
 
 		try {
 			const byCalendarDate = await app.inject({
@@ -639,9 +694,13 @@ describe("отчёты руководителю", () => {
 				"московская граница внезапно захватила камчатскую первую смену: проверка перестала показывать дефект"
 			);
 		} finally {
-			await db.delete(appointments).where(eq(appointments.id, shiftAppointment?.id ?? ""));
-			await db.delete(patients).where(eq(patients.id, shiftPatient?.id ?? ""));
-			await db.update(clinics).set({ timezone: "Europe/Moscow" }).where(eq(clinics.id, CLINIC_ID));
+			// Под контекстом, иначе уборка снимет ноль строк молча, а клиника
+			// останется в поясе +12 для всех следующих тестов файла.
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.delete(appointments).where(eq(appointments.id, shiftAppointment?.id ?? ""));
+				await db.delete(patients).where(eq(patients.id, shiftPatient?.id ?? ""));
+				await db.update(clinics).set({ timezone: "Europe/Moscow" }).where(eq(clinics.id, CLINIC_ID));
+			});
 		}
 	});
 
@@ -739,11 +798,15 @@ describe("отчёты руководителю", () => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		// У «нового» пациента нет ни одной позиции лечения, значит любая оплата
-		// делает его баланс отрицательным.
-		const [prepayment] = await db
-			.insert(payments)
-			.values({ organizationId: ORG_ID, patientId: PATIENT_NEW, amountRub: 4_500.5, status: "paid", paidAt: inPeriod })
-			.returning({ id: payments.id });
+		// делает его баланс отрицательным. Досев под тенант-контекстом: в WITH CHECK
+		// политики `payments` дизъюнкта обхода нет, и вставка без
+		// `app.current_tenant` отвергается кодом 42501.
+		const [prepayment] = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.insert(payments)
+				.values({ organizationId: ORG_ID, patientId: PATIENT_NEW, amountRub: 4_500.5, status: "paid", paidAt: inPeriod })
+				.returning({ id: payments.id })
+		);
 
 		try {
 			const response = await app.inject({ method: "GET", url: "/api/reports/receivables", headers: ORG_HEADERS });
@@ -776,7 +839,11 @@ describe("отчёты руководителю", () => {
 			assert.ok(noteText.includes("20 000,00"), noteText);
 			assert.ok(noteText.includes("15 499,50"), noteText);
 		} finally {
-			await db.delete(payments).where(eq(payments.id, prepayment?.id ?? ""));
+			// Без контекста переплата осталась бы в базе: DELETE не увидел бы её и
+			// вернул ноль строк без ошибки, а следующий тест ждёт «переплат нет».
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.delete(payments).where(eq(payments.id, prepayment?.id ?? ""));
+			});
 		}
 	});
 

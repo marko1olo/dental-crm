@@ -78,6 +78,15 @@ type PatientInsightDto = {
 /**
  * Долг пациента двумя способами: по КАНОНУ (без отменённых) и ПРЕЖНИМ образом
  * (со всеми позициями). Обе суммы — точным `numeric`, текстом колонки.
+ *
+ * ЗЕРКАЛО ПРИВЕДЕНО К ДЕЙСТВУЮЩЕЙ ФОРМУЛЕ 2026-08-06: в обеих ветках стояло
+ * `greatest(quantity, 1)`, убранное в тот же день из отчётов
+ * (`services/reports/managerReports.ts`, разбор стоит там). На контрактных
+ * данных записи побитово равны — `quantity` целое и не меньше единицы, а с
+ * миграции 0162 колонка иного и не принимает, — поэтому числа проверки не
+ * изменились; снята вторая, противоречащая спецификация. SQL оставлен ручным
+ * намеренно: вызов канона `chargeLineKopecks` сделал бы оракул зависимым от
+ * проверяемого пути, и сторож проходил бы на сломанной формуле.
  */
 async function debtBothWays(patientId: string): Promise<{
 	canon: string;
@@ -90,13 +99,13 @@ async function debtBothWays(patientId: string): Promise<{
 		paid: string;
 	}>(sql`
 		with active as (
-		  select coalesce(sum(greatest(unit_price_rub * greatest(quantity, 1) - discount_rub, 0)), 0)::numeric(12,2) as amount
+		  select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)), 0)::numeric(12,2) as amount
 		    from treatment_items
 		   where organization_id = ${ORGANIZATION_ID}::uuid
 		     and patient_id = ${patientId}::uuid
 		     and status <> 'cancelled'
 		), everything as (
-		  select coalesce(sum(greatest(unit_price_rub * greatest(quantity, 1) - discount_rub, 0)), 0)::numeric(12,2) as amount
+		  select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)), 0)::numeric(12,2) as amount
 		    from treatment_items
 		   where organization_id = ${ORGANIZATION_ID}::uuid
 		     and patient_id = ${patientId}::uuid

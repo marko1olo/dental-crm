@@ -25,6 +25,7 @@ import {
 	patients
 } from "../db/schema.js";
 import { dispatchDueMessages, enqueueMessage } from "../services/communications/dispatcher.js";
+import { withFixtureTenant } from "./support/fixtureOrganizations.js";
 
 /**
  * Причина отказа по закону, а не по технике. Формулировки две — «отказался от
@@ -41,15 +42,23 @@ function isMissingDatabase(error: unknown): boolean {
 	return /ECONNREFUSED|does not exist|password authentication|ENOTFOUND/i.test(message);
 }
 
-/** Причина, по которой сообщение не ушло, — как её видит администратор. */
+/**
+ * Причина, по которой сообщение не ушло, — как её видит администратор.
+ *
+ * Чтение идёт под тенант-контекстом клиники, потому что под принудительным RLS
+ * запрос без `app.current_tenant` возвращает ноль строк и ошибки не даёт: без
+ * обёртки `assert.ok(row)` падал бы на «строки нет», хотя очередь заполнена.
+ */
 async function statusOf(dedupeKey: string): Promise<{ status: string; reason: string | null }> {
-	const [row] = await db
-		.select({ status: communicationOutbox.status, reason: communicationOutbox.lastErrorMessage })
-		.from(communicationOutbox)
-		.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.dedupeKey, dedupeKey)))
-		.limit(1);
-	assert.ok(row, `строки очереди ${dedupeKey} нет`);
-	return { status: row.status as string, reason: row.reason };
+	return withFixtureTenant(ORG_ID, async () => {
+		const [row] = await db
+			.select({ status: communicationOutbox.status, reason: communicationOutbox.lastErrorMessage })
+			.from(communicationOutbox)
+			.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.dedupeKey, dedupeKey)))
+			.limit(1);
+		assert.ok(row, `строки очереди ${dedupeKey} нет`);
+		return { status: row.status as string, reason: row.reason };
+	});
 }
 
 describe("диспетчер: согласие и ответ на обращение", () => {
@@ -57,40 +66,46 @@ describe("диспетчер: согласие и ответ на обращен
 
 	before(async () => {
 		try {
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника согласий" }).onConflictDoNothing();
-			await db
-				.insert(patients)
-				.values({
-					id: PATIENT_ID,
-					organizationId: ORG_ID,
-					fullName: "Отказавшийся Пётр Петрович",
-					phone: "+7 916 000-07-01"
-				})
-				.onConflictDoNothing();
+			// Сев идёт под тенант-контекстом клиники: под принудительным RLS
+			// `WITH CHECK` тенант-таблиц требует `organization_id = current_tenant`
+			// и дизъюнкта обхода не имеет, поэтому вставка без контекста
+			// отвергается кодом 42501, а не пишет строку.
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника согласий" }).onConflictDoNothing();
+				await db
+					.insert(patients)
+					.values({
+						id: PATIENT_ID,
+						organizationId: ORG_ID,
+						fullName: "Отказавшийся Пётр Петрович",
+						phone: "+7 916 000-07-01"
+					})
+					.onConflictDoNothing();
 
-			// Пациент отказался от сообщений по SMS в обеих областях — так
-			// выглядит база сразу после того, как он написал «СТОП».
-			await db
-				.insert(patientCommunicationConsents)
-				.values([
-					{
-						organizationId: ORG_ID,
-						patientId: PATIENT_ID,
-						channel: "sms",
-						scope: "service",
-						state: "revoked",
-						source: "inbound_stop"
-					},
-					{
-						organizationId: ORG_ID,
-						patientId: PATIENT_ID,
-						channel: "sms",
-						scope: "marketing",
-						state: "revoked",
-						source: "inbound_stop"
-					}
-				])
-				.onConflictDoNothing();
+				// Пациент отказался от сообщений по SMS в обеих областях — так
+				// выглядит база сразу после того, как он написал «СТОП».
+				await db
+					.insert(patientCommunicationConsents)
+					.values([
+						{
+							organizationId: ORG_ID,
+							patientId: PATIENT_ID,
+							channel: "sms",
+							scope: "service",
+							state: "revoked",
+							source: "inbound_stop"
+						},
+						{
+							organizationId: ORG_ID,
+							patientId: PATIENT_ID,
+							channel: "sms",
+							scope: "marketing",
+							state: "revoked",
+							source: "inbound_stop"
+						}
+					])
+					.onConflictDoNothing();
+			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;
@@ -99,10 +114,15 @@ describe("диспетчер: согласие и ответ на обращен
 
 	after(async () => {
 		if (databaseAvailable) {
-			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-			await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			// Уборка тоже под контекстом: `DELETE` без него не видит ни одной своей
+			// строки и снимает НОЛЬ, не сообщая об этом, — фикстура осталась бы в
+			// живой базе, а отчёт выглядел бы успешным.
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+				await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
+				await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+				await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			});
 		}
 	});
 

@@ -877,9 +877,19 @@ export const portalRoutes: FastifyPluginAsync = async (
 			const patientId = payload.sub;
 			const organizationId = payload.organizationId as string;
 
-			const document = await getDocumentById(
-				organizationId,
-				request.params.documentId,
+			/*
+			 * КОНТЕКСТ АРЕНДАТОРА. Здесь пациентский токен портала, а не токен
+			 * кабинета и не токен сотрудника: `security/identity.ts` его не
+			 * читает, поэтому `request.tenantId` не выставлен и глобальная
+			 * обёртка server.ts этот обработчик не оборачивает. Под FORCE RLS
+			 * `getDocumentById` возвращал ноль строк ВСЕГДА, и пациент получал
+			 * 404 на КАЖДЫЙ свой документ — при том что соседний маршрут `/me`
+			 * с точно такой же проверкой токена контекст себе ставит. Клиника
+			 * названа в полезной нагрузке токена и подтверждена его подписью,
+			 * поэтому обход не нужен: под контекстом чужой документ недоступен.
+			 */
+			const document = await withTenantCtx(organizationId, () =>
+				getDocumentById(organizationId, request.params.documentId),
 			);
 
 			if (!document || document.patientId !== patientId || document.status !== "issued") {

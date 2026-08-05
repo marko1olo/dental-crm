@@ -520,8 +520,12 @@ describe("снятие устаревших напоминаний", () => {
 			 */
 			await purgeFixtures();
 
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника подтверждений" });
-			await db.insert(patients).values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Подтвердов Пётр Петрович" });
+			// Тот же тенант-контекст, что и у сева выше: без него вставка
+			// организации и пациента отвергается кодом 42501.
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника подтверждений" });
+				await db.insert(patients).values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Подтвердов Пётр Петрович" });
+			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;
@@ -540,70 +544,74 @@ describe("снятие устаревших напоминаний", () => {
 		const targetAppointment = "dce70000-0000-4000-8000-000000000611";
 		const otherAppointment = "dce70000-0000-4000-8000-000000000612";
 
-		await db.insert(communicationOutbox).values([
-			{
-				organizationId: ORG_ID,
-				patientId: PATIENT_ID,
-				channel: "sms",
-				intent: "appointment_confirmation",
-				recipientAddress: "79160000611",
-				body: "Напоминание за сутки",
-				status: "queued",
-				dedupeKey: `reminder:${targetAppointment}:24`
-			},
-			{
-				organizationId: ORG_ID,
-				patientId: PATIENT_ID,
-				channel: "sms",
-				intent: "appointment_confirmation",
-				recipientAddress: "79160000611",
-				body: "Напоминание за два часа",
-				status: "queued",
-				dedupeKey: `reminder:${targetAppointment}:2`
-			},
-			{
-				// Уже отправленное не трогаем: историю переписывать нельзя.
-				organizationId: ORG_ID,
-				patientId: PATIENT_ID,
-				channel: "sms",
-				intent: "appointment_confirmation",
-				recipientAddress: "79160000611",
-				body: "Уже отправлено",
-				status: "sent",
-				sentAt: new Date(),
-				dedupeKey: `reminder:${targetAppointment}:48`
-			},
-			{
-				// Напоминание другого приёма.
-				organizationId: ORG_ID,
-				patientId: PATIENT_ID,
-				channel: "sms",
-				intent: "appointment_confirmation",
-				recipientAddress: "79160000611",
-				body: "Другой приём",
-				status: "queued",
-				dedupeKey: `reminder:${otherAppointment}:24`
-			},
-			{
-				// Рассылка: ключ другой, снятие её не касается.
-				organizationId: ORG_ID,
-				patientId: PATIENT_ID,
-				channel: "sms",
-				intent: "general",
-				recipientAddress: "79160000611",
-				body: "Рассылка",
-				status: "queued",
-				dedupeKey: `campaign:some-campaign:${PATIENT_ID}`
-			}
-		]);
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(communicationOutbox).values([
+				{
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					channel: "sms",
+					intent: "appointment_confirmation",
+					recipientAddress: "79160000611",
+					body: "Напоминание за сутки",
+					status: "queued",
+					dedupeKey: `reminder:${targetAppointment}:24`
+				},
+				{
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					channel: "sms",
+					intent: "appointment_confirmation",
+					recipientAddress: "79160000611",
+					body: "Напоминание за два часа",
+					status: "queued",
+					dedupeKey: `reminder:${targetAppointment}:2`
+				},
+				{
+					// Уже отправленное не трогаем: историю переписывать нельзя.
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					channel: "sms",
+					intent: "appointment_confirmation",
+					recipientAddress: "79160000611",
+					body: "Уже отправлено",
+					status: "sent",
+					sentAt: new Date(),
+					dedupeKey: `reminder:${targetAppointment}:48`
+				},
+				{
+					// Напоминание другого приёма.
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					channel: "sms",
+					intent: "appointment_confirmation",
+					recipientAddress: "79160000611",
+					body: "Другой приём",
+					status: "queued",
+					dedupeKey: `reminder:${otherAppointment}:24`
+				},
+				{
+					// Рассылка: ключ другой, снятие её не касается.
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					channel: "sms",
+					intent: "general",
+					recipientAddress: "79160000611",
+					body: "Рассылка",
+					status: "queued",
+					dedupeKey: `campaign:some-campaign:${PATIENT_ID}`
+				}
+			]);
+		});
 
 		const removed = await invalidateAppointmentReminders(ORG_ID, targetAppointment, "перенос в тесте");
 		assert.equal(removed, 2, "должны сняться ровно два неотправленных напоминания этого приёма");
 
-		const remaining = await db
-			.select({ dedupeKey: communicationOutbox.dedupeKey })
-			.from(communicationOutbox)
-			.where(eq(communicationOutbox.organizationId, ORG_ID));
+		const remaining = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ dedupeKey: communicationOutbox.dedupeKey })
+				.from(communicationOutbox)
+				.where(eq(communicationOutbox.organizationId, ORG_ID))
+		);
 
 		assert.deepEqual(
 			remaining.map((row) => row.dedupeKey).sort(),

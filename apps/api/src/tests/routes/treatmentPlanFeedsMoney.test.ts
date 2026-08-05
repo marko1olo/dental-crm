@@ -14,8 +14,17 @@
  * руками по канонической формуле отчёта дебиторки
  * (`services/reports/managerReports.ts`, `receivables()`):
  *
- *     строка позиции = greatest(unit_price_rub * greatest(quantity,1) - discount_rub, 0)
+ *     строка позиции = greatest(unit_price_rub * quantity - discount_rub, 0)
  *     сальдо пациента = Σ строк(status <> 'cancelled') - Σ оплат(status = 'paid')
+ *
+ * ЗЕРКАЛО ПРИВЕДЕНО К ДЕЙСТВУЮЩЕЙ ФОРМУЛЕ 2026-08-06: здесь стояло
+ * `greatest(quantity, 1)`, убранное в тот же день из самого отчёта
+ * (`managerReports.ts`, разбор стоит там). На контрактных данных обе записи
+ * побитово равны — `quantity` целое и не меньше единицы, а с миграции 0162
+ * колонка иного и не принимает, — поэтому ни одно число проверки не изменилось.
+ * Снята вторая, противоречащая спецификация; цвет проверки не подгонялся.
+ * Зеркало осталось ручным SQL намеренно: вызов канона `chargeLineKopecks`
+ * превратил бы независимый оракул в тавтологию — см. следующий абзац.
  *
  * Ни одного построителя проверяемого маршрута в проверках не участвует: сторож,
  * сверяющий код с самим собой, пройдёт и на сломанной формуле. Разбор, из
@@ -138,7 +147,7 @@ async function moneyForPatient(patientId: string): Promise<{
 		items: number;
 	}>(sql`
 		with planned as (
-		  select coalesce(sum(greatest(unit_price_rub * greatest(quantity, 1) - discount_rub, 0)), 0)::numeric(12,2) as amount,
+		  select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)), 0)::numeric(12,2) as amount,
 		         count(*)::int as items
 		    from treatment_items
 		   where organization_id = ${ORGANIZATION_ID}::uuid

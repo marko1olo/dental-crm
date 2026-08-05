@@ -13,6 +13,7 @@ import {
 } from "../db/schema.js";
 import { processInboundEvents } from "../services/messengerIngestion.js";
 import { detectOptOutIntent, optOutAcknowledgement } from "../services/communications/optOut.js";
+import { withFixtureTenant } from "./support/fixtureOrganizations.js";
 
 /**
  * Ответ «СТОП» ничего не менял: таблица согласий заполнялась только руками
@@ -95,17 +96,22 @@ describe("разбор входящих сообщений", () => {
 
 	before(async () => {
 		try {
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника входящих" }).onConflictDoNothing();
-			await db
-				.insert(patients)
-				.values([
-					{ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Входящий Иван Иванович", phone: "+7 916 000-02-01" },
-					// Два пациента с одним номером — семья, общий телефон. Такое
-					// совпадение нельзя разрешать в пользу первой строки.
-					{ id: TWIN_A, organizationId: ORG_ID, fullName: "Двойников Пётр Петрович", phone: "+7 916 000-02-99" },
-					{ id: TWIN_B, organizationId: ORG_ID, fullName: "Двойникова Анна Петровна", phone: "89160000299" }
-				])
-				.onConflictDoNothing();
+			// Под принудительным RLS `WITH CHECK` тенант-таблиц сверяет
+			// `organization_id` с `app.current_tenant` и обхода не допускает: сев без
+			// тенант-контекста отвергается кодом 42501, а не создаёт клинику.
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника входящих" }).onConflictDoNothing();
+				await db
+					.insert(patients)
+					.values([
+						{ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Входящий Иван Иванович", phone: "+7 916 000-02-01" },
+						// Два пациента с одним номером — семья, общий телефон. Такое
+						// совпадение нельзя разрешать в пользу первой строки.
+						{ id: TWIN_A, organizationId: ORG_ID, fullName: "Двойников Пётр Петрович", phone: "+7 916 000-02-99" },
+						{ id: TWIN_B, organizationId: ORG_ID, fullName: "Двойникова Анна Петровна", phone: "89160000299" }
+					])
+					.onConflictDoNothing();
+			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;
@@ -114,41 +120,53 @@ describe("разбор входящих сообщений", () => {
 
 	after(async () => {
 		if (databaseAvailable) {
-			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-			await db.delete(communicationEvents).where(eq(communicationEvents.organizationId, ORG_ID));
-			await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
-			await db.delete(messengerInboundEvents).where(eq(messengerInboundEvents.organizationId, ORG_ID));
-			await db.delete(crmLeads).where(eq(crmLeads.organizationId, ORG_ID));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			// Уборка тоже под контекстом: `DELETE` без него не видит своих строк и
+			// снимает НОЛЬ молча — фикстура осталась бы в живой базе, а отчёт
+			// выглядел бы успешным.
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+				await db.delete(communicationEvents).where(eq(communicationEvents.organizationId, ORG_ID));
+				await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
+				await db.delete(messengerInboundEvents).where(eq(messengerInboundEvents.organizationId, ORG_ID));
+				await db.delete(crmLeads).where(eq(crmLeads.organizationId, ORG_ID));
+				await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+				await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			});
 		}
 	});
 
 	test("«СТОП» от известного пациента отзывает согласие по каналу", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		await db.insert(messengerInboundEvents).values({
-			organizationId: ORG_ID,
-			channel: "whatsapp",
-			externalChatId: "79160000201",
-			messageText: "СТОП",
-			eventKind: "message"
+		// Входящее событие — такая же тенант-строка, как и всё остальное: без
+		// контекста её вставка отвергается кодом 42501, а чтение согласий ниже
+		// вернуло бы ноль строк и ошибки не дало бы.
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(messengerInboundEvents).values({
+				organizationId: ORG_ID,
+				channel: "whatsapp",
+				externalChatId: "79160000201",
+				messageText: "СТОП",
+				eventKind: "message"
+			});
 		});
 
 		const report = await processInboundEvents({ limit: 50 });
 		assert.ok(report.matchedToPatient >= 1, JSON.stringify(report));
 		assert.ok(report.optOuts >= 1, JSON.stringify(report));
 
-		const consents = await db
-			.select({ scope: patientCommunicationConsents.scope, state: patientCommunicationConsents.state, source: patientCommunicationConsents.source })
-			.from(patientCommunicationConsents)
-			.where(
-				and(
-					eq(patientCommunicationConsents.organizationId, ORG_ID),
-					eq(patientCommunicationConsents.patientId, PATIENT_ID),
-					eq(patientCommunicationConsents.channel, "whatsapp")
+		const consents = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ scope: patientCommunicationConsents.scope, state: patientCommunicationConsents.state, source: patientCommunicationConsents.source })
+				.from(patientCommunicationConsents)
+				.where(
+					and(
+						eq(patientCommunicationConsents.organizationId, ORG_ID),
+						eq(patientCommunicationConsents.patientId, PATIENT_ID),
+						eq(patientCommunicationConsents.channel, "whatsapp")
+					)
 				)
-			);
+		);
 
 		// Пациент, написавший «СТОП», не делает разницы между сервисным и
 		// рекламным — отзываются обе области.
@@ -160,26 +178,30 @@ describe("разбор входящих сообщений", () => {
 	test("после «СТОП» пациенту уходит подтверждение, а не тишина", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		await db.insert(messengerInboundEvents).values({
-			organizationId: ORG_ID,
-			channel: "whatsapp",
-			externalChatId: "79160000201",
-			messageText: "стоп",
-			eventKind: "message"
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(messengerInboundEvents).values({
+				organizationId: ORG_ID,
+				channel: "whatsapp",
+				externalChatId: "79160000201",
+				messageText: "стоп",
+				eventKind: "message"
+			});
 		});
 
 		await processInboundEvents({ limit: 50 });
 
-		const queued = await db
-			.select({
-				intent: communicationOutbox.intent,
-				scope: communicationOutbox.scope,
-				body: communicationOutbox.body,
-				channel: communicationOutbox.channel,
-				status: communicationOutbox.status
-			})
-			.from(communicationOutbox)
-			.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.patientId, PATIENT_ID)));
+		const queued = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({
+					intent: communicationOutbox.intent,
+					scope: communicationOutbox.scope,
+					body: communicationOutbox.body,
+					channel: communicationOutbox.channel,
+					status: communicationOutbox.status
+				})
+				.from(communicationOutbox)
+				.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.patientId, PATIENT_ID)))
+		);
 
 		const acknowledgement = queued.find((row) => row.intent === "transactional_reply");
 		assert.ok(acknowledgement, `подтверждение не поставлено в очередь: ${JSON.stringify(queued)}`);
@@ -195,32 +217,40 @@ describe("разбор входящих сообщений", () => {
 	test("повторный разбор того же события не удваивает подтверждение", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const [event] = await db
-			.insert(messengerInboundEvents)
-			.values({
-				organizationId: ORG_ID,
-				channel: "sms",
-				externalChatId: "79160000201",
-				messageText: "отпишите меня",
-				eventKind: "message"
-			})
-			.returning({ id: messengerInboundEvents.id });
+		const [event] = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.insert(messengerInboundEvents)
+				.values({
+					organizationId: ORG_ID,
+					channel: "sms",
+					externalChatId: "79160000201",
+					messageText: "отпишите меня",
+					eventKind: "message"
+				})
+				.returning({ id: messengerInboundEvents.id })
+		);
 		assert.ok(event);
 
 		await processInboundEvents({ limit: 50 });
 		// Разбор повторяется целиком: так бывает при перезапуске обработчика.
-		await db.update(messengerInboundEvents).set({ processedAt: null }).where(eq(messengerInboundEvents.id, event.id));
+		// `UPDATE` без тенант-контекста тронул бы ноль строк и не сообщил об этом —
+		// повтор разбора просто не состоялся бы, а тест остался бы зелёным.
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.update(messengerInboundEvents).set({ processedAt: null }).where(eq(messengerInboundEvents.id, event.id));
+		});
 		await processInboundEvents({ limit: 50 });
 
-		const acknowledgements = await db
-			.select({ id: communicationOutbox.id })
-			.from(communicationOutbox)
-			.where(
-				and(
-					eq(communicationOutbox.organizationId, ORG_ID),
-					eq(communicationOutbox.dedupeKey, `optout-ack:${event.id}`)
+		const acknowledgements = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ id: communicationOutbox.id })
+				.from(communicationOutbox)
+				.where(
+					and(
+						eq(communicationOutbox.organizationId, ORG_ID),
+						eq(communicationOutbox.dedupeKey, `optout-ack:${event.id}`)
+					)
 				)
-			);
+		);
 
 		assert.equal(acknowledgements.length, 1, "подтверждение поставлено дважды");
 	});
@@ -228,27 +258,31 @@ describe("разбор входящих сообщений", () => {
 	test("«СТАРТ» возвращает только сервисные сообщения, но не рекламу", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		await db.insert(messengerInboundEvents).values({
-			organizationId: ORG_ID,
-			channel: "whatsapp",
-			externalChatId: "79160000201",
-			messageText: "СТАРТ",
-			eventKind: "message"
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(messengerInboundEvents).values({
+				organizationId: ORG_ID,
+				channel: "whatsapp",
+				externalChatId: "79160000201",
+				messageText: "СТАРТ",
+				eventKind: "message"
+			});
 		});
 
 		const report = await processInboundEvents({ limit: 50 });
 		assert.ok(report.optIns >= 1, JSON.stringify(report));
 
-		const rows = await db
-			.select({ scope: patientCommunicationConsents.scope, state: patientCommunicationConsents.state })
-			.from(patientCommunicationConsents)
-			.where(
-				and(
-					eq(patientCommunicationConsents.organizationId, ORG_ID),
-					eq(patientCommunicationConsents.patientId, PATIENT_ID),
-					eq(patientCommunicationConsents.channel, "whatsapp")
+		const rows = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ scope: patientCommunicationConsents.scope, state: patientCommunicationConsents.state })
+				.from(patientCommunicationConsents)
+				.where(
+					and(
+						eq(patientCommunicationConsents.organizationId, ORG_ID),
+						eq(patientCommunicationConsents.patientId, PATIENT_ID),
+						eq(patientCommunicationConsents.channel, "whatsapp")
+					)
 				)
-			);
+		);
 		const byScope = new Map(rows.map((row) => [row.scope, row.state]));
 		assert.equal(byScope.get("service"), "granted");
 		// Согласие на рекламу словом «СТАРТ» не выдаётся: для рекламы нужно
@@ -259,21 +293,25 @@ describe("разбор входящих сообщений", () => {
 	test("обычное сообщение попадает в переписку без изменения согласий", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		await db.insert(messengerInboundEvents).values({
-			organizationId: ORG_ID,
-			channel: "whatsapp",
-			externalChatId: "79160000201",
-			messageText: "Здравствуйте, можно перенести приём на четверг?",
-			eventKind: "message"
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(messengerInboundEvents).values({
+				organizationId: ORG_ID,
+				channel: "whatsapp",
+				externalChatId: "79160000201",
+				messageText: "Здравствуйте, можно перенести приём на четверг?",
+				eventKind: "message"
+			});
 		});
 
 		const report = await processInboundEvents({ limit: 50 });
 		assert.equal(report.optOuts, 0, JSON.stringify(report));
 
-		const events = await db
-			.select({ message: communicationEvents.message, direction: communicationEvents.direction })
-			.from(communicationEvents)
-			.where(and(eq(communicationEvents.organizationId, ORG_ID), eq(communicationEvents.patientId, PATIENT_ID)));
+		const events = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ message: communicationEvents.message, direction: communicationEvents.direction })
+				.from(communicationEvents)
+				.where(and(eq(communicationEvents.organizationId, ORG_ID), eq(communicationEvents.patientId, PATIENT_ID)))
+		);
 		assert.ok(events.some((row) => row.message.includes("перенести приём")), JSON.stringify(events));
 		assert.ok(events.every((row) => row.direction === "inbound"));
 	});
@@ -281,34 +319,37 @@ describe("разбор входящих сообщений", () => {
 	test("незнакомый номер становится лидом, а не карточкой пациента", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const patientsBefore = await db
-			.select({ id: patients.id })
-			.from(patients)
-			.where(eq(patients.organizationId, ORG_ID));
+		const patientsBefore = await withFixtureTenant(ORG_ID, async () =>
+			db.select({ id: patients.id }).from(patients).where(eq(patients.organizationId, ORG_ID))
+		);
 
-		await db.insert(messengerInboundEvents).values({
-			organizationId: ORG_ID,
-			channel: "whatsapp",
-			externalChatId: "79995550000",
-			messageText: "Здравствуйте, сколько стоит имплантация?",
-			eventKind: "message"
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(messengerInboundEvents).values({
+				organizationId: ORG_ID,
+				channel: "whatsapp",
+				externalChatId: "79995550000",
+				messageText: "Здравствуйте, сколько стоит имплантация?",
+				eventKind: "message"
+			});
 		});
 
 		const report = await processInboundEvents({ limit: 50 });
 		assert.ok(report.leadsCreated >= 1, JSON.stringify(report));
 
 		// Картотека не пополнилась: раньше здесь появлялся пациент с именем
-		// «WhatsApp User 79995550000».
-		const patientsAfter = await db
-			.select({ id: patients.id })
-			.from(patients)
-			.where(eq(patients.organizationId, ORG_ID));
+		// «WhatsApp User 79995550000». Оба счёта берутся под тенант-контекстом —
+		// без него они оба дали бы ноль и сравнение стало бы бессодержательным.
+		const patientsAfter = await withFixtureTenant(ORG_ID, async () =>
+			db.select({ id: patients.id }).from(patients).where(eq(patients.organizationId, ORG_ID))
+		);
 		assert.equal(patientsAfter.length, patientsBefore.length);
 
-		const leads = await db
-			.select({ source: crmLeads.source, phone: crmLeads.phone, notes: crmLeads.notes })
-			.from(crmLeads)
-			.where(eq(crmLeads.organizationId, ORG_ID));
+		const leads = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ source: crmLeads.source, phone: crmLeads.phone, notes: crmLeads.notes })
+				.from(crmLeads)
+				.where(eq(crmLeads.organizationId, ORG_ID))
+		);
 		assert.equal(leads.length, 1, JSON.stringify(leads));
 		assert.equal(leads[0]?.source, "inbound_whatsapp");
 		assert.equal(leads[0]?.phone, "79995550000");
@@ -318,28 +359,31 @@ describe("разбор входящих сообщений", () => {
 	test("номер, подходящий двум карточкам, не сопоставляется наугад", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		await db.insert(messengerInboundEvents).values({
-			organizationId: ORG_ID,
-			channel: "whatsapp",
-			externalChatId: "+7 916 000-02-99",
-			messageText: "Добрый день",
-			eventKind: "message"
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(messengerInboundEvents).values({
+				organizationId: ORG_ID,
+				channel: "whatsapp",
+				externalChatId: "+7 916 000-02-99",
+				messageText: "Добрый день",
+				eventKind: "message"
+			});
 		});
 
 		const report = await processInboundEvents({ limit: 50 });
 		assert.ok(report.ambiguous >= 1, JSON.stringify(report));
 
 		// Переписка не ушла ни в одну из двух карточек: раньше брали первую.
-		const events = await db
-			.select({ patientId: communicationEvents.patientId })
-			.from(communicationEvents)
-			.where(eq(communicationEvents.organizationId, ORG_ID));
+		const events = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ patientId: communicationEvents.patientId })
+				.from(communicationEvents)
+				.where(eq(communicationEvents.organizationId, ORG_ID))
+		);
 		assert.equal(events.some((row) => row.patientId === TWIN_A || row.patientId === TWIN_B), false);
 
-		const leads = await db
-			.select({ notes: crmLeads.notes })
-			.from(crmLeads)
-			.where(eq(crmLeads.organizationId, ORG_ID));
+		const leads = await withFixtureTenant(ORG_ID, async () =>
+			db.select({ notes: crmLeads.notes }).from(crmLeads).where(eq(crmLeads.organizationId, ORG_ID))
+		);
 		assert.ok(
 			leads.some((row) => row.notes?.includes("несколько карточек")),
 			JSON.stringify(leads)
@@ -349,17 +393,21 @@ describe("разбор входящих сообщений", () => {
 	test("событие без текста закрывается без записи в переписку", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const [inserted] = await db
-			.insert(messengerInboundEvents)
-			.values({ organizationId: ORG_ID, channel: "whatsapp", externalChatId: "79160000201", eventKind: "status" })
-			.returning({ id: messengerInboundEvents.id });
+		const [inserted] = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.insert(messengerInboundEvents)
+				.values({ organizationId: ORG_ID, channel: "whatsapp", externalChatId: "79160000201", eventKind: "status" })
+				.returning({ id: messengerInboundEvents.id })
+		);
 
 		await processInboundEvents({ limit: 50 });
 
-		const [row] = await db
-			.select({ processedAt: messengerInboundEvents.processedAt })
-			.from(messengerInboundEvents)
-			.where(eq(messengerInboundEvents.id, inserted?.id ?? ""));
+		const [row] = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ processedAt: messengerInboundEvents.processedAt })
+				.from(messengerInboundEvents)
+				.where(eq(messengerInboundEvents.id, inserted?.id ?? ""))
+		);
 		assert.notEqual(row?.processedAt, null);
 	});
 

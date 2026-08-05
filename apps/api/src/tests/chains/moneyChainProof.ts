@@ -283,11 +283,22 @@ async function main(): Promise<void> {
 		return row?.paid ?? "нет строки";
 	}
 
-	/** Долг клиники — той же формулой, что у отчёта дебиторки, но написанной здесь. */
+	/**
+	 * Долг клиники — той же формулой, что у отчёта дебиторки, но написанной здесь.
+	 *
+	 * ЗЕРКАЛО ПРИВЕДЕНО К ДЕЙСТВУЮЩЕЙ ФОРМУЛЕ 2026-08-06: стояло
+	 * `greatest(quantity, 1)`, убранное в тот же день из самого отчёта
+	 * (`services/reports/managerReports.ts`, разбор стоит там). Обещание в первой
+	 * строке — «той же формулой, что у отчёта» — иначе перестало бы быть правдой,
+	 * а зеркало превратилось бы во вторую спецификацию. Числа прогона не
+	 * изменились: на контрактном количестве (целое >= 1, и с миграции 0162 колонка
+	 * иного не принимает) обе записи побитово равны. Ручной SQL сохранён
+	 * намеренно — вызов канона `chargeLineKopecks` сверял бы код с самим собой.
+	 */
 	async function debtText(organizationId: string): Promise<{ planned: string; paid: string; due: string }> {
 		const row = await firstRow<{ planned: string; paid: string; due: string }>(
 			sql`with planned as (
-			      select coalesce(sum(greatest(unit_price_rub * greatest(quantity, 1) - discount_rub, 0)), 0)::numeric(12,2) as total
+			      select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)), 0)::numeric(12,2) as total
 			        from treatment_items
 			       where organization_id = ${organizationId}::uuid and status <> 'cancelled'
 			    ), paid as (

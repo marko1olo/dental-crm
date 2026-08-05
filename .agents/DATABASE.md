@@ -83,13 +83,22 @@ server), reached over TCP at `127.0.0.1:5432`.
     `throw`s when it is unset or blank. The previous revision of this document said the opposite and used
     it as the reason to distrust `db:generate`. That reason is gone; a different reason remains, see
     "Migrations" below.
-*   `apps/api/src/services/syncEngine.ts` imports `@electric-sql/pglite` and `@electric-sql/pglite-sync`,
-    neither of which is installed. It is dead code, excluded from typecheck at `apps/api/tsconfig.json`
-    alongside `src/scripts/patch-owner-credentials.ts`. Two more files of that era stood in the same
-    exclude list — `src/scripts/seedPglite.ts` and `src/scripts/setup-fresh-db.ts`. Both were **deleted
-    from disk 2026-08-06**: zero entries across all four `package.json`, zero importers, excluded from
-    the build, and `setup-fresh-db.ts` was measured not to start at all
-    (`ERR_MODULE_NOT_FOUND: @electric-sql/pglite`).
+*   `apps/api/src/services/syncEngine.ts` **was deleted from disk 2026-08-06** and no longer exists. It
+    imported `@electric-sql/pglite` and `@electric-sql/pglite-sync`, neither of which is installed, so it
+    could never execute (`ERR_MODULE_NOT_FOUND` on line 1). It started ElectricSQL CRDT replication of 11
+    tenant tables and required a live `PGlite` handle as its argument — an argument no caller in this
+    repository can construct, because the engine is native PostgreSQL 18.4. Verified before deletion: zero
+    importers repo-wide, zero entries across all four `package.json` (the only `package-lock.json` mention
+    is drizzle-orm's **optional** peer dependency), not matched by the test mask `src/**/*.test.ts`, and
+    named in no document as a planned feature — every surviving mention describes it as dead. Three more
+    files of that era — `src/scripts/patch-owner-credentials.ts`, `src/scripts/seedPglite.ts` and
+    `src/scripts/setup-fresh-db.ts` — were deleted the same day on the same evidence.
+*   **`apps/api/tsconfig.json` now carries no by-name exclusions at all**; only the test globs remain. All
+    four PGlite-era files are gone from disk and their exclude entries went with them, because an
+    exclusion naming a file that does not exist is a dangling record that sends the next agent hunting a
+    phantom. `apps/api/tsconfig.tests.json` keeps `"exclude": []` — the empty array is load-bearing:
+    `extends` inherits the parent's `exclude` when the child omits the key, so deleting that line would
+    silently drop all 204 test files out of the types gate.
 
 ### 📁 The `dente-db` directory is NOT the data directory — it is a PGlite corpse
 Root `AGENTS.md:9` and `.claude/rules/dente-database.md` describe `apps/api/dente-db` as "that server's

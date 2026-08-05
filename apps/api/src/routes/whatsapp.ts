@@ -8,6 +8,34 @@
  *   GET /api/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=...&hub.challenge=...
  *
  * See: https://developers.facebook.com/docs/whatsapp/cloud-api/guides/set-up-webhooks
+ *
+ * ФОРМА ОТВЕТА: КОД СТАВИМ, ЗНАЧЕНИЕ ВОЗВРАЩАЕМ.
+ *
+ * `return reply.code(N).send(x)` в обработчике возвращает сам `reply`, а он
+ * thenable: `Reply.prototype.then` (fastify/lib/reply.js:466) разрешается по
+ * `eos(reply.raw)`, то есть когда ответ уже ушёл клиенту. Обёртка withTenantCtx,
+ * которую server.ts вешает на КАЖДЫЙ маршрут хуком onRoute, ждёт разрешения
+ * этого промиса — значит COMMIT уходил ПОСЛЕ ответа. Возврат значения снимает
+ * это: fastify зовёт `reply.send(payload)` уже после разрешения промиса
+ * (lib/wrap-thenable.js:14), то есть после COMMIT.
+ *
+ * Замерено на живом сервере поллером pg_stat_activity (шаг 0,4–1,2 мс) на
+ * PUT /api/whatsapp/settings: ДО правки дельта «коммит минус заголовки»
+ * +1,878 / +1,768 / +1,155 / +0,604 мс — коммит позже ответа во всех прогонах.
+ * С отложенным ограничением, падающим на COMMIT, клиент получал 200 {"ok":true}
+ * при НУЛЕ записанных строк: fastify уже отправил ответ и может только записать
+ * ошибку в журнал (lib/wrap-thenable.js:63). Это важно именно здесь, потому что
+ * useWhatsappSettings.ts сразу после PUT читает GET /api/whatsapp/settings.
+ *
+ * ЧТО НЕ ПЕРЕВЕДЕНО И ПОЧЕМУ:
+ *  • эхо рукопожатия `reply.code(200).send(challenge)` — тело не JSON, а голая
+ *    строка от Meta; трогать сериализацию ответа, от которого зависит подписка
+ *    на вебхук, незачем: транзакции вокруг него нет (запрос Meta без токена
+ *    клиники, обёртка server.ts не срабатывает), то есть дефекта тоже нет.
+ *  • `reply.code(200).send({ received: true })` в POST вебхука — отправка
+ *    СПЕЦИАЛЬНО стоит не в позиции return: Meta повторяет доставку на
+ *    непришедший вовремя 200, а после этой строки идёт длинный разбор входящих
+ *    сообщений. Возврат значения отложил бы подтверждение до конца разбора.
  */
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { and, eq } from "drizzle-orm";
@@ -24,6 +52,7 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
+import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
 	communicationEvents,
 	denteWhatsappBotConfigs,
@@ -151,10 +180,11 @@ export async function registerWhatsappRoutes(
 			.limit(1);
 
 		if (!config) {
-			return reply.code(404).send({
+			reply.code(404);
+			return {
 				error: "WhatsappConfigNotFound",
 				message: "WhatsApp-бот не настроен для этой организации.",
-			});
+			};
 		}
 
 		return {
@@ -188,10 +218,11 @@ export async function registerWhatsappRoutes(
 
 		const parsed = updateWhatsappConfigSchema.safeParse(request.body);
 		if (!parsed.success) {
-			return reply.code(400).send({
+			reply.code(400);
+			return {
 				error: "WhatsappConfigValidationError",
 				message: "Проверьте параметры настройки WhatsApp.",
-			});
+			};
 		}
 
 		const input = parsed.data;
@@ -239,7 +270,8 @@ export async function registerWhatsappRoutes(
 			});
 		}
 
-		return reply.code(200).send({ ok: true });
+		reply.code(200);
+		return { ok: true };
 	});
 
 	/**
@@ -288,7 +320,8 @@ export async function registerWhatsappRoutes(
 		const challenge = query["hub.challenge"];
 
 		if (mode !== "subscribe" || !token || !challenge) {
-			return reply.code(400).send({ error: "BadWebhookRequest" });
+			reply.code(400);
+			return { error: "BadWebhookRequest" };
 		}
 
 		/*
@@ -310,9 +343,17 @@ export async function registerWhatsappRoutes(
 		);
 
 		if (!config) {
-			return reply.code(403).send({ error: "WebhookTokenMismatch" });
+			reply.code(403);
+			return { error: "WebhookTokenMismatch" };
 		}
 
+		/*
+		 * ЭХО РУКОПОЖАТИЯ ОСТАЁТСЯ НА reply.send И ЭТО НАМЕРЕННО. Тело здесь —
+		 * не JSON, а голая строка hub.challenge, которую Meta сверяет побайтно.
+		 * Переводить нечего: обёртки-транзакции вокруг этого обработчика нет
+		 * (запрос приходит от Meta без токена клиники, request.tenantId не
+		 * выставлен), значит и откладывать COMMIT здесь нечему.
+		 */
 		return reply.code(200).send(challenge);
 	});
 
@@ -356,11 +397,12 @@ export async function registerWhatsappRoutes(
 						{ requiredEnv: ["WHATSAPP_APP_SECRET"] },
 						"Вебхук WhatsApp отклонён: секрет приложения не задан в окружении сервера",
 					);
-					return reply.code(503).send({
+					reply.code(503);
+					return {
 						error: "WhatsappAppSecretRequired",
 						message:
 							"Приём сообщений WhatsApp на этом сервере не настроен: секрет приложения не задан, и подпись вебхука проверить нечем.",
-					});
+					};
 				}
 				console.warn(
 					"[WhatsApp] WHATSAPP_APP_SECRET не задан: подпись вебхука не проверяется (только dev).",
@@ -379,16 +421,29 @@ export async function registerWhatsappRoutes(
 					null;
 
 				if (!isValidWhatsappSignature(rawBody, signature, appSecret)) {
-					return reply.code(401).send({
+					reply.code(401);
+					return {
 						error: "WhatsappSignatureMismatch",
 						message: "Подпись вебхука WhatsApp недействительна.",
-					});
+					};
 				}
 			}
 
-			// Acknowledge immediately — Meta retries on non-200. Process async below.
-			// Shape-guard AFTER send so null/non-object body cannot TypeError on
-			// body.entry (cast-after-200) once the client already got 200.
+			/*
+			 * Acknowledge immediately — Meta retries on non-200. Process async
+			 * below. Shape-guard AFTER send so null/non-object body cannot
+			 * TypeError on body.entry (cast-after-200) once the client already
+			 * got 200.
+			 *
+			 * ЭТА ОТПРАВКА НАМЕРЕННО НЕ В ПОЗИЦИИ return И В ЗНАЧЕНИЕ НЕ
+			 * ПЕРЕВОДИТСЯ. Ниже идёт полный разбор входящих сообщений с записями
+			 * в базу; вернуть значение отсюда значило бы отложить подтверждение
+			 * до конца этого разбора, а Meta на задержку отвечает повторной
+			 * доставкой. Отложенного COMMIT здесь нет: запрос приходит от Meta
+			 * без токена клиники, обёртка server.ts этот обработчик не
+			 * оборачивает, а каждая вставка ниже открывает собственную
+			 * транзакцию withTenantCtx и фиксируется сама.
+			 */
 			reply.code(200).send({ received: true });
 
 			if (
@@ -510,13 +565,19 @@ export async function registerWhatsappRoutes(
 						const textBody =
 							typeof textObj?.body === "string" ? textObj.body : null;
 
-						await db.insert(messengerInboundEvents).values({
-							organizationId: orgConfig.organizationId,
-							channel: "whatsapp",
-							externalChatId: fromId,
-							messageText: textBody,
-							eventKind: "message",
-							rawPayload: m as Record<string, unknown>,
+						// Клиника уже известна из настроек бота, найденных выше, —
+					// вставка идёт под её контекстом. Без него `INSERT` не
+					// «возвращал ноль строк», а падал с 42501: в WITH CHECK
+					// политики messenger_inbound_events обхода нет.
+						await withTenantCtx(inboundOrganizationId, async (tx) => {
+							await tx.insert(messengerInboundEvents).values({
+								organizationId: inboundOrganizationId,
+								channel: "whatsapp",
+								externalChatId: fromId,
+								messageText: textBody,
+								eventKind: "message",
+								rawPayload: m as Record<string, unknown>,
+							});
 						});
 					}
 				}
@@ -548,10 +609,11 @@ export async function registerWhatsappRoutes(
 
 		const parsed = bodySchema.safeParse(request.body);
 		if (!parsed.success) {
-			return reply.code(400).send({
+			reply.code(400);
+			return {
 				error: "ValidationError",
 				message: "Укажите ID пациента и текст сообщения.",
-			});
+			};
 		}
 
 		const { patientId, message } = parsed.data;
@@ -566,10 +628,11 @@ export async function registerWhatsappRoutes(
 			.limit(1);
 
 		if (!patient) {
-			return reply.code(404).send({
+			reply.code(404);
+			return {
 				error: "PatientNotFound",
 				message: "Пациент не найден.",
-			});
+			};
 		}
 
 		const [config] = await db
@@ -579,10 +642,11 @@ export async function registerWhatsappRoutes(
 			.limit(1);
 
 		if (!config || !config.isActive) {
-			return reply.code(400).send({
+			reply.code(400);
+			return {
 				error: "WhatsappInactive",
 				message: "Интеграция WhatsApp неактивна или не настроена.",
-			});
+			};
 		}
 
 		// БЫЛО: обработчик записывал строку в communication_events со статусом
@@ -593,20 +657,22 @@ export async function registerWhatsappRoutes(
 		// напоминания о приёме это хуже явной ошибки.
 		const credentials = readWhatsappCredentials(config);
 		if (!credentials) {
-			return reply.code(400).send({
+			reply.code(400);
+			return {
 				error: "WhatsappNotConfigured",
 				message:
 					"Не заданы phone_number_id и токен доступа WhatsApp Cloud API. Сообщение не отправлено.",
-			});
+			};
 		}
 
 		const recipient = normalizeWhatsappRecipient(patient.phone);
 		if (!recipient) {
-			return reply.code(422).send({
+			reply.code(422);
+			return {
 				error: "PatientPhoneMissing",
 				message:
 					"У пациента не указан корректный номер телефона — отправить сообщение в WhatsApp некуда.",
-			});
+			};
 		}
 
 		const sendResult = await sendWhatsappTextMessage({
@@ -631,11 +697,12 @@ export async function registerWhatsappRoutes(
 				{ errorClass: sendResult.errorClass, errorCode: sendResult.errorCode },
 				"WhatsApp Cloud API отклонил сообщение",
 			);
-			return reply.code(502).send({
+			reply.code(502);
+			return {
 				error: "WhatsappSendFailed",
 				errorClass: sendResult.errorClass,
 				message: sendResult.errorMessage,
-			});
+			};
 		}
 
 		// Событие в интерфейс рассылается только после подтверждения от Meta.

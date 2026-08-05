@@ -114,6 +114,7 @@ import { analyzeImagingStudy } from "../ai/visionAnalyzer.js";
 import { analyzeVisiographImage } from "../ai/visiograph.js";
 import { readFile } from "node:fs/promises";
 import { browserRenderableImageMimeType } from "../imaging/previewFormats.js";
+import { withTenantCtx } from "../db/rls.js";
 
 
 const kindLabels = {
@@ -7064,13 +7065,23 @@ export async function registerImagingRoutes(app: FastifyInstance) {
    * организации из подписанного токена, и дополнительно проверяется на выход за
    * пределы каталога хранения: подстановка пути из запроса невозможна.
    */
-  app.get("/api/imaging/studies/:id/file", async (request, reply) => {
+  app.get("/api/imaging/studies/:id/file", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "imaging file"))) return;
     const { id } = request.params as { id: string };
     const orgId = requireOrganizationId(request, reply);
     if (!orgId) return;
 
-    const study = await getImagingStudyById(orgId, id);
+    /*
+     * ПОЧЕМУ ЗДЕСЬ ЯВНЫЙ withTenantCtx (и config.tenantTxSelfManaged выше).
+     * Тело ответа — поток файла снимка: рентген это мегабайты, том КЛКТ —
+     * сотни мегабайт, и время передачи задаёт клиент. Автоматическая обёртка
+     * из server.ts держала бы транзакцию и соединение из пула на всё это время
+     * (см. развёрнутое объяснение в server.ts у хука onRoute). Строка
+     * исследования читается под контекстом арендатора, транзакция закрывается,
+     * поток открывается уже вне её. Организация берётся из проверенного токена,
+     * обхода RLS нет.
+     */
+    const study = await withTenantCtx(orgId, () => getImagingStudyById(orgId, id));
     if (!study) return sendImagingStudyNotFound(reply);
 
     const storagePath = typeof study.storagePath === "string" ? study.storagePath.trim() : "";

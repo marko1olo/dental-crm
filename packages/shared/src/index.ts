@@ -5663,6 +5663,13 @@ export type DicomViewerLaunchMode = z.infer<typeof dicomViewerLaunchModeSchema>;
 export const dicomViewerDataSourceKindSchema = z.enum(["dicomweb", "local_files", "external_viewer", "none"]);
 export type DicomViewerDataSourceKind = z.infer<typeof dicomViewerDataSourceKindSchema>;
 
+/**
+ * Потолок пути к внешнему просмотрщику. Один литерал на все три места, где он
+ * нужен: два запроса-манифеста и перекрёстная проверка ответа ниже. Разъехавшись,
+ * они дали бы значение, которое вход принимает, а ответ отвергает.
+ */
+const externalViewerPathSchema = z.string().max(1000);
+
 export const dicomViewerLaunchManifestRequestSchema = z.object({
   viewerKind: dicomViewerKindSchema.default("ohif"),
   series: dicomSeriesPreviewGroupSchema,
@@ -5670,40 +5677,117 @@ export const dicomViewerLaunchManifestRequestSchema = z.object({
   annotations: z.array(imagingViewerAnnotationSchema).max(200).default([]),
   dicomWebBaseUrl: httpUrlSchema.nullable().optional(),
   ohifBaseUrl: httpUrlSchema.nullable().optional(),
-  externalViewerPath: z.string().max(1000).nullable().optional(),
+  externalViewerPath: externalViewerPathSchema.nullable().optional(),
   allowExternalHandoff: z.boolean().default(true)
 });
 export type DicomViewerLaunchManifestRequest = z.infer<typeof dicomViewerLaunchManifestRequestSchema>;
 
-export const dicomViewerLaunchManifestResponseSchema = z.object({
-  viewerKind: dicomViewerKindSchema,
-  launchMode: dicomViewerLaunchModeSchema,
-  viewerUrl: z.string().nullable(),
-  studyInstanceUid: z.string().nullable(),
-  seriesInstanceUid: z.string().nullable(),
-  dataSource: z.object({
-    kind: dicomViewerDataSourceKindSchema,
-    qidoRoot: z.string().nullable(),
-    wadoRoot: z.string().nullable(),
-    stowRoot: z.string().nullable(),
+/**
+ * Манифест запуска просмотра. Смысл `viewerUrl` задаёт СОСЕДНЕЕ поле
+ * `launchMode`, поэтому поле проверяется не в одиночку, а в паре с ним —
+ * перекрёстной проверкой внизу схемы.
+ *
+ * ЧТО ПРИНИМАЕТСЯ В КАЖДОМ ИЗ ЧЕТЫРЁХ РЕЖИМОВ (производители —
+ * apps/api/src/routes/imaging.ts, buildDicomViewerLaunchManifest):
+ *   • `dicomweb_url` (imaging.ts:3602) — buildOhifViewerUrl() из `ohifBaseUrl`.
+ *     Требуется `httpUrlSchema`, `null` ЗАПРЕЩЁН. Здесь и только здесь схема
+ *     адреса действительно режет: `javascript:`, `data:`, `vbscript:`, `file:`
+ *     и местный путь в этом режиме отвергаются на входе;
+ *   • `local_manifest` (imaging.ts:3605) — просмотр открывается локально,
+ *     адреса нет. Требуется строго `null`;
+ *   • `external_handoff` (imaging.ts:3607) — `externalViewerPath`, то есть путь
+ *     к местному просмотрщику (Weasis, RadiAnt). Это НЕ адрес, разбору как URL
+ *     не подлежит. Принимается `null` ИЛИ любая строка в пределах
+ *     externalViewerPathSchema;
+ *   • `blocked` — безопасной цели нет. Требуется строго `null`.
+ *
+ * ОСТАТОЧНЫЙ РИСК, НАЗВАННЫЙ ЯВНО. В режиме `external_handoff` значение остаётся
+ * произвольной строкой, поэтому `javascript:alert(1)` и `file:///C:/Windows/...`
+ * там ПРИНИМАЮТСЯ и попадают в базу. Ужесточать нельзя без отдельной работы:
+ * отличить «путь к местному просмотрщику» от «строки со схемой» — самостоятельная
+ * задача, и очевидное ужесточение (просто `httpUrlSchema` на поле) убивает режим
+ * целиком, это измерено. Схемы в этом режиме режет ТОЛЬКО выходной слой:
+ * разметка ставит href исключительно когда `isHttpUrl()` истинно
+ * (apps/web/src/components/settings/sources/SourcesDicomCapability.tsx), иначе
+ * печатает значение текстом. Снимешь тот фильтр — дыра открыта, здесь её нет.
+ *
+ * ПОЧЕМУ ПОТОЛОК ДЛИНЫ НЕ НУЖЕН ВЕТКЕ `dicomweb_url`, С ЧИСЛОМ. Прежняя редакция
+ * этого комментария утверждала, что «разумного потолка у такой ссылки нет», и это
+ * было неверно: Study Instance UID ограничен 64 символами (DICOM PS3.5), а
+ * реальный вывод buildOhifViewerUrl — 116 символов, то есть 884 символа запаса до
+ * потолка в 1000. Замер сделан, переоткрывать его не нужно. Длину в этой ветке
+ * не ограничиваем не потому, что предела нет, а потому, что предел задаёт схема
+ * адреса, и он на порядок ниже любого разумного потолка.
+ *
+ * ПОЧЕМУ superRefine, А НЕ discriminatedUnion. Размеченное объединение по
+ * `launchMode` дало бы тот же рантайм-контракт ценой четырёх вариантов по ~20
+ * общих полей: каждое будущее поле пришлось бы вносить в четыре места, где его
+ * забудут в одном. Строгий тип потребителю здесь ничего не покупает — он читает
+ * `viewerUrl: string | null` и отдаёт его выходному фильтру.
+ */
+export const dicomViewerLaunchManifestResponseSchema = z
+  .object({
+    viewerKind: dicomViewerKindSchema,
+    launchMode: dicomViewerLaunchModeSchema,
+    viewerUrl: z.string().nullable(),
     studyInstanceUid: z.string().nullable(),
     seriesInstanceUid: z.string().nullable(),
-    sourceKind: imagingSourceKindSchema,
-    sourceName: z.string()
-  }),
-  displaySetSelector: z.object({
-    preferredLayout: dicomMprReadinessSchema.shape.recommendedLayout,
-    projections: z.array(dicomMprProjectionSchema),
-    studyInstanceUid: z.string().nullable(),
-    seriesInstanceUid: z.string().nullable()
-  }),
-  cornerstoneVolumeId: z.string().nullable(),
-  resourcePolicy: dicomMprResourcePolicySchema,
-  viewerState: imagingViewerSessionStateSchema.nullable(),
-  annotations: z.array(imagingViewerAnnotationSchema),
-  warnings: z.array(z.string()),
-  nextAction: z.string()
-});
+    dataSource: z.object({
+      kind: dicomViewerDataSourceKindSchema,
+      qidoRoot: z.string().nullable(),
+      wadoRoot: z.string().nullable(),
+      stowRoot: z.string().nullable(),
+      studyInstanceUid: z.string().nullable(),
+      seriesInstanceUid: z.string().nullable(),
+      sourceKind: imagingSourceKindSchema,
+      sourceName: z.string()
+    }),
+    displaySetSelector: z.object({
+      preferredLayout: dicomMprReadinessSchema.shape.recommendedLayout,
+      projections: z.array(dicomMprProjectionSchema),
+      studyInstanceUid: z.string().nullable(),
+      seriesInstanceUid: z.string().nullable()
+    }),
+    cornerstoneVolumeId: z.string().nullable(),
+    resourcePolicy: dicomMprResourcePolicySchema,
+    viewerState: imagingViewerSessionStateSchema.nullable(),
+    annotations: z.array(imagingViewerAnnotationSchema),
+    warnings: z.array(z.string()),
+    nextAction: z.string()
+  })
+  .superRefine((manifest, ctx) => {
+    const reject = (message: string) => {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["viewerUrl"], message });
+    };
+
+    switch (manifest.launchMode) {
+      case "dicomweb_url": {
+        if (manifest.viewerUrl === null) {
+          reject("режим dicomweb_url запускает внешний просмотр по адресу: viewerUrl не может быть null");
+          return;
+        }
+        if (!httpUrlSchema.safeParse(manifest.viewerUrl).success) {
+          reject("в режиме dicomweb_url адрес должен начинаться с http:// или https://");
+        }
+        return;
+      }
+      case "external_handoff": {
+        if (manifest.viewerUrl === null) return;
+        const path = externalViewerPathSchema.safeParse(manifest.viewerUrl);
+        if (!path.success) {
+          reject("путь к внешнему просмотрщику длиннее допустимого");
+        }
+        return;
+      }
+      case "local_manifest":
+      case "blocked": {
+        if (manifest.viewerUrl !== null) {
+          reject(`режим ${manifest.launchMode} не открывает внешний просмотр: viewerUrl обязан быть null`);
+        }
+        return;
+      }
+    }
+  });
 export type DicomViewerLaunchManifestResponse = z.infer<typeof dicomViewerLaunchManifestResponseSchema>;
 
 export const dicomViewerToolStateTargetSchema = z.enum(["cornerstone3d", "ohif", "generic_json", "external_viewer"]);
@@ -6167,7 +6251,7 @@ export const dicomViewerWorkbenchManifestRequestSchema = z.object({
   annotations: z.array(imagingViewerAnnotationSchema).max(200).default([]),
   dicomWebBaseUrl: httpUrlSchema.nullable().optional(),
   ohifBaseUrl: httpUrlSchema.nullable().optional(),
-  externalViewerPath: z.string().max(1000).nullable().optional(),
+  externalViewerPath: externalViewerPathSchema.nullable().optional(),
   allowExternalHandoff: z.boolean().default(true)
 });
 export type DicomViewerWorkbenchManifestRequest = z.infer<typeof dicomViewerWorkbenchManifestRequestSchema>;

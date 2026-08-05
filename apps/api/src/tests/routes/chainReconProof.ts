@@ -1067,13 +1067,43 @@ async function main(): Promise<void> {
 			(select count(*)::int from cash_ledger) as cash_ledger`,
 	);
 
+	/*
+	 * ЗЕРКАЛА ЭТОГО ФАЙЛА ПРИВЕДЕНЫ К ДЕЙСТВУЮЩИМ ФОРМУЛАМ 2026-08-06.
+	 *
+	 * Всюду, где столбец называет КАНОН («назначено», долг дебиторки, сумма
+	 * позиций), убран `greatest(quantity, 1)` — вслед за самим отчётом
+	 * (`services/reports/managerReports.ts`, `serviceSales` и `receivables`, где
+	 * стоит полный разбор с тремя опровергнутыми оправданиями) и за
+	 * `services/communications/audience.ts`. На контрактных данных обе записи
+	 * побитово равны: количество обязано быть целым и не меньше единицы
+	 * (`packages/shared/src/index.ts`), а с миграции 0162 колонка иного и не
+	 * принимает — есть ограничения `quantity > 0` и `quantity = trunc(quantity)`.
+	 * Поэтому ни одно число этого прогона не изменилось; изменилось только то,
+	 * что зеркало перестало объявлять формулу, которой в коде больше нет.
+	 *
+	 * ДВА СТОЛБЦА С `round(greatest(quantity,1))` СОЗНАТЕЛЬНО ОСТАВЛЕНЫ КАК ЕСТЬ
+	 * (`planned_dashboard_rounded` ниже и `planned_rounded` в шаге 3). Их предмет —
+	 * НЕ канон, а другой читатель, и смысл этих столбцов именно в том, чтобы
+	 * показать расхождение формул; переписать одно плечо сравнения значит убить
+	 * сравнение. Живой носитель такого округления в дереве есть:
+	 * `db/documentQuery.ts:390`, `Math.max(1, Math.round(Number(item.quantity) || 1))`.
+	 *
+	 * НО ОДИН ЗАМЕР НАДО ЗАПИСАТЬ, ЧТОБЫ ЕГО НЕ ДЕЛАЛИ ЗАНОВО: главный экран,
+	 * с которым сверяется `planned_dashboard_rounded`, количество СЕГОДНЯ НЕ
+	 * ОКРУГЛЯЕТ. `sampleData.ts`, `treatmentLineTotal`:
+	 * `Math.max(0, roundToKopecks(unitPriceRub * quantity - discountRub))` — сырое
+	 * количество. То есть это плечо устарело тоже, но устарело ОТ ДРУГОГО
+	 * изменения и требует отдельного разбора того, что именно отдаёт сводка; здесь
+	 * оно помечено, а не тронуто. Зелёным оно держится по той же причине, что и
+	 * все прочие: на посеве количество целое.
+	 */
 	await rows(
 		"позиции лечения по статусу и связи с приёмом",
 		sql`select status::text as status,
 		       count(*)::int as items,
 		       count(*) filter (where visit_id is null)::int as without_visit,
 		       count(*) filter (where quantity <> round(quantity))::int as fractional_quantity,
-		       sum(greatest(unit_price_rub * greatest(quantity, 1) - discount_rub, 0))::numeric(12,2) as planned_sql,
+		       sum(greatest(unit_price_rub * quantity - discount_rub, 0))::numeric(12,2) as planned_sql,
 		       sum(price_rub)::numeric(12,2) as price_rub_column
 		  from treatment_items
 		 group by status
@@ -1123,7 +1153,7 @@ async function main(): Promise<void> {
 			(select count(*)::int from treatment_plan_items_new where organization_id is null) as plan_items_new_without_org,
 			(select coalesce(sum(greatest(price * quantity - discount, 0)), 0)::numeric(12,2) from treatment_plan_items_new) as plan_items_new_sum,
 			(select count(*)::int from treatment_items) as treatment_items,
-			(select coalesce(sum(greatest(unit_price_rub * greatest(quantity,1) - discount_rub, 0)), 0)::numeric(12,2) from treatment_items) as treatment_items_sum`,
+			(select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)), 0)::numeric(12,2) from treatment_items) as treatment_items_sum`,
 	);
 	const seam = seamRows[0] ?? {};
 	const planSideRows = Number(seam.plan_items_new ?? 0);
@@ -1168,11 +1198,11 @@ async function main(): Promise<void> {
 			const totals = (
 				await db.execute(sql`
 					select
-					  (select coalesce(sum(greatest(unit_price_rub * greatest(quantity,1) - discount_rub, 0)),0)::numeric(12,2)
+					  (select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)),0)::numeric(12,2)
 					     from treatment_items where organization_id = ${org.id} and status <> 'cancelled') as planned_sql_greatest,
 					  (select coalesce(sum(greatest(unit_price_rub * round(greatest(quantity,1)) - discount_rub, 0)),0)::numeric(12,2)
 					     from treatment_items where organization_id = ${org.id} and status <> 'cancelled') as planned_dashboard_rounded,
-					  (select coalesce(sum(greatest(unit_price_rub * greatest(quantity,1) - discount_rub, 0)),0)::numeric(12,2)
+					  (select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)),0)::numeric(12,2)
 					     from treatment_items where organization_id = ${org.id} and status = 'completed') as planned_completed_only,
 					  (select coalesce(sum(amount_rub),0)::numeric(12,2)
 					     from payments where organization_id = ${org.id} and status = 'paid') as paid_sql,
@@ -1204,7 +1234,7 @@ async function main(): Promise<void> {
 					      and sci.tax_deductible) as tax_deductible_sql,
 					  (select count(*)::int from treatment_items
 					    where organization_id = ${org.id} and status <> 'cancelled' and status <> 'completed') as open_items_sql,
-					  (select coalesce(sum(greatest(unit_price_rub * greatest(quantity,1) - discount_rub, 0)),0)::numeric(12,2)
+					  (select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)),0)::numeric(12,2)
 					     from treatment_items where organization_id = ${org.id} and status = 'cancelled') as cancelled_line_sql,
 					  (select count(*)::int from treatment_items where organization_id = ${org.id}) as item_rows,
 					  (select count(*)::int from payments where organization_id = ${org.id}) as payment_rows,
@@ -1241,7 +1271,7 @@ async function main(): Promise<void> {
 					    where organization_id = ${org.id} and doctor_user_id is not null
 					      and starts_at >= ${REPORT_PERIOD_FROM}::timestamptz
 					      and starts_at <= ${REPORT_PERIOD_TO}::timestamptz) as period_appointments_with_doctor,
-					  (select coalesce(sum(greatest(ti.unit_price_rub * greatest(ti.quantity,1) - ti.discount_rub, 0)),0)::numeric(12,2)
+					  (select coalesce(sum(greatest(ti.unit_price_rub * ti.quantity - ti.discount_rub, 0)),0)::numeric(12,2)
 					     from treatment_items ti
 					     join visits v on v.id = ti.visit_id
 					    where ti.organization_id = ${org.id} and ti.status <> 'cancelled'
@@ -1779,9 +1809,9 @@ async function main(): Promise<void> {
 		"пациенты, у которых числа расходятся между формулами",
 		sql`with planned as (
 			  select patient_id, organization_id,
-			         sum(greatest(unit_price_rub * greatest(quantity,1) - discount_rub, 0))::numeric(12,2) as planned_greatest,
+			         sum(greatest(unit_price_rub * quantity - discount_rub, 0))::numeric(12,2) as planned_greatest,
 			         sum(greatest(unit_price_rub * round(greatest(quantity,1)) - discount_rub, 0))::numeric(12,2) as planned_rounded,
-			         sum(greatest(unit_price_rub * greatest(quantity,1) - discount_rub, 0)) filter (where status = 'completed')::numeric(12,2) as planned_completed
+			         sum(greatest(unit_price_rub * quantity - discount_rub, 0)) filter (where status = 'completed')::numeric(12,2) as planned_completed
 			    from treatment_items where status <> 'cancelled'
 			   group by patient_id, organization_id
 			), paid as (
@@ -1938,7 +1968,7 @@ async function main(): Promise<void> {
 			    where organization_id = ${FIXTURE_ORGANIZATION_ID} and appointment_id is not null) as visits_from_appointment,
 			  (select count(*)::int from treatment_items where organization_id = ${FIXTURE_ORGANIZATION_ID}) as items,
 			  (select count(*)::int from payments where organization_id = ${FIXTURE_ORGANIZATION_ID}) as payments,
-			  (select coalesce(sum(greatest(unit_price_rub * greatest(quantity,1) - discount_rub, 0)),0)::numeric(12,2)
+			  (select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)),0)::numeric(12,2)
 			     from treatment_items
 			    where organization_id = ${FIXTURE_ORGANIZATION_ID} and status <> 'cancelled') as planned,
 			  (select coalesce(sum(amount_rub),0)::numeric(12,2) from payments
@@ -1947,7 +1977,7 @@ async function main(): Promise<void> {
 			    where organization_id = ${FIXTURE_ORGANIZATION_ID} and status = 'planned') as advance,
 			  (select coalesce(sum(amount_rub),0)::numeric(12,2) from payments
 			    where organization_id = ${FIXTURE_ORGANIZATION_ID} and status = 'paid' and visit_id is null) as paid_without_visit,
-			  (select coalesce(sum(greatest(unit_price_rub * greatest(quantity,1) - discount_rub, 0)),0)::numeric(12,2)
+			  (select coalesce(sum(greatest(unit_price_rub * quantity - discount_rub, 0)),0)::numeric(12,2)
 			     from treatment_items
 			    where organization_id = ${FIXTURE_ORGANIZATION_ID} and status = 'cancelled') as cancelled_line
 		`)

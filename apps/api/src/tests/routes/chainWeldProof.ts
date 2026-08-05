@@ -421,9 +421,14 @@ async function main(): Promise<void> {
 			}
 			console.log(`   примечание отчёта: ${parsedReceivables.note}`);
 		}
+		// Зеркало отчёта дебиторки. `greatest(quantity, 1)` убран 2026-08-06 вслед за
+		// самим отчётом (`services/reports/managerReports.ts`, разбор стоит там):
+		// на контрактном количестве (целое >= 1, и с миграции 0162 колонка иного не
+		// принимает) обе записи побитово равны, поэтому печатаемые числа не
+		// изменились — снята копия формулы, которой в коде больше нет.
 		const patientDebt = await firstRow<Record<string, unknown>>(
 			sql`select
-			      coalesce((select sum(greatest(unit_price_rub * greatest(quantity,1) - discount_rub, 0))
+			      coalesce((select sum(greatest(unit_price_rub * quantity - discount_rub, 0))
 			                  from treatment_items where patient_id = ${patientId} and status <> 'cancelled'), 0)::numeric(12,2) as planned_rub,
 			      coalesce((select sum(amount_rub) from payments where patient_id = ${patientId} and status = 'paid'), 0)::numeric(12,2) as paid_rub`,
 		);

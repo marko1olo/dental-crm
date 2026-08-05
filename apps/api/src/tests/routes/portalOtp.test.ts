@@ -10,6 +10,7 @@ import {
 	fixtureUuid,
 	isDatabaseUnavailable,
 	purgeFixtureOrganizations,
+	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
 
 /**
@@ -93,10 +94,15 @@ describe("одноразовый код входа в личный кабине�
 	 * часовой потолок, не выжидая их в реальном времени.
 	 */
 	async function shiftIssuedCodesIntoPast(): Promise<void> {
-		await db
-			.update(portalOtpCodes)
-			.set({ createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000) })
-			.where(eq(portalOtpCodes.patientId, PATIENT_ID));
+		// UPDATE без тенант-контекста не падает, а трогает НОЛЬ строк: политика
+		// скрывает их от запроса, а «ноль изменённых» ошибкой не считается. Коды
+		// остались бы свежими, и следующая отправка упёрлась бы в паузу.
+		await withFixtureTenant(ORG_ID, async () => {
+			await db
+				.update(portalOtpCodes)
+				.set({ createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000) })
+				.where(eq(portalOtpCodes.patientId, PATIENT_ID));
+		});
 	}
 
 	async function freshCode(): Promise<string> {
@@ -136,16 +142,21 @@ describe("одноразовый код входа в личный кабине�
 				ORG_ID,
 				...LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
 			]);
-			await db
-				.insert(organizations)
-				.values({ id: ORG_ID, name: "Клиника личного кабинета" });
-			// Без onConflictDoNothing: молчащий конфликт первичного ключа и оставлял
-			// тест работать с чужой строкой вместо своей.
-			await db.insert(patients).values({
-				id: PATIENT_ID,
-				organizationId: ORG_ID,
-				fullName: "Портнов Олег Иванович",
-				phone: PATIENT_PHONE,
+			// Сев идёт под тенант-контекстом: в WITH CHECK тенант-таблиц дизъюнкта
+			// обхода нет, поэтому вставка без `app.current_tenant` отвергается кодом
+			// 42501, а под обходом — тоже 42501 на всём, кроме `organizations`.
+			await withFixtureTenant(ORG_ID, async () => {
+				await db
+					.insert(organizations)
+					.values({ id: ORG_ID, name: "Клиника личного кабинета" });
+				// Без onConflictDoNothing: молчащий конфликт первичного ключа и оставлял
+				// тест работать с чужой строкой вместо своей.
+				await db.insert(patients).values({
+					id: PATIENT_ID,
+					organizationId: ORG_ID,
+					fullName: "Портнов Олег Иванович",
+					phone: PATIENT_PHONE,
+				});
 			});
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;
@@ -204,15 +215,19 @@ describe("одноразовый код входа в личный кабине�
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		const code = await freshCode();
-		await db
-			.update(portalOtpCodes)
-			.set({ expiresAt: new Date(Date.now() - 1000) })
-			.where(
-				and(
-					eq(portalOtpCodes.patientId, PATIENT_ID),
-					eq(portalOtpCodes.deliveryStatus, "sent"),
-				),
-			);
+		// Тот же тенант-контекст, что у сева: без него срок годности сдвинулся бы у
+		// нуля строк, код остался бы действующим, и проверка стала бы бессмысленной.
+		await withFixtureTenant(ORG_ID, async () => {
+			await db
+				.update(portalOtpCodes)
+				.set({ expiresAt: new Date(Date.now() - 1000) })
+				.where(
+					and(
+						eq(portalOtpCodes.patientId, PATIENT_ID),
+						eq(portalOtpCodes.deliveryStatus, "sent"),
+					),
+				);
+		});
 
 		const response = await verifyOtp(PATIENT_PHONE, code);
 		assert.equal(response.statusCode, 401);
@@ -234,10 +249,14 @@ describe("одноразовый код входа в личный кабине�
 		const burned = await verifyOtp(PATIENT_PHONE, code);
 		assert.equal(burned.statusCode, 401, "верный код прошёл после исчерпания попыток");
 
-		const rows = await db
-			.select({ consumedAt: portalOtpCodes.consumedAt })
-			.from(portalOtpCodes)
-			.where(eq(portalOtpCodes.patientId, PATIENT_ID));
+		// Чтение тоже под контекстом: без него политика вернула бы пустой список, и
+		// «все коды погашены» оказалось бы истиной на пустом множестве.
+		const rows = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ consumedAt: portalOtpCodes.consumedAt })
+				.from(portalOtpCodes)
+				.where(eq(portalOtpCodes.patientId, PATIENT_ID)),
+		);
 		assert.ok(
 			rows.every((row) => row.consumedAt !== null),
 			"код не погашен после исчерпания попыток — перебор можно продолжить",
@@ -248,15 +267,19 @@ describe("одноразовый код входа в личный кабине�
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		const code = await freshCode();
-		const rows = await db
-			.select({ codeHash: portalOtpCodes.codeHash })
-			.from(portalOtpCodes)
-			.where(
-				and(
-					eq(portalOtpCodes.patientId, PATIENT_ID),
-					eq(portalOtpCodes.deliveryStatus, "sent"),
+		// Без контекста запрос вернул бы ноль строк, и проверка «код не лежит
+		// открытым» прошла бы, ни одной сохранённой строки не прочитав.
+		const rows = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ codeHash: portalOtpCodes.codeHash })
+				.from(portalOtpCodes)
+				.where(
+					and(
+						eq(portalOtpCodes.patientId, PATIENT_ID),
+						eq(portalOtpCodes.deliveryStatus, "sent"),
+					),
 				),
-			);
+		);
 
 		assert.ok(rows.length > 0, "код не сохранён");
 		for (const row of rows) {

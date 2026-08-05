@@ -57,6 +57,11 @@ interface ApiErrorDetails {
   [key: string]: string | number | boolean | string[] | null;
 }
 
+/** Тело единого конверта ошибки — то, что уходит клиенту как значение. */
+interface ApiErrorEnvelope {
+  error: { code: string; message: string; details: ApiErrorDetails };
+}
+
 /**
  * Читает заголовок с именем файла, допуская кириллицу.
  *
@@ -83,15 +88,31 @@ function decodeHeaderText(value: string | string[] | undefined): string | undefi
   }
 }
 
-/** Единый конверт ошибки. */
+/**
+ * Единый конверт ошибки.
+ *
+ * СТАВИТ КОД И ВОЗВРАЩАЕТ ТЕЛО, А НЕ ЗОВЁТ `send`. Прежняя форма
+ * (`return reply.code(N).send(...)`) отдавала вызывающему сам `reply`, а он
+ * thenable: `Reply.prototype.then` (fastify/lib/reply.js:466) разрешается по
+ * `eos(reply.raw)` — то есть когда ответ уже ушёл клиенту. Обработчик,
+ * написавший `return fail(...)`, тем самым возвращал промис, который ждёт конца
+ * отправки, а обёртка withTenantCtx из server.ts (хук onRoute) ждёт его, чтобы
+ * зафиксировать транзакцию. COMMIT уходил ПОСЛЕ ответа.
+ *
+ * Возврат значения снимает это целиком: fastify зовёт `reply.send(payload)` уже
+ * после разрешения промиса обработчика (lib/wrap-thenable.js:14), то есть после
+ * COMMIT. Код, выставленный `reply.code()`, при этом сохраняется — он живёт на
+ * объекте ответа, а не в аргументах `send`.
+ */
 function fail(
   reply: FastifyReply,
   httpStatus: number,
   code: string,
   message: string,
   details: ApiErrorDetails = {}
-): FastifyReply {
-  return reply.code(httpStatus).send({ error: { code, message, details } });
+): ApiErrorEnvelope {
+  reply.code(httpStatus);
+  return { error: { code, message, details } };
 }
 
 /**
@@ -149,7 +170,7 @@ function failSchemaRefusal(
   issues: ReadonlyArray<SchemaIssueLike>,
   headline: string,
   retryAction: string
-): FastifyReply {
+): ApiErrorEnvelope {
   return fail(reply, 400, "ValidationError", schemaRefusalMessage({
     issues,
     fieldLabels: migrationRunFieldLabels,
@@ -161,7 +182,7 @@ function failSchemaRefusal(
 }
 
 /** Переводит отказ фазы в ответ API с сохранением машинного кода. */
-function failFromPhaseError(reply: FastifyReply, error: unknown): FastifyReply {
+function failFromPhaseError(reply: FastifyReply, error: unknown): ApiErrorEnvelope {
   if (error instanceof MigrationPhaseError) {
     const httpStatus = error.code === "RunNotFound" ? 404 : error.code === "UploadExpired" ? 410 : 422;
     return fail(reply, httpStatus, error.code, error.message);

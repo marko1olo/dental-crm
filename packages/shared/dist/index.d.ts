@@ -57239,7 +57239,50 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
     allowExternalHandoff?: boolean | undefined;
 }>;
 export type DicomViewerLaunchManifestRequest = z.infer<typeof dicomViewerLaunchManifestRequestSchema>;
-export declare const dicomViewerLaunchManifestResponseSchema: z.ZodObject<{
+/**
+ * Манифест запуска просмотра. Смысл `viewerUrl` задаёт СОСЕДНЕЕ поле
+ * `launchMode`, поэтому поле проверяется не в одиночку, а в паре с ним —
+ * перекрёстной проверкой внизу схемы.
+ *
+ * ЧТО ПРИНИМАЕТСЯ В КАЖДОМ ИЗ ЧЕТЫРЁХ РЕЖИМОВ (производители —
+ * apps/api/src/routes/imaging.ts, buildDicomViewerLaunchManifest):
+ *   • `dicomweb_url` (imaging.ts:3602) — buildOhifViewerUrl() из `ohifBaseUrl`.
+ *     Требуется `httpUrlSchema`, `null` ЗАПРЕЩЁН. Здесь и только здесь схема
+ *     адреса действительно режет: `javascript:`, `data:`, `vbscript:`, `file:`
+ *     и местный путь в этом режиме отвергаются на входе;
+ *   • `local_manifest` (imaging.ts:3605) — просмотр открывается локально,
+ *     адреса нет. Требуется строго `null`;
+ *   • `external_handoff` (imaging.ts:3607) — `externalViewerPath`, то есть путь
+ *     к местному просмотрщику (Weasis, RadiAnt). Это НЕ адрес, разбору как URL
+ *     не подлежит. Принимается `null` ИЛИ любая строка в пределах
+ *     externalViewerPathSchema;
+ *   • `blocked` — безопасной цели нет. Требуется строго `null`.
+ *
+ * ОСТАТОЧНЫЙ РИСК, НАЗВАННЫЙ ЯВНО. В режиме `external_handoff` значение остаётся
+ * произвольной строкой, поэтому `javascript:alert(1)` и `file:///C:/Windows/...`
+ * там ПРИНИМАЮТСЯ и попадают в базу. Ужесточать нельзя без отдельной работы:
+ * отличить «путь к местному просмотрщику» от «строки со схемой» — самостоятельная
+ * задача, и очевидное ужесточение (просто `httpUrlSchema` на поле) убивает режим
+ * целиком, это измерено. Схемы в этом режиме режет ТОЛЬКО выходной слой:
+ * разметка ставит href исключительно когда `isHttpUrl()` истинно
+ * (apps/web/src/components/settings/sources/SourcesDicomCapability.tsx), иначе
+ * печатает значение текстом. Снимешь тот фильтр — дыра открыта, здесь её нет.
+ *
+ * ПОЧЕМУ ПОТОЛОК ДЛИНЫ НЕ НУЖЕН ВЕТКЕ `dicomweb_url`, С ЧИСЛОМ. Прежняя редакция
+ * этого комментария утверждала, что «разумного потолка у такой ссылки нет», и это
+ * было неверно: Study Instance UID ограничен 64 символами (DICOM PS3.5), а
+ * реальный вывод buildOhifViewerUrl — 116 символов, то есть 884 символа запаса до
+ * потолка в 1000. Замер сделан, переоткрывать его не нужно. Длину в этой ветке
+ * не ограничиваем не потому, что предела нет, а потому, что предел задаёт схема
+ * адреса, и он на порядок ниже любого разумного потолка.
+ *
+ * ПОЧЕМУ superRefine, А НЕ discriminatedUnion. Размеченное объединение по
+ * `launchMode` дало бы тот же рантайм-контракт ценой четырёх вариантов по ~20
+ * общих полей: каждое будущее поле пришлось бы вносить в четыре места, где его
+ * забудут в одном. Строгий тип потребителю здесь ничего не покупает — он читает
+ * `viewerUrl: string | null` и отдаёт его выходному фильтру.
+ */
+export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.ZodObject<{
     viewerKind: z.ZodEnum<["ohif", "cornerstone3d", "weasis", "radiant", "external_url"]>;
     launchMode: z.ZodEnum<["dicomweb_url", "local_manifest", "external_handoff", "blocked"]>;
     viewerUrl: z.ZodNullable<z.ZodString>;
@@ -57501,6 +57544,180 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodObject<{
     warnings: z.ZodArray<z.ZodString, "many">;
     nextAction: z.ZodString;
 }, "strip", z.ZodTypeAny, {
+    warnings: string[];
+    nextAction: string;
+    viewerUrl: string | null;
+    resourcePolicy: {
+        nextAction: string;
+        requiredTier: "standard" | "low_end" | "workstation" | "diagnostic_workstation";
+        loadStrategy: "metadata_only" | "two_d_stack_stream" | "mpr_downsampled" | "mpr_full" | "external_handoff";
+        estimatedMemoryMb: number;
+        maxClientSlices: number;
+        thumbnailFirst: boolean;
+        downsampleRecommended: boolean;
+        cacheMode: "none" | "metadata_only" | "bounded_disk" | "dicomweb_stream";
+        safetyCaps: string[];
+    };
+    studyInstanceUid: string | null;
+    seriesInstanceUid: string | null;
+    annotations: {
+        type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        unit: string | null;
+        toothCode: string | null;
+        note: string | null;
+        createdByUserId: string | null;
+        label: string;
+        points: {
+            x: number;
+            y: number;
+            z?: number | null | undefined;
+            plane?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null | undefined;
+        }[];
+        measurementValue: number | null;
+        semanticRole?: "ridge_width" | "bone_height" | "clearance" | "generic" | null | undefined;
+    }[];
+    viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
+    viewerState: {
+        mode: "photo" | "two_d" | "stack" | "mpr";
+        zoom: number;
+        crosshair: boolean;
+        windowCenter: number | null;
+        windowWidth: number | null;
+        activeTool: "surgical_guide" | "note" | "window_level" | "pan" | "zoom" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
+        activeQuickActionId: string | null;
+        windowPreset: "custom" | "photo" | "implant" | "endo" | "caries" | "bone" | "soft_tissue" | "perio" | "teeth";
+        brightness: number;
+        contrast: number;
+        inverted: boolean;
+        rotationDeg: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
+        sliceIndex: number | null;
+        projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
+        axisDeg: number;
+        slabMm: number;
+        linkedPlanes: boolean;
+        implantPlan: {
+            itemId: string;
+            indication: string;
+            system: string;
+            line: string;
+            diameterMm: number;
+            lengthMm: number;
+            platform: string;
+            selectedAt: string | null;
+        } | null;
+    } | null;
+    launchMode: "blocked" | "external_handoff" | "dicomweb_url" | "local_manifest";
+    dataSource: {
+        sourceName: string;
+        sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
+        kind: "none" | "dicomweb" | "local_files" | "external_viewer";
+        studyInstanceUid: string | null;
+        seriesInstanceUid: string | null;
+        qidoRoot: string | null;
+        wadoRoot: string | null;
+        stowRoot: string | null;
+    };
+    displaySetSelector: {
+        projections: ("axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction")[];
+        studyInstanceUid: string | null;
+        seriesInstanceUid: string | null;
+        preferredLayout: "none" | "two_d_stack" | "mpr_3up" | "mpr_4up" | "external_only";
+    };
+    cornerstoneVolumeId: string | null;
+}, {
+    warnings: string[];
+    nextAction: string;
+    viewerUrl: string | null;
+    resourcePolicy: {
+        nextAction: string;
+        requiredTier: "standard" | "low_end" | "workstation" | "diagnostic_workstation";
+        loadStrategy: "metadata_only" | "two_d_stack_stream" | "mpr_downsampled" | "mpr_full" | "external_handoff";
+        estimatedMemoryMb: number;
+        maxClientSlices: number;
+        thumbnailFirst: boolean;
+        downsampleRecommended: boolean;
+        cacheMode: "none" | "metadata_only" | "bounded_disk" | "dicomweb_stream";
+        safetyCaps: string[];
+    };
+    studyInstanceUid: string | null;
+    seriesInstanceUid: string | null;
+    annotations: {
+        type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        unit: string | null;
+        toothCode: string | null;
+        note: string | null;
+        createdByUserId: string | null;
+        label: string;
+        points: {
+            x: number;
+            y: number;
+            z?: number | null | undefined;
+            plane?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null | undefined;
+        }[];
+        measurementValue: number | null;
+        semanticRole?: "ridge_width" | "bone_height" | "clearance" | "generic" | null | undefined;
+    }[];
+    viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
+    viewerState: {
+        mode: "photo" | "two_d" | "stack" | "mpr";
+        zoom: number;
+        crosshair: boolean;
+        windowCenter: number | null;
+        windowWidth: number | null;
+        activeTool: "surgical_guide" | "note" | "window_level" | "pan" | "zoom" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
+        windowPreset: "custom" | "photo" | "implant" | "endo" | "caries" | "bone" | "soft_tissue" | "perio" | "teeth";
+        brightness: number;
+        contrast: number;
+        inverted: boolean;
+        rotationDeg: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
+        projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
+        axisDeg: number;
+        slabMm: number;
+        linkedPlanes: boolean;
+        activeQuickActionId?: string | null | undefined;
+        sliceIndex?: number | null | undefined;
+        implantPlan?: {
+            itemId: string;
+            indication: string;
+            system: string;
+            line: string;
+            diameterMm: number;
+            lengthMm: number;
+            platform: string;
+            selectedAt?: string | null | undefined;
+        } | null | undefined;
+    } | null;
+    launchMode: "blocked" | "external_handoff" | "dicomweb_url" | "local_manifest";
+    dataSource: {
+        sourceName: string;
+        sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
+        kind: "none" | "dicomweb" | "local_files" | "external_viewer";
+        studyInstanceUid: string | null;
+        seriesInstanceUid: string | null;
+        qidoRoot: string | null;
+        wadoRoot: string | null;
+        stowRoot: string | null;
+    };
+    displaySetSelector: {
+        projections: ("axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction")[];
+        studyInstanceUid: string | null;
+        seriesInstanceUid: string | null;
+        preferredLayout: "none" | "two_d_stack" | "mpr_3up" | "mpr_4up" | "external_only";
+    };
+    cornerstoneVolumeId: string | null;
+}>, {
     warnings: string[];
     nextAction: string;
     viewerUrl: string | null;
@@ -62619,7 +62836,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             budgetMs: number;
         }[];
     }>;
-    launchManifest: z.ZodObject<{
+    launchManifest: z.ZodEffects<z.ZodObject<{
         viewerKind: z.ZodEnum<["ohif", "cornerstone3d", "weasis", "radiant", "external_url"]>;
         launchMode: z.ZodEnum<["dicomweb_url", "local_manifest", "external_handoff", "blocked"]>;
         viewerUrl: z.ZodNullable<z.ZodString>;
@@ -62881,6 +63098,180 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
         warnings: z.ZodArray<z.ZodString, "many">;
         nextAction: z.ZodString;
     }, "strip", z.ZodTypeAny, {
+        warnings: string[];
+        nextAction: string;
+        viewerUrl: string | null;
+        resourcePolicy: {
+            nextAction: string;
+            requiredTier: "standard" | "low_end" | "workstation" | "diagnostic_workstation";
+            loadStrategy: "metadata_only" | "two_d_stack_stream" | "mpr_downsampled" | "mpr_full" | "external_handoff";
+            estimatedMemoryMb: number;
+            maxClientSlices: number;
+            thumbnailFirst: boolean;
+            downsampleRecommended: boolean;
+            cacheMode: "none" | "metadata_only" | "bounded_disk" | "dicomweb_stream";
+            safetyCaps: string[];
+        };
+        studyInstanceUid: string | null;
+        seriesInstanceUid: string | null;
+        annotations: {
+            type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
+            id: string;
+            createdAt: string;
+            updatedAt: string;
+            unit: string | null;
+            toothCode: string | null;
+            note: string | null;
+            createdByUserId: string | null;
+            label: string;
+            points: {
+                x: number;
+                y: number;
+                z?: number | null | undefined;
+                plane?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null | undefined;
+            }[];
+            measurementValue: number | null;
+            semanticRole?: "ridge_width" | "bone_height" | "clearance" | "generic" | null | undefined;
+        }[];
+        viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
+        viewerState: {
+            mode: "photo" | "two_d" | "stack" | "mpr";
+            zoom: number;
+            crosshair: boolean;
+            windowCenter: number | null;
+            windowWidth: number | null;
+            activeTool: "surgical_guide" | "note" | "window_level" | "pan" | "zoom" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
+            activeQuickActionId: string | null;
+            windowPreset: "custom" | "photo" | "implant" | "endo" | "caries" | "bone" | "soft_tissue" | "perio" | "teeth";
+            brightness: number;
+            contrast: number;
+            inverted: boolean;
+            rotationDeg: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
+            sliceIndex: number | null;
+            projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
+            axisDeg: number;
+            slabMm: number;
+            linkedPlanes: boolean;
+            implantPlan: {
+                itemId: string;
+                indication: string;
+                system: string;
+                line: string;
+                diameterMm: number;
+                lengthMm: number;
+                platform: string;
+                selectedAt: string | null;
+            } | null;
+        } | null;
+        launchMode: "blocked" | "external_handoff" | "dicomweb_url" | "local_manifest";
+        dataSource: {
+            sourceName: string;
+            sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
+            kind: "none" | "dicomweb" | "local_files" | "external_viewer";
+            studyInstanceUid: string | null;
+            seriesInstanceUid: string | null;
+            qidoRoot: string | null;
+            wadoRoot: string | null;
+            stowRoot: string | null;
+        };
+        displaySetSelector: {
+            projections: ("axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction")[];
+            studyInstanceUid: string | null;
+            seriesInstanceUid: string | null;
+            preferredLayout: "none" | "two_d_stack" | "mpr_3up" | "mpr_4up" | "external_only";
+        };
+        cornerstoneVolumeId: string | null;
+    }, {
+        warnings: string[];
+        nextAction: string;
+        viewerUrl: string | null;
+        resourcePolicy: {
+            nextAction: string;
+            requiredTier: "standard" | "low_end" | "workstation" | "diagnostic_workstation";
+            loadStrategy: "metadata_only" | "two_d_stack_stream" | "mpr_downsampled" | "mpr_full" | "external_handoff";
+            estimatedMemoryMb: number;
+            maxClientSlices: number;
+            thumbnailFirst: boolean;
+            downsampleRecommended: boolean;
+            cacheMode: "none" | "metadata_only" | "bounded_disk" | "dicomweb_stream";
+            safetyCaps: string[];
+        };
+        studyInstanceUid: string | null;
+        seriesInstanceUid: string | null;
+        annotations: {
+            type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
+            id: string;
+            createdAt: string;
+            updatedAt: string;
+            unit: string | null;
+            toothCode: string | null;
+            note: string | null;
+            createdByUserId: string | null;
+            label: string;
+            points: {
+                x: number;
+                y: number;
+                z?: number | null | undefined;
+                plane?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null | undefined;
+            }[];
+            measurementValue: number | null;
+            semanticRole?: "ridge_width" | "bone_height" | "clearance" | "generic" | null | undefined;
+        }[];
+        viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
+        viewerState: {
+            mode: "photo" | "two_d" | "stack" | "mpr";
+            zoom: number;
+            crosshair: boolean;
+            windowCenter: number | null;
+            windowWidth: number | null;
+            activeTool: "surgical_guide" | "note" | "window_level" | "pan" | "zoom" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
+            windowPreset: "custom" | "photo" | "implant" | "endo" | "caries" | "bone" | "soft_tissue" | "perio" | "teeth";
+            brightness: number;
+            contrast: number;
+            inverted: boolean;
+            rotationDeg: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
+            projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
+            axisDeg: number;
+            slabMm: number;
+            linkedPlanes: boolean;
+            activeQuickActionId?: string | null | undefined;
+            sliceIndex?: number | null | undefined;
+            implantPlan?: {
+                itemId: string;
+                indication: string;
+                system: string;
+                line: string;
+                diameterMm: number;
+                lengthMm: number;
+                platform: string;
+                selectedAt?: string | null | undefined;
+            } | null | undefined;
+        } | null;
+        launchMode: "blocked" | "external_handoff" | "dicomweb_url" | "local_manifest";
+        dataSource: {
+            sourceName: string;
+            sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
+            kind: "none" | "dicomweb" | "local_files" | "external_viewer";
+            studyInstanceUid: string | null;
+            seriesInstanceUid: string | null;
+            qidoRoot: string | null;
+            wadoRoot: string | null;
+            stowRoot: string | null;
+        };
+        displaySetSelector: {
+            projections: ("axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction")[];
+            studyInstanceUid: string | null;
+            seriesInstanceUid: string | null;
+            preferredLayout: "none" | "two_d_stack" | "mpr_3up" | "mpr_4up" | "external_only";
+        };
+        cornerstoneVolumeId: string | null;
+    }>, {
         warnings: string[];
         nextAction: string;
         viewerUrl: string | null;
@@ -65061,7 +65452,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 budgetMs: number;
             }[];
         }>;
-        launchManifest: z.ZodObject<{
+        launchManifest: z.ZodEffects<z.ZodObject<{
             viewerKind: z.ZodEnum<["ohif", "cornerstone3d", "weasis", "radiant", "external_url"]>;
             launchMode: z.ZodEnum<["dicomweb_url", "local_manifest", "external_handoff", "blocked"]>;
             viewerUrl: z.ZodNullable<z.ZodString>;
@@ -65323,6 +65714,180 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
             warnings: z.ZodArray<z.ZodString, "many">;
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
+            warnings: string[];
+            nextAction: string;
+            viewerUrl: string | null;
+            resourcePolicy: {
+                nextAction: string;
+                requiredTier: "standard" | "low_end" | "workstation" | "diagnostic_workstation";
+                loadStrategy: "metadata_only" | "two_d_stack_stream" | "mpr_downsampled" | "mpr_full" | "external_handoff";
+                estimatedMemoryMb: number;
+                maxClientSlices: number;
+                thumbnailFirst: boolean;
+                downsampleRecommended: boolean;
+                cacheMode: "none" | "metadata_only" | "bounded_disk" | "dicomweb_stream";
+                safetyCaps: string[];
+            };
+            studyInstanceUid: string | null;
+            seriesInstanceUid: string | null;
+            annotations: {
+                type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
+                id: string;
+                createdAt: string;
+                updatedAt: string;
+                unit: string | null;
+                toothCode: string | null;
+                note: string | null;
+                createdByUserId: string | null;
+                label: string;
+                points: {
+                    x: number;
+                    y: number;
+                    z?: number | null | undefined;
+                    plane?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null | undefined;
+                }[];
+                measurementValue: number | null;
+                semanticRole?: "ridge_width" | "bone_height" | "clearance" | "generic" | null | undefined;
+            }[];
+            viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
+            viewerState: {
+                mode: "photo" | "two_d" | "stack" | "mpr";
+                zoom: number;
+                crosshair: boolean;
+                windowCenter: number | null;
+                windowWidth: number | null;
+                activeTool: "surgical_guide" | "note" | "window_level" | "pan" | "zoom" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
+                activeQuickActionId: string | null;
+                windowPreset: "custom" | "photo" | "implant" | "endo" | "caries" | "bone" | "soft_tissue" | "perio" | "teeth";
+                brightness: number;
+                contrast: number;
+                inverted: boolean;
+                rotationDeg: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
+                sliceIndex: number | null;
+                projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
+                axisDeg: number;
+                slabMm: number;
+                linkedPlanes: boolean;
+                implantPlan: {
+                    itemId: string;
+                    indication: string;
+                    system: string;
+                    line: string;
+                    diameterMm: number;
+                    lengthMm: number;
+                    platform: string;
+                    selectedAt: string | null;
+                } | null;
+            } | null;
+            launchMode: "blocked" | "external_handoff" | "dicomweb_url" | "local_manifest";
+            dataSource: {
+                sourceName: string;
+                sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
+                kind: "none" | "dicomweb" | "local_files" | "external_viewer";
+                studyInstanceUid: string | null;
+                seriesInstanceUid: string | null;
+                qidoRoot: string | null;
+                wadoRoot: string | null;
+                stowRoot: string | null;
+            };
+            displaySetSelector: {
+                projections: ("axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction")[];
+                studyInstanceUid: string | null;
+                seriesInstanceUid: string | null;
+                preferredLayout: "none" | "two_d_stack" | "mpr_3up" | "mpr_4up" | "external_only";
+            };
+            cornerstoneVolumeId: string | null;
+        }, {
+            warnings: string[];
+            nextAction: string;
+            viewerUrl: string | null;
+            resourcePolicy: {
+                nextAction: string;
+                requiredTier: "standard" | "low_end" | "workstation" | "diagnostic_workstation";
+                loadStrategy: "metadata_only" | "two_d_stack_stream" | "mpr_downsampled" | "mpr_full" | "external_handoff";
+                estimatedMemoryMb: number;
+                maxClientSlices: number;
+                thumbnailFirst: boolean;
+                downsampleRecommended: boolean;
+                cacheMode: "none" | "metadata_only" | "bounded_disk" | "dicomweb_stream";
+                safetyCaps: string[];
+            };
+            studyInstanceUid: string | null;
+            seriesInstanceUid: string | null;
+            annotations: {
+                type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
+                id: string;
+                createdAt: string;
+                updatedAt: string;
+                unit: string | null;
+                toothCode: string | null;
+                note: string | null;
+                createdByUserId: string | null;
+                label: string;
+                points: {
+                    x: number;
+                    y: number;
+                    z?: number | null | undefined;
+                    plane?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null | undefined;
+                }[];
+                measurementValue: number | null;
+                semanticRole?: "ridge_width" | "bone_height" | "clearance" | "generic" | null | undefined;
+            }[];
+            viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
+            viewerState: {
+                mode: "photo" | "two_d" | "stack" | "mpr";
+                zoom: number;
+                crosshair: boolean;
+                windowCenter: number | null;
+                windowWidth: number | null;
+                activeTool: "surgical_guide" | "note" | "window_level" | "pan" | "zoom" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
+                windowPreset: "custom" | "photo" | "implant" | "endo" | "caries" | "bone" | "soft_tissue" | "perio" | "teeth";
+                brightness: number;
+                contrast: number;
+                inverted: boolean;
+                rotationDeg: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
+                projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
+                axisDeg: number;
+                slabMm: number;
+                linkedPlanes: boolean;
+                activeQuickActionId?: string | null | undefined;
+                sliceIndex?: number | null | undefined;
+                implantPlan?: {
+                    itemId: string;
+                    indication: string;
+                    system: string;
+                    line: string;
+                    diameterMm: number;
+                    lengthMm: number;
+                    platform: string;
+                    selectedAt?: string | null | undefined;
+                } | null | undefined;
+            } | null;
+            launchMode: "blocked" | "external_handoff" | "dicomweb_url" | "local_manifest";
+            dataSource: {
+                sourceName: string;
+                sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
+                kind: "none" | "dicomweb" | "local_files" | "external_viewer";
+                studyInstanceUid: string | null;
+                seriesInstanceUid: string | null;
+                qidoRoot: string | null;
+                wadoRoot: string | null;
+                stowRoot: string | null;
+            };
+            displaySetSelector: {
+                projections: ("axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction")[];
+                studyInstanceUid: string | null;
+                seriesInstanceUid: string | null;
+                preferredLayout: "none" | "two_d_stack" | "mpr_3up" | "mpr_4up" | "external_only";
+            };
+            cornerstoneVolumeId: string | null;
+        }>, {
             warnings: string[];
             nextAction: string;
             viewerUrl: string | null;
@@ -68254,7 +68819,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 budgetMs: number;
             }[];
         }>;
-        launchManifest: z.ZodObject<{
+        launchManifest: z.ZodEffects<z.ZodObject<{
             viewerKind: z.ZodEnum<["ohif", "cornerstone3d", "weasis", "radiant", "external_url"]>;
             launchMode: z.ZodEnum<["dicomweb_url", "local_manifest", "external_handoff", "blocked"]>;
             viewerUrl: z.ZodNullable<z.ZodString>;
@@ -68516,6 +69081,180 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
             warnings: z.ZodArray<z.ZodString, "many">;
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
+            warnings: string[];
+            nextAction: string;
+            viewerUrl: string | null;
+            resourcePolicy: {
+                nextAction: string;
+                requiredTier: "standard" | "low_end" | "workstation" | "diagnostic_workstation";
+                loadStrategy: "metadata_only" | "two_d_stack_stream" | "mpr_downsampled" | "mpr_full" | "external_handoff";
+                estimatedMemoryMb: number;
+                maxClientSlices: number;
+                thumbnailFirst: boolean;
+                downsampleRecommended: boolean;
+                cacheMode: "none" | "metadata_only" | "bounded_disk" | "dicomweb_stream";
+                safetyCaps: string[];
+            };
+            studyInstanceUid: string | null;
+            seriesInstanceUid: string | null;
+            annotations: {
+                type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
+                id: string;
+                createdAt: string;
+                updatedAt: string;
+                unit: string | null;
+                toothCode: string | null;
+                note: string | null;
+                createdByUserId: string | null;
+                label: string;
+                points: {
+                    x: number;
+                    y: number;
+                    z?: number | null | undefined;
+                    plane?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null | undefined;
+                }[];
+                measurementValue: number | null;
+                semanticRole?: "ridge_width" | "bone_height" | "clearance" | "generic" | null | undefined;
+            }[];
+            viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
+            viewerState: {
+                mode: "photo" | "two_d" | "stack" | "mpr";
+                zoom: number;
+                crosshair: boolean;
+                windowCenter: number | null;
+                windowWidth: number | null;
+                activeTool: "surgical_guide" | "note" | "window_level" | "pan" | "zoom" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
+                activeQuickActionId: string | null;
+                windowPreset: "custom" | "photo" | "implant" | "endo" | "caries" | "bone" | "soft_tissue" | "perio" | "teeth";
+                brightness: number;
+                contrast: number;
+                inverted: boolean;
+                rotationDeg: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
+                sliceIndex: number | null;
+                projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
+                axisDeg: number;
+                slabMm: number;
+                linkedPlanes: boolean;
+                implantPlan: {
+                    itemId: string;
+                    indication: string;
+                    system: string;
+                    line: string;
+                    diameterMm: number;
+                    lengthMm: number;
+                    platform: string;
+                    selectedAt: string | null;
+                } | null;
+            } | null;
+            launchMode: "blocked" | "external_handoff" | "dicomweb_url" | "local_manifest";
+            dataSource: {
+                sourceName: string;
+                sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
+                kind: "none" | "dicomweb" | "local_files" | "external_viewer";
+                studyInstanceUid: string | null;
+                seriesInstanceUid: string | null;
+                qidoRoot: string | null;
+                wadoRoot: string | null;
+                stowRoot: string | null;
+            };
+            displaySetSelector: {
+                projections: ("axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction")[];
+                studyInstanceUid: string | null;
+                seriesInstanceUid: string | null;
+                preferredLayout: "none" | "two_d_stack" | "mpr_3up" | "mpr_4up" | "external_only";
+            };
+            cornerstoneVolumeId: string | null;
+        }, {
+            warnings: string[];
+            nextAction: string;
+            viewerUrl: string | null;
+            resourcePolicy: {
+                nextAction: string;
+                requiredTier: "standard" | "low_end" | "workstation" | "diagnostic_workstation";
+                loadStrategy: "metadata_only" | "two_d_stack_stream" | "mpr_downsampled" | "mpr_full" | "external_handoff";
+                estimatedMemoryMb: number;
+                maxClientSlices: number;
+                thumbnailFirst: boolean;
+                downsampleRecommended: boolean;
+                cacheMode: "none" | "metadata_only" | "bounded_disk" | "dicomweb_stream";
+                safetyCaps: string[];
+            };
+            studyInstanceUid: string | null;
+            seriesInstanceUid: string | null;
+            annotations: {
+                type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
+                id: string;
+                createdAt: string;
+                updatedAt: string;
+                unit: string | null;
+                toothCode: string | null;
+                note: string | null;
+                createdByUserId: string | null;
+                label: string;
+                points: {
+                    x: number;
+                    y: number;
+                    z?: number | null | undefined;
+                    plane?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null | undefined;
+                }[];
+                measurementValue: number | null;
+                semanticRole?: "ridge_width" | "bone_height" | "clearance" | "generic" | null | undefined;
+            }[];
+            viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
+            viewerState: {
+                mode: "photo" | "two_d" | "stack" | "mpr";
+                zoom: number;
+                crosshair: boolean;
+                windowCenter: number | null;
+                windowWidth: number | null;
+                activeTool: "surgical_guide" | "note" | "window_level" | "pan" | "zoom" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
+                windowPreset: "custom" | "photo" | "implant" | "endo" | "caries" | "bone" | "soft_tissue" | "perio" | "teeth";
+                brightness: number;
+                contrast: number;
+                inverted: boolean;
+                rotationDeg: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
+                projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
+                axisDeg: number;
+                slabMm: number;
+                linkedPlanes: boolean;
+                activeQuickActionId?: string | null | undefined;
+                sliceIndex?: number | null | undefined;
+                implantPlan?: {
+                    itemId: string;
+                    indication: string;
+                    system: string;
+                    line: string;
+                    diameterMm: number;
+                    lengthMm: number;
+                    platform: string;
+                    selectedAt?: string | null | undefined;
+                } | null | undefined;
+            } | null;
+            launchMode: "blocked" | "external_handoff" | "dicomweb_url" | "local_manifest";
+            dataSource: {
+                sourceName: string;
+                sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
+                kind: "none" | "dicomweb" | "local_files" | "external_viewer";
+                studyInstanceUid: string | null;
+                seriesInstanceUid: string | null;
+                qidoRoot: string | null;
+                wadoRoot: string | null;
+                stowRoot: string | null;
+            };
+            displaySetSelector: {
+                projections: ("axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction")[];
+                studyInstanceUid: string | null;
+                seriesInstanceUid: string | null;
+                preferredLayout: "none" | "two_d_stack" | "mpr_3up" | "mpr_4up" | "external_only";
+            };
+            cornerstoneVolumeId: string | null;
+        }>, {
             warnings: string[];
             nextAction: string;
             viewerUrl: string | null;
@@ -71430,7 +72169,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     budgetMs: number;
                 }[];
             }>;
-            launchManifest: z.ZodObject<{
+            launchManifest: z.ZodEffects<z.ZodObject<{
                 viewerKind: z.ZodEnum<["ohif", "cornerstone3d", "weasis", "radiant", "external_url"]>;
                 launchMode: z.ZodEnum<["dicomweb_url", "local_manifest", "external_handoff", "blocked"]>;
                 viewerUrl: z.ZodNullable<z.ZodString>;
@@ -71692,6 +72431,180 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                 warnings: z.ZodArray<z.ZodString, "many">;
                 nextAction: z.ZodString;
             }, "strip", z.ZodTypeAny, {
+                warnings: string[];
+                nextAction: string;
+                viewerUrl: string | null;
+                resourcePolicy: {
+                    nextAction: string;
+                    requiredTier: "standard" | "low_end" | "workstation" | "diagnostic_workstation";
+                    loadStrategy: "metadata_only" | "two_d_stack_stream" | "mpr_downsampled" | "mpr_full" | "external_handoff";
+                    estimatedMemoryMb: number;
+                    maxClientSlices: number;
+                    thumbnailFirst: boolean;
+                    downsampleRecommended: boolean;
+                    cacheMode: "none" | "metadata_only" | "bounded_disk" | "dicomweb_stream";
+                    safetyCaps: string[];
+                };
+                studyInstanceUid: string | null;
+                seriesInstanceUid: string | null;
+                annotations: {
+                    type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
+                    id: string;
+                    createdAt: string;
+                    updatedAt: string;
+                    unit: string | null;
+                    toothCode: string | null;
+                    note: string | null;
+                    createdByUserId: string | null;
+                    label: string;
+                    points: {
+                        x: number;
+                        y: number;
+                        z?: number | null | undefined;
+                        plane?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null | undefined;
+                    }[];
+                    measurementValue: number | null;
+                    semanticRole?: "ridge_width" | "bone_height" | "clearance" | "generic" | null | undefined;
+                }[];
+                viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
+                viewerState: {
+                    mode: "photo" | "two_d" | "stack" | "mpr";
+                    zoom: number;
+                    crosshair: boolean;
+                    windowCenter: number | null;
+                    windowWidth: number | null;
+                    activeTool: "surgical_guide" | "note" | "window_level" | "pan" | "zoom" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
+                    activeQuickActionId: string | null;
+                    windowPreset: "custom" | "photo" | "implant" | "endo" | "caries" | "bone" | "soft_tissue" | "perio" | "teeth";
+                    brightness: number;
+                    contrast: number;
+                    inverted: boolean;
+                    rotationDeg: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
+                    sliceIndex: number | null;
+                    projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
+                    axisDeg: number;
+                    slabMm: number;
+                    linkedPlanes: boolean;
+                    implantPlan: {
+                        itemId: string;
+                        indication: string;
+                        system: string;
+                        line: string;
+                        diameterMm: number;
+                        lengthMm: number;
+                        platform: string;
+                        selectedAt: string | null;
+                    } | null;
+                } | null;
+                launchMode: "blocked" | "external_handoff" | "dicomweb_url" | "local_manifest";
+                dataSource: {
+                    sourceName: string;
+                    sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
+                    kind: "none" | "dicomweb" | "local_files" | "external_viewer";
+                    studyInstanceUid: string | null;
+                    seriesInstanceUid: string | null;
+                    qidoRoot: string | null;
+                    wadoRoot: string | null;
+                    stowRoot: string | null;
+                };
+                displaySetSelector: {
+                    projections: ("axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction")[];
+                    studyInstanceUid: string | null;
+                    seriesInstanceUid: string | null;
+                    preferredLayout: "none" | "two_d_stack" | "mpr_3up" | "mpr_4up" | "external_only";
+                };
+                cornerstoneVolumeId: string | null;
+            }, {
+                warnings: string[];
+                nextAction: string;
+                viewerUrl: string | null;
+                resourcePolicy: {
+                    nextAction: string;
+                    requiredTier: "standard" | "low_end" | "workstation" | "diagnostic_workstation";
+                    loadStrategy: "metadata_only" | "two_d_stack_stream" | "mpr_downsampled" | "mpr_full" | "external_handoff";
+                    estimatedMemoryMb: number;
+                    maxClientSlices: number;
+                    thumbnailFirst: boolean;
+                    downsampleRecommended: boolean;
+                    cacheMode: "none" | "metadata_only" | "bounded_disk" | "dicomweb_stream";
+                    safetyCaps: string[];
+                };
+                studyInstanceUid: string | null;
+                seriesInstanceUid: string | null;
+                annotations: {
+                    type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
+                    id: string;
+                    createdAt: string;
+                    updatedAt: string;
+                    unit: string | null;
+                    toothCode: string | null;
+                    note: string | null;
+                    createdByUserId: string | null;
+                    label: string;
+                    points: {
+                        x: number;
+                        y: number;
+                        z?: number | null | undefined;
+                        plane?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null | undefined;
+                    }[];
+                    measurementValue: number | null;
+                    semanticRole?: "ridge_width" | "bone_height" | "clearance" | "generic" | null | undefined;
+                }[];
+                viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
+                viewerState: {
+                    mode: "photo" | "two_d" | "stack" | "mpr";
+                    zoom: number;
+                    crosshair: boolean;
+                    windowCenter: number | null;
+                    windowWidth: number | null;
+                    activeTool: "surgical_guide" | "note" | "window_level" | "pan" | "zoom" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
+                    windowPreset: "custom" | "photo" | "implant" | "endo" | "caries" | "bone" | "soft_tissue" | "perio" | "teeth";
+                    brightness: number;
+                    contrast: number;
+                    inverted: boolean;
+                    rotationDeg: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
+                    projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
+                    axisDeg: number;
+                    slabMm: number;
+                    linkedPlanes: boolean;
+                    activeQuickActionId?: string | null | undefined;
+                    sliceIndex?: number | null | undefined;
+                    implantPlan?: {
+                        itemId: string;
+                        indication: string;
+                        system: string;
+                        line: string;
+                        diameterMm: number;
+                        lengthMm: number;
+                        platform: string;
+                        selectedAt?: string | null | undefined;
+                    } | null | undefined;
+                } | null;
+                launchMode: "blocked" | "external_handoff" | "dicomweb_url" | "local_manifest";
+                dataSource: {
+                    sourceName: string;
+                    sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
+                    kind: "none" | "dicomweb" | "local_files" | "external_viewer";
+                    studyInstanceUid: string | null;
+                    seriesInstanceUid: string | null;
+                    qidoRoot: string | null;
+                    wadoRoot: string | null;
+                    stowRoot: string | null;
+                };
+                displaySetSelector: {
+                    projections: ("axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction")[];
+                    studyInstanceUid: string | null;
+                    seriesInstanceUid: string | null;
+                    preferredLayout: "none" | "two_d_stack" | "mpr_3up" | "mpr_4up" | "external_only";
+                };
+                cornerstoneVolumeId: string | null;
+            }>, {
                 warnings: string[];
                 nextAction: string;
                 viewerUrl: string | null;
@@ -75397,7 +76310,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     budgetMs: number;
                 }[];
             }>;
-            launchManifest: z.ZodObject<{
+            launchManifest: z.ZodEffects<z.ZodObject<{
                 viewerKind: z.ZodEnum<["ohif", "cornerstone3d", "weasis", "radiant", "external_url"]>;
                 launchMode: z.ZodEnum<["dicomweb_url", "local_manifest", "external_handoff", "blocked"]>;
                 viewerUrl: z.ZodNullable<z.ZodString>;
@@ -75659,6 +76572,180 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                 warnings: z.ZodArray<z.ZodString, "many">;
                 nextAction: z.ZodString;
             }, "strip", z.ZodTypeAny, {
+                warnings: string[];
+                nextAction: string;
+                viewerUrl: string | null;
+                resourcePolicy: {
+                    nextAction: string;
+                    requiredTier: "standard" | "low_end" | "workstation" | "diagnostic_workstation";
+                    loadStrategy: "metadata_only" | "two_d_stack_stream" | "mpr_downsampled" | "mpr_full" | "external_handoff";
+                    estimatedMemoryMb: number;
+                    maxClientSlices: number;
+                    thumbnailFirst: boolean;
+                    downsampleRecommended: boolean;
+                    cacheMode: "none" | "metadata_only" | "bounded_disk" | "dicomweb_stream";
+                    safetyCaps: string[];
+                };
+                studyInstanceUid: string | null;
+                seriesInstanceUid: string | null;
+                annotations: {
+                    type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
+                    id: string;
+                    createdAt: string;
+                    updatedAt: string;
+                    unit: string | null;
+                    toothCode: string | null;
+                    note: string | null;
+                    createdByUserId: string | null;
+                    label: string;
+                    points: {
+                        x: number;
+                        y: number;
+                        z?: number | null | undefined;
+                        plane?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null | undefined;
+                    }[];
+                    measurementValue: number | null;
+                    semanticRole?: "ridge_width" | "bone_height" | "clearance" | "generic" | null | undefined;
+                }[];
+                viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
+                viewerState: {
+                    mode: "photo" | "two_d" | "stack" | "mpr";
+                    zoom: number;
+                    crosshair: boolean;
+                    windowCenter: number | null;
+                    windowWidth: number | null;
+                    activeTool: "surgical_guide" | "note" | "window_level" | "pan" | "zoom" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
+                    activeQuickActionId: string | null;
+                    windowPreset: "custom" | "photo" | "implant" | "endo" | "caries" | "bone" | "soft_tissue" | "perio" | "teeth";
+                    brightness: number;
+                    contrast: number;
+                    inverted: boolean;
+                    rotationDeg: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
+                    sliceIndex: number | null;
+                    projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
+                    axisDeg: number;
+                    slabMm: number;
+                    linkedPlanes: boolean;
+                    implantPlan: {
+                        itemId: string;
+                        indication: string;
+                        system: string;
+                        line: string;
+                        diameterMm: number;
+                        lengthMm: number;
+                        platform: string;
+                        selectedAt: string | null;
+                    } | null;
+                } | null;
+                launchMode: "blocked" | "external_handoff" | "dicomweb_url" | "local_manifest";
+                dataSource: {
+                    sourceName: string;
+                    sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
+                    kind: "none" | "dicomweb" | "local_files" | "external_viewer";
+                    studyInstanceUid: string | null;
+                    seriesInstanceUid: string | null;
+                    qidoRoot: string | null;
+                    wadoRoot: string | null;
+                    stowRoot: string | null;
+                };
+                displaySetSelector: {
+                    projections: ("axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction")[];
+                    studyInstanceUid: string | null;
+                    seriesInstanceUid: string | null;
+                    preferredLayout: "none" | "two_d_stack" | "mpr_3up" | "mpr_4up" | "external_only";
+                };
+                cornerstoneVolumeId: string | null;
+            }, {
+                warnings: string[];
+                nextAction: string;
+                viewerUrl: string | null;
+                resourcePolicy: {
+                    nextAction: string;
+                    requiredTier: "standard" | "low_end" | "workstation" | "diagnostic_workstation";
+                    loadStrategy: "metadata_only" | "two_d_stack_stream" | "mpr_downsampled" | "mpr_full" | "external_handoff";
+                    estimatedMemoryMb: number;
+                    maxClientSlices: number;
+                    thumbnailFirst: boolean;
+                    downsampleRecommended: boolean;
+                    cacheMode: "none" | "metadata_only" | "bounded_disk" | "dicomweb_stream";
+                    safetyCaps: string[];
+                };
+                studyInstanceUid: string | null;
+                seriesInstanceUid: string | null;
+                annotations: {
+                    type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
+                    id: string;
+                    createdAt: string;
+                    updatedAt: string;
+                    unit: string | null;
+                    toothCode: string | null;
+                    note: string | null;
+                    createdByUserId: string | null;
+                    label: string;
+                    points: {
+                        x: number;
+                        y: number;
+                        z?: number | null | undefined;
+                        plane?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null | undefined;
+                    }[];
+                    measurementValue: number | null;
+                    semanticRole?: "ridge_width" | "bone_height" | "clearance" | "generic" | null | undefined;
+                }[];
+                viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
+                viewerState: {
+                    mode: "photo" | "two_d" | "stack" | "mpr";
+                    zoom: number;
+                    crosshair: boolean;
+                    windowCenter: number | null;
+                    windowWidth: number | null;
+                    activeTool: "surgical_guide" | "note" | "window_level" | "pan" | "zoom" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
+                    windowPreset: "custom" | "photo" | "implant" | "endo" | "caries" | "bone" | "soft_tissue" | "perio" | "teeth";
+                    brightness: number;
+                    contrast: number;
+                    inverted: boolean;
+                    rotationDeg: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
+                    projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
+                    axisDeg: number;
+                    slabMm: number;
+                    linkedPlanes: boolean;
+                    activeQuickActionId?: string | null | undefined;
+                    sliceIndex?: number | null | undefined;
+                    implantPlan?: {
+                        itemId: string;
+                        indication: string;
+                        system: string;
+                        line: string;
+                        diameterMm: number;
+                        lengthMm: number;
+                        platform: string;
+                        selectedAt?: string | null | undefined;
+                    } | null | undefined;
+                } | null;
+                launchMode: "blocked" | "external_handoff" | "dicomweb_url" | "local_manifest";
+                dataSource: {
+                    sourceName: string;
+                    sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
+                    kind: "none" | "dicomweb" | "local_files" | "external_viewer";
+                    studyInstanceUid: string | null;
+                    seriesInstanceUid: string | null;
+                    qidoRoot: string | null;
+                    wadoRoot: string | null;
+                    stowRoot: string | null;
+                };
+                displaySetSelector: {
+                    projections: ("axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction")[];
+                    studyInstanceUid: string | null;
+                    seriesInstanceUid: string | null;
+                    preferredLayout: "none" | "two_d_stack" | "mpr_3up" | "mpr_4up" | "external_only";
+                };
+                cornerstoneVolumeId: string | null;
+            }>, {
                 warnings: string[];
                 nextAction: string;
                 viewerUrl: string | null;

@@ -1,6 +1,6 @@
 import { readIssuedDocumentSnapshot } from "../../db/documentQuery.js";
 import { requireOrganizationId } from "../../security/identity.js";
-﻿import type { FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
 import {
   createDocumentSchema,
@@ -50,6 +50,7 @@ import {
   taxXmlSourceSnapshotForIssue
 } from "../documents.js";
 import { getDocumentById, issueGeneratedDocumentInDb, voidGeneratedDocumentInDb, storeTaxXmlSnapshotInDb } from "../../db/documentQuery.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { getVisitByIdInDb } from "../../db/visitsQuery.js";
@@ -59,8 +60,19 @@ import { renderDocumentHtml, taxFiscalDocumentBlockReason } from "../../document
 export async function register(app: FastifyInstance) {
   // ────────────────────────────────────────────────────────────
   // GET /api/documents/:id/pdf  — issued documents (signed archive)
+  //
+  // ПОЧЕМУ config.tenantTxSelfManaged И ЯВНЫЙ withTenantCtx.
+  // Тело ответа — буфер PDF, который печатает ВНЕШНИЙ headless-браузер
+  // (renderIssuedHtmlToPdf в routes/documents.ts запускает Edge/Chrome; предел
+  // ожидания DENTE_PDF_EXPORT_TIMEOUT_MS, по умолчанию 60 с, потолок 180 с).
+  // Автоматическая обёртка server.ts держала транзакцию и соединение из пула
+  // (их 10) всё время запуска браузера, печати и последующей передачи файла
+  // клиенту — то есть соединение к базе стояло на процессе, который к базе
+  // отношения не имеет. Теперь документ читается под контекстом арендатора,
+  // транзакция закрывается, и только потом печатается PDF. Обхода RLS нет:
+  // организация берётся из проверенного токена, чтение идёт под её контекстом.
   // ────────────────────────────────────────────────────────────
-  app.get<{ Params: { id: string } }>("/api/documents/:id/pdf", async (request, reply) => {
+  app.get<{ Params: { id: string } }>("/api/documents/:id/pdf", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "document pdf"))) return;
     const { id } = request.params;
     // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
@@ -69,7 +81,7 @@ export async function register(app: FastifyInstance) {
     // Организация теперь берётся только из проверенного токена (401 иначе).
     const orgId = requireOrganizationId(request, reply);
     if (!orgId) return;
-    const document = await getDocumentById(orgId, id);
+    const document = await withTenantCtx(orgId, () => getDocumentById(orgId, id));
     if (!document) {
       return reply.code(404).send(apiError("Документ не найден"));
     }
@@ -105,8 +117,13 @@ export async function register(app: FastifyInstance) {
   // On-the-fly PDF for treatment_plan documents (draft or issued).
   // Does NOT require signatureAttestation — used for immediate
   // patient hand-out directly from the visit screen.
+  //
+  // Причина config.tenantTxSelfManaged та же, что у соседнего /pdf: печать
+  // выполняет внешний headless-браузер, и держать на ней транзакцию нельзя.
+  // Все три чтения из базы (документ, пациент, контекст рендеринга) собраны в
+  // один явный withTenantCtx ниже и заканчиваются до вызова печати.
   // ────────────────────────────────────────────────────────────
-  app.get<{ Params: { id: string } }>("/api/documents/:id/treatment-plan-pdf", async (request, reply) => {
+  app.get<{ Params: { id: string } }>("/api/documents/:id/treatment-plan-pdf", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "treatment plan pdf"))) return;
     // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
     // Все проверки принадлежности сравнивали подделку саму с собой и сходились,
@@ -115,7 +132,7 @@ export async function register(app: FastifyInstance) {
     const orgId = requireOrganizationId(request, reply);
     if (!orgId) return;
     const { id } = request.params;
-    const document = await getDocumentById(orgId, id);
+    const document = await withTenantCtx(orgId, () => getDocumentById(orgId, id));
     if (!document) {
       return reply.code(404).send(apiError("Документ не найден"));
     }
@@ -156,14 +173,20 @@ export async function register(app: FastifyInstance) {
         .send(issuedResult.pdf);
     }
 
-    const patient = await import("../../db/patientsQuery.js").then(m => m.getPatientByIdFromDb(orgId, document.patientId));
-    if (!patient) {
+    // Пациент и контекст рендеринга — второе и третье обращения к базе. Они
+    // собраны в одну транзакцию арендатора, которая закрывается до печати.
+    const draftSources = await withTenantCtx(orgId, async () => {
+      const draftPatient = await getPatientByIdFromDb(orgId, document.patientId);
+      if (!draftPatient) return { patient: null, context: null };
+      // Реальный контекст вместо пустой заглушки (см. documents.ts).
+      return { patient: draftPatient, context: await resolveDocumentRenderContext(orgId, document.patientId) };
+    });
+    const patient = draftSources.patient;
+    if (!patient || !draftSources.context) {
       return reply.code(404).send(apiError("Пациент не найден"));
     }
 
-    // Реальный контекст вместо пустой заглушки (см. documents.ts).
-    const context = await resolveDocumentRenderContext(orgId, document.patientId);
-    const html = renderDocumentHtml(document, patient, context);
+    const html = renderDocumentHtml(document, patient, draftSources.context);
 
     const result = await renderIssuedHtmlToPdf(html);
     if (!result.ok) {

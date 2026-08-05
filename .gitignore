@@ -31,7 +31,15 @@ local-secrets/*.env
 local-secrets/*.local
 !local-secrets/*.example
 !local-secrets/README.md
-scripts/smoke-speech-key-rotation.mjs
+# Здесь стояло `scripts/smoke-speech-key-rotation.mjs`. Правило снято 2026-08-06:
+# ошибочным было ОНО, а не отслеживание. Скрипт живой — 7119 байт в HEAD, заведён
+# в package.json как `smoke:speech-key-rotation`, описан в README.md и в
+# docs/05-speech-transcription-plan.md. Ключи внутри синтетические
+# (`..._do_not_leak_111111111111111111`), и вся его работа — доказывать, что
+# настоящие ключи НЕ утекают в лог и в файл здоровья.
+# Правило пришло с самым первым коммитом 57d8a7817 (2026-05-28) и на шесть недель
+# опередило сам файл, созданный в 99bba4e0c (2026-07-08) — то есть добавлено не
+# из-за содержимого этого скрипта. Секрета в нём не было и нет.
 playwright-report/
 blob-report/
 *.tsbuildinfo

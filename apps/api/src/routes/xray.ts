@@ -7,6 +7,32 @@
  * GET  /api/xray/scans/:id      — один скан со всеми результатами
  * PUT  /api/xray/scans/:id      — сохранить заключение врача (aiReport/notes)
  * DELETE /api/xray/scans/:id    — удалить скан
+ *
+ * ФОРМА ОТВЕТА: КОД СТАВИМ, ЗНАЧЕНИЕ ВОЗВРАЩАЕМ.
+ *
+ * Ни один обработчик здесь не пишет `return reply.code(N).send(x)`. Причина не
+ * стилистическая. server.ts (хук onRoute) оборачивает КАЖДЫЙ обработчик в
+ * withTenantCtx, то есть в транзакцию, и ждёт разрешения промиса обработчика,
+ * прежде чем зафиксировать её. А `reply` — thenable: `Reply.prototype.then`
+ * (fastify/lib/reply.js:466) разрешается только по `eos(reply.raw)`, то есть
+ * когда ответ уже УШЁЛ клиенту. Поэтому `return reply.send(...)` откладывал
+ * COMMIT на момент ПОСЛЕ ответа: замерено поллером pg_stat_activity на живом
+ * сервере, дельта «коммит минус заголовки» = +0,6…+1,9 мс, три прогона из трёх.
+ *
+ * Чем это плохо именно здесь: VisiographAnalyzer.tsx сразу после POST
+ * /api/xray/scans читает GET /api/xray/scans/:id. Докоммитный ответ означает
+ * гонку «записал → прочитал» на глазах у врача. Хуже того, при отказе на самом
+ * COMMIT (отложенное ограничение) fastify уже отправил 201 и может только
+ * записать ошибку в журнал (lib/wrap-thenable.js:63) — врач видит «снимок
+ * сохранён» при нуле строк в базе. Воспроизведено детерминированно.
+ *
+ * Возврат значения этого не даёт: fastify зовёт `reply.send(payload)` уже ПОСЛЕ
+ * разрешения промиса (lib/wrap-thenable.js:14), то есть после COMMIT. Заголовки
+ * и код, выставленные через `reply.code()/header()/type()` до возврата,
+ * сохраняются — они живут на объекте ответа, а не в аргументах `send`.
+ *
+ * НЕ ПЕРЕВЕДЕНО и переводить нельзя: `reply.code(204).send()` в DELETE — у
+ * 204 нет тела, и возврат значения его бы туда положил.
  */
 
 
@@ -109,10 +135,11 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 
     const parsed = createXrayScanSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "XrayScanValidationError",
         message: "Неверный формат запроса загрузки снимка.",
-      });
+      };
     }
 
     const organizationId = requireOrganizationId(request, reply);
@@ -158,10 +185,12 @@ export async function registerXrayRoutes(app: FastifyInstance) {
       .returning();
 
     if (!inserted) {
-      return reply.code(500).send({ error: "InsertError", message: "Не удалось сохранить снимок." });
+      reply.code(500);
+      return { error: "InsertError", message: "Не удалось сохранить снимок." };
     }
 
-    return reply.code(201).send(scanToResponse(inserted));
+    reply.code(201);
+    return scanToResponse(inserted);
   });
 
   app.post("/api/xray/scans/:id/analyze", async (request, reply) => {
@@ -179,15 +208,18 @@ export async function registerXrayRoutes(app: FastifyInstance) {
       .limit(1);
 
     if (!scan) {
-      return reply.code(404).send({ error: "XrayScanNotFound", message: "Снимок не найден." });
+      reply.code(404);
+      return { error: "XrayScanNotFound", message: "Снимок не найден." };
     }
 
     if (!scan.imageDataUri) {
-      return reply.code(400).send({ error: "XrayScanNoImage", message: "Снимок не содержит изображения." });
+      reply.code(400);
+      return { error: "XrayScanNoImage", message: "Снимок не содержит изображения." };
     }
 
     if (scan.status === "analyzing") {
-      return reply.code(409).send({ error: "XrayScanAlreadyAnalyzing", message: "Анализ уже выполняется." });
+      reply.code(409);
+      return { error: "XrayScanAlreadyAnalyzing", message: "Анализ уже выполняется." };
     }
 
     // Mark as analyzing immediately
@@ -196,10 +228,19 @@ export async function registerXrayRoutes(app: FastifyInstance) {
       .set({ status: "analyzing", aiError: null })
       .where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)));
 
-    // Run analysis async — respond immediately with 202 so the UI can poll
-    reply.code(202).send({ status: "analyzing", id });
-
-    // Background AI call
+    /*
+     * Фоновый вызов ставится в очередь ДО возврата ответа, а сам ответ уходит
+     * после фиксации транзакции. Порядок именно такой, потому что интерфейс
+     * сразу после 202 начинает опрашивать GET /api/xray/scans/:id и обязан
+     * увидеть status = "analyzing": ответ раньше COMMIT давал первому опросу
+     * прежнее значение.
+     *
+     * ЧТО ЗДЕСЬ НЕ ЧИНИТСЯ И НЕ ДЕЛАЕТ ВИД, ЧТО ПОЧИНЕНО: колбэк setImmediate
+     * наследует асинхронный контекст обработчика вместе с transactionStorage,
+     * поэтому его собственные db.update идут по дескриптору транзакции,
+     * которая к тому моменту уже закрыта. Так было и до этой правки, порядок
+     * отправки ответа на это не влияет; долг назван, а не замаскирован.
+     */
     setImmediate(async () => {
       try {
         const result = await analyzeVisiographImage(scan.imageDataUri!);
@@ -223,6 +264,9 @@ export async function registerXrayRoutes(app: FastifyInstance) {
           .where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)));
       }
     });
+
+    reply.code(202);
+    return { status: "analyzing", id };
   });
 
   app.get("/api/xray/scans", async (request, reply) => {
@@ -233,7 +277,8 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 
     const { patientId } = request.query as { patientId?: string };
     if (!patientId) {
-      return reply.code(400).send({ error: "MissingPatientId", message: "Укажите patientId." });
+      reply.code(400);
+      return { error: "MissingPatientId", message: "Укажите patientId." };
     }
 
     const scans = await db
@@ -260,7 +305,8 @@ export async function registerXrayRoutes(app: FastifyInstance) {
       .limit(1);
 
     if (!scan) {
-      return reply.code(404).send({ error: "XrayScanNotFound", message: "Снимок не найден." });
+      reply.code(404);
+      return { error: "XrayScanNotFound", message: "Снимок не найден." };
     }
 
     return scanToResponse(scan, true); // Include image
@@ -300,10 +346,11 @@ export async function registerXrayRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const parsed = updateXrayScanSchema.safeParse(request.body ?? {});
     if (!parsed.success) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "XrayScanValidationError",
         message: "Неверный формат запроса сохранения заключения.",
-      });
+      };
     }
 
     const patch = parsed.data;
@@ -315,10 +362,11 @@ export async function registerXrayRoutes(app: FastifyInstance) {
       patch.status === undefined &&
       patch.toothCode === undefined
     ) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "XrayScanValidationError",
         message: "Нет полей для обновления.",
-      });
+      };
     }
 
     const updateData: {
@@ -344,7 +392,8 @@ export async function registerXrayRoutes(app: FastifyInstance) {
       .returning();
 
     if (!updated) {
-      return reply.code(404).send({ error: "XrayScanNotFound", message: "Снимок не найден." });
+      reply.code(404);
+      return { error: "XrayScanNotFound", message: "Снимок не найден." };
     }
 
     return scanToResponse(updated, false);
@@ -366,9 +415,16 @@ export async function registerXrayRoutes(app: FastifyInstance) {
       .returning({ id: xrayScans.id });
 
     if (!result.length) {
-      return reply.code(404).send({ error: "XrayScanNotFound", message: "Снимок не найден." });
+      reply.code(404);
+      return { error: "XrayScanNotFound", message: "Снимок не найден." };
     }
 
+    /*
+     * 204 остаётся на `reply.send()` и переводу не подлежит: у ответа без
+     * содержимого тела нет, а возврат значения его бы туда положил (fastify
+     * #5003 — возвращённый null при 204 давал content-length: 4). Записи здесь
+     * уже нет: DELETE выполнен выше, читать после него нечего.
+     */
     return reply.code(204).send();
   });
 }

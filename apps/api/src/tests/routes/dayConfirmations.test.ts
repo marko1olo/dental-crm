@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { appointmentActionCodes } from "../../db/communicationsSchema.js";
@@ -13,7 +13,8 @@ import {
 	users
 } from "../../db/schema.js";
 import { dayBoundsInTimeZone, registerDayConfirmationRoutes, tomorrowInTimeZone } from "../../routes/dayConfirmations.js";
-import { fixtureUuid, isDatabaseUnavailable, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
+import { fixtureUuid, isDatabaseUnavailable, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /**
  * Утренний обзвон.
@@ -206,7 +207,13 @@ describe("список подтверждений на день", () => {
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
 		process.env.NODE_ENV = "development";
 
-		app = Fastify();
+		/*
+		 * Приложение собирается с теми же двумя хуками изоляции, что вешает боевой
+		 * server.ts: без обёртки `withTenantCtx` вокруг обработчика запрос к базе
+		 * под принудительным RLS возвращает НОЛЬ строк без ошибки, и обзвон отвечал
+		 * бы пустым списком на засеянный день.
+		 */
+		app = createTenantTestApp();
 		await registerDayConfirmationRoutes(app);
 
 		try {
@@ -220,99 +227,107 @@ describe("список подтверждений на день", () => {
 			 */
 			await purgeFixtureOrganizations([ORG_ID, FOREIGN_ORG]);
 
-			// Без onConflictDoNothing: место расчищено выше, и конфликт первичного
-			// ключа здесь означал бы, что фикстура сеет не туда, куда думает.
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника обзвона" });
-			await db.insert(clinics).values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" });
-			await db
-				.insert(users)
-				.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Смирнов Сергей Сергеевич", role: "doctor" });
-			await db
-				.insert(patients)
-				.values([
-					{ id: CONFIRMED_PATIENT, organizationId: ORG_ID, fullName: "Подтвердил Пётр", phone: "+7 916 000-07-01" },
-					{ id: DELIVERED_PATIENT, organizationId: ORG_ID, fullName: "Получил Павел", phone: "+7 916 000-07-02" },
-					{ id: FAILED_PATIENT, organizationId: ORG_ID, fullName: "Недоставлен Дмитрий", phone: "+7 916 000-07-03" },
-					// Без телефона: напоминание отправить некуда, звонить тоже.
-					{ id: NO_REMINDER_PATIENT, organizationId: ORG_ID, fullName: "Безномера Николай", phone: null }
-				]);
-
 			/*
-			 * Приёмы привязываются К САМОЙ ДАТЕ, а не к «сейчас плюс сутки»: 09:00
-			 * UTC — это 12:00 по Москве того же календарного дня, и четыре приёма со
-			 * сдвигом 0-3 часа заведомо попадают в московские сутки isoDate. Прежний
-			 * якорь считался от текущего момента и в трёх часах суток уезжал на
-			 * предыдущий день вместе с ожидаемой датой.
+			 * Сев идёт под тенант-контекстом клиники. У всех тенант-таблиц, кроме
+			 * `organizations`, в WITH CHECK стоит только `organization_id =
+			 * current_tenant`, без дизъюнкта обхода: вставка без контекста отвергается
+			 * кодом 42501, и обход RLS её не спасает.
 			 */
-			const dayAnchor = new Date(`${isoDate}T09:00:00.000Z`);
-			const slot = (offsetHours: number) => ({
-				startsAt: new Date(dayAnchor.getTime() + offsetHours * 3_600_000),
-				endsAt: new Date(dayAnchor.getTime() + offsetHours * 3_600_000 + 3_600_000)
+			await withFixtureTenant(ORG_ID, async () => {
+				// Без onConflictDoNothing: место расчищено выше, и конфликт первичного
+				// ключа здесь означал бы, что фикстура сеет не туда, куда думает.
+				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника обзвона" });
+				await db.insert(clinics).values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" });
+				await db
+					.insert(users)
+					.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Смирнов Сергей Сергеевич", role: "doctor" });
+				await db
+					.insert(patients)
+					.values([
+						{ id: CONFIRMED_PATIENT, organizationId: ORG_ID, fullName: "Подтвердил Пётр", phone: "+7 916 000-07-01" },
+						{ id: DELIVERED_PATIENT, organizationId: ORG_ID, fullName: "Получил Павел", phone: "+7 916 000-07-02" },
+						{ id: FAILED_PATIENT, organizationId: ORG_ID, fullName: "Недоставлен Дмитрий", phone: "+7 916 000-07-03" },
+						// Без телефона: напоминание отправить некуда, звонить тоже.
+						{ id: NO_REMINDER_PATIENT, organizationId: ORG_ID, fullName: "Безномера Николай", phone: null }
+					]);
+
+				/*
+				 * Приёмы привязываются К САМОЙ ДАТЕ, а не к «сейчас плюс сутки»: 09:00
+				 * UTC — это 12:00 по Москве того же календарного дня, и четыре приёма со
+				 * сдвигом 0-3 часа заведомо попадают в московские сутки isoDate. Прежний
+				 * якорь считался от текущего момента и в трёх часах суток уезжал на
+				 * предыдущий день вместе с ожидаемой датой.
+				 */
+				const dayAnchor = new Date(`${isoDate}T09:00:00.000Z`);
+				const slot = (offsetHours: number) => ({
+					startsAt: new Date(dayAnchor.getTime() + offsetHours * 3_600_000),
+					endsAt: new Date(dayAnchor.getTime() + offsetHours * 3_600_000 + 3_600_000)
+				});
+
+				await db
+					.insert(appointments)
+					.values([
+						{ id: CONFIRMED_APPOINTMENT, organizationId: ORG_ID, patientId: CONFIRMED_PATIENT, doctorUserId: DOCTOR_ID, status: "confirmed", ...slot(0) },
+						{ id: DELIVERED_APPOINTMENT, organizationId: ORG_ID, patientId: DELIVERED_PATIENT, doctorUserId: DOCTOR_ID, status: "planned", ...slot(1) },
+						{ id: FAILED_APPOINTMENT, organizationId: ORG_ID, patientId: FAILED_PATIENT, doctorUserId: DOCTOR_ID, status: "planned", ...slot(2) },
+						{ id: NO_REMINDER_APPOINTMENT, organizationId: ORG_ID, patientId: NO_REMINDER_PATIENT, doctorUserId: DOCTOR_ID, status: "planned", ...slot(3) }
+					]);
+
+				await db
+					.insert(communicationOutbox)
+					.values([
+						{
+							organizationId: ORG_ID,
+							patientId: CONFIRMED_PATIENT,
+							channel: "sms",
+							intent: "appointment_confirmation",
+							recipientAddress: "79160000701",
+							body: "Напоминание",
+							status: "delivered",
+							sentAt: new Date(),
+							deliveredAt: new Date(),
+							receiptDetail: "SMS.RU 103: Доставлено",
+							dedupeKey: `reminder:${CONFIRMED_APPOINTMENT}:24`
+						},
+						{
+							organizationId: ORG_ID,
+							patientId: DELIVERED_PATIENT,
+							channel: "sms",
+							intent: "appointment_confirmation",
+							recipientAddress: "79160000702",
+							body: "Напоминание",
+							status: "delivered",
+							sentAt: new Date(),
+							deliveredAt: new Date(),
+							receiptDetail: "SMS.RU 103: Доставлено",
+							dedupeKey: `reminder:${DELIVERED_APPOINTMENT}:24`
+						},
+						{
+							organizationId: ORG_ID,
+							patientId: FAILED_PATIENT,
+							channel: "sms",
+							intent: "appointment_confirmation",
+							recipientAddress: "79160000703",
+							body: "Напоминание",
+							status: "failed",
+							lastErrorMessage: "Не доставлено: истёк срок жизни сообщения",
+							dedupeKey: `reminder:${FAILED_APPOINTMENT}:24`
+						}
+					]);
+
+				// Пациент нажал ссылку — это видно отдельно от статуса записи.
+				await db
+					.insert(appointmentActionCodes)
+					.values({
+						code: "ConfirmAA1",
+						organizationId: ORG_ID,
+						appointmentId: CONFIRMED_APPOINTMENT,
+						action: "confirm",
+						expiresAt: new Date(Date.now() + 86_400_000),
+						usedAt: new Date()
+					})
+					.onConflictDoNothing();
 			});
-
-			await db
-				.insert(appointments)
-				.values([
-					{ id: CONFIRMED_APPOINTMENT, organizationId: ORG_ID, patientId: CONFIRMED_PATIENT, doctorUserId: DOCTOR_ID, status: "confirmed", ...slot(0) },
-					{ id: DELIVERED_APPOINTMENT, organizationId: ORG_ID, patientId: DELIVERED_PATIENT, doctorUserId: DOCTOR_ID, status: "planned", ...slot(1) },
-					{ id: FAILED_APPOINTMENT, organizationId: ORG_ID, patientId: FAILED_PATIENT, doctorUserId: DOCTOR_ID, status: "planned", ...slot(2) },
-					{ id: NO_REMINDER_APPOINTMENT, organizationId: ORG_ID, patientId: NO_REMINDER_PATIENT, doctorUserId: DOCTOR_ID, status: "planned", ...slot(3) }
-				]);
-
-			await db
-				.insert(communicationOutbox)
-				.values([
-					{
-						organizationId: ORG_ID,
-						patientId: CONFIRMED_PATIENT,
-						channel: "sms",
-						intent: "appointment_confirmation",
-						recipientAddress: "79160000701",
-						body: "Напоминание",
-						status: "delivered",
-						sentAt: new Date(),
-						deliveredAt: new Date(),
-						receiptDetail: "SMS.RU 103: Доставлено",
-						dedupeKey: `reminder:${CONFIRMED_APPOINTMENT}:24`
-					},
-					{
-						organizationId: ORG_ID,
-						patientId: DELIVERED_PATIENT,
-						channel: "sms",
-						intent: "appointment_confirmation",
-						recipientAddress: "79160000702",
-						body: "Напоминание",
-						status: "delivered",
-						sentAt: new Date(),
-						deliveredAt: new Date(),
-						receiptDetail: "SMS.RU 103: Доставлено",
-						dedupeKey: `reminder:${DELIVERED_APPOINTMENT}:24`
-					},
-					{
-						organizationId: ORG_ID,
-						patientId: FAILED_PATIENT,
-						channel: "sms",
-						intent: "appointment_confirmation",
-						recipientAddress: "79160000703",
-						body: "Напоминание",
-						status: "failed",
-						lastErrorMessage: "Не доставлено: истёк срок жизни сообщения",
-						dedupeKey: `reminder:${FAILED_APPOINTMENT}:24`
-					}
-				]);
-
-			// Пациент нажал ссылку — это видно отдельно от статуса записи.
-			await db
-				.insert(appointmentActionCodes)
-				.values({
-					code: "ConfirmAA1",
-					organizationId: ORG_ID,
-					appointmentId: CONFIRMED_APPOINTMENT,
-					action: "confirm",
-					expiresAt: new Date(Date.now() + 86_400_000),
-					usedAt: new Date()
-				})
-				.onConflictDoNothing();
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;
 			databaseAvailable = false;
@@ -321,13 +336,20 @@ describe("список подтверждений на день", () => {
 
 	after(async () => {
 		if (databaseAvailable) {
-			await db.delete(appointmentActionCodes).where(eq(appointmentActionCodes.organizationId, ORG_ID));
-			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-			await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(users).where(eq(users.organizationId, ORG_ID));
-			await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			/*
+			 * Уборка тоже идёт под тенант-контекстом. DELETE без него не ошибается —
+			 * политика просто не показывает ни одной строки, и удаляется ноль: хук
+			 * отчитался бы об успехе, оставив клинику в общей базе.
+			 */
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.delete(appointmentActionCodes).where(eq(appointmentActionCodes.organizationId, ORG_ID));
+				await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+				await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+				await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+				await db.delete(users).where(eq(users.organizationId, ORG_ID));
+				await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
+				await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			});
 		}
 		await app.close();
 		process.env = originalEnv;

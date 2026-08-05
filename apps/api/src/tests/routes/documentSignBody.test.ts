@@ -12,7 +12,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
-import Fastify from "fastify";
 import { db } from "../../db/client.js";
 import {
 	generatedDocuments,
@@ -23,13 +22,14 @@ import {
 import { register as registerSign } from "../../routes/documents/sign.js";
 import { register as registerSignUkep } from "../../routes/documents/signUkep.js";
 import { authTokenSecret } from "../../security/authSecret.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,
 	purgeFixtureOrganizations,
+	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "documentSignBody";
 const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);
@@ -139,29 +139,36 @@ describe("подпись документа — Zod body (null → 400, не 500
 		}
 
 		if (databaseReady) {
-			await db.insert(organizations).values({
-				id: ORGANIZATION_ID,
-				name: "Клиника сторожа тела подписи документа",
-			});
-			await db.insert(users).values({
-				id: DOCTOR_ID,
-				organizationId: ORGANIZATION_ID,
-				fullName: "Врач сторожа подписи",
-				role: "doctor",
-			});
-			await db.insert(patients).values({
-				id: PATIENT_ID,
-				organizationId: ORGANIZATION_ID,
-				fullName: "Пациент сторожа подписи",
-				status: "active",
-			});
-			await db.insert(generatedDocuments).values({
-				id: DRAFT_DOC_ID,
-				organizationId: ORGANIZATION_ID,
-				patientId: PATIENT_ID,
-				kind: "medical_intervention_refusal",
-				status: "draft",
-				title: "Черновик для handwritten sign",
+			/*
+			 * Сев идёт под тенант-контекстом. WITH CHECK у `users`, `patients` и
+			 * `generated_documents` требует `organization_id = current_tenant` и не
+			 * знает дизъюнкта обхода, поэтому вставка без контекста даёт 42501.
+			 */
+			await withFixtureTenant(ORGANIZATION_ID, async () => {
+				await db.insert(organizations).values({
+					id: ORGANIZATION_ID,
+					name: "Клиника сторожа тела подписи документа",
+				});
+				await db.insert(users).values({
+					id: DOCTOR_ID,
+					organizationId: ORGANIZATION_ID,
+					fullName: "Врач сторожа подписи",
+					role: "doctor",
+				});
+				await db.insert(patients).values({
+					id: PATIENT_ID,
+					organizationId: ORGANIZATION_ID,
+					fullName: "Пациент сторожа подписи",
+					status: "active",
+				});
+				await db.insert(generatedDocuments).values({
+					id: DRAFT_DOC_ID,
+					organizationId: ORGANIZATION_ID,
+					patientId: PATIENT_ID,
+					kind: "medical_intervention_refusal",
+					status: "draft",
+					title: "Черновик для handwritten sign",
+				});
 			});
 		}
 
@@ -174,10 +181,9 @@ describe("подпись документа — Zod body (null → 400, не 500
 			authTokenSecret(),
 		);
 
-		app = Fastify();
-		app.addHook("onRequest", async (request) => {
-			getRequestIdentity(request);
-		});
+		// Оба хука изоляции боевого server.ts: без обёртки `withTenantCtx` вокруг
+		// обработчика подпись читает НОЛЬ строк и черновик выглядит несуществующим.
+		app = createTenantTestApp();
 		await registerSign(app);
 		await registerSignUkep(app);
 		await app.ready();

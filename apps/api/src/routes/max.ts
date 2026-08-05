@@ -18,6 +18,7 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
+import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
 	communicationEvents,
 	denteMaxBotConfigs,
@@ -290,21 +291,37 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 
 		if (!botIdHeader) return;
 
-		const [orgConfig] = await db
-			.select({ organizationId: denteMaxBotConfigs.organizationId })
-			.from(denteMaxBotConfigs)
-			.where(eq(denteMaxBotConfigs.botId, botIdHeader))
-			.limit(1);
+		/*
+		 * ОПЕРАЦИЯ «ДО АРЕНДАТОРА»: событие прислал MAX, токена клиники в
+		 * вебхуке нет, и чья это клиника — известно только по идентификатору
+		 * бота. Под FORCE RLS запрос без контекста отдавал ноль строк,
+		 * срабатывал `return` ниже, и КАЖДОЕ входящее сообщение MAX молча
+		 * пропадало. Обход накрывает ровно этот SELECT одной колонки.
+		 */
+		const [orgConfig] = await withSuperuserBypass(async (tx) =>
+			tx
+				.select({ organizationId: denteMaxBotConfigs.organizationId })
+				.from(denteMaxBotConfigs)
+				.where(eq(denteMaxBotConfigs.botId, botIdHeader))
+				.limit(1),
+		);
 
 		if (!orgConfig) return;
 
-		await db.insert(messengerInboundEvents).values({
-			organizationId: orgConfig.organizationId,
-			channel: "max",
-			externalChatId: chatId,
-			messageText: text,
-			eventKind: "message",
-			rawPayload: body as Record<string, unknown>,
+		// Клиника известна из найденных настроек бота — вставка идёт под её
+		// контекстом. Без него `INSERT` падал с 42501, а ответ 200 отправлялся
+		// раньше (выше по обработчику), поэтому MAX не повторял событие и оно
+		// терялось окончательно.
+		const inboundOrganizationId = orgConfig.organizationId;
+		await withTenantCtx(inboundOrganizationId, async (tx) => {
+			await tx.insert(messengerInboundEvents).values({
+				organizationId: inboundOrganizationId,
+				channel: "max",
+				externalChatId: chatId,
+				messageText: text,
+				eventKind: "message",
+				rawPayload: body as Record<string, unknown>,
+			});
 		});
 
 		// Await or float the processor to ingest this message to the Inbox immediately

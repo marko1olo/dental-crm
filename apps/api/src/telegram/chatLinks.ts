@@ -1,5 +1,6 @@
 import { eq, and, desc, sql, isNull, or, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { clinics, denteTelegramChatLinks } from "../db/schema.js";
 import {
   denteTelegramChatLinkListResponseSchema,
@@ -96,17 +97,38 @@ function toDenteTelegramChatLink(row: ChatLinkRow): DenteTelegramChatLink {
   };
 }
 
+/*
+ * КОНТЕКСТ АРЕНДАТОРА ПРИНАДЛЕЖИТ ЭТИМ ФУНКЦИЯМ, А НЕ ИХ ВЫЗЫВАЮЩИМ.
+ *
+ * Область (`scope`) всегда несёт `organizationId` — то есть арендатор известен
+ * здесь ВСЕГДА, и ставить контекст выше по стеку незачем. Это важно потому, что
+ * вызывающих три и контекст есть только у одного:
+ *   • вебхук Telegram — сам открывает `withTenantCtx` (routes/telegram.ts:2490);
+ *   • маршруты панели управления — пускают по заголовку `x-dente-admin-secret`,
+ *     который `security/identity.ts` не читает, поэтому `request.tenantId` не
+ *     выставляется и глобальная обёртка server.ts их НЕ оборачивает;
+ *   • тесты и служебные вызовы.
+ * Под FORCE RLS второй случай ломался молча и по-разному: счётчик активных
+ * привязок на панели статуса всегда показывал 0, список привязок всегда был
+ * пуст, а отзыв привязки затрагивал ноль строк и отвечал «связка не найдена» —
+ * то есть клиника не могла отвязать чат пациента вообще никак.
+ *
+ * Вложенный вызов бесплатен: `withTenantCtx` переиспользует уже открытую
+ * транзакцию и не берёт второго соединения из пула (db/rls.ts, REENTRANCY).
+ */
 export async function listDenteTelegramChatLinks(
   scope: DenteTelegramChatLinkScope,
   limit: number = 50
 ): Promise<DenteTelegramChatLink[]> {
   const boundedLimit = Math.max(1, Math.min(200, Math.trunc(limit) || 50));
-  const links = await db
-    .select()
-    .from(denteTelegramChatLinks)
-    .where(and(...chatLinkVisibilityConditions(scope)))
-    .orderBy(desc(denteTelegramChatLinks.lastUpdateAt))
-    .limit(boundedLimit);
+  const links = await withTenantCtx(scope.organizationId, async (tx) =>
+    tx
+      .select()
+      .from(denteTelegramChatLinks)
+      .where(and(...chatLinkVisibilityConditions(scope)))
+      .orderBy(desc(denteTelegramChatLinks.lastUpdateAt))
+      .limit(boundedLimit)
+  );
 
   return links.map(toDenteTelegramChatLink);
 }
@@ -119,10 +141,12 @@ export async function listDenteTelegramChatLinks(
 export async function countActiveDenteTelegramChatLinks(
   scope: DenteTelegramChatLinkScope
 ): Promise<number> {
-  const [row] = await db
-    .select({ activeCount: sql<number>`count(*)::int` })
-    .from(denteTelegramChatLinks)
-    .where(and(...chatLinkVisibilityConditions(scope), eq(denteTelegramChatLinks.status, "active")));
+  const [row] = await withTenantCtx(scope.organizationId, async (tx) =>
+    tx
+      .select({ activeCount: sql<number>`count(*)::int` })
+      .from(denteTelegramChatLinks)
+      .where(and(...chatLinkVisibilityConditions(scope), eq(denteTelegramChatLinks.status, "active")))
+  );
   return row?.activeCount ?? 0;
 }
 
@@ -130,21 +154,23 @@ export async function revokeDenteTelegramChatLink(
   scope: DenteTelegramChatLinkScope,
   linkId: string
 ): Promise<DenteTelegramChatLink | null> {
-  const [updated] = await db
-    .update(denteTelegramChatLinks)
-    .set({
-      status: "revoked",
-      revokedAt: sql`CURRENT_TIMESTAMP`,
-      lastUpdateAt: sql`CURRENT_TIMESTAMP`
-    })
-    .where(
-      and(
-        ...chatLinkVisibilityConditions(scope),
-        eq(denteTelegramChatLinks.id, linkId),
-        eq(denteTelegramChatLinks.status, "active")
+  const [updated] = await withTenantCtx(scope.organizationId, async (tx) =>
+    tx
+      .update(denteTelegramChatLinks)
+      .set({
+        status: "revoked",
+        revokedAt: sql`CURRENT_TIMESTAMP`,
+        lastUpdateAt: sql`CURRENT_TIMESTAMP`
+      })
+      .where(
+        and(
+          ...chatLinkVisibilityConditions(scope),
+          eq(denteTelegramChatLinks.id, linkId),
+          eq(denteTelegramChatLinks.status, "active")
+        )
       )
-    )
-    .returning();
+      .returning()
+  );
 
   if (!updated) return null;
   return toDenteTelegramChatLink(updated);
@@ -190,71 +216,75 @@ export async function upsertDenteTelegramChatLink(
   input: UpsertDenteTelegramChatLinkInput
 ): Promise<DenteTelegramChatLink> {
   const botConfigId = input.botConfigId?.trim() || "default";
-  const clinicId = await persistableClinicId(input.organizationId, input.clinicId?.trim() || null);
+  // Контекст ставится один раз на всю операцию: и проверка филиала, и вставка,
+  // и снятие прежней активной связки идут под одним арендатором.
+  return withTenantCtx(input.organizationId, async (tx) => {
+    const clinicId = await persistableClinicId(input.organizationId, input.clinicId?.trim() || null);
 
-  /**
-   * В `set` попадают только те поля, для которых пришло значение. Раньше здесь
-   * был `coalesce(параметр, колонка)`, но параметр NULL заставляет Postgres
-   * выводить тип из соседнего аргумента, и это ровно тот запрос, который падает
-   * не на первом прогоне. Пустое значение и так не должно затирать колонку —
-   * значит и в запросе ему делать нечего.
-   */
-  const conflictUpdate: Record<string, unknown> = {
-    subjectType: input.subjectType,
-    subjectId: input.subjectId,
-    status: "active",
-    revokedAt: null,
-    lastUpdateAt: sql`CURRENT_TIMESTAMP`
-  };
-  if (clinicId) conflictUpdate.clinicId = clinicId;
-  if (input.chatTransportRef) conflictUpdate.chatTransportRef = input.chatTransportRef;
-  if (input.chatIdLast4) conflictUpdate.chatIdLast4 = input.chatIdLast4;
-
-  const [saved] = await db
-    .insert(denteTelegramChatLinks)
-    .values({
-      organizationId: input.organizationId,
-      clinicId,
-      botConfigId,
+    /**
+     * В `set` попадают только те поля, для которых пришло значение. Раньше здесь
+     * был `coalesce(параметр, колонка)`, но параметр NULL заставляет Postgres
+     * выводить тип из соседнего аргумента, и это ровно тот запрос, который падает
+     * не на первом прогоне. Пустое значение и так не должно затирать колонку —
+     * значит и в запросе ему делать нечего.
+     */
+    const conflictUpdate: Record<string, unknown> = {
       subjectType: input.subjectType,
       subjectId: input.subjectId,
-      chatFingerprint: input.chatFingerprint,
-      chatTransportRef: input.chatTransportRef ?? null,
-      chatIdLast4: input.chatIdLast4 ?? null,
       status: "active",
-      revokedAt: null
-    })
-    .onConflictDoUpdate({
-      target: [
-        denteTelegramChatLinks.organizationId,
-        denteTelegramChatLinks.botConfigId,
-        denteTelegramChatLinks.chatFingerprint
-      ],
-      set: conflictUpdate
-    })
-    .returning();
-
-  // Один субъект — один активный чат. Прежний чат того же пациента снимается
-  // ПОСЛЕ вставки: иначе только что записанная строка снялась бы сама.
-  await db
-    .update(denteTelegramChatLinks)
-    .set({
-      status: "revoked",
-      revokedAt: sql`CURRENT_TIMESTAMP`,
+      revokedAt: null,
       lastUpdateAt: sql`CURRENT_TIMESTAMP`
-    })
-    .where(
-      and(
-        eq(denteTelegramChatLinks.organizationId, input.organizationId),
-        eq(denteTelegramChatLinks.botConfigId, botConfigId),
-        eq(denteTelegramChatLinks.subjectType, input.subjectType),
-        eq(denteTelegramChatLinks.subjectId, input.subjectId),
-        eq(denteTelegramChatLinks.status, "active"),
-        sql`${denteTelegramChatLinks.id} <> ${saved!.id}`
-      )
-    );
+    };
+    if (clinicId) conflictUpdate.clinicId = clinicId;
+    if (input.chatTransportRef) conflictUpdate.chatTransportRef = input.chatTransportRef;
+    if (input.chatIdLast4) conflictUpdate.chatIdLast4 = input.chatIdLast4;
 
-  return toDenteTelegramChatLink(saved!);
+    const [saved] = await tx
+      .insert(denteTelegramChatLinks)
+      .values({
+        organizationId: input.organizationId,
+        clinicId,
+        botConfigId,
+        subjectType: input.subjectType,
+        subjectId: input.subjectId,
+        chatFingerprint: input.chatFingerprint,
+        chatTransportRef: input.chatTransportRef ?? null,
+        chatIdLast4: input.chatIdLast4 ?? null,
+        status: "active",
+        revokedAt: null
+      })
+      .onConflictDoUpdate({
+        target: [
+          denteTelegramChatLinks.organizationId,
+          denteTelegramChatLinks.botConfigId,
+          denteTelegramChatLinks.chatFingerprint
+        ],
+        set: conflictUpdate
+      })
+      .returning();
+
+    // Один субъект — один активный чат. Прежний чат того же пациента снимается
+    // ПОСЛЕ вставки: иначе только что записанная строка снялась бы сама.
+    await tx
+      .update(denteTelegramChatLinks)
+      .set({
+        status: "revoked",
+        revokedAt: sql`CURRENT_TIMESTAMP`,
+        lastUpdateAt: sql`CURRENT_TIMESTAMP`
+      })
+      .where(
+        and(
+          eq(denteTelegramChatLinks.organizationId, input.organizationId),
+          eq(denteTelegramChatLinks.botConfigId, botConfigId),
+          eq(denteTelegramChatLinks.subjectType, input.subjectType),
+          eq(denteTelegramChatLinks.subjectId, input.subjectId),
+          eq(denteTelegramChatLinks.status, "active"),
+          sql`${denteTelegramChatLinks.id} <> ${saved!.id}`
+        )
+      );
+
+    return toDenteTelegramChatLink(saved!);
+  });
 }
 
 /**
@@ -280,29 +310,37 @@ export async function buildDenteTelegramChatLinkList(
   if (subjectType !== "all") filters.push(eq(denteTelegramChatLinks.subjectType, subjectType));
   if (subjectId) filters.push(eq(denteTelegramChatLinks.subjectId, subjectId));
 
-  const [totals] = await db
-    .select({
-      totalCount: sql<number>`count(*)::int`,
-      activeCount: sql<number>`count(*) filter (where ${denteTelegramChatLinks.status} = 'active')::int`,
-      revokedCount: sql<number>`count(*) filter (where ${denteTelegramChatLinks.status} = 'revoked')::int`
-    })
-    .from(denteTelegramChatLinks)
-    .where(and(...visibility));
+  // Три запроса одной страницы — под одним контекстом арендатора, названным в
+  // самой области видимости. Без него панель управления (её пускают по
+  // `x-dente-admin-secret`, а он `request.tenantId` не выставляет) показывала
+  // пустой список и нули во всех счётчиках.
+  const { totals, filtered, rows } = await withTenantCtx(input.organizationId, async (tx) => {
+    const [totalsRow] = await tx
+      .select({
+        totalCount: sql<number>`count(*)::int`,
+        activeCount: sql<number>`count(*) filter (where ${denteTelegramChatLinks.status} = 'active')::int`,
+        revokedCount: sql<number>`count(*) filter (where ${denteTelegramChatLinks.status} = 'revoked')::int`
+      })
+      .from(denteTelegramChatLinks)
+      .where(and(...visibility));
 
-  const [filtered] = await db
-    .select({ filteredCount: sql<number>`count(*)::int` })
-    .from(denteTelegramChatLinks)
-    .where(and(...filters));
+    const [filteredRow] = await tx
+      .select({ filteredCount: sql<number>`count(*)::int` })
+      .from(denteTelegramChatLinks)
+      .where(and(...filters));
 
-  const rows = await db
-    .select()
-    .from(denteTelegramChatLinks)
-    .where(and(...filters))
-    // Порядок обязан быть устойчивым: без него страница по offset может
-    // показать одну связку дважды и потерять другую.
-    .orderBy(desc(denteTelegramChatLinks.lastUpdateAt), desc(denteTelegramChatLinks.id))
-    .limit(limit)
-    .offset(start);
+    const pageRows = await tx
+      .select()
+      .from(denteTelegramChatLinks)
+      .where(and(...filters))
+      // Порядок обязан быть устойчивым: без него страница по offset может
+      // показать одну связку дважды и потерять другую.
+      .orderBy(desc(denteTelegramChatLinks.lastUpdateAt), desc(denteTelegramChatLinks.id))
+      .limit(limit)
+      .offset(start);
+
+    return { totals: totalsRow, filtered: filteredRow, rows: pageRows };
+  });
 
   const filteredCount = filtered?.filteredCount ?? 0;
   const nextOffset = start + rows.length;

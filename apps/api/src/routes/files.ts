@@ -7,6 +7,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { attachments, patients, visitDiaries, visits } from "../db/schema.js";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
@@ -154,21 +155,39 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 	});
 
 
-	app.get("/api/attachments/:attachmentId/download", async (request, reply) => {
+	/*
+	 * Выдача файла вложения.
+	 *
+	 * ПОЧЕМУ ЗДЕСЬ ЯВНЫЙ withTenantCtx И tenantTxSelfManaged. Тело ответа —
+	 * поток файла с диска: он передаётся столько, сколько занимает передача, и
+	 * скорость задаёт клиент. Автоматическая обёртка из server.ts держала бы
+	 * транзакцию и соединение из пула (их 10) всё это время; десяти
+	 * одновременных выгрузок хватало, чтобы обычные запросы к базе перестали
+	 * получать соединение вовсе. Строка вложения читается под контекстом
+	 * арендатора, транзакция закрывается, и только потом открывается поток.
+	 * Обход RLS не применяется: строка ищется по organization_id из
+	 * проверенного токена и под политикой арендатора.
+	 */
+	app.get(
+		"/api/attachments/:attachmentId/download",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 		const { attachmentId } = request.params as { attachmentId: string };
 
-		const [attachment] = await db
-			.select()
-			.from(attachments)
-			.where(
-				and(
-					eq(attachments.id, attachmentId),
-					eq(attachments.organizationId, orgId),
-				),
-			)
-			.limit(1);
+		const [attachment] = await withTenantCtx(orgId, (tx) =>
+			tx
+				.select()
+				.from(attachments)
+				.where(
+					and(
+						eq(attachments.id, attachmentId),
+						eq(attachments.organizationId, orgId),
+					),
+				)
+				.limit(1),
+		);
 
 		if (!attachment) {
 			return reply.code(404).send({
