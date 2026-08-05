@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { organizations, patientArchiveReasonsAndBlacklists, patients } from "../../db/schema.js";
 import { isPatientBookingBlocked } from "../../db/patientArchiveReasonsAndBlacklistsQuery.js";
-import { fixtureUuid, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
+import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
 
 /**
  * ЧЁРНЫЙ СПИСОК ОБЯЗАН ОТВЕЧАТЬ В БЕЗОПАСНУЮ СТОРОНУ.
@@ -49,18 +49,25 @@ describe("чёрный список отвечает в безопасную с�
 		try {
 			// Уборка НА ВХОДЕ: прогон, убитый снаружи, до after не доходит.
 			await purgeFixtureOrganizations([ORG_ID]);
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника чёрного списка" });
-			await db.insert(patients).values({
-				id: PATIENT_ID,
-				organizationId: ORG_ID,
-				fullName: PATIENT_NAME
-			});
-			await db.insert(patientArchiveReasonsAndBlacklists).values({
-				organizationId: ORG_ID,
-				patientId: PATIENT_ID,
-				patientName: PATIENT_NAME,
-				archiveReason: "Проверка безопасной стороны",
-				isBookingBlocked: true
+			/*
+			 * Сев под тенант-контекстом клиники: под FORCE RLS у тенант-таблиц в
+			 * WITH CHECK стоит только `organization_id = current_tenant`, поэтому
+			 * вставка без контекста отвергается кодом 42501.
+			 */
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника чёрного списка" });
+				await db.insert(patients).values({
+					id: PATIENT_ID,
+					organizationId: ORG_ID,
+					fullName: PATIENT_NAME
+				});
+				await db.insert(patientArchiveReasonsAndBlacklists).values({
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					patientName: PATIENT_NAME,
+					archiveReason: "Проверка безопасной стороны",
+					isBookingBlocked: true
+				});
 			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;

@@ -682,7 +682,8 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
       });
       const summary = summarizeDiscovery(result);
 
-      return reply.code(200).send({
+      reply.code(200);
+      return {
         roots: result.roots,
         summary,
         /**
@@ -726,7 +727,7 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
           truncated: result.truncated
         },
         warnings: result.warnings
-      });
+      };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Поиск не выполнен.";
       return fail(reply, 500, "DiscoveryFailed", message);
@@ -751,7 +752,8 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
 
     try {
       const metadata = await readDicomMetadata(parsed.data.filePath);
-      return reply.code(200).send({ filePath: parsed.data.filePath, metadata });
+      reply.code(200);
+      return { filePath: parsed.data.filePath, metadata };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Снимок не разобран.";
       return fail(reply, 422, "DicomRejected", message, { filePath: parsed.data.filePath });

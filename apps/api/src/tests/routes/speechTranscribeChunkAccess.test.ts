@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { organizations, patients, visits } from "../../db/schema.js";
 import { registerSpeechRoutes } from "../../routes/speech.js";
@@ -11,8 +11,10 @@ import {
 	LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
 	fixtureUuid,
 	isDatabaseUnavailable,
-	purgeFixtureOrganizations
+	purgeFixtureOrganizations,
+	withFixtureTenant
 } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 import { acquireSpeechDurableTestLock, type SpeechDurableTestLock } from "../support/speechDurableTestLock.js";
 
 /**
@@ -91,7 +93,7 @@ describe("доступ к записи фрагмента диктовки", () 
 		delete process.env.DENTE_DEV_ALLOW_HEADER_ORG;
 		delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
 
-		app = Fastify();
+		app = createTenantTestApp();
 		await registerSpeechRoutes(app);
 
 		const secret = TOKEN_SECRET();
@@ -107,16 +109,21 @@ describe("доступ к записи фрагмента диктовки", () 
 			// уйти по тому же пути, что при провале засева, а не упасть в before.
 			durableLock = await acquireSpeechDurableTestLock();
 			await purgeFixtureOrganizations([ORG_A, ORG_B, ...LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS]);
-			await db.insert(organizations).values([
-				{ id: ORG_A, name: "Клиника диктовки А" },
-				{ id: ORG_B, name: "Клиника диктовки Б" }
-			]);
-			// Без onConflictDoNothing: раньше он молча оставлял чужую строку с тем же
-			// первичным ключом, и тест шёл по данным соседнего файла.
-			await db
-				.insert(patients)
-				.values({ id: PATIENT_A, organizationId: ORG_A, fullName: "Гордеев Илья Максимович", birthDate: "1988-03-17" });
-			await db.insert(visits).values({ id: VISIT_A, organizationId: ORG_A, patientId: PATIENT_A, status: "draft" });
+			// Клиник две, а `app.current_tenant` хранит ровно одного арендатора:
+			// вставка организации проходит только при `id = current_tenant`, поэтому
+			// общий `values([А, Б])` отвергался бы кодом 42501 на второй строке.
+			await withFixtureTenant(ORG_A, async () => {
+				await db.insert(organizations).values({ id: ORG_A, name: "Клиника диктовки А" });
+				// Без onConflictDoNothing: раньше он молча оставлял чужую строку с тем же
+				// первичным ключом, и тест шёл по данным соседнего файла.
+				await db
+					.insert(patients)
+					.values({ id: PATIENT_A, organizationId: ORG_A, fullName: "Гордеев Илья Максимович", birthDate: "1988-03-17" });
+				await db.insert(visits).values({ id: VISIT_A, organizationId: ORG_A, patientId: PATIENT_A, status: "draft" });
+			});
+			await withFixtureTenant(ORG_B, async () => {
+				await db.insert(organizations).values({ id: ORG_B, name: "Клиника диктовки Б" });
+			});
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;
 			databaseAvailable = false;

@@ -56,15 +56,15 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { eq, sql } from "drizzle-orm";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { denteAdminSecretHeader } from "../../accessGuard.js";
 import { db, pool } from "../../db/client.js";
 import { appointments, organizations, patients } from "../../db/schema.js";
 import { registerDashboardRoutes } from "../../routes/dashboard.js";
 import { authTokenSecret, clinicalAdminSecret } from "../../security/authSecret.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { fixtureUuid, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
+import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "hydrationUnknownTimeIsNotNow";
 const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);

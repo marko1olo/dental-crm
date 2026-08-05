@@ -69,7 +69,11 @@ describe("создание карты пациента: запрет дубле�
 	let databaseAvailable = true;
 
 	before(async () => {
-		app = Fastify();
+		// Оба хука боевого server.ts: организация берётся из подписанного токена и
+		// кладётся в request.tenantId, а каждый обработчик оборачивается в
+		// withTenantCtx. Без второго маршрут под FORCE RLS читает ноль строк —
+		// запрет дублей сравнивал бы новую карту с пустой картотекой.
+		app = createTenantTestApp();
 		await registerPatientRoutes(app);
 
 		// Токен кабинета подписывается штатным секретом сервера; в вывод он не
