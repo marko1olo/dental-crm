@@ -96,6 +96,25 @@ describe("rublesToKopecks / kopecksToWholeRubles", () => {
 	});
 });
 
+describe("sumKopecks", () => {
+	test("пустой массив возвращает 0", () => {
+		assert.strictEqual(sumKopecks([]), 0);
+	});
+
+	test("сумма нескольких значений считается точно", () => {
+		assert.strictEqual(sumKopecks([15050, 1, 0, 100000]), 115051);
+	});
+
+	test("отрицательные значения уменьшают сумму", () => {
+		assert.strictEqual(sumKopecks([1000, -500, -500]), 0);
+		assert.strictEqual(sumKopecks([500, -1000]), -500);
+	});
+
+	test("если хотя бы одно значение не целое, выбрасывается ошибка", () => {
+		assert.throws(() => sumKopecks([1000, 1.5]));
+	});
+});
+
 describe("multiplyKopecks", () => {
 	test("цена на количество считается точно", () => {
 		assert.strictEqual(multiplyKopecks(parseKopecks("1234.56"), 3), 370368);
