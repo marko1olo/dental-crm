@@ -1,5 +1,22 @@
 # RECON DOSSIER — DENTE / dental-crm
 
+> ## ⛔ THE DATABASE SECTIONS OF THIS DOSSIER ARE STALE (banner added 2026-08-06)
+>
+> Compiled 2026-07-28; database numbers re-measured 2026-08-06. **Six statements below are now false.**
+> They are left in place as a record of what was believed then — do NOT act on them. Corrected values:
+>
+> | This dossier says | Actual on 2026-08-06 |
+> | :--- | :--- |
+> | `drizzle.config.ts` declares `driver: "pglite"`, `url: "./dente-db"` (line ~40) | Config declares `dialect: "postgresql"`, reads `DATABASE_URL`, throws when it is blank |
+> | `db:generate` writes snapshots for a database nobody uses (line ~41) | The config targets the real database now; still hand-write SQL, but for the journal reason, not this one |
+> | `db/schema.ts` 2,505 lines, 122 `pgTable`, 44 `pgEnum` → 125 tables (lines ~131, ~196–197) | 3,158 lines, 126 `pgTable`, 46 `pgEnum` → **129 tables** declared; **148** tables live in `public` |
+> | 90 `.sql`, `0000`–`0013` then `0061`–`0132`, duplicates `0119/0120/0124/0128` (lines ~198–199) | **130 `.sql`**, highest ordinal **`0160`**, **seven** duplicated ordinals: `0011`, `0012`, `0013`, `0119`, `0120`, `0124`, `0128` |
+> | `meta/_journal.json` lists 28 tags matching **zero** `.sql` filenames (line ~200) | **34 entries, 17 matching a real file** (including `0157`–`0160`); 17 tags without a file; 113 files absent from it. A stale partial index, not a dead one — and the runner never reads it |
+> | (not stated anywhere in this dossier) | `apps/api/dente-db` is a **PGlite corpse**, not a data directory — the live one is `.data/pg18`. RLS is deployed: 147 of 148 tables carry `FORCE` + a `tenant_isolation` policy |
+>
+> Authority for all of the above: `.agents/DATABASE.md`. Counts move daily under concurrent agents —
+> re-measure with `fd`/`jq` before quoting any number from either document.
+
 Compiled 2026-07-28 by the outgoing lead, from five parallel read-only census agents plus direct
 verification. Everything here was read off disk or executed, not recalled. Line counts and hashes drift —
 the tree is edited continuously. Re-check `git log` and `git status --porcelain` before acting on any of it.

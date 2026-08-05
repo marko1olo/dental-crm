@@ -37,6 +37,7 @@
 
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
+import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
 	clinics,
 	communicationEvents,
@@ -218,17 +219,34 @@ export async function processInboundEvents(options: { limit?: number } = {}): Pr
 		problems: [] as string[]
 	};
 
-	const pendingEvents = await db
-		.select()
-		.from(messengerInboundEvents)
-		.where(isNull(messengerInboundEvents.processedAt))
-		.orderBy(messengerInboundEvents.createdAt)
-		.limit(limit);
+	/*
+	 * ОЧЕРЕДЬ ВХОДЯЩИХ ОБЩАЯ ДЛЯ ВСЕХ КЛИНИК, и это единственное место разбора,
+	 * где арендатор неизвестен: строка ещё не прочитана, назвать клинику нечем.
+	 *
+	 * Под FORCE RLS этот запрос без контекста возвращал ноль строк и не ошибался
+	 * ни разу: цикл ниже не выполнялся НИКОГДА, и весь модуль был мёртв при
+	 * живых вызывающих. Дороже всего это стоило на слове «СТОП» — отказ от
+	 * рассылки не доходил до согласий, и клиника продолжала писать человеку,
+	 * который прямо попросил перестать.
+	 *
+	 * Обход накрывает РОВНО это чтение очереди. Разбор каждого события идёт под
+	 * контекстом ЕГО клиники (ниже): под обходом соседнее событие чужой клиники
+	 * могло бы дописать согласие или лид не в ту картотеку.
+	 */
+	const pendingEvents = await withSuperuserBypass(async (tx) =>
+		tx
+			.select()
+			.from(messengerInboundEvents)
+			.where(isNull(messengerInboundEvents.processedAt))
+			.orderBy(messengerInboundEvents.createdAt)
+			.limit(limit)
+	);
 
 	for (const event of pendingEvents) {
 		try {
 			// Сбой на одном событии не должен останавливать разбор очереди.
-			await processSingleEvent(event, report);
+			// Клиника события известна из самой строки — работа идёт под ней.
+			await withTenantCtx(event.organizationId, () => processSingleEvent(event, report));
 			report.processed += 1;
 		} catch (error) {
 			report.failed += 1;

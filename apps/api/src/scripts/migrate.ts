@@ -35,6 +35,11 @@
  *                                      на «already exists».
  *   npm run db:migrate -- --strict   — считать ошибкой изменение уже
  *                                      применённого файла (для CI).
+ *
+ * РЕЖИМЫ ОТЛИЧАЮТСЯ ТОЛЬКО ТЕМ, ПРИМЕНЯЮТСЯ ЛИ ИЗМЕНЕНИЯ.
+ * Проверки недостающих файлов (assertMigrationsAreApplicable) выполняются
+ * одинаково и до первого обращения к базе во всех трёх режимах. Так --dry-run
+ * не может позеленеть там, где боевой запуск падает.
  */
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";

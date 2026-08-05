@@ -32,6 +32,49 @@ export const nonNegativeMoneyRubSchema = moneyRubSchema.refine((value) => value 
   message: "сумма не может быть отрицательной"
 });
 
+/**
+ * Адрес, который пришёл от пользователя и потом уходит либо в браузер сотрудника
+ * (href, window.open), либо в исходящий запрос сервера.
+ *
+ * ПОЧЕМУ `z.string().url()` ЗДЕСЬ НЕДОСТАТОЧНО. Она не ограничивает схему — она
+ * просто вызывает `new URL()`. Замер на zod 3.25.76 / Node v24.13.0, все строки
+ * прошли `z.string().url()` без ошибки:
+ *   "javascript:alert(1)", "data:text/html,<script>", "vbscript:msgbox",
+ *   "file:///c:/", " javascript:alert(1)" (ведущий пробел),
+ *   "java\tscript:alert(1)" (табуляция внутри слова) — WHATWG-парсер сам
+ *   выбрасывает ведущие пробелы и управляющие символы, поэтому наивные фильтры
+ *   «строка начинается с javascript:» мимо этих двух проходят, а `new URL` нет.
+ * Отвергается ею только "//evil.com" — как строка без схемы вообще.
+ *
+ * ПОЧЕМУ ПРОВЕРКА ИДЁТ ЧЕРЕЗ `new URL().protocol`, А НЕ РЕГУЛЯРКОЙ. Регулярка по
+ * сырой строке — это ровно тот класс фильтра, который обходят регистром,
+ * управляющими символами и табуляцией внутри имени схемы (см. выше). Разбор
+ * нормализует строку до сравнения, поэтому решение принимается по уже
+ * приведённому к нижнему регистру `protocol`. Так же устроен серверный гейт
+ * адреса архива снимков в apps/api/src/routes/imaging.ts (isSafeTarget) и
+ * проверка ссылок в apps/api/src/services/communications/appointmentActionLinks.ts.
+ *
+ * ГРАНИЦА ЭТОЙ СХЕМЫ: она отвечает только за схему адреса. Она НЕ проверяет, что
+ * хост не внутренний — это отдельный SSRF-гейт на сервере, и он остаётся
+ * обязательным для всего, по чему сервер ходит сам.
+ */
+const allowedHttpUrlProtocols: ReadonlySet<string> = new Set(["http:", "https:"]);
+
+export function isHttpUrl(value: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return false;
+  }
+  return allowedHttpUrlProtocols.has(parsed.protocol);
+}
+
+export const httpUrlSchema = z
+  .string()
+  .url()
+  .refine(isHttpUrl, { message: "адрес должен начинаться с http:// или https://" });
+
 export const patientStatusSchema = z.enum(["active", "archived"]);
 export type PatientStatus = z.infer<typeof patientStatusSchema>;
 
@@ -5435,7 +5478,7 @@ export const dicomWebConnectorStatusSchema = z.enum(["ready", "auth_required", "
 export type DicomWebConnectorStatus = z.infer<typeof dicomWebConnectorStatusSchema>;
 
 export const dicomWebConnectorCheckRequestSchema = z.object({
-  endpointUrl: z.string().url(),
+  endpointUrl: httpUrlSchema,
   qidoRsPath: z.string().min(1).default("/studies"),
   wadoRsPath: z.string().min(1).default("/studies"),
   stowRsPath: z.string().min(1).default("/studies"),
@@ -5625,8 +5668,8 @@ export const dicomViewerLaunchManifestRequestSchema = z.object({
   series: dicomSeriesPreviewGroupSchema,
   viewerState: imagingViewerSessionStateSchema.nullable().optional(),
   annotations: z.array(imagingViewerAnnotationSchema).max(200).default([]),
-  dicomWebBaseUrl: z.string().url().nullable().optional(),
-  ohifBaseUrl: z.string().url().nullable().optional(),
+  dicomWebBaseUrl: httpUrlSchema.nullable().optional(),
+  ohifBaseUrl: httpUrlSchema.nullable().optional(),
   externalViewerPath: z.string().max(1000).nullable().optional(),
   allowExternalHandoff: z.boolean().default(true)
 });
@@ -6122,8 +6165,8 @@ export const dicomViewerWorkbenchManifestRequestSchema = z.object({
   connector: dicomWebConnectorCheckResponseSchema.nullable().optional(),
   viewerState: imagingViewerSessionStateSchema.nullable().optional(),
   annotations: z.array(imagingViewerAnnotationSchema).max(200).default([]),
-  dicomWebBaseUrl: z.string().url().nullable().optional(),
-  ohifBaseUrl: z.string().url().nullable().optional(),
+  dicomWebBaseUrl: httpUrlSchema.nullable().optional(),
+  ohifBaseUrl: httpUrlSchema.nullable().optional(),
   externalViewerPath: z.string().max(1000).nullable().optional(),
   allowExternalHandoff: z.boolean().default(true)
 });

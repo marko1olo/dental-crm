@@ -39,11 +39,12 @@
 		"src/**/*.test.ts",
 		"src/**/*.bench.ts",
 		// Движок PGlite из проекта удалён (db/client.ts работает через
-		// node-postgres), а пакет @electric-sql/pglite не установлен. Файлы
-		// оставлены как есть — на них никто не ссылается.
-		"src/services/syncEngine.ts",
-		"src/scripts/setup-fresh-db.ts",
-		"src/scripts/patch-owner-credentials.ts",
-		"src/scripts/seedPglite.ts"
+		// node-postgres), а пакет @electric-sql/pglite не установлен.
+		// seedPglite.ts, setup-fresh-db.ts и patch-owner-credentials.ts удалены
+		// с диска 2026-08-06 как мёртвый код той эпохи, их строки убраны отсюда
+		// вместе с файлами: исключение по имени несуществующего файла — висячая
+		// запись, из-за которой следующий агент ищет файл, которого нет.
+		// Последний оставшийся лежит на диске и ничего не импортирует.
+		"src/services/syncEngine.ts"
 	]
 }

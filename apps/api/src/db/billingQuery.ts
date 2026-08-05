@@ -81,6 +81,27 @@ export async function createPaymentInDb(organizationId: string, input: CreatePay
       visitId: input.visitId || null,
       documentId: input.documentId || null,
       amountRub: input.amountRub,
+      /*
+       * `paid_at` ЗДЕСЬ НЕ ПИШЕТСЯ, И ЭТО ИЗВЕСТНЫЙ ДЕФЕКТ, А НЕ РЕШЕНИЕ.
+       *
+       * Колонка объявлена `timestamp ... notNull().defaultNow()` (db/schema.ts),
+       * поэтому в неё попадает момент НАЖАТИЯ КНОПКИ, а не момент расчёта с
+       * пациентом. Поля `paidAt` нет и во входном контракте
+       * (`packages/shared/src/index.ts`, `createPaymentSchema`), так что назвать
+       * настоящую дату оплаты кассиру нечем даже при желании.
+       *
+       * Цена для клиники измерима, а не теоретична: по `payments.paid_at`
+       * отбирается зарплатный период врача (`services/finance/doctorPayouts.ts`)
+       * и налоговый год справки о вычете (`documents/guards.ts`,
+       * `paymentPaidInTaxYear`). Вчерашняя смена, забитая утром, уезжает в чужой
+       * расчёт зарплаты, а забитая 1 января — в чужой налоговый год.
+       *
+       * Не чинится здесь намеренно: принять `paidAt` от клиента значит разрешить
+       * назначать дату выручки задним числом, то есть переносить деньги между
+       * налоговыми периодами. Это вопрос полномочий и проверок, а не записи в
+       * таблицу; развилка вынесена ведущему (см. комментарий у
+       * `paymentFieldLabels` в `routes/billing.ts`).
+       */
       method: input.method,
       fiscalReceiptNumber: input.fiscalReceiptNumber || null,
       fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,

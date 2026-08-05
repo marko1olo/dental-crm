@@ -73,7 +73,44 @@ export function FinanceLedger({
 						const service = safeCatalog.find(
 							(catalogItem) => catalogItem.id === item.serviceId,
 						);
-						const total = item.unitPriceRub * item.quantity - item.discountRub;
+						/*
+						 * ЗАЖИМ В НОЛЬ, А НЕ УКРАШЕНИЕ. Здесь стояло
+						 * `item.unitPriceRub * item.quantity - item.discountRub` без
+						 * `Math.max(0, …)`, и это ЕДИНСТВЕННОЕ из восьми мест расчёта
+						 * итога строки на клиенте, где зажима не было (перепись
+						 * 2026-08-06: useAppLogic.tsx:11231/11479/12455,
+						 * components/visit/completedServicesPlan.ts:108,
+						 * components/plan/planPricing.ts:360,
+						 * components/odontogram/treatmentEstimatorPricing.ts:728,
+						 * ClinicalAiPersonalizePanel.tsx — все с зажимом).
+						 *
+						 * Почему это видел пациент. Скидка объявлена суммой НА СТРОКУ
+						 * (`treatment_items.discount_rub numeric(12,2)`,
+						 * `apps/api/src/db/schema.ts:558`), а не процентом и не ценой за
+						 * единицу. Ограничения «скидка ≤ цена × количество» нет нигде: в
+						 * живой базе у `treatment_items` НОЛЬ CHECK-ограничений
+						 * (`pg_constraint`, contype='c', замер 2026-08-06), а маршрут
+						 * приёма сметы (`routes/odontogram.ts:122`) принимает скидку до
+						 * 100 000 000 ₽ независимо от цены. Значит строка «цена 1 000,
+						 * количество 1, скидка 1 500» законна, и экран печатал пациенту
+						 * «−500 ₽» ровно там, где ему выставляют счёт.
+						 *
+						 * Сервер на тех же данных даёт 0: канон
+						 * `apps/api/src/money/patientDebt.ts`, `chargeLineKopecks` —
+						 * `Math.max(0, цена × количество − скидка)`, и зажим там стоит НА
+						 * СТРОКЕ намеренно, чтобы отрицательная позиция не гасила долг по
+						 * соседним позициям того же пациента. Клиент обязан показывать то
+						 * же число, что и сервер.
+						 *
+						 * Правка минимальная — только зажим. Канон считает целыми
+						 * копейками, здесь по-прежнему рубли с плавающей точкой:
+						 * 1 500,10 × 3 даёт 4500.299999999999. Перевод клиентского слоя
+						 * денег на копейки — отдельная работа, она не входит в этот фикс.
+						 */
+						const total = Math.max(
+							0,
+							item.unitPriceRub * item.quantity - item.discountRub,
+						);
 						return (
 							<article
 								className={`finance-row plan-${item.status}`}

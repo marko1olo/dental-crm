@@ -415,6 +415,11 @@ launch/cancel, подгрузка вместе с предпросмотром. 
 ## Salvaged fix from closed PR #552
 - **Branch**: `fix-drop-constraints-logs-16443840779344071698`
 - **Title**: 🧹 Remove leftover console.logs in drop_constraints_pglite.ts
+- **СТАТУС 2026-08-06: УТРАТИЛО СИЛУ — целевой файл удалён.** `apps/api/drop_constraints_pglite.ts`
+  снесён коммитом `8dba4744c` («chore(api): remove obsolete root scratch migration scripts») вместе с
+  остальными корневыми scratch-скриптами. Правку применять некуда. Запись оставлена как история
+  закрытого PR, а не как задача. Заодно: PGlite в проекте нет — движок нативный PostgreSQL 18.4
+  (`.agents/DATABASE.md`).
 - **Files Modified**:
   - `apps/api/drop_constraints_pglite.ts` (2 lines added):
     > } catch(e) { /* ignore expected error if constraint does not exist */ }
@@ -439,6 +444,10 @@ launch/cancel, подгрузка вместе с предпросмотром. 
 ## Salvaged fix from closed PR #549
 - **Branch**: `code-health/remove-migrate-console-logs-11441343709773525889`
 - **Title**: 🧹 Remove leftover console.logs from migrate.ts
+- **СТАТУС 2026-08-06: УТРАТИЛО СИЛУ — целевой файл удалён.** Речь про корневой
+  `apps/api/migrate.ts` (PGlite-скрипт), снесённый коммитом `8dba4744c`. **Не путать с живым раннером
+  `apps/api/src/scripts/migrate.ts`** — это другой файл, он работает через `node-postgres` и никакого
+  `new PGlite(...)` в нём нет. Запись оставлена как история закрытого PR.
 - **Files Modified**:
   - `apps/api/migrate.ts` (24 lines added):
     > const client = new PGlite("./dente-db");
@@ -593,6 +602,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
 ## Salvaged fix from closed PR #517
 - **Branch**: `fix/remove-migrate-console-logs-13955975131268310997`
 - **Title**: 🧹 refactor: remove spammy console logs in migration script
+- **СТАТУС 2026-08-06: УТРАТИЛО СИЛУ — целевой файл удалён.** Корневой `apps/api/migrate.ts`
+  (PGlite-скрипт) снесён коммитом `8dba4744c`. Живой раннер — `apps/api/src/scripts/migrate.ts`, это
+  другой файл. Запись оставлена как история закрытого PR.
 - **Files Modified**:
   - `apps/api/migrate.ts` (24 lines added):
     > const client = new PGlite("./dente-db");
@@ -609,6 +621,9 @@ launch/cancel, подгрузка вместе с предпросмотром. 
 ## Salvaged fix from closed PR #516
 - **Branch**: `jules-155648292377404905-a05c3aba`
 - **Title**: 🧹 Remove leftover console.log in migrate.ts
+- **СТАТУС 2026-08-06: УТРАТИЛО СИЛУ — целевой файл удалён.** Корневой `apps/api/migrate.ts`
+  снесён коммитом `8dba4744c`. Живой раннер — `apps/api/src/scripts/migrate.ts`. Запись оставлена
+  как история закрытого PR.
 - **Files Modified**:
   - `apps/api/migrate.ts` (4 lines added):
     > } catch {}

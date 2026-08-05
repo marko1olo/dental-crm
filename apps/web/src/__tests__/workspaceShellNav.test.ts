@@ -4,6 +4,7 @@ import type { StaffRole } from "@dental/shared";
 import {
 	actionIcons,
 	appViews,
+	getFallbackAppView,
 	getFilteredAppViews,
 	sidebarIcons,
 	viewHints,
@@ -140,5 +141,51 @@ describe("workspace navigation rail mapping", () => {
 				assert.ok(sidebarIcons[view]);
 			}
 		}
+	});
+
+	/*
+	 * The route guard in useAppLogic.tsx sends a role to the fallback view
+	 * whenever the requested view is not on its allow-list. That fallback used to
+	 * be the constant "shift", which is not on the administrator or manager
+	 * allow-list and never has been — so the guard that exists to ENFORCE the
+	 * list was itself putting two roles on a view outside it, with no rail entry
+	 * to navigate back from. The fallback is now derived from the role's own
+	 * list; these tests pin that it stays derived.
+	 */
+	it("lands every role on a view its own allow-list contains", () => {
+		for (const role of staffRoles) {
+			const fallback = getFallbackAppView(role);
+			const allowed = getFilteredAppViews(role);
+			assert.ok(
+				allowed.includes(fallback),
+				`role "${role}" falls back to "${fallback}", which its allow-list does not contain: ${allowed.join(", ")}`,
+			);
+		}
+	});
+
+	it("keeps the fallback reachable from the rail the role actually sees", () => {
+		// A fallback the sidebar cannot draw is a view the user can be put on but
+		// never return to. getVisibleRailViews is a subset of the allow-list, so
+		// the check above is necessary but not sufficient on its own.
+		for (const role of staffRoles) {
+			const fallback = getFallbackAppView(role);
+			assert.ok(
+				appViews.includes(fallback),
+				`role "${role}" falls back to unknown view "${fallback}"`,
+			);
+			assert.ok(viewLabels[fallback].trim().length > 0);
+			assert.ok(sidebarIcons[fallback]);
+		}
+	});
+
+	it("gives administrator and manager their own first view, not the shift board", () => {
+		// The concrete defect, named so a regression reads as itself in the log.
+		assert.equal(getFallbackAppView("administrator"), "schedule");
+		assert.equal(getFallbackAppView("manager"), "schedule");
+		// And the three roles that always had "shift" first are untouched: this
+		// fix must not move anyone who was already landing inside their own list.
+		assert.equal(getFallbackAppView("doctor"), "shift");
+		assert.equal(getFallbackAppView("assistant"), "shift");
+		assert.equal(getFallbackAppView("owner"), "shift");
 	});
 });

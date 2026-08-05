@@ -35,7 +35,7 @@ All competitive feature extractions, parity registries, architecture maps, and s
    - Complete Fastify 4+ API route directory mapping all 48 backend endpoint files across Patients, Schedule, EHR, DICOM 3D, Documents, Finance, Communications, and Smart Imports.
 
 8. **[FRONTEND_COMPONENTS_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FRONTEND_COMPONENTS_DEEP_MAP.md)**
-   - Detailed React 18 frontend component map across views, 3D CT planning toolbar, clinical rule panels, and dictation bars.
+   - Detailed React 19 frontend component map across views, 3D CT planning toolbar, clinical rule panels, and dictation bars. *(Corrected 2026-08-06: previously "React 18"; `apps/web/package.json` declares 19.2.7.)*
 
 9. **[ALGORITHMS_AND_SHARED_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/ALGORITHMS_AND_SHARED_DEEP_MAP.md)**
    - Detailed technical breakdown of `@dental/shared` package Zod schemas, 3D DICOM MPR WebWorker algorithms, speech normalization logic, and NDFL calculation rules.

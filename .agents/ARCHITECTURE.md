@@ -8,7 +8,7 @@ This document describes the structure, data flows, and architectural conventions
 
 The project is structured as an npm workspaces monorepo:
 *   `apps/api/` — Backend server (Fastify, TypeScript, tsx execution).
-*   `apps/web/` — Web Frontend client (Vite, React 18, Tailwind CSS, TypeScript).
+*   `apps/web/` — Web Frontend client (Vite, **React 19**, Tailwind CSS, TypeScript).
 *   `packages/shared/` — Common types, schemas, and helper functions shared by both frontend and backend.
 *   `scripts/` — Smoke test scenarios, database tooling, and validation scripts.
 
@@ -55,7 +55,13 @@ Whisper-class models frequently generate phantom words during silent pauses or l
 
 ## 🖥️ Web Frontend (`apps/web`)
 
-The frontend is a Single Page Application (SPA) built with React 18 and Vite.
+The frontend is a Single Page Application (SPA) built with **React 19** and Vite.
+
+> **Corrected 2026-08-06: this is React 19, not React 18.** `apps/web/package.json` declares
+> `react ^19.2.7` and `react-dom ^19.2.7`, and `node_modules/react` resolves to `19.2.7`. Several
+> documents in this repo still say "React 18"; that is a full major version wrong, and an agent that
+> believes it will reach for APIs that no longer behave the same way and apply advice that has been
+> superseded. Check `apps/web/package.json` before acting on any React-version claim.
 
 ### 🧠 App State Management
 *   **Zustand** is used for isolated UI states:

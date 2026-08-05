@@ -42,6 +42,13 @@ import {
 } from "@dental/shared";
 import { taxPaymentsForDocumentScope } from "./taxPaymentSnapshot.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
+/*
+ * Итог строки лечения считается в ОДНОМ месте на весь сервер —
+ * `money/patientDebt.ts`. Своей формулы здесь больше нет: та, что стояла,
+ * округляла ПРОИЗВЕДЕНИЕ и расходилась с воротами выдачи того же документа на
+ * 500,00 ₽ (замер у `treatmentPlanItemTotalKopecks` ниже).
+ */
+import { chargeLineOutcome } from "../money/patientDebt.js";
 
 export type DocumentRenderContext = {
   clinicProfile?: ClinicProfile;
@@ -701,30 +708,51 @@ const treatmentPlanItemStatusLabels: Record<TreatmentPlanItem["status"], string>
 };
 
 /**
- * Итог по строке плана лечения в целых копейках.
+ * Итог по строке плана лечения в целых копейках. `null` — «посчитать нельзя».
  *
- * Цена и скидка приводятся к копейкам, поэтому вычитание идёт целыми числами:
- * 1010.10 * 1 - 0 больше не даёт 1010.1000000000001.
+ * ЧТО ЗДЕСЬ БЫЛО И СКОЛЬКО ЭТО СТОИЛО. Стояло
+ * `Math.round(unitPriceKopecks * quantity)` для дробного количества, и прежний
+ * комментарий это защищал словами «Падать на дробном количестве нельзя —
+ * документ тогда вообще не отрендерится, — поэтому дробный случай округляется до
+ * целой копейки». Первая половина верна, вторая — нет: округление здесь не
+ * спасало документ, а делало его противоречивым САМОМУ СЕБЕ. Замер 2026-08-05
+ * через публичные входы, цена 1 000,00 ₽, количество 1,5, скидка 0:
  *
- * Количество в базе объявлено как numeric(10, 2) (apps/api/src/db/schema.ts:458),
- * хотя контракт требует целое. Падать на дробном количестве нельзя — документ
- * тогда вообще не отрендерится, — поэтому дробный случай округляется до целой
- * копейки и это отмечено здесь явно, а не спрятано. Целое количество считается
- * точно и никакого округления не проходит.
+ *   ворота выдачи (`documents/guards.ts`, `validateDocumentCreation`) → 2 000,00 ₽
+ *   эта функция (через `renderDocumentHtml`, ячейка «Сумма»)          → 1 500,00 ₽
+ *
+ * 500,00 ₽ разницы между валидатором сметы и печатной формой той же сметы. Обе
+ * стороны «округляли», но разное: ворота — количество, печать — произведение.
+ *
+ * СТАЛО: расчёт зовётся из ОДНОГО дома (`money/patientDebt.ts`), общего с
+ * воротами; своей формулы здесь больше нет. Дробное и нулевое количество —
+ * данные вне контракта (`treatmentPlanItemSchema.quantity` объявлен
+ * `z.number().int().positive()`, а колонка `treatment_items.quantity` —
+ * `numeric(10, 2)`, поэтому такое значение физически возможно). Ответ на него —
+ * `null`, «сумма не определяется», и это не новая для файла величина: ровно так
+ * же здесь уже устроены `treatmentPlanTotalKopecks` и `remainingKopecksOrNull`,
+ * а `rub(null)` печатает «не указана» — строку из `unresolvedPlaceholderPatterns`,
+ * то есть документ с такой строкой НЕ ВЫДАЁТСЯ. Черновик при этом рисуется
+ * целиком, и человек видит, какая именно позиция мешает.
  */
-function treatmentPlanItemTotalKopecks(item: TreatmentPlanItem): number {
-  const unitPriceKopecks = parseKopecks(item.unitPriceRub);
-  const discountKopecks = parseKopecks(item.discountRub);
-  const quantity = Number(item.quantity);
-  if (!Number.isFinite(quantity)) return 0;
-  const grossKopecks = Number.isInteger(quantity)
-    ? unitPriceKopecks * quantity
-    : Math.round(unitPriceKopecks * quantity);
-  return Math.max(0, grossKopecks - discountKopecks);
+function treatmentPlanItemTotalKopecks(item: TreatmentPlanItem): number | null {
+  const outcome = chargeLineOutcome(item);
+  return outcome.ok ? outcome.kopecks : null;
 }
 
 function treatmentPlanItemTotalRub(item: TreatmentPlanItem) {
-  return rublesFromKopecks(treatmentPlanItemTotalKopecks(item));
+  const kopecks = treatmentPlanItemTotalKopecks(item);
+  return kopecks === null ? null : rublesFromKopecks(kopecks);
+}
+
+/** Позиции плана, чей итог посчитать нельзя. Пустой массив — все читаются. */
+function unreadableTreatmentPlanItems(
+  document: GeneratedDocument,
+  context: DocumentRenderContext
+): TreatmentPlanItem[] {
+  return financialDocumentTreatmentItems(document, context).filter(
+    (item) => treatmentPlanItemTotalKopecks(item) === null
+  );
 }
 
 function serviceCatalogMap(context: DocumentRenderContext) {
@@ -752,11 +780,21 @@ function financialDocumentTreatmentItems(document: GeneratedDocument, context: D
  * Сумма плана лечения в целых копейках, либо сумма самого документа, если строк
  * плана нет. Сложение идёт целыми числами через sumKopecks, поэтому «больше
  * нуля» и последующее сравнение с оплатами не зависят от порядка слагаемых.
+ *
+ * ХОТЬ ОДНА НЕЧИТАЕМАЯ СТРОКА ДЕЛАЕТ НЕИЗВЕСТНЫМ ВЕСЬ ИТОГ, а не вычитается из
+ * него молча. Пропустить такую строку значило бы напечатать пациенту итог,
+ * который меньше состава услуг ровно на неё, — то есть документ, где сумма
+ * строк не равна итогу. Это и есть то, что `.agents/AGENTS.md` §8b запрещает
+ * словами «Money and legal documents are exact to the kopeck». `null` здесь
+ * уже был законным ответом («сумма не определяется»), и весь файл ниже его
+ * обрабатывает: остаток, график рассрочки и `rub()` печатают «не указана», а
+ * эта строка входит в `unresolvedPlaceholderPatterns`, то есть документ не
+ * выдаётся.
  */
 function treatmentPlanTotalKopecks(document: GeneratedDocument, context: DocumentRenderContext): number | null {
-  const totalKopecks = sumKopecks(
-    financialDocumentTreatmentItems(document, context).map(treatmentPlanItemTotalKopecks)
-  );
+  const lineTotals = financialDocumentTreatmentItems(document, context).map(treatmentPlanItemTotalKopecks);
+  if (lineTotals.some((total) => total === null)) return null;
+  const totalKopecks = sumKopecks(lineTotals.filter((total): total is number => total !== null));
   if (totalKopecks > 0) return totalKopecks;
   const documentTotalRub = document.totalAmountRub;
   if (documentTotalRub === null || documentTotalRub === undefined || !Number.isFinite(documentTotalRub)) {
@@ -4091,6 +4129,34 @@ function documentIssueBlockReasonRaw(
 
   if (treatmentPlanBackedFinancialKinds.has(document.kind) && !financialDocumentTreatmentItems(document, context).length) {
     return "Для выдачи финансового документа нужен состав услуг из плана лечения: услуга, количество, цена, скидка и итоговая сумма.";
+  }
+
+  /*
+   * Позиция, чей итог посчитать нельзя, ОСТАНАВЛИВАЕТ ВЫДАЧУ, а не печатается
+   * прочерком в выданном документе.
+   *
+   * Причина названа числом в шапке `treatmentPlanItemTotalKopecks`: пока такая
+   * строка считалась округлением, ворота выдачи и печатная форма ОДНОГО
+   * документа расходились на 500,00 ₽. Черновик рисуется целиком — иначе
+   * администратор не увидел бы, какую позицию править, — а выдача блокируется:
+   * выданный документ обязан сходиться построчно и в итоге до копейки
+   * (`.agents/AGENTS.md` §8b).
+   *
+   * Проверка стоит здесь, а не полагается на «не указана» в теле: у документа с
+   * такой строкой может не быть напечатанного итога вовсе, и тогда общий фильтр
+   * незаполненных полей её бы не поймал.
+   */
+  const unreadableItems = unreadableTreatmentPlanItems(document, context);
+  const firstUnreadableItem = unreadableItems[0];
+  if (firstUnreadableItem) {
+    const itemName = firstUnreadableItem.snapshotServiceName || firstUnreadableItem.serviceId;
+    return (
+      `Позиций плана лечения с непригодным количеством: ${unreadableItems.length}. ` +
+      `Первая — «${itemName}», количество ${firstUnreadableItem.quantity}. ` +
+      "Количество услуги обязано быть целым числом больше нуля: по дробному количеству " +
+      "проверка суммы документа и его печатная форма дают разные суммы, поэтому документ не выдаётся. " +
+      "Исправьте количество в плане лечения и оформите документ заново."
+    );
   }
 
   const payloadBlockReason = documentPayloadBlockReason(document);

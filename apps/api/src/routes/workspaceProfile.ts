@@ -599,36 +599,29 @@ async function seedDemoDataForPreset(
 // ————————————————————————————————————————————————————————————————————————————
 // Route registration
 // ————————————————————————————————————————————————————————————————————————————
-const workspaceFeatureFlagsSchema = z.object({
-  hasAssistants: z.boolean(),
-  hasMultipleChairs: z.boolean(),
-  hasDentalLab: z.boolean(),
-  hasInsuranceCoPay: z.boolean(),
-  hasInstallments: z.boolean(),
-  hasOrthodontics: z.boolean(),
-  hasTasks: z.boolean(),
-  hasReclamations: z.boolean(),
-  hasPediatricMode: z.boolean(),
-  isOmniRole: z.boolean(),
-  workspacePreset: z.string(),
-  onboardingCompleted: z.boolean(),
-  hasPayrollModule: z.boolean(),
-  hasMarketingModule: z.boolean(),
-  hasAnalyticsModule: z.boolean(),
-  hasInventoryModule: z.boolean(),
-  aiEnableTreatmentPlan: z.boolean(),
-  aiEnableRecommendations: z.boolean(),
-  aiEnableDocuments: z.boolean(),
-  hasGnathology: z.boolean(),
-  hasCsoScanner: z.boolean(),
-  hasLeadsKanban: z.boolean(),
-  hasOmnichannel: z.boolean(),
-  hasEngineeringStatus: z.boolean(),
-  hasClinicalRules: z.boolean(),
-  hasReferralModule: z.boolean(),
-  hasBpmWorkflows: z.boolean(),
-  numberOfDoctors: z.number(),
-});
+/*
+ * ЗДЕСЬ СТОЯЛ workspaceFeatureFlagsSchema (z.object на 28 признаков) и четыре
+ * блока `schema: { body/params/response }`, где Zod-объекты передавались Fastify
+ * напрямую. Удалено 2026-08-05: Fastify ждёт в этих полях JSON Schema и отдаёт её
+ * в AJV и fast-json-stringify. Zod-объект туда не годится — у него есть метод
+ * `.required`, а JSON Schema требует массив, — и сборка сериализатора падала:
+ *
+ *   FastifyError FST_ERR_SCH_SERIALIZATION_BUILD: Failed building the
+ *   serialization schema for GET: /api/workspace/profile, due to error
+ *   schema is invalid: data/required must be array
+ *
+ * Падало это не на запросе, а на `ready()`, то есть ВЕСЬ Fastify-экземпляр не
+ * поднимался: любой тест и любой запуск сервера, доходящий до createDenteApiApp,
+ * умирал на первом же inject. Zod-провайдера типов (fastify-type-provider-zod,
+ * setValidatorCompiler/setSerializerCompiler) в проекте нет ни одного — искал по
+ * всему apps/api.
+ *
+ * Проверка тела при этом не потеряна: оба POST-обработчика ниже разбирают тело
+ * сами через workspaceProfileBodySchema.safeParse / workspacePresetBodySchema
+ * .safeParse и отвечают 400 ValidationError — именно так, как этого требует
+ * tests/routes/egiszVkBody.test.ts. Блоки schema дублировали эту проверку и
+ * только ломали загрузку.
+ */
 
 export async function workspaceProfileRoutes(fastify: FastifyInstance) {
   /*
@@ -650,14 +643,7 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
    * ключи из базы отбрасываются, отсутствующие берутся из умолчаний — набор
    * признаков растёт вместе с продуктом, и старая запись не должна ронять ответ.
    */
-  fastify.get(
-    "/api/workspace/profile",
-    {
-      schema: {
-        response: { 200: workspaceFeatureFlagsSchema, 401: z.object({ error: z.string() }), 400: z.object({ error: z.string() }), 404: z.object({ error: z.string() }) }
-      }
-    },
-    async (req, reply) => {
+  fastify.get("/api/workspace/profile", async (req, reply) => {
     const organizationId = await resolveOrganizationId(req);
     if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
 
@@ -671,14 +657,7 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
   });
 
   // GET /api/workspace/chairs
-  fastify.get(
-    "/api/workspace/chairs",
-    {
-      schema: {
-        response: { 200: z.object({ success: z.boolean(), data: z.array(z.object({ id: z.string().uuid(), name: z.string() })) }), 401: z.object({ error: z.string() }), 400: z.object({ error: z.string() }), 404: z.object({ error: z.string() }) }
-      }
-    },
-    async (req, reply) => {
+  fastify.get("/api/workspace/chairs", async (req, reply) => {
     const organizationId = await resolveOrganizationId(req);
     if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
 
@@ -694,12 +673,6 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
   // POST /api/workspace/profile — save arbitrary flags
   fastify.post<{ Body: Partial<WorkspaceFeatureFlags> }>(
     "/api/workspace/profile",
-    {
-      schema: {
-        body: workspaceProfileBodySchema,
-        response: { 200: workspaceFeatureFlagsSchema.extend({ ok: z.boolean() }), 401: z.object({ error: z.string() }), 400: z.object({ error: z.string() }), 404: z.object({ error: z.string() }) }
-      }
-    },
     async (req, reply) => {
       const organizationId = await resolveOrganizationId(req);
       if (!organizationId)
@@ -783,13 +756,6 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
     Body?: { numberOfChairs?: number; hasPediatricMode?: boolean };
   }>(
     "/api/workspace/preset/:name",
-    {
-      schema: {
-        params: z.object({ name: z.string() }),
-        body: workspacePresetBodySchema,
-        response: { 200: z.object({ ok: z.boolean(), preset: z.string(), flags: workspaceFeatureFlagsSchema }), 401: z.object({ error: z.string() }), 400: z.object({ error: z.string() }), 404: z.object({ error: z.string() }) }
-      }
-    },
     async (req, reply) => {
     const organizationId = await resolveOrganizationId(req);
     if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });

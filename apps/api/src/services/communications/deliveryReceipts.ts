@@ -21,6 +21,7 @@
 
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { communicationOutbox } from "../../db/schema.js";
 
 export type ReceiptState = "delivered" | "failed" | "in_transit" | "unknown";
@@ -239,21 +240,41 @@ export async function applyReceipts(receipts: readonly ParsedReceipt[], now = ne
 	const byId = new Map<string, ParsedReceipt>();
 	for (const receipt of receipts) byId.set(receipt.providerMessageId, receipt);
 
-	const rows = await db
-		.select({
-			id: communicationOutbox.id,
-			status: communicationOutbox.status,
-			providerMessageId: communicationOutbox.providerMessageId
-		})
-		.from(communicationOutbox)
-		.where(
-			and(
-				sql`${communicationOutbox.providerMessageId} is not null`,
-				inArray(communicationOutbox.providerMessageId, [...byId.keys()]),
-				// Провайдер знает только об отправленных сообщениях.
-				inArray(communicationOutbox.status, ["sent", "delivered"])
+	/*
+	 * ОПЕРАЦИЯ «ДО АРЕНДАТОРА». Квитанцию присылает шлюз связи на публичный
+	 * адрес обратного вызова: токена нет, `request.tenantId` не выставлен, и
+	 * глобальная обёртка server.ts обработчик не оборачивает. Клиника станет
+	 * известна ТОЛЬКО из найденной строки — правило 4 выше именно про это.
+	 *
+	 * Под FORCE RLS этот поиск без контекста отдавал ноль строк, и КАЖДАЯ
+	 * квитанция считалась ничейной: `unmatched === receipts.length`, ответ шлюзу
+	 * 200 «принято, применено 0», повтора не будет. Сообщения навсегда
+	 * оставались в состоянии «отправлено», а экран подтверждений дня, который
+	 * решает, кому звонить, по признаку «доставлено», врал по каждому приёму.
+	 *
+	 * Обход накрывает РОВНО этот SELECT и добирает `organization_id` — он и есть
+	 * ответ на вопрос «чьё это сообщение». Все записи ниже идут под контекстом
+	 * найденной клиники: под одним лишь обходом `UPDATE` был бы отвергнут кодом
+	 * 42501, потому что дизъюнкта обхода в `WITH CHECK` нет.
+	 */
+	const rows = await withSuperuserBypass(async (tx) =>
+		tx
+			.select({
+				id: communicationOutbox.id,
+				organizationId: communicationOutbox.organizationId,
+				status: communicationOutbox.status,
+				providerMessageId: communicationOutbox.providerMessageId
+			})
+			.from(communicationOutbox)
+			.where(
+				and(
+					sql`${communicationOutbox.providerMessageId} is not null`,
+					inArray(communicationOutbox.providerMessageId, [...byId.keys()]),
+					// Провайдер знает только об отправленных сообщениях.
+					inArray(communicationOutbox.status, ["sent", "delivered"])
+				)
 			)
-		);
+	);
 
 	const matchedIds = new Set(rows.map((row) => row.providerMessageId).filter((id): id is string => Boolean(id)));
 	report.unmatched = [...byId.keys()].filter((id) => !matchedIds.has(id)).length;
@@ -262,48 +283,52 @@ export async function applyReceipts(receipts: readonly ParsedReceipt[], now = ne
 		const receipt = row.providerMessageId ? byId.get(row.providerMessageId) : undefined;
 		if (!receipt) continue;
 
-		if (receipt.state === "delivered") {
-			await db
-				.update(communicationOutbox)
-				.set({ status: "delivered", deliveredAt: now, receiptDetail: receipt.detail, updatedAt: now })
-				.where(eq(communicationOutbox.id, row.id));
-			report.applied += 1;
-			report.delivered += 1;
-			continue;
-		}
-
-		if (receipt.state === "failed") {
-			// Доставленное не отменяется поздней квитанцией об ошибке: порядок
-			// запросов от провайдера не гарантирован.
-			if (row.status === "delivered") {
-				await db
+		// Одна квитанция — одна клиника. Контекст ставится по организации самой
+		// найденной строки, поэтому изменить чужую строку этот проход не может.
+		await withTenantCtx(row.organizationId, async (tx) => {
+			if (receipt.state === "delivered") {
+				await tx
 					.update(communicationOutbox)
-					.set({ receiptDetail: receipt.detail, updatedAt: now })
+					.set({ status: "delivered", deliveredAt: now, receiptDetail: receipt.detail, updatedAt: now })
 					.where(eq(communicationOutbox.id, row.id));
-				report.ignored += 1;
-				continue;
+				report.applied += 1;
+				report.delivered += 1;
+				return;
 			}
-			await db
-				.update(communicationOutbox)
-				.set({
-					status: "failed",
-					lastErrorClass: "not_delivered",
-					lastErrorMessage: receipt.detail,
-					receiptDetail: receipt.detail,
-					updatedAt: now
-				})
-				.where(eq(communicationOutbox.id, row.id));
-			report.applied += 1;
-			report.failed += 1;
-			continue;
-		}
 
-		// in_transit и unknown статус не меняют, но текст сохраняют.
-		await db
-			.update(communicationOutbox)
-			.set({ receiptDetail: receipt.detail, updatedAt: now })
-			.where(eq(communicationOutbox.id, row.id));
-		report.ignored += 1;
+			if (receipt.state === "failed") {
+				// Доставленное не отменяется поздней квитанцией об ошибке: порядок
+				// запросов от провайдера не гарантирован.
+				if (row.status === "delivered") {
+					await tx
+						.update(communicationOutbox)
+						.set({ receiptDetail: receipt.detail, updatedAt: now })
+						.where(eq(communicationOutbox.id, row.id));
+					report.ignored += 1;
+					return;
+				}
+				await tx
+					.update(communicationOutbox)
+					.set({
+						status: "failed",
+						lastErrorClass: "not_delivered",
+						lastErrorMessage: receipt.detail,
+						receiptDetail: receipt.detail,
+						updatedAt: now
+					})
+					.where(eq(communicationOutbox.id, row.id));
+				report.applied += 1;
+				report.failed += 1;
+				return;
+			}
+
+			// in_transit и unknown статус не меняют, но текст сохраняют.
+			await tx
+				.update(communicationOutbox)
+				.set({ receiptDetail: receipt.detail, updatedAt: now })
+				.where(eq(communicationOutbox.id, row.id));
+			report.ignored += 1;
+		});
 	}
 
 	return report;

@@ -42,9 +42,6 @@
 	// код эпохи PGlite (пакет @electric-sql/pglite не установлен) и легаси-моки.
 	// Добавлять сюда тесты нельзя — в этом весь смысл файла.
 	"exclude": [
-		"src/services/syncEngine.ts",
-		"src/scripts/setup-fresh-db.ts",
-		"src/scripts/patch-owner-credentials.ts",
-		"src/scripts/seedPglite.ts"
+		"src/services/syncEngine.ts"
 	]
 }

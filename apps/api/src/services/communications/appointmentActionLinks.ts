@@ -33,6 +33,7 @@
 import { randomInt } from "node:crypto";
 import { and, eq, lt } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { appointmentActionCodes } from "../../db/communicationsSchema.js";
 
 export type AppointmentAction = "confirm" | "cancel";
@@ -187,11 +188,21 @@ export async function resolveActionCode(rawCode: string, now = new Date()): Prom
 	// и случайный мусор, и попытки перебора.
 	if (code.length < 8 || code.length > 32 || !/^[A-Za-z0-9]+$/.test(code)) return null;
 
-	const [row] = await db
-		.select()
-		.from(appointmentActionCodes)
-		.where(eq(appointmentActionCodes.code, code))
-		.limit(1);
+	/*
+	 * ОПЕРАЦИЯ «ДО АРЕНДАТОРА» — тот же класс, что вход по логину в routes/auth.ts.
+	 * Пациент открывает ссылку из SMS, токена у него нет и быть не может, а
+	 * клиника станет известна ТОЛЬКО из найденной строки: код нарочно не несёт
+	 * в себе ничего, по чему её можно было бы назвать заранее. Под FORCE RLS
+	 * запрос без контекста отдавал ноль строк, и КАЖДАЯ ссылка подтверждения и
+	 * отмены отвечала «Ссылка недействительна» — включая только что выданную.
+	 *
+	 * Обход накрывает РОВНО этот один SELECT. Всё, что делает с ним вызывающий
+	 * (routes/publicAppointmentActions.ts), идёт уже под `withTenantCtx` по
+	 * organizationId из найденной строки.
+	 */
+	const [row] = await withSuperuserBypass(async (tx) =>
+		tx.select().from(appointmentActionCodes).where(eq(appointmentActionCodes.code, code)).limit(1)
+	);
 	if (!row) return null;
 
 	return {
@@ -211,11 +222,37 @@ export async function markActionCodeUsed(code: string, now = new Date()): Promis
 /**
  * Уборка просроченных кодов. Вызывается фоновым обработчиком: таблица иначе
  * растёт вместе с числом приёмов, а пользы от истёкших кодов нет.
+ *
+ * ФОРМА — ЦИКЛ ПО АРЕНДАТОРАМ, А НЕ ОДИН ГЛОБАЛЬНЫЙ DELETE. Прежний запрос шёл
+ * по всем клиникам сразу и без контекста удалял ноль строк молча: таблица росла
+ * вечно. Соблазн обернуть его в обход велик и неверен — под обходом политики не
+ * действуют ни для одной строки, а удаление чужих данных одним оператором это
+ * ровно то, от чего защищает изоляция. Обход накрывает единственное, чего иначе
+ * не узнать, — СПИСОК клиник, у которых есть просроченные коды; само удаление
+ * идёт по каждой клинике отдельно, под её собственным контекстом.
  */
 export async function purgeExpiredActionCodes(olderThan: Date): Promise<number> {
-	const removed = await db
-		.delete(appointmentActionCodes)
-		.where(lt(appointmentActionCodes.expiresAt, olderThan))
-		.returning({ code: appointmentActionCodes.code });
-	return removed.length;
+	const staleOrganizations = await withSuperuserBypass(async (tx) =>
+		tx
+			.selectDistinct({ organizationId: appointmentActionCodes.organizationId })
+			.from(appointmentActionCodes)
+			.where(lt(appointmentActionCodes.expiresAt, olderThan))
+	);
+
+	let removedTotal = 0;
+	for (const { organizationId } of staleOrganizations) {
+		const removed = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.delete(appointmentActionCodes)
+				.where(
+					and(
+						eq(appointmentActionCodes.organizationId, organizationId),
+						lt(appointmentActionCodes.expiresAt, olderThan)
+					)
+				)
+				.returning({ code: appointmentActionCodes.code })
+		);
+		removedTotal += removed.length;
+	}
+	return removedTotal;
 }

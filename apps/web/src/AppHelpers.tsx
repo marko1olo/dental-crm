@@ -50,7 +50,6 @@ import {
 } from "lucide-react";
 import {
   buildRuleBasedVisitDraftFromTranscript,
-  dashboardSchema,
   documentAmountSource,
   documentFactoryGroups,
   documentKindMetadata,

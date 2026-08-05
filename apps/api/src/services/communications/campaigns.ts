@@ -25,6 +25,11 @@
 
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import {
+  withSuperuserBypass,
+  withTenantCtx,
+  type TenantDb,
+} from "../../db/rls.js";
 import { communicationCampaigns } from "../../db/communicationsSchema.js";
 import {
   communicationOutbox,
@@ -560,6 +565,12 @@ export async function campaignProgress(
  * Пометить как завершённую те запущенные рассылки, у которых в очереди больше
  * ничего не ждёт отправки. Без этого «выполняется» остаётся навсегда, и по
  * списку нельзя понять, что закончилось.
+ *
+ * ДВА РЕЖИМА, И У НИХ РАЗНЫЕ ИСТОЧНИКИ АРЕНДАТОРА. С `organizationId` функцию
+ * зовёт маршрут — клиника названа. Без него зовёт фоновый цикл, и тогда это
+ * обход по ВСЕМ клиникам: список берётся под обходом одним запросом, а закрытие
+ * каждой рассылки идёт под контекстом её собственной клиники. Без контекста оба
+ * запроса возвращали ноль строк молча, и ни одна рассылка не закрывалась.
  */
 export async function completeFinishedCampaigns(
   organizationId?: string | null,
@@ -569,72 +580,105 @@ export async function completeFinishedCampaigns(
   if (organizationId)
     scope.push(eq(communicationCampaigns.organizationId, organizationId));
 
-  const running = await db
-    .select({ id: communicationCampaigns.id })
-    .from(communicationCampaigns)
-    .where(and(...scope));
+  const readRunning = async (tx: TenantDb) =>
+    tx
+      .select({
+        id: communicationCampaigns.id,
+        organizationId: communicationCampaigns.organizationId,
+      })
+      .from(communicationCampaigns)
+      .where(and(...scope));
+  const running = organizationId
+    ? await withTenantCtx(organizationId, readRunning)
+    : await withSuperuserBypass(readRunning);
   if (running.length === 0) return 0;
 
-  const runningIds = running.map((c) => c.id);
-
-  const pendingCounts = await db
-    .select({
-      campaignId: communicationOutbox.campaignId,
-      total: sql<number>`count(*)::int`,
-    })
-    .from(communicationOutbox)
-    .where(
-      and(
-        inArray(communicationOutbox.campaignId, runningIds),
-        inArray(communicationOutbox.status, ["queued", "sending"]),
-      ),
-    )
-    .groupBy(communicationOutbox.campaignId);
-
-  const pendingByCampaign = new Map(
-    pendingCounts.map((row) => [row.campaignId, Number(row.total)]),
-  );
-
-  const completedIds = runningIds.filter((id) => !pendingByCampaign.get(id));
-
-  if (completedIds.length > 0) {
-    await db
-      .update(communicationCampaigns)
-      .set({ status: "completed", completedAt: now, updatedAt: now })
-      .where(inArray(communicationCampaigns.id, completedIds));
+  // Рассылки группируются по клинике: и остаток очереди, и закрытие выполняются
+  // внутри контекста той клиники, которой рассылка принадлежит.
+  const byOrganization = new Map<string, string[]>();
+  for (const campaign of running) {
+    const list = byOrganization.get(campaign.organizationId) ?? [];
+    list.push(campaign.id);
+    byOrganization.set(campaign.organizationId, list);
   }
 
-  return completedIds.length;
+  let completedTotal = 0;
+  for (const [tenantId, runningIds] of byOrganization) {
+    completedTotal += await withTenantCtx(tenantId, async (tx) => {
+      const pendingCounts = await tx
+        .select({
+          campaignId: communicationOutbox.campaignId,
+          total: sql<number>`count(*)::int`,
+        })
+        .from(communicationOutbox)
+        .where(
+          and(
+            inArray(communicationOutbox.campaignId, runningIds),
+            inArray(communicationOutbox.status, ["queued", "sending"]),
+          ),
+        )
+        .groupBy(communicationOutbox.campaignId);
+
+      const pendingByCampaign = new Map(
+        pendingCounts.map((row) => [row.campaignId, Number(row.total)]),
+      );
+
+      const completedIds = runningIds.filter(
+        (id) => !pendingByCampaign.get(id),
+      );
+
+      if (completedIds.length > 0) {
+        await tx
+          .update(communicationCampaigns)
+          .set({ status: "completed", completedAt: now, updatedAt: now })
+          .where(inArray(communicationCampaigns.id, completedIds));
+      }
+
+      return completedIds.length;
+    });
+  }
+
+  return completedTotal;
 }
 
 /**
  * Запуск отложенных рассылок, у которых пришло время. Вызывается фоновым
  * обработчиком вместе с разбором очереди.
+ *
+ * Перечисление созревших рассылок — единственное место, где арендатор
+ * неизвестен: обработчик по замыслу смотрит все клиники сразу. Обход накрывает
+ * ровно этот SELECT двух колонок; сам запуск идёт под контекстом клиники,
+ * названной в найденной строке. Без контекста запрос отдавал ноль строк, и ни
+ * одна отложенная рассылка не стартовала — она вечно висела «запланирована».
  */
 export async function launchScheduledCampaigns(
   now = new Date(),
 ): Promise<{ launched: number; problems: string[] }> {
-  const due = await db
-    .select({
-      id: communicationCampaigns.id,
-      organizationId: communicationCampaigns.organizationId,
-    })
-    .from(communicationCampaigns)
-    .where(
-      and(
-        eq(communicationCampaigns.status, "scheduled"),
-        sql`${communicationCampaigns.scheduledAt} <= ${now}`,
+  const due = await withSuperuserBypass(async (tx) =>
+    tx
+      .select({
+        id: communicationCampaigns.id,
+        organizationId: communicationCampaigns.organizationId,
+      })
+      .from(communicationCampaigns)
+      .where(
+        and(
+          eq(communicationCampaigns.status, "scheduled"),
+          sql`${communicationCampaigns.scheduledAt} <= ${now}`,
+        ),
       ),
-    );
+  );
 
   let launched = 0;
   const problems: string[] = [];
   for (const campaign of due) {
-    const result = await launchCampaign({
-      organizationId: campaign.organizationId,
-      campaignId: campaign.id,
-      now,
-    });
+    const result = await withTenantCtx(campaign.organizationId, () =>
+      launchCampaign({
+        organizationId: campaign.organizationId,
+        campaignId: campaign.id,
+        now,
+      }),
+    );
     if (result.ok) launched += 1;
     else problems.push(`Рассылка ${campaign.id}: ${result.reason}`);
   }

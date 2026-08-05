@@ -28,6 +28,7 @@
 
 import { and, eq, gt, inArray, isNotNull, lt, lte, notInArray, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import {
 	clinics,
 	communicationOutbox,
@@ -158,54 +159,66 @@ export function parseLeadHours(raw: string): number[] {
 }
 
 export async function resolveCommunicationSettings(organizationId: string): Promise<ResolvedCommunicationSettings> {
-	const [row] = await db
-		.select()
-		.from(communicationSettings)
-		.where(eq(communicationSettings.organizationId, organizationId))
-		.limit(1);
-
 	/*
-	 * Строки настроек связи у организации может не быть вовсе — так выглядит
-	 * любая только что созданная клиника. Раньше в этом случае возвращались
-	 * умолчания с часовым поясом "Europe/Moscow", хотя `clinics.timezone` по
-	 * умолчанию `Europe/Samara`: тихие часы считались в чужом поясе, и обе их
-	 * границы съезжали на час (разбор — у FALLBACK_COMMUNICATION_TIMEZONE выше).
-	 *
-	 * Источник правды о поясе — клиника, поэтому спрашиваем его у неё. Берём
-	 * самую раннюю клинику организации: у сети их может быть несколько, и пока
-	 * настройки связи одни на организацию, выбор обязан быть определённым, а не
-	 * зависеть от порядка выдачи строк. Если клиник нет ни одной — остаётся
-	 * константа, и она совпадает с умолчанием `clinics.timezone`.
+	 * КОНТЕКСТ СТАВИТСЯ ЗДЕСЬ, А НЕ У ВЫЗЫВАЮЩЕГО. Эту функцию зовут и из
+	 * маршрутов (контекст уже стоит от глобальной обёртки server.ts), и из
+	 * фонового цикла, где запроса нет вовсе. Арендатор — обязательный аргумент,
+	 * то есть он известен ВСЕГДА, поэтому обёртка принадлежит функции. Без неё
+	 * фоновый вызов получал ноль строк и молча уходил на умолчания: тихие часы
+	 * считались в чужом поясе, и сообщение уходило пациенту ночью.
+	 * Вложенный вызов бесплатен — withTenantCtx переиспользует уже открытую
+	 * транзакцию и не берёт второго соединения из пула (см. db/rls.ts).
 	 */
-	if (!row) {
-		const [clinic] = await db
-			.select({ timezone: clinics.timezone })
-			.from(clinics)
-			.where(eq(clinics.organizationId, organizationId))
-			.orderBy(clinics.createdAt)
+	return withTenantCtx(organizationId, async (tx) => {
+		const [row] = await tx
+			.select()
+			.from(communicationSettings)
+			.where(eq(communicationSettings.organizationId, organizationId))
 			.limit(1);
 
-		return {
-			...DEFAULT_COMMUNICATION_SETTINGS,
-			timezone: clinic?.timezone ?? FALLBACK_COMMUNICATION_TIMEZONE
-		};
-	}
+		/*
+		 * Строки настроек связи у организации может не быть вовсе — так выглядит
+		 * любая только что созданная клиника. Раньше в этом случае возвращались
+		 * умолчания с часовым поясом "Europe/Moscow", хотя `clinics.timezone` по
+		 * умолчанию `Europe/Samara`: тихие часы считались в чужом поясе, и обе их
+		 * границы съезжали на час (разбор — у FALLBACK_COMMUNICATION_TIMEZONE выше).
+		 *
+		 * Источник правды о поясе — клиника, поэтому спрашиваем его у неё. Берём
+		 * самую раннюю клинику организации: у сети их может быть несколько, и пока
+		 * настройки связи одни на организацию, выбор обязан быть определённым, а не
+		 * зависеть от порядка выдачи строк. Если клиник нет ни одной — остаётся
+		 * константа, и она совпадает с умолчанием `clinics.timezone`.
+		 */
+		if (!row) {
+			const [clinic] = await tx
+				.select({ timezone: clinics.timezone })
+				.from(clinics)
+				.where(eq(clinics.organizationId, organizationId))
+				.orderBy(clinics.createdAt)
+				.limit(1);
 
-	return {
-		timezone: row.timezone,
-		quietHoursStartMinute: row.quietHoursStartMinute,
-		quietHoursEndMinute: row.quietHoursEndMinute,
-		deferServiceInQuietHours: row.deferServiceInQuietHours,
-		blockMarketingInQuietHours: row.blockMarketingInQuietHours,
-		dailyLimitPerPatient: row.dailyLimitPerPatient,
-		maxAttempts: row.maxAttempts,
-		retryBaseSeconds: row.retryBaseSeconds,
-		retryMaxSeconds: row.retryMaxSeconds,
-		channelFallback: parseChannelFallback(row.channelFallbackJson),
-		appointmentReminderEnabled: row.appointmentReminderEnabled,
-		appointmentReminderLeadHours: parseLeadHours(row.appointmentReminderLeadHoursJson),
-		appointmentReminderWindowMinutes: row.appointmentReminderWindowMinutes
-	};
+			return {
+				...DEFAULT_COMMUNICATION_SETTINGS,
+				timezone: clinic?.timezone ?? FALLBACK_COMMUNICATION_TIMEZONE
+			};
+		}
+
+		return {
+			timezone: row.timezone,
+			quietHoursStartMinute: row.quietHoursStartMinute,
+			quietHoursEndMinute: row.quietHoursEndMinute,
+			deferServiceInQuietHours: row.deferServiceInQuietHours,
+			blockMarketingInQuietHours: row.blockMarketingInQuietHours,
+			dailyLimitPerPatient: row.dailyLimitPerPatient,
+			maxAttempts: row.maxAttempts,
+			retryBaseSeconds: row.retryBaseSeconds,
+			retryMaxSeconds: row.retryMaxSeconds,
+			channelFallback: parseChannelFallback(row.channelFallbackJson),
+			appointmentReminderEnabled: row.appointmentReminderEnabled,
+			appointmentReminderLeadHours: parseLeadHours(row.appointmentReminderLeadHoursJson),
+			appointmentReminderWindowMinutes: row.appointmentReminderWindowMinutes
+		};
+	});
 }
 
 // ─── Постановка в очередь ────────────────────────────────────────────────────
@@ -247,46 +260,56 @@ export async function resolveRecipientAddress(
 	channel: CommunicationChannelCode,
 	patientId: string
 ): Promise<{ address: string | null; reason: string | null }> {
-	if (channel === "telegram") {
-		const chatId = await resolveTelegramChatId(organizationId, patientId);
-		return chatId
-			? { address: chatId, reason: null }
-			: { address: null, reason: "У пациента нет активной привязки к Telegram-боту клиники." };
-	}
+	// Контекст ставится здесь по той же причине, что и в
+	// resolveCommunicationSettings выше: функцию зовут и маршруты, и фоновый
+	// цикл, а арендатор — обязательный аргумент. Без контекста и привязка к
+	// Telegram, и карточка пациента читались как отсутствующие, и напоминание
+	// молча отменялось с причиной «у пациента нет телефона».
+	return withTenantCtx(organizationId, async (tx) => {
+		if (channel === "telegram") {
+			const chatId = await resolveTelegramChatId(organizationId, patientId);
+			return chatId
+				? { address: chatId, reason: null }
+				: { address: null, reason: "У пациента нет активной привязки к Telegram-боту клиники." };
+		}
 
-	const [patient] = await db
-		.select({ phone: patients.phone, email: patients.email, notes: patients.notes })
-		.from(patients)
-		.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
-		.limit(1);
+		const [patient] = await tx
+			.select({ phone: patients.phone, email: patients.email, notes: patients.notes })
+			.from(patients)
+			.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
+			.limit(1);
 
-	if (!patient) return { address: null, reason: "Пациент не найден в этой организации." };
+		if (!patient) return { address: null, reason: "Пациент не найден в этой организации." };
 
-	if (channel === "max") {
-		/*
-		 * В MAX бот не пишет первым: диалог начинает пациент, и его идентификатор
-		 * приходит во входящем событии. Разбор входящих оставляет метку
-		 * `MAX:<chat_id>` в заметках карточки — отсюда и берётся адрес. Раньше в
-		 * это поле подставлялся телефон, то есть заведомо непригодное значение.
-		 */
-		const mark = /MAX:(-?\d{1,19})/.exec(patient.notes ?? "");
-		return mark?.[1]
-			? { address: mark[1], reason: null }
-			: {
-					address: null,
-					reason: "У пациента нет переписки в MAX: бот не может написать первым, диалог начинает пациент."
-				};
-	}
+		if (channel === "max") {
+			/*
+			 * В MAX бот не пишет первым: диалог начинает пациент, и его идентификатор
+			 * приходит во входящем событии. Разбор входящих оставляет метку
+			 * `MAX:<chat_id>` в заметках карточки — отсюда и берётся адрес. Раньше в
+			 * это поле подставлялся телефон, то есть заведомо непригодное значение.
+			 */
+			const mark = /MAX:(-?\d{1,19})/.exec(patient.notes ?? "");
+			return mark?.[1]
+				? { address: mark[1], reason: null }
+				: {
+						address: null,
+						reason: "У пациента нет переписки в MAX: бот не может написать первым, диалог начинает пациент."
+					};
+		}
 
-	if (channel === "email") {
-		const email = patient.email?.trim() ?? "";
-		return isValidEmailAddress(email)
-			? { address: email, reason: null }
-			: { address: null, reason: "У пациента не указан корректный адрес электронной почты." };
-	}
+		if (channel === "email") {
+			const email = patient.email?.trim() ?? "";
+			return isValidEmailAddress(email)
+				? { address: email, reason: null }
+				: { address: null, reason: "У пациента не указан корректный адрес электронной почты." };
+		}
 
-	const msisdn = channel === "whatsapp" ? normalizeWhatsappRecipient(patient.phone) : normalizeRussianMsisdn(patient.phone);
-	return msisdn ? { address: msisdn, reason: null } : { address: null, reason: "У пациента не указан корректный номер телефона." };
+		const msisdn =
+			channel === "whatsapp" ? normalizeWhatsappRecipient(patient.phone) : normalizeRussianMsisdn(patient.phone);
+		return msisdn
+			? { address: msisdn, reason: null }
+			: { address: null, reason: "У пациента не указан корректный номер телефона." };
+	});
 }
 
 export async function enqueueMessage(input: EnqueueMessageInput): Promise<EnqueueMessageResult> {
@@ -313,45 +336,53 @@ export async function enqueueMessage(input: EnqueueMessageInput): Promise<Enqueu
 	}
 
 	const scheduledAt = input.scheduledAt ?? new Date();
-	const [inserted] = await db
-		.insert(communicationOutbox)
-		.values({
-			organizationId: input.organizationId,
-			clinicId: input.clinicId ?? null,
-			patientId: input.patientId ?? null,
-			taskId: input.taskId ?? null,
-			templateId: input.templateId ?? null,
-			campaignId: input.campaignId ?? null,
-			channel: input.channel,
-			intent: input.intent,
-			scope: input.scope ?? "service",
-			recipientAddress,
-			subject: input.subject?.trim() || null,
-			body,
-			status: "queued",
-			scheduledAt,
-			nextAttemptAt: scheduledAt,
-			maxAttempts: input.maxAttempts ?? 5,
-			dedupeKey: input.dedupeKey
-		})
-		// Повтор постановки — обычное дело при перезапуске планировщика.
-		// Это не ошибка и не повод отправить второе сообщение.
-		.onConflictDoNothing({ target: [communicationOutbox.organizationId, communicationOutbox.dedupeKey] })
-		.returning({ id: communicationOutbox.id });
+	// Постановка в очередь — ЗАПИСЬ, а не чтение, и без контекста она не
+	// «возвращала ноль строк», а падала с 42501: в WITH CHECK политики
+	// communication_outbox дизъюнкта обхода нет. Арендатор известен из входа.
+	return withTenantCtx(input.organizationId, async (tx) => {
+		const [inserted] = await tx
+			.insert(communicationOutbox)
+			.values({
+				organizationId: input.organizationId,
+				clinicId: input.clinicId ?? null,
+				patientId: input.patientId ?? null,
+				taskId: input.taskId ?? null,
+				templateId: input.templateId ?? null,
+				campaignId: input.campaignId ?? null,
+				channel: input.channel,
+				intent: input.intent,
+				scope: input.scope ?? "service",
+				recipientAddress,
+				subject: input.subject?.trim() || null,
+				body,
+				status: "queued",
+				scheduledAt,
+				nextAttemptAt: scheduledAt,
+				maxAttempts: input.maxAttempts ?? 5,
+				dedupeKey: input.dedupeKey
+			})
+			// Повтор постановки — обычное дело при перезапуске планировщика.
+			// Это не ошибка и не повод отправить второе сообщение.
+			.onConflictDoNothing({ target: [communicationOutbox.organizationId, communicationOutbox.dedupeKey] })
+			.returning({ id: communicationOutbox.id });
 
-	if (inserted) return { ok: true, outboxId: inserted.id, duplicate: false };
+		if (inserted) return { ok: true as const, outboxId: inserted.id, duplicate: false };
 
-	const [existing] = await db
-		.select({ id: communicationOutbox.id })
-		.from(communicationOutbox)
-		.where(
-			and(eq(communicationOutbox.organizationId, input.organizationId), eq(communicationOutbox.dedupeKey, input.dedupeKey))
-		)
-		.limit(1);
+		const [existing] = await tx
+			.select({ id: communicationOutbox.id })
+			.from(communicationOutbox)
+			.where(
+				and(
+					eq(communicationOutbox.organizationId, input.organizationId),
+					eq(communicationOutbox.dedupeKey, input.dedupeKey)
+				)
+			)
+			.limit(1);
 
-	return existing
-		? { ok: true, outboxId: existing.id, duplicate: true }
-		: { ok: false, reason: "Не удалось поставить сообщение в очередь." };
+		return existing
+			? { ok: true as const, outboxId: existing.id, duplicate: true }
+			: { ok: false as const, reason: "Не удалось поставить сообщение в очередь." };
+	});
 }
 
 // ─── Разбор очереди ──────────────────────────────────────────────────────────
@@ -766,6 +797,31 @@ async function processRow(
 /**
  * Один проход по очереди. Возвращает отчёт — вызывающий решает, логировать его
  * или показывать в интерфейсе.
+ *
+ * ФОРМА ПРОХОДА: ЦИКЛ ПО АРЕНДАТОРАМ, КАЖДЫЙ В СВОЁМ КОНТЕКСТЕ.
+ * ------------------------------------------------------------
+ * Обработчик вызывается из фонового цикла (dispatchWorker.ts), где запроса нет
+ * вовсе, поэтому глобальная обёртка server.ts не действует и
+ * `app.current_tenant` не выставлен никем. Под FORCE RLS это ломало проход
+ * целиком и по-разному в каждой части: `claimBatch` возвращал ноль строк молча
+ * (очередь копилась вечно, а отчёт показывал «взято 0» — то же число, что у
+ * клиники без единого сообщения), а `releaseStuckLocks` затрагивал ноль строк,
+ * из-за чего зависший захват не возвращался в очередь никогда.
+ *
+ * Обходом это не лечится, и это не вопрос вкуса: `UPDATE` требует и `USING`, и
+ * `WITH CHECK`, а дизъюнкт обхода стоит только в `USING` (миграции 0158/0159),
+ * то есть `UPDATE` под одним лишь обходом отвергается кодом 42501. Значит
+ * работа обязана идти под контекстом конкретной клиники.
+ *
+ * Обход остаётся ровно на одном запросе — на СПИСКЕ клиник, у которых в очереди
+ * что-то есть. Это единственное, чего иначе не узнать. Всё остальное, включая
+ * захват строк и запись результата, выполняется по каждой клинике отдельно
+ * внутри `withTenantCtx`: смешать две клиники в одном проходе физически нельзя.
+ *
+ * Общий предел пачки сохранён: `batchSize` — бюджет на ВЕСЬ проход, он тратится
+ * по клиникам в порядке срочности (у кого раньше подошёл срок, тот первый).
+ * Клиника, до которой бюджет не дошёл, всё равно получает возврат зависших
+ * захватов и попадает в счётчики остатка — иначе её очередь выглядела бы пустой.
  */
 export async function dispatchDueMessages(options: DispatchOptions = {}): Promise<DispatchReport> {
 	const now = options.now ?? new Date();
@@ -773,9 +829,97 @@ export async function dispatchDueMessages(options: DispatchOptions = {}): Promis
 	const workerId = options.workerId ?? `api:${process.pid}`;
 	const stuckLockMinutes = Math.max(1, options.stuckLockMinutes ?? 10);
 
-	const organizationScope = options.organizationId ?? null;
+	const targets = options.organizationId
+		? [options.organizationId]
+		: await listOutboxOrganizations(now, stuckLockMinutes);
+
+	const report = {
+		claimed: 0,
+		sent: 0,
+		retried: 0,
+		failed: 0,
+		suppressed: 0,
+		notConfigured: 0,
+		deferred: 0,
+		releasedStuck: 0,
+		awaitingRetry: 0,
+		awaitingSchedule: 0
+	};
+
+	let budget = batchSize;
+	for (const organizationId of targets) {
+		const orgReport = await withTenantCtx(organizationId, () =>
+			dispatchForOrganization({
+				organizationId,
+				now,
+				batchSize: Math.max(0, budget),
+				workerId,
+				stuckLockMinutes
+			})
+		);
+		report.claimed += orgReport.claimed;
+		report.sent += orgReport.sent;
+		report.retried += orgReport.retried;
+		report.failed += orgReport.failed;
+		report.suppressed += orgReport.suppressed;
+		report.notConfigured += orgReport.notConfigured;
+		report.deferred += orgReport.deferred;
+		report.releasedStuck += orgReport.releasedStuck;
+		report.awaitingRetry += orgReport.awaitingRetry;
+		report.awaitingSchedule += orgReport.awaitingSchedule;
+		budget -= orgReport.claimed;
+	}
+
+	return report;
+}
+
+/**
+ * Клиники, у которых в очереди есть строка, требующая внимания этого прохода:
+ * подошедшая по сроку либо зависшая в захвате. Порядок — по срочности, чтобы
+ * общий бюджет пачки доставался сначала тем, у кого срок раньше.
+ *
+ * ЕДИНСТВЕННОЕ МЕСТО, ГДЕ АРЕНДАТОР НЕИЗВЕСТЕН, и потому единственное место с
+ * обходом. Запрос читает ОДНУ колонку — идентификатор организации — и не отдаёт
+ * ни одной строки очереди: содержимое чужого сообщения под обход не попадает.
+ */
+async function listOutboxOrganizations(now: Date, stuckLockMinutes: number): Promise<string[]> {
+	const stuckThreshold = new Date(now.getTime() - stuckLockMinutes * 60_000);
+	const rows = await withSuperuserBypass(async (tx) =>
+		tx
+			.select({ organizationId: communicationOutbox.organizationId })
+			.from(communicationOutbox)
+			.where(
+				or(
+					eq(communicationOutbox.status, "queued" as const),
+					and(
+						eq(communicationOutbox.status, "sending" as const),
+						or(lt(communicationOutbox.lockedAt, stuckThreshold), sql`${communicationOutbox.lockedAt} IS NULL`)
+					)
+				)
+			)
+			.groupBy(communicationOutbox.organizationId)
+			.orderBy(sql`min(${communicationOutbox.nextAttemptAt}) asc nulls first`)
+	);
+	return rows.map((row) => row.organizationId);
+}
+
+/**
+ * Проход по очереди ОДНОЙ клиники. Вызывается уже внутри `withTenantCtx`, то
+ * есть все запросы ниже идут под её арендатором.
+ */
+async function dispatchForOrganization(input: {
+	readonly organizationId: string;
+	readonly now: Date;
+	readonly batchSize: number;
+	readonly workerId: string;
+	readonly stuckLockMinutes: number;
+}): Promise<DispatchReport> {
+	const { now, workerId, stuckLockMinutes, batchSize } = input;
+	const organizationScope = input.organizationId;
 	const releasedStuck = await releaseStuckLocks(now, stuckLockMinutes, organizationScope);
-	const claimed = await claimBatch(now, batchSize, workerId, organizationScope);
+	// Бюджет прохода мог кончиться на предыдущих клиниках: тогда строки не
+	// забираются вовсе, но остаток очереди этой клиники всё равно считается.
+	const claimed = batchSize > 0 ? await claimBatch(now, batchSize, workerId, organizationScope) : [];
 	const handledIds = claimed.map((row) => row.id);
 	const report = {
 		claimed: claimed.length,

@@ -56,7 +56,6 @@ import {
 	type DocumentPayload,
 	type DocumentSourceStatus,
 	type DocumentVoidReasonCode,
-	dashboardSchema,
 	documentAmountSource,
 	documentFactoryGroups,
 	documentKindMetadata,
@@ -873,6 +872,7 @@ import {
 	ActionIcon,
 	type AppView,
 	appViews,
+	getFallbackAppView,
 	getFilteredAppViews,
 	viewLabels,
 	WorkspaceSidebar,
@@ -2183,13 +2183,22 @@ export function useAppLogic(): any {
 	 * даже в первый коммит и монтировать нечего. Запрошенное значение осталось
 	 * доступным как `requestedWorkspaceView` и нужно только для правки адреса.
 	 *
-	 * ПРО ЗАПАСНОЙ РАЗДЕЛ. Здесь «shift» — тот же, что стоял в прежнем эффекте, и
-	 * менять его этой правкой нельзя: у ролей «Администратор» и «Управляющий»
-	 * getFilteredAppViews «shift» НЕ содержит, но именно на него их сбрасывает и
-	 * viewFromHash(), и прежний охранник, — то есть «Смена» и сегодня их рабочий
-	 * стартовый экран. Подставить сюда «первый разрешённый роли раздел» значило бы
-	 * молча переселить две роли на другой стартовый экран под видом починки границ
-	 * ошибок. Это отдельное решение, и оно вынесено ведущему.
+	 * ПРО ЗАПАСНОЙ РАЗДЕЛ. Здесь стояла КОНСТАНТА «shift», и она была дефектом,
+	 * а не настройкой. У ролей «Администратор» и «Управляющий» getFilteredAppViews
+	 * «shift» НЕ содержит — ни разу за всю историю функции (заведена коммитом
+	 * 4867a6afc уже без него, пять последующих правок его этим ролям не
+	 * добавляли). То есть охранник, поставленный СОБЛЮДАТЬ список, сам отправлял
+	 * две роли в раздел вне списка: «Смена» им показывалась, при том что её пункта
+	 * нет в боковом меню (getVisibleRailViews считается от того же списка) — уйдя
+	 * с неё, вернуться было уже нечем.
+	 *
+	 * Теперь запасной раздел берётся из списка САМОЙ роли (getFallbackAppView,
+	 * рядом со списком, чтобы они не разъехались). Прав это не прибавляет никому:
+	 * для врача, ассистента и владельца «shift» и так стоит в их списке первым,
+	 * поэтому у них ничего не меняется; администратор и управляющий вместо чужой
+	 * «Смены» получают первый СВОЙ раздел — «Записи». Обратный вариант (выдать
+	 * двум ролям «shift») — продуктовое решение, а не починка, и здесь не
+	 * принимается.
 	 */
 	const allowedWorkspaceViews = useMemo(
 		() => getFilteredAppViews(selectedWorkspaceRole),
@@ -2199,7 +2208,7 @@ export function useAppLogic(): any {
 		requestedWorkspaceView,
 	)
 		? requestedWorkspaceView
-		: "shift";
+		: getFallbackAppView(selectedWorkspaceRole);
 	const {
 		onboardingDismissed,
 		setOnboardingDismissed,

@@ -1,1 +1,0 @@
-{instruction: SYSTEM OVERRIDE: Stop trying to call summarize_task or attempt_completion. You are in an infinite tool loop. Simply output your handoff summary in plain text markdown to the user and stop calling tools completely to end your turn. Proceed to next feature.}

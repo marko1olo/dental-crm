@@ -34,7 +34,27 @@ export interface ClinicalAuditInput {
 }
 
 /**
- * Core append function — fire-and-forget, never throws to the caller.
+ * Core append function.
+ *
+ * НЕ БРОСАЕТ — И ЭТО ОСОЗНАННЫЙ ВЫБОР, А НЕ НЕДОСМОТР. Развилка «ронять
+ * операцию или писать в аварийный канал» решается здесь в пользу второго
+ * ровно потому, что этот журнал фиксирует ДОСТУП (просмотр карты, чтение
+ * журнала), а не изменение. Отменять при отказе записи нечего: данные уже
+ * показаны, откат невозможен. Для путей, которые ИЗМЕНЯЮТ медданные, деньги
+ * или документы, выбор противоположный — см. `audit.ts`, где отказ записи
+ * пробрасывается и отменяет операцию.
+ *
+ * БЫЛО: `console.error("[ClinicalAudit] Failed to write audit log:", err)` —
+ * одна строка с объектом ошибки и БЕЗ САМОГО СОБЫТИЯ. Восстановить по такому
+ * логу, кто и к чьей карте обращался, невозможно: событие исчезало целиком, в
+ * логе оставался только факт, что что-то не записалось. Это не аварийный
+ * канал, а сообщение о том, что аварийный канал не предусмотрен.
+ *
+ * СТАЛО: в лог уходит полное содержимое события одной строкой с устойчивым
+ * префиксом `[ClinicalAudit] ОТКАЗ ЗАПИСИ`, по которому событие можно найти и
+ * внести в журнал вручную. Требование РСБ.3 (сбор, запись и хранение
+ * информации о событиях безопасности) без такой строки не выполняется:
+ * потерянное событие обязано оставаться восстановимым.
  */
 export async function writeClinicalAuditLog(
 	input: ClinicalAuditInput,
@@ -51,8 +71,23 @@ export async function writeClinicalAuditLog(
 			userAgent: input.userAgent ?? null,
 		});
 	} catch (err) {
-		// Never propagate — audit failure must not crash the clinical flow
-		console.error("[ClinicalAudit] Failed to write audit log:", err);
+		// Never propagate — audit failure must not crash the clinical flow,
+		// но событие обязано пережить отказ в читаемом виде.
+		console.error(
+			`[ClinicalAudit] ОТКАЗ ЗАПИСИ журнала доступа к медданным. ` +
+				`Событие подлежит ручному внесению: ${JSON.stringify({
+					organizationId: input.organizationId,
+					userId: input.userId ?? null,
+					patientId: input.patientId ?? null,
+					action: input.action,
+					entityType: input.entityType,
+					entityId: input.entityId,
+					ipAddress: input.ipAddress ?? null,
+					userAgent: input.userAgent ?? null,
+					occurredAt: new Date().toISOString(),
+				})}. Причина отказа:`,
+			err,
+		);
 	}
 }
 

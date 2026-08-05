@@ -136,7 +136,7 @@ Reports.** `git status --porcelain` them before touching; if still dirty, leave 
 Cross-lane seams belong to YOU, not to a lane: the God Context (`useAppLogic.tsx`, 14,425 lines, ~1,014
 return fields, `.claude/rules/dente-god-context.md` fires on it), the routing chain
 (`workspaceShell.tsx:25` → `AppHelpers.tsx:6033` → `useAppLogic.tsx:4280`), `App.tsx` (4,774), `db/schema.ts`
-(125 tables), and `server.ts` route registration.
+(`db/schema.ts`, 129 tables declared / 148 live as of 2026-08-06), and `server.ts` route registration.
 
 ════════════════════════════════════════════════════════════════════════
 5. ENVIRONMENT FACTS — HARD-WON, DO NOT RE-DERIVE, PASTE INTO EVERY PROMPT
@@ -228,12 +228,24 @@ return fields, `.claude/rules/dente-god-context.md` fires on it), the routing ch
   OmnichannelInbox (1,306), Scanner (154). A guard test `tests/panelsAreMounted.test.ts` exists because
   panels were added to the dead file and silently never rendered. **Adding a view means editing `appViews`,
   `App.tsx`, and `workspacePreload.ts` — three places or it does not exist.**
-- **Migrations are a mess but the runner is sound.** 90 `.sql` in `apps/api/drizzle/`, numbered 0000–0013
-  then jumping to 0061–0132, with four duplicated ordinals. `drizzle/meta/_journal.json` lists 28 tags
-  matching **zero** filenames — drizzle-kit's journal is dead, and `drizzle.config.ts` still targets
-  `driver: "pglite"`. The real runner is custom: `src/scripts/migrate.ts`, numeric sort, one transaction
-  each, sha256 ledger in `_dente_migrations`, with `--dry-run`/`--baseline`/`--strict`. **Use
-  `npm run db:migrate`. Do not trust `npm run db:generate`.**
+- **Migrations are a mess but the runner is sound.** Measured 2026-08-06: **130 `.sql`** in
+  `apps/api/drizzle/`, highest ordinal **`0160`**, 123 distinct ordinals with gaps, and **seven**
+  duplicated ordinals (`0011`, `0012`, `0013`, `0119`, `0120`, `0124`, `0128`). `drizzle/meta/_journal.json`
+  holds **34 entries, 17 of which match a real file**, 17 tags with no file, and 113 files absent from it —
+  a stale partial index, not a dead one, and **the runner never reads it**. `drizzle.config.ts` no longer
+  targets `driver: "pglite"`; it declares `dialect: "postgresql"` and throws on a blank `DATABASE_URL`.
+  The real runner is custom: `src/scripts/migrate.ts`, numeric sort, one transaction each, sha256 ledger in
+  `_dente_migrations`, with `--dry-run`/`--baseline`/`--strict`. **Use `npm run db:migrate` and hand-write
+  the SQL.** *(This bullet previously read "90 `.sql`, 0000–0013 then 0061–0132, four duplicated ordinals,
+  28 journal tags matching zero filenames, `driver: "pglite"`" — every one of those was stale. Numbers move
+  daily; re-measure with `fd` before quoting. Authority: `.agents/DATABASE.md`.)*
+- **The database is live, and `dente-db` is not it.** Native PostgreSQL **18.4** on `127.0.0.1:5432`, data
+  directory **`.data/pg18`**. `apps/api/dente-db` is a PGlite leftover (`postmaster.pid` PID `-42`, path
+  `/pglite/data`, no `dental_crm` in `base/`) — never cite it. The server binaries live in
+  `node_modules/@embedded-postgres/`, which is **undeclared and extraneous: `npm ci` deletes it** and the
+  database becomes unstartable. `npm run db:reset-seed` has **no safety gate at all** — the
+  `DENTAL_ALLOW_DESTRUCTIVE_DB_RESET` variable documented before 2026-08-06 never existed. RLS is deployed:
+  147 of 148 tables carry `ENABLE` + `FORCE` + a `tenant_isolation` policy with a non-null `WITH CHECK`.
 - **How anything authenticates to the API** — two proven routes, both used by existing tests:
   1. `import { TOKEN_SECRET } from "../routes/auth.js"`, then `signToken({organizationId}, TOKEN_SECRET())`,
      sent as header `x-dente-clinic-token`. (Auth is NOT JWT — it is a 2-segment HMAC token from
@@ -452,7 +464,12 @@ Mechanics that matter:
 - **Money is exact to the kopeck; legal documents are exact.** `.agents/AGENTS.md` §8b. Note the open
   `amountRub`-is-an-integer defect before writing any money code.
 - **MIGRATIONS**: a migration is complete only as `.sql` + ledger entry + proof against a clean database
-  (`.agents/AGENTS.md` §8b). Use `npm run db:migrate`; ignore `db:generate` and the dead drizzle journal.
+  (`.agents/AGENTS.md` §8b). Use `npm run db:migrate` and hand-write the SQL; the runner does not read
+  `drizzle/meta/_journal.json` at all (that journal is a stale PARTIAL index — 34 entries, 17 matching a
+  real file, 113 files missing from it as of 2026-08-06 — not the dead one earlier drafts described, so do
+  not "clean it up" on that assumption). Also: RLS must be part of the same migration —
+  `ENABLE` + `FORCE ROW LEVEL SECURITY` + a `tenant_isolation` policy with both `USING` and `WITH CHECK`,
+  or the table is a tenant leak.
 - **TWO STRIKES THEN CHANGE THE ROUTE**: if the same failure appears twice, stop. Do not add wrapper glue or
   another checker over the same failure. Report it.
 - **THE REPORT SHAPE** — `.agents/AGENTS.md` §8b, and it is not optional:

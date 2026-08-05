@@ -16,7 +16,7 @@ You are an AI coding agent (Claude Code / Aider / Windsurf / Antigravity) workin
    * Verify code compiles cleanly using `npm run typecheck`.
 
 3. **DATABASE ENGINE — native PostgreSQL 18 over TCP** (verified 2026-07-27):
-   `apps/api/src/db/client.ts` connects with `drizzle-orm/node-postgres` and `new pg.Pool({connectionString: DATABASE_URL})` to `127.0.0.1:5432`. `DATABASE_URL` lives in the repo-root `.env` and is mandatory — the client throws when it is missing. `apps/api/dente-db` is that server's data directory (`PG_VERSION` 18, live `postmaster.pid`), not an in-process PGlite store; `@electric-sql/pglite` is not installed and is in no `package.json`. pg-pool TCP connections are the correct and only supported path. `seedPglite.ts` and the `postgres:16-alpine` service in `docker-compose.yml` are stale alternates.
+   `apps/api/src/db/client.ts` connects with `drizzle-orm/node-postgres` and `new pg.Pool({connectionString: DATABASE_URL})` to `127.0.0.1:5432`. `DATABASE_URL` lives in the repo-root `.env` and is mandatory — the client throws when it is missing. `apps/api/dente-db` is that server's data directory (`PG_VERSION` 18, live `postmaster.pid`), not an in-process PGlite store; `@electric-sql/pglite` is not installed and is in no `package.json`. pg-pool TCP connections are the correct and only supported path. `seedPglite.ts` and `setup-fresh-db.ts` were stale alternates and were deleted 2026-08-06; the `postgres:16-alpine` service in `docker-compose.yml` is still one.
 
 4. **STRICT ANTI-HARDCODE & FILE READ PROTOCOL**:
    * Hardcoding configuration, ports, database credentials, or API endpoints is strictly banned. Use TypeScript interfaces, `.env` files, or configurations.

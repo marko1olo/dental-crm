@@ -112,10 +112,37 @@ function moneyLine(amount: number | null | undefined): number {
 	return Math.round(amount * 100) / 100;
 }
 
+/**
+ * Итог строки плана: `цена × количество − скидка`, не ниже нуля.
+ *
+ * КОЛИЧЕСТВО БОЛЬШЕ НЕ ПОДМЕНЯЕТСЯ ЕДИНИЦЕЙ. Здесь стояло
+ * `item.quantity > 0 ? item.quantity : 1`, то есть строка без объёма считалась
+ * за одну услугу и уходила суммой в payload ИИ, а оттуда — в текст, который
+ * читает пациент. Это та же тихая догадка, что стояла в SQL отчётов
+ * руководителя (`services/reports/managerReports.ts`), и убрана она по тому же
+ * основанию:
+ *
+ *  • Данные сюда приходят из `dashboard.treatmentPlanItems`, а их контракт
+ *    объявляет `quantity: z.number().int().positive()`
+ *    (`packages/shared/src/index.ts`). Ветка «количество ≤ 0» защищала от
+ *    состояния, которого контракт не допускает, и тем врала о модели угроз.
+ *  • Канон (`apps/api/src/money/patientDebt.ts`, `assertContractQuantity`) на
+ *    количестве ≤ 0 ОТКАЗЫВАЕТ дословно со словами «позицию без объёма надо
+ *    отменять статусом cancelled, а не считать как одну единицу». Бросить
+ *    исключение посреди сборки payload нельзя — панель обязана отрисоваться, —
+ *    но выставлять счёт за единицу, которой нет, тем более нельзя. Поэтому
+ *    строка без законного объёма даёт 0: за неё не выставляется ничего, ровно
+ *    как решил канон.
+ *
+ * Дробное количество отвергается по той же причине: колонка `numeric(10, 2)`
+ * его физически пропускает, а канон на нём отказывает, потому что три
+ * существующих расчёта округляли его по-разному.
+ */
 function lineTotal(item: PlanItem): number {
 	const unit = moneyLine(item.unitPriceRub);
 	const discount = moneyLine(item.discountRub);
-	const qty = typeof item.quantity === "number" && item.quantity > 0 ? item.quantity : 1;
+	const qty = item.quantity;
+	if (typeof qty !== "number" || !Number.isInteger(qty) || qty <= 0) return 0;
 	return moneyLine(Math.max(0, unit * qty - discount));
 }
 

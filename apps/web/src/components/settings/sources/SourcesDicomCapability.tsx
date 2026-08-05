@@ -3,6 +3,7 @@ import type {
 	DicomWorkstationReadinessResponse,
 	MprWindowPreset,
 } from "@dental/shared";
+import { isHttpUrl } from "@dental/shared";
 import {
 	CheckCircle2,
 	ClipboardCheck,
@@ -1662,7 +1663,27 @@ export function SourcesDicomCapability() {
 											: "том снимков еще не подготовлен"}
 									</span>
 								</div>
-								{dicomViewerLaunchManifest.viewerUrl ? (
+								{/*
+								 * ВТОРОЙ СЛОЙ ЗАЩИТЫ, НЕ ДУБЛИКАТ ПЕРВОГО. Схема на входе
+								 * (httpUrlSchema в packages/shared) ограничивает адрес
+								 * архива и внешнего просмотрщика схемами http/https. Здесь
+								 * проверяется то, что реально попадает в разметку, потому
+								 * что в `viewerUrl` приходит ещё и `externalViewerPath` —
+								 * произвольная строка до 1000 символов без разбора адреса
+								 * (apps/api/src/routes/imaging.ts, ветка external_handoff), —
+								 * а сам `viewerUrl` в ответе объявлен как `z.string()` и
+								 * возвращается в том числе из сохранённого рабочего набора
+								 * просмотра, то есть из базы.
+								 *
+								 * React 19 подменяет в href только схему `javascript:`
+								 * (sanitizeURL), а `data:`, `vbscript:` и `file:` оставляет
+								 * как есть — полагаться на него как на единственную защиту
+								 * нельзя. Адрес не http/https показывается текстом: кликать
+								 * по нему браузер всё равно не станет, а исполнять — тем
+								 * более.
+								 */}
+								{dicomViewerLaunchManifest.viewerUrl &&
+								isHttpUrl(dicomViewerLaunchManifest.viewerUrl) ? (
 									<a
 										href={dicomViewerLaunchManifest.viewerUrl}
 										target="_blank"
@@ -1672,6 +1693,11 @@ export function SourcesDicomCapability() {
 									>
 										Открыть внешний просмотр
 									</a>
+								) : dicomViewerLaunchManifest.viewerUrl ? (
+									<span title="Адрес внешнего просмотра открывается только по http/https">
+										Цель внешнего просмотра:{" "}
+										{dicomViewerLaunchManifest.viewerUrl}
+									</span>
 								) : (
 									<span>{dicomViewerLaunchManifest.nextAction}</span>
 								)}

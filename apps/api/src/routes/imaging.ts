@@ -3111,6 +3111,38 @@ function buildQidoProbeUrl(input: DicomWebConnectorCheckRequest) {
   return addQueryParams(studiesUrl, { limit: "1" });
 }
 
+/**
+ * Заголовки ПРОБНОГО запроса к архиву снимков (QIDO-RS, checkDicomWebConnector).
+ *
+ * ЗДЕСЬ НАМЕРЕННО НЕТ ЗАГОЛОВКА Authorization, И ЭТО НЕ ЗАБЫТАЯ СТРОКА.
+ *
+ * ЧТО БЫЛО. Функция вешала серверный DICOMWEB_BEARER_TOKEN (или
+ * DICOMWEB_BASIC_AUTH) на запрос к ЛЮБОМУ хосту, который прошёл SSRF-гейт.
+ * Адрес при этом вводит оператор в поле «адрес архива» прямо перед пробой.
+ * SSRF-гейт тут не помогает и не должен: он отсекает внутренние и служебные
+ * диапазоны, а «https://архив-злоумышленника.example» — совершенно легальный
+ * публичный адрес, он гейт проходит. Дефект не в адресе, а в том, что учётные
+ * данные не привязаны к хосту, для которого выданы: один запрос — и секрет
+ * доступа к архиву медицинских снимков лежит в чужом журнале.
+ *
+ * ПОЧЕМУ ИМЕННО ПРОБА ОПАСНЕЕ ВСЕГО. dicomWebAuthHeaders вызывается ровно из
+ * одного места — checkDicomWebConnector, то есть боевых запросов с этим токеном
+ * в коде нет вообще. Единственный запрос, который его нёс, шёл по адресу,
+ * который оператор только что напечатал.
+ *
+ * ПОЧЕМУ НЕ СДЕЛАНА ПРИВЯЗКА К ХОСТУ, А ПРОСТО СНЯТ ЗАГОЛОВОК. Привязывать
+ * не к чему: хост архива в конфигурации нигде не зафиксирован. Проверено —
+ * DICOMWEB_BEARER_TOKEN и DICOMWEB_BASIC_AUTH не описаны в .env.example, а из
+ * адресов, известных серверу (routes/system.ts), есть только локальный
+ * обработчик КЛКТ и внешний просмотрщик OHIF, но не адрес самого архива.
+ * Заводить под это новую переменную окружения — изменение конфигурации
+ * развёртывания, и решение о ней принимает ведущий, а не эта правка.
+ *
+ * ЧТО ПРИ ЭТОМ НЕ ЛОМАЕТСЯ. Проба проверяет ДОСТИЖИМОСТЬ, а не аутентификацию:
+ * connectorStatusFromHttpStatus уже трактует 401/403 как отдельный статус
+ * auth_required, то есть «архив жив и требует учётные данные» — это исправный
+ * результат проверки, а не отказ.
+ */
 function dicomWebAuthHeaders(authMode: DicomWebAuthMode) {
   const headers: Record<string, string> = {
     Accept: "application/dicom+json, application/json;q=0.9, */*;q=0.1"
@@ -3118,15 +3150,19 @@ function dicomWebAuthHeaders(authMode: DicomWebAuthMode) {
   const warnings: string[] = [];
 
   if (authMode === "bearer") {
-    const token = process.env.DICOMWEB_BEARER_TOKEN?.trim();
-    if (token) headers.Authorization = `Bearer ${token}`;
-    else warnings.push("Серверный токен архива снимков не настроен; запрос будет отправлен без учетных данных архива.");
+    warnings.push(
+      process.env.DICOMWEB_BEARER_TOKEN?.trim()
+        ? "Серверный токен архива снимков настроен, но на проверке связи не отправляется: он выдан конкретному архиву, а адрес проверки задает оператор. Ответ 401/403 означает, что архив доступен и требует учетных данных."
+        : "Серверный токен архива снимков не настроен; запрос будет отправлен без учетных данных архива."
+    );
   }
 
   if (authMode === "basic") {
-    const basic = process.env.DICOMWEB_BASIC_AUTH?.trim();
-    if (basic) headers.Authorization = basic.startsWith("Basic ") ? basic : `Basic ${Buffer.from(basic).toString("base64")}`;
-    else warnings.push("Серверная авторизация архива снимков не настроена; запрос будет отправлен без учетных данных архива.");
+    warnings.push(
+      process.env.DICOMWEB_BASIC_AUTH?.trim()
+        ? "Серверная авторизация архива снимков настроена, но на проверке связи не отправляется: она выдана конкретному архиву, а адрес проверки задает оператор. Ответ 401/403 означает, что архив доступен и требует учетных данных."
+        : "Серверная авторизация архива снимков не настроена; запрос будет отправлен без учетных данных архива."
+    );
   }
 
   if (authMode === "reverse_proxy") {
@@ -3143,64 +3179,301 @@ function connectorStatusFromHttpStatus(httpStatus: number | null, fetchError: bo
   return "misconfigured";
 }
 
-// Helper to validate IP
-function isSafeIp(ip: string): boolean {
-  if (net.isIPv4(ip)) {
-    const parts = ip.split(".").map(Number);
-    // Check 127.0.0.0/8 (Loopback), 10.0.0.0/8 (Private), 172.16.0.0/12 (Private), 192.168.0.0/16 (Private)
-    // Also block 169.254.0.0/16 (Link-local) and 0.0.0.0/8 (Current network)
-    if (
-      parts[0] === 127 ||
-      parts[0] === 10 ||
-      (parts[0] === 172 && parts[1] !== undefined && parts[1] >= 16 && parts[1] <= 31) ||
-      (parts[0] === 192 && parts[1] === 168) ||
-      (parts[0] === 169 && parts[1] === 254) ||
-      parts[0] === 0
-    ) {
-      return false;
-    }
-    return true;
-  } else if (net.isIPv6(ip)) {
-    const lowerIp = ip.toLowerCase();
+// ---------------------------------------------------------------------------
+// SSRF-гейт адреса архива снимков.
+//
+// Здесь сервер клиники по указанию пользователя открывает исходящее соединение,
+// то есть это классическая мишень SSRF: администратор клиники подставляет адрес,
+// а ходит по нему сервер — из доверенной сети, с серверным токеном архива в
+// заголовке Authorization (см. dicomWebAuthHeaders). Поэтому список запрещённых
+// диапазонов собран по реестрам IANA Special-Purpose Address Registry (IPv4/IPv6)
+// и рекомендациям OWASP SSRF Prevention Cheat Sheet, а не «по памяти».
+//
+// ПОЧЕМУ ЗДЕСЬ КАЖДЫЙ ДИАПАЗОН, А НЕ ТОЛЬКО RFC 1918: следующий агент,
+// увидев «лишние» строки, попытается их вычистить. Не надо. Прошлая версия
+// гейта блокировала ровно шесть условий и пропускала 100.64.0.0/10, 192.0.0.0/24,
+// 198.18.0.0/15, 224.0.0.0/4, 240.0.0.0/4, ::, NAT64 64:ff9b::/96 (через который
+// адрес метаданных облака 169.254.169.254 достаётся как 64:ff9b::a9fe:a9fe) и
+// IPv4-compatible ::127.0.0.1. Каждая строка ниже закрывает измеренную дыру.
+//
+// ОГРАНИЧЕНИЕ, КОТОРОЕ НАДО ЗНАТЬ: это блок-лист. OWASP прямо пишет, что
+// allow-list («ходим только по заранее утверждённым хостам») строго сильнее, и
+// если у клиники появится реестр разрешённых адресов архивов, правильное место
+// его вставки — isSafeTarget, до резолвинга.
+// ---------------------------------------------------------------------------
 
-    // Mitigate IPv4-mapped IPv6
-    if (lowerIp.startsWith("::ffff:")) {
-      return isSafeIp(lowerIp.substring(7));
-    }
+type BlockedIpv4Range = { readonly cidr: string; readonly base: number; readonly mask: number; readonly why: string };
+type BlockedIpv6Range = { readonly cidr: string; readonly base: Uint8Array; readonly bits: number; readonly why: string };
 
-    // Block ::1 (Loopback), fc00::/7 (Unique Local Address), fe80::/10 (Link-local)
-    if (
-      lowerIp === "::1" ||
-      lowerIp.startsWith("fc") ||
-      lowerIp.startsWith("fd") ||
-      lowerIp.startsWith("fe8") ||
-      lowerIp.startsWith("fe9") ||
-      lowerIp.startsWith("fea") ||
-      lowerIp.startsWith("feb")
-    ) {
-      return false;
-    }
-    return true;
+/**
+ * Разбор IPv4 в 32-битное число. Принимает ТОЛЬКО каноническую запись «d.d.d.d»
+ * без ведущих нулей: «012.0.0.1» и «0177.0.0.1» отвергаются здесь явно.
+ *
+ * Это не паранойя ради паранойи, а защита от октальной путаницы, на которой
+ * ломались чужие библиотеки разбора адресов. На этом хосте (Node v24.13.0)
+ * net.isIPv4("012.0.0.1") уже возвращает false, а WHATWG-парсер URL нормализует
+ * «http://0177.0.0.1/» в hostname «127.0.0.1» ещё до нас — но разбор обязан быть
+ * самодостаточным, потому что его же вызывает IPv6-ветка для встроенных адресов,
+ * куда нормализация URL не доходит.
+ */
+function ipv4ToUint32(ip: string): number | null {
+  const parts = ip.split(".");
+  if (parts.length !== 4) return null;
+  let value = 0;
+  for (const part of parts) {
+    if (!/^(?:0|[1-9][0-9]{0,2})$/.test(part)) return null;
+    const octet = Number(part);
+    if (octet > 255) return null;
+    value = value * 256 + octet;
   }
+  return value >>> 0;
+}
+
+function parseIpv4Cidr(cidr: string, why: string): BlockedIpv4Range {
+  const [prefix, bitsText] = cidr.split("/");
+  const base = ipv4ToUint32(prefix ?? "");
+  const bits = Number(bitsText);
+  if (base === null || !Number.isInteger(bits) || bits < 0 || bits > 32) {
+    // Ошибка в самой таблице — это дыра в гейте, поэтому падаем на старте
+    // сервера, а не молча пропускаем адрес мимо проверки.
+    throw new Error(`Некорректный IPv4-CIDR в списке SSRF-блокировок: ${cidr}`);
+  }
+  const mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0;
+  return { cidr, base: (base & mask) >>> 0, mask, why };
+}
+
+/**
+ * IPv4: запрещённые диапазоны. Источник — IANA IPv4 Special-Purpose Address
+ * Registry плюс общеизвестные адреса метаданных облаков.
+ */
+const blockedIpv4Ranges: readonly BlockedIpv4Range[] = [
+  parseIpv4Cidr("0.0.0.0/8", "«этот хост в этой сети» (RFC 1122); 0.0.0.0 на многих стеках означает локальный интерфейс"),
+  parseIpv4Cidr("10.0.0.0/8", "частная сеть RFC 1918 — внутренняя сеть клиники"),
+  parseIpv4Cidr("100.64.0.0/10", "CGNAT RFC 6598: операторский NAT и оборудование клиники за ним. Сюда же попадает 100.100.100.200 — эндпоинт метаданных Alibaba Cloud ECS, отдельная строка под него не нужна"),
+  parseIpv4Cidr("127.0.0.0/8", "loopback: сам сервер CRM, БД на 127.0.0.1:5432, локальные модули-мосты"),
+  parseIpv4Cidr("169.254.0.0/16", "link-local RFC 3927 и, главное, 169.254.169.254 — эндпоинт метаданных с временными учётными данными у AWS, GCP, Azure, Oracle Cloud, DigitalOcean, Hetzner и OpenStack"),
+  parseIpv4Cidr("172.16.0.0/12", "частная сеть RFC 1918"),
+  parseIpv4Cidr("192.0.0.0/24", "назначения протоколов IETF: сюда входит 192.0.0.192 и служебные адреса NAT64/DS-Lite"),
+  parseIpv4Cidr("192.0.2.0/24", "TEST-NET-1 (RFC 5737): в реальной сети такой адрес указывает на подмену или на локальную заглушку"),
+  parseIpv4Cidr("192.31.196.0/24", "AS112-v4 (RFC 7535) — служебный anycast"),
+  parseIpv4Cidr("192.52.193.0/24", "AMT (RFC 7450) — служебный anycast"),
+  parseIpv4Cidr("192.88.99.0/24", "anycast-релей 6to4 (RFC 7526, объявлен устаревшим) — точка входа в чужой туннель"),
+  parseIpv4Cidr("192.168.0.0/16", "частная сеть RFC 1918"),
+  parseIpv4Cidr("192.175.48.0/24", "прямое делегирование AS112 (RFC 7534) — служебный anycast"),
+  parseIpv4Cidr("198.18.0.0/15", "сетевой benchmark (RFC 2544): маршрутизируется внутрь лабораторных сегментов"),
+  parseIpv4Cidr("198.51.100.0/24", "TEST-NET-2 (RFC 5737)"),
+  parseIpv4Cidr("203.0.113.0/24", "TEST-NET-3 (RFC 5737)"),
+  parseIpv4Cidr("224.0.0.0/4", "multicast (RFC 5771): запрос уходит группе узлов внутренней сети, а не одному архиву"),
+  parseIpv4Cidr("240.0.0.0/4", "зарезервировано (RFC 1112); сюда же попадает широковещательный 255.255.255.255")
+];
+
+/**
+ * Разбор IPv6 в 16 байт. Зона интерфейса («fe80::1%eth0») отбрасывается: это тот
+ * же адрес, а по строковому префиксу зону не отличить. Последняя группа может
+ * быть записана как IPv4 («::ffff:127.0.0.1», «64:ff9b::192.0.2.1»).
+ */
+function ipv6ToBytes(ip: string): Uint8Array | null {
+  const withoutZone = (ip.split("%")[0] ?? "").toLowerCase();
+  const sides = withoutZone.split("::");
+  if (sides.length > 2) return null;
+
+  const readGroups = (text: string): number[] | null => {
+    if (text === "") return [];
+    const chunks = text.split(":");
+    const groups: number[] = [];
+    for (let index = 0; index < chunks.length; index += 1) {
+      const chunk = chunks[index] ?? "";
+      if (index === chunks.length - 1 && chunk.includes(".")) {
+        const embedded = ipv4ToUint32(chunk);
+        if (embedded === null) return null;
+        groups.push((embedded >>> 16) & 0xffff, embedded & 0xffff);
+        continue;
+      }
+      if (!/^[0-9a-f]{1,4}$/.test(chunk)) return null;
+      groups.push(Number.parseInt(chunk, 16));
+    }
+    return groups;
+  };
+
+  const head = readGroups(sides[0] ?? "");
+  const tail = sides.length === 2 ? readGroups(sides[1] ?? "") : [];
+  if (head === null || tail === null) return null;
+
+  let groups: number[];
+  if (sides.length === 2) {
+    // «::» обязан сжимать хотя бы одну нулевую группу, иначе запись некорректна.
+    const missing = 8 - head.length - tail.length;
+    if (missing < 1) return null;
+    groups = [...head, ...new Array<number>(missing).fill(0), ...tail];
+  } else {
+    if (head.length !== 8) return null;
+    groups = head;
+  }
+
+  const bytes = new Uint8Array(16);
+  for (let index = 0; index < 8; index += 1) {
+    const group = groups[index] ?? 0;
+    bytes[index * 2] = (group >>> 8) & 0xff;
+    bytes[index * 2 + 1] = group & 0xff;
+  }
+  return bytes;
+}
+
+function parseIpv6Cidr(cidr: string, why: string): BlockedIpv6Range {
+  const [prefix, bitsText] = cidr.split("/");
+  const base = ipv6ToBytes(prefix ?? "");
+  const bits = Number(bitsText);
+  if (base === null || !Number.isInteger(bits) || bits < 0 || bits > 128) {
+    throw new Error(`Некорректный IPv6-CIDR в списке SSRF-блокировок: ${cidr}`);
+  }
+  return { cidr, base, bits, why };
+}
+
+function ipv6InRange(bytes: Uint8Array, range: BlockedIpv6Range): boolean {
+  const fullBytes = range.bits >> 3;
+  for (let index = 0; index < fullBytes; index += 1) {
+    if (bytes[index] !== range.base[index]) return false;
+  }
+  const restBits = range.bits & 7;
+  if (restBits === 0) return true;
+  const mask = (0xff << (8 - restBits)) & 0xff;
+  return ((bytes[fullBytes] ?? 0) & mask) === ((range.base[fullBytes] ?? 0) & mask);
+}
+
+/**
+ * Префиксы IPv6, которые не «запрещены сами по себе», а требуют разбора: внутри
+ * них лежит встроенный IPv4-адрес, и решение принимается по нему.
+ */
+const ipv4MappedIpv6Range = parseIpv6Cidr("::ffff:0:0/96", "IPv4-mapped");
+const ipv4TranslatedIpv6Range = parseIpv6Cidr("::ffff:0:0:0/96", "IPv4-translated (RFC 2765)");
+const nat64WellKnownRange = parseIpv6Cidr("64:ff9b::/96", "NAT64 well-known (RFC 6052)");
+const ipv4CompatibleIpv6Range = parseIpv6Cidr("::/96", "IPv4-compatible (устарел, RFC 4291)");
+const globalUnicastIpv6Range = parseIpv6Cidr("2000::/3", "глобальный юникаст");
+
+/**
+ * IPv6: специальные префиксы ВНУТРИ глобального юникаста 2000::/3.
+ *
+ * Всё, что вне 2000::/3, отсекается одним правилом ниже (см. isSafeIpv6Bytes):
+ * ::, ::1, fc00::/7, fe80::/10, ff00::/8, 100::/64 — глобально маршрутизируемый
+ * юникаст IANA выдаёт только из 2000::/3, поэтому «не 2000::/3 ⇒ спецназначение»
+ * корректно и покрывает их разом. Здесь остаются только те, которые то правило
+ * увидеть не может, потому что они лежат внутри 2000::/3.
+ */
+const blockedIpv6Ranges: readonly BlockedIpv6Range[] = [
+  parseIpv6Cidr("2001::/23", "назначения протоколов IETF: Teredo 2001::/32 (туннель в чужую сеть), benchmark 2001:2::/48, ORCHIDv2 2001:20::/28"),
+  parseIpv6Cidr("2001:db8::/32", "документационный префикс (RFC 3849)"),
+  parseIpv6Cidr("2002::/16", "6to4 (RFC 7526, объявлен устаревшим): вторые четыре байта — произвольный IPv4, то есть готовый обход IPv4-фильтра через релей"),
+  parseIpv6Cidr("2620:4f:8000::/48", "прямое делегирование AS112 (RFC 7534)"),
+  parseIpv6Cidr("3fff::/20", "документационный префикс (RFC 9637)"),
+  parseIpv6Cidr("5f00::/16", "идентификаторы сегментов SRv6 (RFC 9602) — внутренняя маршрутизация оператора")
+];
+
+function isSafeIpv4(ip: string): boolean {
+  const value = ipv4ToUint32(ip);
+  if (value === null) return false;
+  return !blockedIpv4Ranges.some((range) => (((value ^ range.base) & range.mask) >>> 0) === 0);
+}
+
+function isSafeIpv6Bytes(bytes: Uint8Array): boolean {
+  const embeddedIpv4 = `${bytes[12] ?? 0}.${bytes[13] ?? 0}.${bytes[14] ?? 0}.${bytes[15] ?? 0}`;
+
+  // IPv4-mapped ::ffff:0:0/96 — «::ffff:169.254.169.254» это тот же адрес
+  // метаданных облака. Решение принимается по встроенному IPv4.
+  if (ipv6InRange(bytes, ipv4MappedIpv6Range)) return isSafeIpv4(embeddedIpv4);
+
+  // IPv4-translated ::ffff:0:0:0/96 (RFC 2765) — то же для SIIT-трансляции.
+  if (ipv6InRange(bytes, ipv4TranslatedIpv6Range)) return isSafeIpv4(embeddedIpv4);
+
+  // NAT64 64:ff9b::/96 (RFC 6052). Именно через него внутренний адрес достаётся
+  // в обход IPv4-ветки: 64:ff9b::a9fe:a9fe — это 169.254.169.254.
+  // Соседний 64:ff9b:1::/48 (RFC 8215) сюда не попадает и разбору не подлежит:
+  // позиция встроенного IPv4 там зависит от длины префикса, поэтому он целиком
+  // отсекается правилом «вне 2000::/3».
+  if (ipv6InRange(bytes, nat64WellKnownRange)) return isSafeIpv4(embeddedIpv4);
+
+  // IPv4-compatible ::/96 (устарел, RFC 4291): «::127.0.0.1» — это loopback.
+  // Сюда же попадают «::» (неуказанный адрес) и «::1» (loopback): они дают
+  // встроенные 0.0.0.0 и 0.0.0.1, а те лежат в запрещённом 0.0.0.0/8.
+  if (ipv6InRange(bytes, ipv4CompatibleIpv6Range)) return isSafeIpv4(embeddedIpv4);
+
+  // Единственный глобально маршрутизируемый юникаст — 2000::/3. Всё остальное
+  // (ULA fc00::/7, link-local fe80::/10, multicast ff00::/8, discard 100::/64,
+  // NAT64 64:ff9b:1::/48, включая fd00:ec2::254 — адрес метаданных AWS по
+  // IPv6) — спецназначение и наружу маршрутизироваться не должно.
+  if (!ipv6InRange(bytes, globalUnicastIpv6Range)) return false;
+
+  return !blockedIpv6Ranges.some((range) => ipv6InRange(bytes, range));
+}
+
+/**
+ * Единственная точка классификации адреса. Принимает строку адреса, а не имя
+ * хоста: имена резолвит isSafeTarget.
+ */
+function isSafeIp(ip: string): boolean {
+  if (net.isIPv4(ip)) return isSafeIpv4(ip);
+  if (net.isIPv6(ip)) {
+    const bytes = ipv6ToBytes(ip);
+    if (bytes === null) return false;
+    return isSafeIpv6Bytes(bytes);
+  }
+  // Не адрес вообще — закрываемся. Сюда же попадают «2130706433», «0x7f.0.0.1»
+  // и «012.0.0.1»: net.isIPv4 в Node 24 их отвергает (проверено), значит
+  // октальная и десятичная формы до сетевого вызова не доходят.
   return false;
 }
 
-// Check URL safety (accepting TOCTOU to not break HTTPS/SNI)
-async function isSafeTarget(urlString: string): Promise<boolean> {
+type TargetSafety = { readonly ok: true } | { readonly ok: false; readonly reason: string };
+
+/**
+ * Проверка адреса цели перед исходящим запросом.
+ *
+ * ЧЕСТНО ПРО ОСТАВШИЙСЯ РИСК (DNS rebinding): между этой проверкой и fetch()
+ * имя резолвится ЕЩЁ РАЗ, уже внутри undici, и злонамеренный DNS-сервер может
+ * вернуть тогда другой адрес. Полностью это закрывает только привязка соединения
+ * к уже проверенному адресу через собственный lookup в диспетчере undici —
+ * это переписывание механизма исходящих запросов, и оно оставлено ведущему.
+ * Здесь закрыты две вещи, которые от диспетчера не зависят:
+ *   • проверяются ВСЕ адреса имени (all: true), а не первый. Раньше имя с двумя
+ *     A-записями — публичной и 127.0.0.1 — проходило гейт по публичной, а
+ *     соединение могло уйти на loopback. Это не требовало никакого тайминга.
+ *   • редирект больше не проходит мимо гейта, см. checkDicomWebConnector.
+ */
+async function isSafeTarget(urlString: string): Promise<TargetSafety> {
+  let url: URL;
   try {
-    const url = new URL(urlString);
-    const hostname = url.hostname;
-
-    if (hostname === "localhost") return false;
-
-    const addresses = await dns.lookup(hostname);
-    const ip = addresses.address;
-
-    return isSafeIp(ip);
+    url = new URL(urlString);
   } catch {
-    // If URL parsing or DNS resolution fails, consider it unsafe
-    return false;
+    return { ok: false, reason: "адрес архива снимков не разбирается как URL" };
   }
+
+  // zod .url() пропускает file:, gopher:, ftp: — схему обязан ограничивать гейт.
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    return { ok: false, reason: "поддерживаются только адреса http/https" };
+  }
+
+  // RFC 6761: «localhost» и всё в зоне .localhost обязаны указывать на loopback,
+  // но резолвер клиники может быть настроен иначе — проверяем по имени тоже.
+  const hostname = url.hostname.replace(/^\[|\]$/g, "").replace(/\.$/, "").toLowerCase();
+  if (hostname === "" || hostname === "localhost" || hostname.endsWith(".localhost")) {
+    return { ok: false, reason: "адрес указывает на сам сервер клиники" };
+  }
+
+  const addresses = await dns.lookup(hostname, { all: true }).catch(() => null);
+  if (addresses === null) {
+    return { ok: false, reason: "имя хоста архива снимков не резолвится с сервера клиники" };
+  }
+
+  if (addresses.length === 0) {
+    return { ok: false, reason: "имя хоста архива снимков не дало ни одного адреса" };
+  }
+
+  // ВСЕ адреса, а не первый: имя с двумя A-записями (публичной и 127.0.0.1)
+  // раньше проходило гейт по публичной, а соединение уходило по любой из них.
+  if (addresses.some((entry) => !isSafeIp(entry.address))) {
+    return { ok: false, reason: "адрес указывает на внутреннюю сеть, loopback или служебный диапазон" };
+  }
+
+  return { ok: true };
 }
 
 async function checkDicomWebConnector(input: DicomWebConnectorCheckRequest) {
@@ -3215,16 +3488,30 @@ async function checkDicomWebConnector(input: DicomWebConnectorCheckRequest) {
   let fetchError = false;
 
   try {
-    if (!(await isSafeTarget(qidoUrl))) {
+    const safety = await isSafeTarget(qidoUrl);
+    if (!safety.ok) {
       fetchError = true;
-      warnings.push("Безопасность: адрес архива снимков недопустим (указывает на внутреннюю сеть или loopback).");
+      warnings.push(`Безопасность: адрес архива снимков недопустим — ${safety.reason}.`);
     } else {
       const response = await fetch(qidoUrl, {
         method: "GET",
         headers,
+        // redirect: "manual" — обязательная часть SSRF-гейта, а не стиль.
+        // По умолчанию fetch идёт по редиректам сам (измерено: 302 на внутренний
+        // адрес возвращает 200 и тело внутреннего ресурса), и адрес после
+        // редиректа НИКТО не проверяет. Это был полный обход гейта: достаточно
+        // указать свой сервер, который ответит «302 Location: 169.254.169.254».
+        redirect: "manual",
         signal: abortController.signal
       });
-      httpStatus = response.status;
+      if (response.status >= 300 && response.status < 400) {
+        fetchError = true;
+        warnings.push(
+          "Безопасность: архив снимков ответил перенаправлением, а идти по нему запрещено — цель перенаправления не проходит проверку адреса. Укажите конечный адрес сервиса напрямую."
+        );
+      } else {
+        httpStatus = response.status;
+      }
     }
   } catch {
     fetchError = true;

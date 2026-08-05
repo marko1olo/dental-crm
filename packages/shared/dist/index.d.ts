@@ -2,6 +2,8 @@ import { z } from "zod";
 export declare const moneyRubSchema: z.ZodEffects<z.ZodNumber, number, number>;
 export declare const positiveMoneyRubSchema: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
 export declare const nonNegativeMoneyRubSchema: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+export declare function isHttpUrl(value: string): boolean;
+export declare const httpUrlSchema: z.ZodEffects<z.ZodString, string, string>;
 export declare const patientStatusSchema: z.ZodEnum<["active", "archived"]>;
 export type PatientStatus = z.infer<typeof patientStatusSchema>;
 export declare const appointmentStatusSchema: z.ZodEnum<["planned", "confirmed", "arrived", "in_treatment", "completed", "cancelled", "no_show"]>;
@@ -55274,7 +55276,7 @@ export type DicomWebAuthMode = z.infer<typeof dicomWebAuthModeSchema>;
 export declare const dicomWebConnectorStatusSchema: z.ZodEnum<["ready", "auth_required", "unreachable", "misconfigured"]>;
 export type DicomWebConnectorStatus = z.infer<typeof dicomWebConnectorStatusSchema>;
 export declare const dicomWebConnectorCheckRequestSchema: z.ZodObject<{
-    endpointUrl: z.ZodString;
+    endpointUrl: z.ZodEffects<z.ZodString, string, string>;
     qidoRsPath: z.ZodDefault<z.ZodString>;
     wadoRsPath: z.ZodDefault<z.ZodString>;
     stowRsPath: z.ZodDefault<z.ZodString>;
@@ -57023,8 +57025,8 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
         measurementValue: number | null;
         semanticRole?: "ridge_width" | "bone_height" | "clearance" | "generic" | null | undefined;
     }>, "many">>;
-    dicomWebBaseUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    ohifBaseUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    dicomWebBaseUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
+    ohifBaseUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
     externalViewerPath: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     allowExternalHandoff: z.ZodDefault<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
@@ -61807,8 +61809,8 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
         measurementValue: number | null;
         semanticRole?: "ridge_width" | "bone_height" | "clearance" | "generic" | null | undefined;
     }>, "many">>;
-    dicomWebBaseUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    ohifBaseUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    dicomWebBaseUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
+    ohifBaseUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
     externalViewerPath: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     allowExternalHandoff: z.ZodDefault<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {

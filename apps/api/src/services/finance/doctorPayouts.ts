@@ -395,7 +395,8 @@ export function payoutRowNote(input: {
 // ─── Запрос. Один агрегат на всех врачей, без цикла по врачам ────────────────
 
 /**
- * Один запрос с тремя CTE вместо цикла «на каждого врача по три SELECT».
+ * Один запрос с CTE вместо цикла «на каждого врача по три SELECT» И вместо
+ * двух отдельных операторов на строки и контрольную сумму.
  *
  * ЛОВУШКА DRIZZLE, на которой в этом проекте дважды теряли данные: внутри
  * sql`` подстановка `${table.column}` без join-а в запросе рендерится ГОЛЫМ
@@ -404,6 +405,20 @@ export function payoutRowNote(input: {
  * единой ошибки. Поэтому внутри sql`` здесь пишется `${table}."column"` —
  * имя таблицы подставляется явно. Проверять себя нужно печатью
  * `query.toSQL().sql`, для этого запрос и собирается отдельной функцией.
+ *
+ * ПОЧЕМУ КОНТРОЛЬНАЯ СУММА ВНУТРИ ЭТОГО ЖЕ ОПЕРАТОРА — разбор в шапке
+ * `doctorPayouts` ниже. Коротко: снимок берётся НА ОПЕРАТОР, а не на
+ * транзакцию, поэтому два оператора внутри одной транзакции READ COMMITTED
+ * согласованного чтения не дают.
+ *
+ * ФОРМА СОЕДИНЕНИЯ ВЫБРАНА ТАК, ЧТОБЫ КАССА НЕ ПРОПАДАЛА ПРИ НУЛЕ ВРАЧЕЙ.
+ * Ведущая сторона — контрольная сумма (`payout_period_revenue`): агрегат без
+ * `group by` возвращает РОВНО одну строку всегда, даже когда платежей нет.
+ * Строки врачей присоединяются к ней слева по `true`. Обратный порядок (врачи
+ * слева, касса через `cross join`) уронил бы итоги клиники в ноль ровно в том
+ * случае, когда они особенно нужны: касса за период есть, а ни один платёж не
+ * дошёл до врача по цепочке визит → приём. Владелец увидел бы «выручки нет»
+ * вместо «выручка есть, но не отнесена ни к кому».
  */
 export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 	const { organizationId, from, to } = scope;
@@ -535,91 +550,116 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 		? and(eq(users.organizationId, organizationId), eq(users.id, scope.onlyDoctorUserId))
 		: eq(users.organizationId, organizationId);
 
-	return db
-		.with(paidVisits, revenue, materials, rateCandidates)
-		.select({
-			doctorUserId: users.id,
-			doctorName: users.fullName,
-			role: users.role,
-			isActive: users.isActive,
-			revenueRub: sql<number>`coalesce(${revenue.revenueRub}, 0)::numeric(12,2)`.as("revenue_rub"),
-			paymentCount: sql<number>`coalesce(${revenue.paymentCount}, 0)::int`.as("payment_count"),
-			materialCostRub: sql<number>`coalesce(${materials.materialCostRub}, 0)::numeric(12,2)`.as(
-				"material_cost_rub",
+	/*
+	 * Итоги кассы за период целиком: сходится ли сумма по врачам с кассой.
+	 *
+	 * ОХВАТ «ТОЛЬКО СВОИ» ОБЯЗАТЕЛЕН И ЗДЕСЬ, А НЕ ТОЛЬКО В СТРОКАХ.
+	 * БЫЛО: `scope` передавался, но `onlyDoctorUserId` этот запрос игнорировал.
+	 * Строки врач получал свои, а `totals` — по всей клинике: на живой базе врач с
+	 * собственной кассой 23 400 ₽ получал `revenueRub: 67400` и `paymentCount: 8`,
+	 * то есть выручку коллег и число чужих оплат. Заслонка на экране этого не
+	 * лечит — число уходит в ответ маршрута и видно в сетевой панели браузера.
+	 * Зарплата коллеги — не та величина, которую врач вправе сложить из отчёта о
+	 * своей выплате.
+	 *
+	 * При `onlyDoctorUserId` соединения остаются левыми, а условие по врачу стоит в
+	 * WHERE: оплата без визита даёт NULL в `doctor_user_id`, сравнение с ним
+	 * неверно, и такая касса из «своего» итога выпадает. Поэтому у врача
+	 * `revenueRub` = `attributableRevenueRub`, а «не отнесено к врачу» равно нулю —
+	 * чужая и ничейная касса в его отчёт не попадают вовсе.
+	 */
+	const periodRevenue = db.$with("payout_period_revenue").as(
+		db
+			.select({
+				totalRevenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`.as(
+					"total_revenue_rub",
+				),
+				totalPaymentCount: sql<number>`count(*)::int`.as("total_payment_count"),
+				attributableRevenueRub: sql<number>`coalesce(
+					sum(${payments.amountRub}) filter (where ${appointments.doctorUserId} is not null),
+					0
+				)::numeric(12,2)`.as("attributable_revenue_rub"),
+			})
+			.from(payments)
+			.leftJoin(visits, and(eq(payments.visitId, visits.id), eq(visits.organizationId, organizationId)))
+			.leftJoin(
+				appointments,
+				and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, organizationId)),
+			)
+			.where(
+				and(
+					eq(payments.organizationId, organizationId),
+					eq(payments.status, "paid"),
+					gte(payments.paidAt, from),
+					lte(payments.paidAt, to),
+					scope.onlyDoctorUserId ? eq(appointments.doctorUserId, scope.onlyDoctorUserId) : undefined,
+				),
 			),
-			materialMovements: sql<number>`coalesce(${materials.movements}, 0)::int`.as("material_movements"),
-			materialMovementsUnpriced: sql<number>`coalesce(${materials.movementsUnpriced}, 0)::int`.as(
-				"material_movements_unpriced",
-			),
-			commissionPct: rateCandidates.commissionPct,
-			materialDeductionPct: rateCandidates.materialDeductionPct,
-			rateEffectiveFrom: rateCandidates.effectiveFrom,
-			rateRowCount: sql<number>`coalesce(${rateCandidates.rateRowCount}, 0)::int`.as("rate_row_count"),
-		})
-		.from(users)
-		.leftJoin(revenue, eq(revenue.doctorUserId, users.id))
-		.leftJoin(materials, eq(materials.doctorUserId, users.id))
-		// Ставка присоединяется только самой свежей строкой: остальные оставлены
-		// в CTE ради счётчика rate_row_count.
-		.leftJoin(rateCandidates, and(eq(rateCandidates.userId, users.id), eq(rateCandidates.rowNumber, 1)))
-		.where(
-			and(
-				doctorFilter,
-				/*
-				 * В отчёт попадают врачи клиники И любой сотрудник, на которого за
-				 * период пришла касса или списание материалов. Второе условие
-				 * обязательно: приём может вести владелец или сотрудник с иной
-				 * ролью, и его заработок нельзя потерять из-за фильтра по роли.
-				 */
-				or(eq(users.role, "doctor"), isNotNull(revenue.doctorUserId), isNotNull(materials.doctorUserId)),
-			),
-		);
-}
+	);
 
-/**
- * Итоги кассы за период целиком: сходится ли сумма по врачам с кассой.
- *
- * ОХВАТ «ТОЛЬКО СВОИ» ОБЯЗАТЕЛЕН И ЗДЕСЬ, А НЕ ТОЛЬКО В СТРОКАХ.
- * БЫЛО: `scope` передавался, но `onlyDoctorUserId` этот запрос игнорировал.
- * Строки врач получал свои, а `totals` — по всей клинике: на живой базе врач с
- * собственной кассой 23 400 ₽ получал `revenueRub: 67400` и `paymentCount: 8`,
- * то есть выручку коллег и число чужих оплат. Заслонка на экране этого не
- * лечит — число уходит в ответ маршрута и видно в сетевой панели браузера.
- * Зарплата коллеги — не та величина, которую врач вправе сложить из отчёта о
- * своей выплате.
- *
- * При `onlyDoctorUserId` соединения остаются левыми, а условие по врачу стоит в
- * WHERE: оплата без визита даёт NULL в `doctor_user_id`, сравнение с ним
- * неверно, и такая касса из «своего» итога выпадает. Поэтому у врача
- * `revenueRub` = `attributableRevenueRub`, а «не отнесено к врачу» равно нулю —
- * чужая и ничейная касса в его отчёт не попадают вовсе.
- */
-function buildPeriodRevenueQuery(scope: DoctorPayoutScope) {
-	const { organizationId, from, to } = scope;
-	return db
-		.select({
-			revenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`.as("revenue_rub"),
-			paymentCount: sql<number>`count(*)::int`.as("payment_count"),
-			attributableRevenueRub: sql<number>`coalesce(
-				sum(${payments.amountRub}) filter (where ${appointments.doctorUserId} is not null),
-				0
-			)::numeric(12,2)`.as("attributable_revenue_rub"),
-		})
-		.from(payments)
-		.leftJoin(visits, and(eq(payments.visitId, visits.id), eq(visits.organizationId, organizationId)))
-		.leftJoin(
-			appointments,
-			and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, organizationId)),
-		)
-		.where(
-			and(
-				eq(payments.organizationId, organizationId),
-				eq(payments.status, "paid"),
-				gte(payments.paidAt, from),
-				lte(payments.paidAt, to),
-				scope.onlyDoctorUserId ? eq(appointments.doctorUserId, scope.onlyDoctorUserId) : undefined,
+	const doctorRows = db.$with("payout_doctor_rows").as(
+		db
+			.select({
+				doctorUserId: users.id,
+				doctorName: users.fullName,
+				role: users.role,
+				isActive: users.isActive,
+				revenueRub: sql<number>`coalesce(${revenue.revenueRub}, 0)::numeric(12,2)`.as("doctor_revenue_rub"),
+				paymentCount: sql<number>`coalesce(${revenue.paymentCount}, 0)::int`.as("doctor_payment_count"),
+				materialCostRub: sql<number>`coalesce(${materials.materialCostRub}, 0)::numeric(12,2)`.as(
+					"doctor_material_cost_rub",
+				),
+				materialMovements: sql<number>`coalesce(${materials.movements}, 0)::int`.as("doctor_material_movements"),
+				materialMovementsUnpriced: sql<number>`coalesce(${materials.movementsUnpriced}, 0)::int`.as(
+					"doctor_material_movements_unpriced",
+				),
+				commissionPct: rateCandidates.commissionPct,
+				materialDeductionPct: rateCandidates.materialDeductionPct,
+				rateEffectiveFrom: rateCandidates.effectiveFrom,
+				rateRowCount: sql<number>`coalesce(${rateCandidates.rateRowCount}, 0)::int`.as("doctor_rate_row_count"),
+			})
+			.from(users)
+			.leftJoin(revenue, eq(revenue.doctorUserId, users.id))
+			.leftJoin(materials, eq(materials.doctorUserId, users.id))
+			// Ставка присоединяется только самой свежей строкой: остальные оставлены
+			// в CTE ради счётчика rate_row_count.
+			.leftJoin(rateCandidates, and(eq(rateCandidates.userId, users.id), eq(rateCandidates.rowNumber, 1)))
+			.where(
+				and(
+					doctorFilter,
+					/*
+					 * В отчёт попадают врачи клиники И любой сотрудник, на которого за
+					 * период пришла касса или списание материалов. Второе условие
+					 * обязательно: приём может вести владелец или сотрудник с иной
+					 * ролью, и его заработок нельзя потерять из-за фильтра по роли.
+					 */
+					or(eq(users.role, "doctor"), isNotNull(revenue.doctorUserId), isNotNull(materials.doctorUserId)),
+				),
 			),
-		);
+	);
+
+	return db
+		.with(paidVisits, revenue, materials, rateCandidates, periodRevenue, doctorRows)
+		.select({
+			doctorUserId: doctorRows.doctorUserId,
+			doctorName: doctorRows.doctorName,
+			role: doctorRows.role,
+			isActive: doctorRows.isActive,
+			revenueRub: doctorRows.revenueRub,
+			paymentCount: doctorRows.paymentCount,
+			materialCostRub: doctorRows.materialCostRub,
+			materialMovements: doctorRows.materialMovements,
+			materialMovementsUnpriced: doctorRows.materialMovementsUnpriced,
+			commissionPct: doctorRows.commissionPct,
+			materialDeductionPct: doctorRows.materialDeductionPct,
+			rateEffectiveFrom: doctorRows.rateEffectiveFrom,
+			rateRowCount: doctorRows.rateRowCount,
+			totalRevenueRub: periodRevenue.totalRevenueRub,
+			totalPaymentCount: periodRevenue.totalPaymentCount,
+			attributableRevenueRub: periodRevenue.attributableRevenueRub,
+		})
+		.from(periodRevenue)
+		.leftJoin(doctorRows, sql`true`);
 }
 
 /**
@@ -657,26 +697,71 @@ const METHOD_NOTE =
 /**
  * Выплаты всем врачам клиники за период.
  *
- * Два запроса: агрегат по врачам и контрольная сумма кассы за период. Второй
- * нужен, чтобы владелец видел разницу между кассой клиники и суммой строк: без
- * него «не отнесено к врачу» выглядело бы как ошибка расчёта.
+ * ОДИН ОПЕРАТОР SQL НА СТРОКИ И НА КОНТРОЛЬНУЮ СУММУ. Контрольная сумма (касса
+ * периода целиком) имеет смысл только если обе половины читают ОДНО И ТО ЖЕ
+ * состояние `payments`: иначе разница «касса минус сумма по врачам» уходит в
+ * строку «не отнесено к врачу», и владелец видит потерянные деньги там, где их
+ * не терял.
  *
- * ОДИН СНИМОК НА ОБА ЗАПРОСА. Контрольная сумма имеет смысл только если обе
- * половины читают одно и то же состояние `payments`. Оба запроса выполняются
- * внутри одной транзакции: `withTenantCtx` переиспользует активную транзакцию,
- * если она уже открыта (авто-обёртка `onRoute` в server.ts), иначе открывает
- * свою. Раньше вторая половина открывала собственную транзакцию, и оплата,
- * попавшая в базу между двумя запросами, давала расхождение контрольной суммы:
- * владелец видел «потерянные» деньги в строке «не отнесено к врачу».
- * REPEATABLE READ не требуется: внутри одной транзакции READ COMMITTED даёт
- * обоим запросам согласованное чтение только при условии, что между ними нет
- * записи из этой же транзакции — здесь оба запроса read-only.
+ * ЗДЕСЬ БЫЛА МОЯ ОШИБКА, И ОНА ИСПРАВЛЯЕТСЯ ВМЕСТЕ С КОДОМ. В этом месте стоял
+ * комментарий: «Оба запроса выполняются внутри одной транзакции … REPEATABLE
+ * READ не требуется: внутри одной транзакции READ COMMITTED даёт обоим запросам
+ * согласованное чтение только при условии, что между ними нет записи из этой же
+ * транзакции — здесь оба запроса read-only». ЭТО НЕВЕРНО. Документация
+ * PostgreSQL, 13.2.1 Read Committed Isolation Level, дословно:
+ *
+ *   «In effect, a SELECT query sees a snapshot of the database as of the instant
+ *    the query begins to run.»
+ *   «Also note that two successive SELECT commands can see different data, even
+ *    though they are within a single transaction, if other transactions commit
+ *    changes after the first SELECT starts and before the second SELECT starts.»
+ *
+ * То есть снимок берётся НА ОПЕРАТОР, а не на транзакцию, и `Promise.all` на
+ * одном соединении лишь сериализует два оператора в два разных снимка. Общая
+ * транзакция не давала контрольной сумме ничего: расхождение оставалось ровно
+ * тем же, каким было до «починки».
+ *
+ * ПОЧЕМУ ОДИН ОПЕРАТОР, А НЕ REPEATABLE READ. Оба варианта закрывают дефект, и
+ * REPEATABLE READ здесь не принёс бы даже ошибок сериализации: та же
+ * документация, 13.2.2, говорит «Note that only updating transactions might need
+ * to be retried; read-only transactions will never have serialization
+ * conflicts», а оба запроса — обычные SELECT без FOR UPDATE/FOR SHARE. Но
+ * поднять уровень изоляции ЗДЕСЬ НЕЧЕМ, и это не вкус, а измеримый факт:
+ *   • `SET TRANSACTION` (docs, sql-set-transaction): «The transaction isolation
+ *     level cannot be changed after the first query or data-modification
+ *     statement … of a transaction has been executed.»
+ *   • К моменту вызова транзакция уже выполнила запрос: маршруты обёрнуты
+ *     транзакцией автоматически, а `withTenantCtx` (`db/rls.ts`) на входе
+ *     выполняет `SELECT current_setting('app.current_tenant', true)`.
+ *   Значит команда смены уровня получила бы 25001, а чтобы её принять, пришлось
+ *   бы править `db/rls.ts` и `server.ts` — файлы за границей этой правки, и
+ *   уровень изоляции стал бы общим для всех маршрутов ради одного отчёта.
+ *
+ * Один оператор даёт ту же гарантию безусловно и локально: «each SQL statement
+ * sees a snapshot of data … as it was some time ago» (docs, 13.1), а для CTE —
+ * «All the statements are executed with the same snapshot» (docs, 7.8.4).
+ * Цена — запрос стал длиннее на два CTE; повторных попыток и обработки 40001 не
+ * требуется вовсе.
+ *
+ * ЧТО ОСТАЛОСЬ НЕ ЗАКРЫТЫМ И ЭТО НАДО ГОВОРИТЬ ВСЛУХ: согласован СНИМОК, а не
+ * бизнес-смысл. Оплата, принятая ПОСЛЕ этого оператора, в отчёт не попадёт
+ * вовсе — ни в строки, ни в контрольную сумму, — и это правильно: отчёт
+ * отвечает на вопрос о состоянии кассы на один момент времени.
  */
 export async function doctorPayouts(scope: DoctorPayoutScope): Promise<DoctorPayoutReport> {
-	const [aggregateRows, [periodRevenue]] = await withTenantCtx(
-		scope.organizationId,
-		async () =>
-			Promise.all([buildDoctorPayoutAggregateQuery(scope), buildPeriodRevenueQuery(scope)]),
+	const snapshotRows = await withTenantCtx(scope.organizationId, async () =>
+		buildDoctorPayoutAggregateQuery(scope),
+	);
+
+	/*
+	 * Контрольная сумма лежит в КАЖДОЙ строке ответа (левое соединение по `true`),
+	 * поэтому читается из первой. Строк всегда минимум одна: ведущая сторона —
+	 * агрегат без `group by`.
+	 */
+	const [snapshotHead] = snapshotRows;
+	const aggregateRows = snapshotRows.filter(
+		(row): row is typeof row & { doctorUserId: string; doctorName: string; role: string; isActive: boolean } =>
+			row.doctorUserId !== null,
 	);
 
 	const rows: DoctorPayoutRow[] = aggregateRows.map((row) => {
@@ -735,9 +820,9 @@ export async function doctorPayouts(scope: DoctorPayoutScope): Promise<DoctorPay
 		(left, right) => right.revenueRub - left.revenueRub || left.doctorName.localeCompare(right.doctorName, "ru"),
 	);
 
-	const totalRevenueRub = moneyFromDb(periodRevenue?.revenueRub ?? 0, "касса за период");
+	const totalRevenueRub = moneyFromDb(snapshotHead?.totalRevenueRub ?? 0, "касса за период");
 	const attributableRevenueRub = moneyFromDb(
-		periodRevenue?.attributableRevenueRub ?? 0,
+		snapshotHead?.attributableRevenueRub ?? 0,
 		"касса, отнесённая к врачам",
 	);
 
@@ -793,7 +878,7 @@ export async function doctorPayouts(scope: DoctorPayoutScope): Promise<DoctorPay
 		rows,
 		totals: {
 			revenueRub: totalRevenueRub,
-			paymentCount: Number(periodRevenue?.paymentCount ?? 0),
+			paymentCount: Number(snapshotHead?.totalPaymentCount ?? 0),
 			attributableRevenueRub,
 			unattributedRevenueRub: roundMoney(new Decimal(totalRevenueRub).minus(attributableRevenueRub)),
 			materialCostRub: roundMoney(materialCost),

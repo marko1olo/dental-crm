@@ -77,7 +77,6 @@ import {
 } from "lucide-react";
 import {
   buildRuleBasedVisitDraftFromTranscript,
-  dashboardSchema,
   documentAmountSource,
   documentFactoryGroups,
   documentKindMetadata,
@@ -414,13 +413,19 @@ const InventoryView = lazy(() => import("./components/InventoryView").then((modu
 const ScannerView = lazy(() => import("./ScannerView").then((module) => ({ default: module.ScannerView })));
 const LeadsKanbanView = lazy(() => import("./components/leads/LeadsKanbanView").then((module) => ({ default: module.LeadsKanbanView })));
 /*
- * Панели вставлены сюда, а не в AppRouter.tsx: тот файл никто не импортировал —
+ * Панель вставлена сюда, а не в AppRouter.tsx: тот файл никто не импортировал —
  * это был мёртвый код, и панели, добавленные в него, не отрисовывались вообще.
  * Выяснилось только на снимке живого экрана. Файл удалён.
+ *
+ * DayConfirmationsPanel отсюда убрана. Коммит 3f7dbcd6b («mount DayConfirmations,
+ * FreedSlots, Messengers and Rules panels into main schedule and settings
+ * routers», 2026-07-31) смонтировал её в ScheduleView рядом с FreedSlotsPanel и
+ * ScheduleClipboardPanel, но здешний монтаж от 2026-07-27 не снял. Панель держит
+ * собственное состояние и сама ходит в API из useEffect, поэтому на экране
+ * расписания жили два экземпляра: два запроса дневных подтверждений и два
+ * несинхронных набора отметок «обзвонил». Оставлен более поздний монтаж,
+ * согласованный с соседними панелями смены.
  */
-const DayConfirmationsPanel = lazy(() =>
-  import("./components/schedule/DayConfirmationsPanel").then((module) => ({ default: module.DayConfirmationsPanel })),
-);
 const ManagerReportsPanel = lazy(() =>
   import("./components/reports/ManagerReportsPanel").then((module) => ({ default: module.ManagerReportsPanel })),
 );
@@ -4031,13 +4036,12 @@ export function App() {
               />
             </Suspense>
             {/*
-              Утренний обзвон. Подтверждение приёма по ссылке уже работает, но
-              без этого списка администратор не видит результата и обзванивает
-              всех подряд: половину звонков зря, половину нужных пропуская.
+              Утренний обзвон живёт в ScheduleView: кнопка «Подтверждения» рядом
+              с «Освободившиеся окна» и «Буфер». Второй, всегда открытый
+              экземпляр стоял здесь и давал дублирующий запрос к API дневных
+              подтверждений; убран, чтобы отметки «обзвонил» не расходились
+              между двумя копиями списка.
             */}
-            <Suspense fallback={null}>
-              <DayConfirmationsPanel />
-            </Suspense>
           </WorkspaceRouteErrorBoundary>
           ) : null}
 

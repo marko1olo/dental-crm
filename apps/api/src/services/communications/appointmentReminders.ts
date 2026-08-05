@@ -20,6 +20,7 @@
 
 import { and, eq, gte, inArray, like, lte } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import { withSuperuserBypass, withTenantCtx, type TenantDb } from "../../db/rls.js";
 import {
 	appointments,
 	clinics,
@@ -131,18 +132,32 @@ export async function invalidateAppointmentReminders(
 	appointmentId: string,
 	reason: string
 ): Promise<number> {
-	const removed = await db
-		.delete(communicationOutbox)
-		.where(
-			and(
-				eq(communicationOutbox.organizationId, organizationId),
-				eq(communicationOutbox.status, "queued"),
-				// Только напоминания этого приёма: ключ начинается с
-				// `reminder:<приём>:`. Рассылки и ручные сообщения не трогаем.
-				like(communicationOutbox.dedupeKey, `reminder:${appointmentId}:%`)
+	/*
+	 * КОНТЕКСТ АРЕНДАТОРА. Вызывают отсюда двое: маршрут сетки приёмов
+	 * (routes/schedule.ts, аутентифицированный — там контекст уже стоит от
+	 * глобальной обёртки server.ts) и ПУБЛИЧНАЯ ссылка отмены
+	 * (routes/publicAppointmentActions.ts), у которой токена нет. Во втором
+	 * случае под FORCE RLS `DELETE` затрагивал ноль строк и не жаловался:
+	 * пациент отменял приём и всё равно получал назавтра «ждём вас». Обёртка
+	 * ставится здесь, а не у вызывающего, потому что арендатор — обязательный
+	 * аргумент этой функции, то есть он известен ВСЕГДА. Для маршрута это
+	 * вложенный вызов: withTenantCtx переиспользует уже открытую транзакцию и
+	 * второго соединения из пула не берёт (см. db/rls.ts, REENTRANCY).
+	 */
+	const removed = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.delete(communicationOutbox)
+			.where(
+				and(
+					eq(communicationOutbox.organizationId, organizationId),
+					eq(communicationOutbox.status, "queued"),
+					// Только напоминания этого приёма: ключ начинается с
+					// `reminder:<приём>:`. Рассылки и ручные сообщения не трогаем.
+					like(communicationOutbox.dedupeKey, `reminder:${appointmentId}:%`)
+				)
 			)
-		)
-		.returning({ id: communicationOutbox.id });
+			.returning({ id: communicationOutbox.id })
+	);
 
 	if (removed.length > 0) {
 		// Причина остаётся в журнале сервера: в самой строке её уже не сохранить.
@@ -184,29 +199,63 @@ export async function scheduleAppointmentReminders(
 	if (options.organizationId) {
 		settingsFilter.push(eq(communicationSettings.organizationId, options.organizationId));
 	}
-	const enabledRows = await db
-		.select({ organizationId: communicationSettings.organizationId })
-		.from(communicationSettings)
-		.where(and(...settingsFilter));
+	/*
+	 * ПЕРЕЧИСЛЕНИЕ АРЕНДАТОРОВ — ЕДИНСТВЕННОЕ МЕСТО, ГДЕ АРЕНДАТОР НЕИЗВЕСТЕН.
+	 *
+	 * Планировщик по замыслу обходит ВСЕ клиники, у которых напоминания
+	 * включены, поэтому назвать арендатора до этого запроса нечем. Под FORCE RLS
+	 * запрос без контекста отдавал ноль строк и НЕ ошибался: `enabledRows` был
+	 * пуст всегда, цикл ниже не выполнялся ни разу, и вся система напоминаний
+	 * молчала, отчитываясь «organizations: 0» — то же число, что у сервера без
+	 * единой подключённой клиники.
+	 *
+	 * Обход накрывает РОВНО этот один SELECT одной колонки и ничего больше:
+	 * дальше каждая клиника обрабатывается под СВОИМ `withTenantCtx`. Обход на
+	 * весь проход был бы дырой — под ним политики не действуют ни для одной
+	 * строки, и один отчёт мог бы смешать приёмы двух клиник.
+	 *
+	 * Когда организация названа явно (кнопка «Поставить напоминания» в
+	 * интерфейсе), обход не нужен вовсе: арендатор известен, и перечисление идёт
+	 * под его контекстом.
+	 */
+	const readEnabledOrganizations = async (tx: TenantDb) =>
+		tx
+			.select({ organizationId: communicationSettings.organizationId })
+			.from(communicationSettings)
+			.where(and(...settingsFilter));
+	const enabledRows = options.organizationId
+		? await withTenantCtx(options.organizationId, readEnabledOrganizations)
+		: await withSuperuserBypass(readEnabledOrganizations);
 
-	await Promise.all(
-		enabledRows.map(async ({ organizationId }) => {
-			report.organizations += 1;
-			try {
-				await scheduleForOrganization(organizationId, now, report, namedSkips);
-			} catch (error) {
-				const detail = error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200);
-				/*
-				 * Идентификатор организации остаётся в журнале сервера и уходит из текста
-				 * для человека: администратор клиники видел строку вида «Организация
-				 * 4a3420d1-6ffb-…: …» и не мог из неё ничего понять, а поддержке нужен
-				 * именно идентификатор.
-				 */
-				console.error(`[reminders] сбой постановки напоминаний, организация ${organizationId}: ${detail}`);
-				report.problems.push(`Напоминания поставить не удалось: ${detail}`);
-			}
-		})
-	);
+	/*
+	 * ПОСЛЕДОВАТЕЛЬНЫЙ ОБХОД, А НЕ Promise.all. Каждая клиника теперь работает
+	 * внутри собственной транзакции (этого требует контекст арендатора), а пул
+	 * держит 10 соединений и делит их с интерактивной работой администраторов.
+	 * Параллельный запуск по всем клиникам занял бы пул целиком и поставил бы
+	 * стойку регистрации в очередь за фоновой рассылкой — ровно та беда, из-за
+	 * которой в этом же файле запросы уже переписывали на пакетные.
+	 */
+	for (const { organizationId } of enabledRows) {
+		report.organizations += 1;
+		try {
+			// РАБОТА ПО ОДНОЙ КЛИНИКЕ — ЦЕЛИКОМ ПОД ЕЁ АРЕНДАТОРОМ: и чтение
+			// приёмов, и постановка в очередь. Внутри этой транзакции чужая
+			// строка недоступна ни на чтение, ни на запись.
+			await withTenantCtx(organizationId, () =>
+				scheduleForOrganization(organizationId, now, report, namedSkips)
+			);
+		} catch (error) {
+			const detail = error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200);
+			/*
+			 * Идентификатор организации остаётся в журнале сервера и уходит из текста
+			 * для человека: администратор клиники видел строку вида «Организация
+			 * 4a3420d1-6ffb-…: …» и не мог из неё ничего понять, а поддержке нужен
+			 * именно идентификатор.
+			 */
+			console.error(`[reminders] сбой постановки напоминаний, организация ${organizationId}: ${detail}`);
+			report.problems.push(`Напоминания поставить не удалось: ${detail}`);
+		}
+	}
 
 	return {
 		...report,

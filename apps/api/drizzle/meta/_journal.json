@@ -239,6 +239,20 @@
       "when": 1785956553000,
       "tag": "0160_rls_perimeter_orphan_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1785964254684,
+      "tag": "0161_audit_append_only",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1785970620380,
+      "tag": "0162_treatment_items_line_integrity",
+      "breakpoints": true
     }
   ]
 }

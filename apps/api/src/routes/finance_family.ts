@@ -8,7 +8,7 @@ import {
 import {
 	kopecksToNumericString,
 	parseKopecks,
-	rublesToKopecks,
+	positiveMoneyRubSchema,
 } from "@dental/shared";
 import { db } from "../db/client.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
@@ -19,11 +19,27 @@ const familyPaymentSchema = z.object({
 	organizationId: z.string().uuid().optional(),
 	patientId: z.string().uuid(),
 	familyGroupId: z.string().uuid(),
-	// The payments ledger stores whole rubles (integer column), so a family-wallet
-	// payment must be an integer too. Allowing fractional amounts here would debit
-	// the wallet by e.g. 100.50 while recording a rounded 101 — drifting the two
-	// balances apart over time.
-	amountRub: z.number().int().positive(),
+	/*
+	 * КОПЕЙКИ. Здесь стояло `z.number().int().positive()` с обоснованием
+	 * «The payments ledger stores whole rubles (integer column)». Обоснование
+	 * было ЛОЖНЫМ, и это проверяется по объявлению схемы, а не по памяти:
+	 * `payments.amount_rub` — `numeric(12, 2)` (`db/schema.ts`, миграция 0131),
+	 * `family_groups.balance` — `numeric(12, 2)` (миграция 0000). Обе колонки
+	 * копейки хранят с самого начала.
+	 *
+	 * ЧТО ЭТО СТОИЛО КЛИНИКЕ. Оплатить с семейного кошелька 1 500,50 ₽ было
+	 * нельзя вовсе — маршрут отвечал 400 на законную сумму. При этом ПОПОЛНЕНИЕ
+	 * шло через ту же дверь с тем же ограничением, а баланс всё равно умел
+	 * держать копейки (например, после прямой правки в базе или переноса из
+	 * старой системы): такие копейки с кошелька было не снять НИКОГДА — ни одна
+	 * разрешённая сумма их не выбирала. Деньги семьи оставались в базе
+	 * неизрасходуемыми.
+	 *
+	 * `positiveMoneyRubSchema` — тот же контракт денег, что у кассы
+	 * (`createPaymentSchema.amountRub`): третий знак после запятой отвергается,
+	 * ноль и минус отвергаются.
+	 */
+	amountRub: positiveMoneyRubSchema,
 	documentId: z.string().uuid().optional(),
 	visitId: z.string().uuid().optional(),
 	// Ключ идемпотентности. Без него повтор запроса после обрыва связи списывал
@@ -44,9 +60,16 @@ const familyPaymentSchema = z.object({
  */
 const familyTopupSchema = z.object({
 	familyGroupId: z.string().uuid(),
-	// Баланс хранится в целых рублях (integer), поэтому копейки не принимаем:
-	// иначе списание и запись в журнал начнут расходиться.
-	amountRub: z.number().int().positive().max(10_000_000),
+	/*
+	 * Копейки — по той же причине, что и у оплаты выше: `family_groups.balance`
+	 * объявлен `numeric(12, 2)`. Прежний комментарий «Баланс хранится в целых
+	 * рублях (integer)» противоречил объявлению колонки в этом же репозитории.
+	 * Верхний предел оставлен прежним: 10 000 000 ₽ за одно пополнение — это
+	 * защита от опечатки в кассе, а не свойство денег.
+	 */
+	amountRub: positiveMoneyRubSchema.refine((value) => value <= 10_000_000, {
+		message: "сумма одного пополнения не может превышать 10 000 000 ₽",
+	}),
 	// Кто внёс деньги — обычно глава семьи. Нужен для журнала платежей.
 	patientId: z.string().uuid(),
 	method: z.enum(["cash", "card", "bank_transfer", "online", "other"]).default("cash"),
@@ -479,7 +502,44 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				.send({ error: "Cannot delete family group with members" });
 		}
 
-		const result = (await db
+		/*
+		 * УДАЛЕНИЕ СЕМЬИ С ДЕНЬГАМИ НА КОШЕЛЬКЕ ОСТАНОВЛЕНО.
+		 *
+		 * ЧТО БЫЛО. Проверялись только участники. Группа без участников, но с
+		 * остатком на балансе, удалялась `db.delete(familyGroups)` вместе с
+		 * кошельком: строка исчезала, а деньги, которые семья внесла авансом
+		 * (маршрут `topup` пишет их со статусом `planned`, то есть это ещё НЕ
+		 * выручка клиники, а обязательство перед семьёй), переставали
+		 * существовать как обязательство. В журнале платежей пополнение при этом
+		 * оставалось — то есть после удаления клиника получала запись «семья
+		 * внесла деньги» без строки, где эти деньги лежат. Ни вернуть, ни
+		 * потратить их после этого нечем.
+		 *
+		 * Условие «нет участников» этому не мешает: главу семьи можно отвязать, а
+		 * баланс остаётся. Поэтому проверка отдельная и стоит ПОСЛЕ проверки
+		 * участников — так администратор видит сначала более понятную причину.
+		 *
+		 * Отрицательный баланс тоже блокирует удаление: это долг семьи клинике, и
+		 * стереть его так же нельзя, как и остаток. Сравнение идёт в целых
+		 * копейках — `Number(balance) !== 0` на строке "0.00" из драйвера дал бы
+		 * верный ответ случайно, а на "0.001" (испорченные данные) — молча ложный.
+		 */
+		const family = await familyGroupForOrganization(id, organizationId);
+		if (!family) {
+			return reply.code(404).send({ error: "Family group not found" });
+		}
+		const balanceKopecks = parseKopecks(family.balance);
+		if (balanceKopecks !== 0) {
+			return reply.code(409).send({
+				error: "FamilyWalletNotEmpty",
+				message:
+					`На семейном кошельке ${kopecksToNumericString(balanceKopecks)} ₽. ` +
+					"Группу с ненулевым балансом удалить нельзя: вместе с ней исчезнут деньги семьи. " +
+					"Верните остаток или израсходуйте его, а затем удаляйте группу.",
+			});
+		}
+
+		const [deleted] = await db
 			.delete(familyGroups)
 			.where(
 				and(
@@ -487,10 +547,9 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 					eq(familyGroups.organizationId, organizationId),
 				),
 			)
-			.returning()) as any;
-		const family = result[0];
+			.returning({ id: familyGroups.id });
 
-		if (!family)
+		if (!deleted)
 			return reply.code(404).send({ error: "Family group not found" });
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "FAMILY_GROUP_DELETED",
@@ -515,7 +574,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		if (!payParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Проверьте оплату с семейного счёта: нужны patientId, familyGroupId и целые рубли больше нуля.",
+				message: "Проверьте оплату с семейного счёта: нужны patientId, familyGroupId и сумма больше нуля с точностью до копейки.",
 			});
 		}
 		const payload = payParsed.data;
@@ -569,7 +628,8 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 					.limit(1);
 				if (duplicate) {
 					if (
-						duplicate.amountRub !== payload.amountRub ||
+						parseKopecks(duplicate.amountRub) !==
+							parseKopecks(payload.amountRub) ||
 						duplicate.patientId !== payload.patientId ||
 						duplicate.method !== "family_wallet"
 					) {
@@ -588,7 +648,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				// базу попадало 51, а клиентам по WebSocket уходило 50.50 — после
 				// перезагрузки страницы сумма менялась сама.
 				const currentKopecks = parseKopecks(family.balance);
-				const amountKopecks = rublesToKopecks(payload.amountRub);
+				const amountKopecks = parseKopecks(payload.amountRub);
 				if (currentKopecks < amountKopecks) {
 					throw new FamilyFinanceError("Недостаточно средств на семейном балансе", 402);
 				}
@@ -679,7 +739,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		if (!parsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Проверьте сумму пополнения: нужны целые рубли больше нуля.",
+				message: "Проверьте сумму пополнения: нужна сумма больше нуля с точностью до копейки.",
 			});
 		}
 		const payload = parsed.data;
@@ -730,7 +790,8 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 					.limit(1);
 				if (duplicate) {
 					if (
-						duplicate.amountRub !== payload.amountRub ||
+						parseKopecks(duplicate.amountRub) !==
+							parseKopecks(payload.amountRub) ||
 						duplicate.patientId !== payload.patientId ||
 						duplicate.method !== payload.method ||
 						duplicate.status !== "planned"
@@ -749,7 +810,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				// округления — а списание, наоборот, округляло. Из-за асимметрии
 				// копейки попадали в кошелёк при пополнении и терялись при оплате.
 				const newBalance = kopecksToNumericString(
-					parseKopecks(family.balance) + rublesToKopecks(payload.amountRub),
+					parseKopecks(family.balance) + parseKopecks(payload.amountRub),
 				);
 				/*
 				 * БЫЛО: UPDATE по id без organizationId в WHERE (см. pay выше).

@@ -404,149 +404,164 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
       });
     }
 
-    // Resolve the clinic timezone + working schedule so slots reflect the
-    // clinic's actual local hours, not a hardcoded UTC 09–18 window.
-    const [org] = await db
-      .select({ clinicSchedule: organizations.clinicSchedule })
-      .from(organizations)
-      .where(eq(organizations.id, organizationId))
-      .limit(1);
-
-    if (!org) {
-      return reply
-        .status(404)
-        .send({ error: "ClinicNotFound", message: CLINIC_LINK_DEAD_MESSAGE });
-    }
-
-    const [clinic] = await db
-      .select({ timezone: clinics.timezone })
-      .from(clinics)
-      .where(eq(clinics.organizationId, organizationId))
-      .limit(1);
-
-    const timeZone = clinic?.timezone || DEFAULT_TIMEZONE;
-    const schedule = org.clinicSchedule as unknown;
-    const slotMinutes = (() => {
-      const raw = (schedule as Record<string, unknown> | null)
-        ?.defaultVisitMinutes;
-      return typeof raw === "number" && raw >= 5 && raw <= 240
-        ? raw
-        : DEFAULT_SLOT_MINUTES;
-    })();
-
-    // `date` is already the clinic-local calendar date, so the weekday comes
-    // straight from it (no timezone math needed for the day-of-week lookup).
-    const [wy, wm, wd] = date.split("-").map((n) => Number.parseInt(n, 10)) as [
-      number,
-      number,
-      number,
-    ];
-    const calendarWeekday = new Date(Date.UTC(wy, wm - 1, wd)).getUTCDay();
-    const daySchedule = resolveDaySchedule(schedule, calendarWeekday);
-
-    if (!daySchedule.isWorking) {
-      // 409, как и в POST /book ниже на этот же случай: день существует, но
-      // приёма в нём нет. Текст тот же, что там, — теперь пациент прочитает
-      // его до заполнения формы, а не после.
-      return reply.status(409).send({
-        error: "ClinicClosedThatDay",
-        message: "В этот день клиника не работает. Выберите другую дату.",
-      });
-    }
-    if (daySchedule.closeMinute <= daySchedule.openMinute) {
-      // Это НЕ выходной: клиника считает день рабочим, а часы заданы так, что
-      // рабочего времени не остаётся. Причина другая, значит и текст другой.
-      return reply.status(409).send({
-        error: "ClinicHoursMisconfigured",
-        message:
-          "Часы приёма на этот день у клиники заданы неверно: окончание рабочего дня не позже начала, поэтому свободного времени нет ни одного. Выберите другую дату или позвоните в клинику.",
-      });
-    }
-
-    // The clinic day, expressed as a UTC instant range, for the appointment query.
-    const dayStartUtc = localWallTimeToUtc(date, 0, timeZone);
-    const dayEndUtc = new Date(dayStartUtc.getTime() + 24 * 60 * 60_000);
-
-    const existingApps = await db
-      .select({ startsAt: appointments.startsAt, endsAt: appointments.endsAt })
-      .from(appointments)
-      .where(
-        and(
-          eq(appointments.organizationId, organizationId),
-          eq(appointments.doctorUserId, doctorId),
-          gte(appointments.startsAt, dayStartUtc),
-          lt(appointments.startsAt, dayEndUtc),
-          // Отменённые записи и неявки освобождают слот (см. FREED_APPOINTMENT_STATUSES).
-          notInArray(appointments.status, [...FREED_APPOINTMENT_STATUSES]),
-        ),
-      );
-
-    const nowMs = Date.now();
-    const slots: { time: string; startsAt: string; endsAt: string }[] = [];
     /*
-     * Два счётчика вместо одного пустого массива: без них «окон в этом дне не
-     * бывает», «окна были, но все прошли» и «окна есть, все заняты»
-     * неразличимы, а действия у пациента в них разные.
+     * КОНТЕКСТ АРЕНДАТОРА НА ПУБЛИЧНОМ МАРШРУТЕ.
      *
-     * windowSlots — сколько приёмов вообще укладывается в рабочее окно;
-     * upcomingSlots — сколько из них ещё не наступило.
+     * Токена здесь нет и быть не может — ссылку открывает пациент, — поэтому
+     * `request.tenantId` не выставлен, и глобальная обёртка server.ts (onRoute,
+     * строки 339–355) этот обработчик НЕ оборачивает. Под FORCE RLS все три
+     * запроса ниже возвращали ноль строк без единой ошибки: первый же из них не
+     * находил организацию, и живая клиника отвечала пациенту 404 «ссылка
+     * устарела». Обхода здесь не нужно: арендатор ЗНАЕТ СЕБЯ — он назван в
+     * адресе ссылки и уже проверен на форму UUID выше. Соседний маршрут
+     * `/:organizationId/doctors` устроен ровно так же.
      */
-    let windowSlots = 0;
-    let upcomingSlots = 0;
+    return withTenantCtx(organizationId, async (tx) => {
+      // Resolve the clinic timezone + working schedule so slots reflect the
+      // clinic's actual local hours, not a hardcoded UTC 09–18 window.
+      const [org] = await tx
+        .select({ clinicSchedule: organizations.clinicSchedule })
+        .from(organizations)
+        .where(eq(organizations.id, organizationId))
+        .limit(1);
 
-    for (
-      let minute = daySchedule.openMinute;
-      minute + slotMinutes <= daySchedule.closeMinute;
-      minute += slotMinutes
-    ) {
-      windowSlots += 1;
-      const slotStart = localWallTimeToUtc(date, minute, timeZone);
-      const slotEnd = new Date(slotStart.getTime() + slotMinutes * 60_000);
+      if (!org) {
+        return reply
+          .status(404)
+          .send({ error: "ClinicNotFound", message: CLINIC_LINK_DEAD_MESSAGE });
+      }
 
-      // Don't offer slots in the past.
-      if (slotStart.getTime() <= nowMs) continue;
-      upcomingSlots += 1;
+      const [clinic] = await tx
+        .select({ timezone: clinics.timezone })
+        .from(clinics)
+        .where(eq(clinics.organizationId, organizationId))
+        .limit(1);
 
-      const isTaken = existingApps.some((app) => {
-        const appStart = new Date(app.startsAt).getTime();
-        const appEnd = new Date(app.endsAt).getTime();
-        return slotStart.getTime() < appEnd && slotEnd.getTime() > appStart;
-      });
+      const timeZone = clinic?.timezone || DEFAULT_TIMEZONE;
+      const schedule = org.clinicSchedule as unknown;
+      const slotMinutes = (() => {
+        const raw = (schedule as Record<string, unknown> | null)
+          ?.defaultVisitMinutes;
+        return typeof raw === "number" && raw >= 5 && raw <= 240
+          ? raw
+          : DEFAULT_SLOT_MINUTES;
+      })();
 
-      if (!isTaken) {
-        const hh = Math.floor(minute / 60)
-          .toString()
-          .padStart(2, "0");
-        const mm = (minute % 60).toString().padStart(2, "0");
-        slots.push({
-          time: `${hh}:${mm}`,
-          startsAt: slotStart.toISOString(),
-          endsAt: slotEnd.toISOString(),
+      // `date` is already the clinic-local calendar date, so the weekday comes
+      // straight from it (no timezone math needed for the day-of-week lookup).
+      const [wy, wm, wd] = date
+        .split("-")
+        .map((n) => Number.parseInt(n, 10)) as [number, number, number];
+      const calendarWeekday = new Date(Date.UTC(wy, wm - 1, wd)).getUTCDay();
+      const daySchedule = resolveDaySchedule(schedule, calendarWeekday);
+
+      if (!daySchedule.isWorking) {
+        // 409, как и в POST /book ниже на этот же случай: день существует, но
+        // приёма в нём нет. Текст тот же, что там, — теперь пациент прочитает
+        // его до заполнения формы, а не после.
+        return reply.status(409).send({
+          error: "ClinicClosedThatDay",
+          message: "В этот день клиника не работает. Выберите другую дату.",
         });
       }
-    }
+      if (daySchedule.closeMinute <= daySchedule.openMinute) {
+        // Это НЕ выходной: клиника считает день рабочим, а часы заданы так, что
+        // рабочего времени не остаётся. Причина другая, значит и текст другой.
+        return reply.status(409).send({
+          error: "ClinicHoursMisconfigured",
+          message:
+            "Часы приёма на этот день у клиники заданы неверно: окончание рабочего дня не позже начала, поэтому свободного времени нет ни одного. Выберите другую дату или позвоните в клинику.",
+        });
+      }
 
-    if (windowSlots === 0) {
-      // Рабочий день короче одного приёма: 20 минут работы при приёме в 30
-      // минут не дают ни одного окна. Для пациента это не «занято».
-      return reply.status(409).send({
-        error: "ClinicDayShorterThanVisit",
-        message:
-          "Рабочее время клиники в этот день короче одного приёма, поэтому записаться на него нельзя. Выберите другую дату или позвоните в клинику.",
-      });
-    }
-    if (upcomingSlots === 0) {
-      // Окна в дне были, но все они уже прошли: сегодняшний день после
-      // закрытия и любая прошедшая дата. «Всё занято» здесь ложь.
-      return reply.status(409).send({
-        error: "ClinicDayAlreadyOver",
-        message:
-          "Приёмные часы этого дня уже прошли, записаться на него больше нельзя. Выберите другую дату.",
-      });
-    }
+      // The clinic day, expressed as a UTC instant range, for the appointment query.
+      const dayStartUtc = localWallTimeToUtc(date, 0, timeZone);
+      const dayEndUtc = new Date(dayStartUtc.getTime() + 24 * 60 * 60_000);
 
-    // Дальше пустой список означает ровно одно: окна есть, все заняты.
-    return slots;
+      const existingApps = await tx
+        .select({
+          startsAt: appointments.startsAt,
+          endsAt: appointments.endsAt,
+        })
+        .from(appointments)
+        .where(
+          and(
+            eq(appointments.organizationId, organizationId),
+            eq(appointments.doctorUserId, doctorId),
+            gte(appointments.startsAt, dayStartUtc),
+            lt(appointments.startsAt, dayEndUtc),
+            // Отменённые записи и неявки освобождают слот (см. FREED_APPOINTMENT_STATUSES).
+            notInArray(appointments.status, [...FREED_APPOINTMENT_STATUSES]),
+          ),
+        );
+
+      const nowMs = Date.now();
+      const slots: { time: string; startsAt: string; endsAt: string }[] = [];
+      /*
+       * Два счётчика вместо одного пустого массива: без них «окон в этом дне не
+       * бывает», «окна были, но все прошли» и «окна есть, все заняты»
+       * неразличимы, а действия у пациента в них разные.
+       *
+       * windowSlots — сколько приёмов вообще укладывается в рабочее окно;
+       * upcomingSlots — сколько из них ещё не наступило.
+       */
+      let windowSlots = 0;
+      let upcomingSlots = 0;
+
+      for (
+        let minute = daySchedule.openMinute;
+        minute + slotMinutes <= daySchedule.closeMinute;
+        minute += slotMinutes
+      ) {
+        windowSlots += 1;
+        const slotStart = localWallTimeToUtc(date, minute, timeZone);
+        const slotEnd = new Date(slotStart.getTime() + slotMinutes * 60_000);
+
+        // Don't offer slots in the past.
+        if (slotStart.getTime() <= nowMs) continue;
+        upcomingSlots += 1;
+
+        const isTaken = existingApps.some((app) => {
+          const appStart = new Date(app.startsAt).getTime();
+          const appEnd = new Date(app.endsAt).getTime();
+          return slotStart.getTime() < appEnd && slotEnd.getTime() > appStart;
+        });
+
+        if (!isTaken) {
+          const hh = Math.floor(minute / 60)
+            .toString()
+            .padStart(2, "0");
+          const mm = (minute % 60).toString().padStart(2, "0");
+          slots.push({
+            time: `${hh}:${mm}`,
+            startsAt: slotStart.toISOString(),
+            endsAt: slotEnd.toISOString(),
+          });
+        }
+      }
+
+      if (windowSlots === 0) {
+        // Рабочий день короче одного приёма: 20 минут работы при приёме в 30
+        // минут не дают ни одного окна. Для пациента это не «занято».
+        return reply.status(409).send({
+          error: "ClinicDayShorterThanVisit",
+          message:
+            "Рабочее время клиники в этот день короче одного приёма, поэтому записаться на него нельзя. Выберите другую дату или позвоните в клинику.",
+        });
+      }
+      if (upcomingSlots === 0) {
+        // Окна в дне были, но все они уже прошли: сегодняшний день после
+        // закрытия и любая прошедшая дата. «Всё занято» здесь ложь.
+        return reply.status(409).send({
+          error: "ClinicDayAlreadyOver",
+          message:
+            "Приёмные часы этого дня уже прошли, записаться на него больше нельзя. Выберите другую дату.",
+        });
+      }
+
+      // Дальше пустой список означает ровно одно: окна есть, все заняты.
+      return slots;
+    });
   });
 
   // 3. Book an appointment
@@ -567,6 +582,19 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
     const { organizationId } = request.params;
     if (!organizationId) {
       return reply.status(400).send({ error: "Missing organizationId" });
+    }
+    /*
+     * Форма идентификатора проверяется ЗДЕСЬ, как в двух соседних маршрутах, и
+     * это не косметика. Ниже он уходит в `withTenantCtx`, то есть в
+     * `set_config('app.current_tenant', …)`, а политики RLS приводят это
+     * значение к `uuid`. Непохожая на UUID строка из адреса дала бы 22P02
+     * (invalid input syntax for type uuid) и ответ 500 вместо внятного отказа.
+     */
+    if (!organizationIdSchema.safeParse(organizationId).success) {
+      return reply.status(404).send({
+        error: "ClinicLinkInvalid",
+        message: CLINIC_LINK_DEAD_MESSAGE,
+      });
     }
 
     const parsed = bookingRequestSchema.safeParse(request.body);
@@ -612,164 +640,175 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
         .send({ error: "Нельзя записаться на прошедшее время" });
     }
 
-    // The doctor must belong to this organization. Without this check the
-    // public endpoint would let a caller attach appointments to any doctor
-    // UUID across organizations.
-    const [doctor] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(
-        and(
-          eq(users.id, doctorId),
-          eq(users.organizationId, organizationId),
-          eq(users.role, "doctor"),
-        ),
-      )
-      .limit(1);
-    if (!doctor) {
-      return reply.status(404).send({ error: "Врач не найден" });
-    }
+    /*
+     * КОНТЕКСТ АРЕНДАТОРА НА ПУБЛИЧНОМ МАРШРУТЕ (см. пояснение в маршруте
+     * свободного времени выше). Без него под FORCE RLS ломалось ВСЁ, что ниже,
+     * и ломалось по-разному: поиск врача возвращал ноль строк и пациент получал
+     * «Врач не найден» на работающего врача, а если бы дошло до вставки —
+     * `INSERT` в patients/appointments отвергался бы кодом 42501, и пациент
+     * видел бы 500. Арендатор назван в адресе ссылки и проверен на форму UUID.
+     */
+    return withTenantCtx(organizationId, async (tenantTx) => {
+      // The doctor must belong to this organization. Without this check the
+      // public endpoint would let a caller attach appointments to any doctor
+      // UUID across organizations.
+      const [doctor] = await tenantTx
+        .select({ id: users.id })
+        .from(users)
+        .where(
+          and(
+            eq(users.id, doctorId),
+            eq(users.organizationId, organizationId),
+            eq(users.role, "doctor"),
+          ),
+        )
+        .limit(1);
+      if (!doctor) {
+        return reply.status(404).send({ error: "Врач не найден" });
+      }
 
-    // ── Проверка рабочего времени клиники ────────────────────────────────
-    const [clinicRow] = await db
-      .select({ timezone: clinics.timezone })
-      .from(clinics)
-      .where(eq(clinics.organizationId, organizationId))
-      .limit(1);
-    const [bookingOrg] = await db
-      .select({ clinicSchedule: organizations.clinicSchedule })
-      .from(organizations)
-      .where(eq(organizations.id, organizationId))
-      .limit(1);
-    const bookingTimeZone = clinicRow?.timezone || DEFAULT_TIMEZONE;
-    const localDate = utcToLocalWallTime(startDate, bookingTimeZone);
-    const bookingDaySchedule = resolveDaySchedule(
-      bookingOrg?.clinicSchedule as unknown,
-      localDate.weekday,
-    );
+      // ── Проверка рабочего времени клиники ────────────────────────────────
+      const [clinicRow] = await tenantTx
+        .select({ timezone: clinics.timezone })
+        .from(clinics)
+        .where(eq(clinics.organizationId, organizationId))
+        .limit(1);
+      const [bookingOrg] = await tenantTx
+        .select({ clinicSchedule: organizations.clinicSchedule })
+        .from(organizations)
+        .where(eq(organizations.id, organizationId))
+        .limit(1);
+      const bookingTimeZone = clinicRow?.timezone || DEFAULT_TIMEZONE;
+      const localDate = utcToLocalWallTime(startDate, bookingTimeZone);
+      const bookingDaySchedule = resolveDaySchedule(
+        bookingOrg?.clinicSchedule as unknown,
+        localDate.weekday,
+      );
 
-    if (!bookingDaySchedule.isWorking) {
-      return reply
-        .status(409)
-        .send({
+      if (!bookingDaySchedule.isWorking) {
+        return reply.status(409).send({
           error: "В этот день клиника не работает. Выберите другую дату.",
         });
-    }
+      }
 
-    const localEnd = utcToLocalWallTime(endDate, bookingTimeZone);
-    const startMinute = localDate.hours * 60 + localDate.minutes;
-    const endMinute = localEnd.hours * 60 + localEnd.minutes;
-    if (
-      startMinute < bookingDaySchedule.openMinute ||
-      endMinute > bookingDaySchedule.closeMinute ||
-      endMinute <= startMinute
-    ) {
-      return reply.status(409).send({
-        error:
-          "Выбранное время вне часов работы клиники. Обновите список слотов.",
-      });
-    }
+      const localEnd = utcToLocalWallTime(endDate, bookingTimeZone);
+      const startMinute = localDate.hours * 60 + localDate.minutes;
+      const endMinute = localEnd.hours * 60 + localEnd.minutes;
+      if (
+        startMinute < bookingDaySchedule.openMinute ||
+        endMinute > bookingDaySchedule.closeMinute ||
+        endMinute <= startMinute
+      ) {
+        return reply.status(409).send({
+          error:
+            "Выбранное время вне часов работы клиники. Обновите список слотов.",
+        });
+      }
 
-    // ── Атомарная проверка занятости и создание записи ───────────────────
-    try {
-      const result = await db.transaction(async (tx) => {
-        // Блокируем строку врача: сериализует параллельные записи к нему.
-        await tx
-          .select({ id: users.id })
-          .from(users)
-          .where(eq(users.id, doctorId))
-          .limit(1)
-          .for("update");
+      // ── Атомарная проверка занятости и создание записи ───────────────────
+      // Вложенная транзакция — это SAVEPOINT внутри транзакции арендатора:
+      // соединение то же, значит `app.current_tenant` продолжает действовать,
+      // а откат конфликта не уносит с собой весь контекст.
+      try {
+        const result = await tenantTx.transaction(async (tx) => {
+          // Блокируем строку врача: сериализует параллельные записи к нему.
+          await tx
+            .select({ id: users.id })
+            .from(users)
+            .where(eq(users.id, doctorId))
+            .limit(1)
+            .for("update");
 
-        const sameDayApps = await tx
-          .select({
-            startsAt: appointments.startsAt,
-            endsAt: appointments.endsAt,
-          })
-          .from(appointments)
-          .where(
-            and(
-              eq(appointments.organizationId, organizationId),
-              eq(appointments.doctorUserId, doctorId),
-              gte(
-                appointments.startsAt,
-                new Date(startDate.getTime() - 24 * 60 * 60_000),
+          const sameDayApps = await tx
+            .select({
+              startsAt: appointments.startsAt,
+              endsAt: appointments.endsAt,
+            })
+            .from(appointments)
+            .where(
+              and(
+                eq(appointments.organizationId, organizationId),
+                eq(appointments.doctorUserId, doctorId),
+                gte(
+                  appointments.startsAt,
+                  new Date(startDate.getTime() - 24 * 60 * 60_000),
+                ),
+                lt(
+                  appointments.startsAt,
+                  new Date(startDate.getTime() + 24 * 60 * 60_000),
+                ),
+                // Отменённые записи не блокируют время.
+                notInArray(appointments.status, [
+                  ...FREED_APPOINTMENT_STATUSES,
+                ]),
               ),
-              lt(
-                appointments.startsAt,
-                new Date(startDate.getTime() + 24 * 60 * 60_000),
-              ),
-              // Отменённые записи не блокируют время.
-              notInArray(appointments.status, [...FREED_APPOINTMENT_STATUSES]),
-            ),
+            );
+
+          const hasConflict = sameDayApps.some((app) => {
+            const appStart = new Date(app.startsAt).getTime();
+            const appEnd = new Date(app.endsAt).getTime();
+            return startDate.getTime() < appEnd && endDate.getTime() > appStart;
+          });
+          if (hasConflict) return { conflict: true as const };
+
+          const phoneDigits = normalizePhoneDigits(patientPhone);
+          const candidates = await tx
+            .select({ id: patients.id, phone: patients.phone })
+            .from(patients)
+            .where(eq(patients.organizationId, organizationId));
+          const existingPatient = candidates.find(
+            (candidate) =>
+              normalizePhoneDigits(candidate.phone ?? "") === phoneDigits,
           );
 
-        const hasConflict = sameDayApps.some((app) => {
-          const appStart = new Date(app.startsAt).getTime();
-          const appEnd = new Date(app.endsAt).getTime();
-          return startDate.getTime() < appEnd && endDate.getTime() > appStart;
-        });
-        if (hasConflict) return { conflict: true as const };
+          let patientId: string;
+          if (existingPatient) {
+            patientId = existingPatient.id;
+          } else {
+            const [createdPatient] = await tx
+              .insert(patients)
+              .values({
+                organizationId,
+                fullName: patientName,
+                phone: patientPhone,
+                status: "active",
+              })
+              .returning({ id: patients.id });
+            if (!createdPatient) throw new Error("patient_insert_failed");
+            patientId = createdPatient.id;
+          }
 
-        const phoneDigits = normalizePhoneDigits(patientPhone);
-        const candidates = await tx
-          .select({ id: patients.id, phone: patients.phone })
-          .from(patients)
-          .where(eq(patients.organizationId, organizationId));
-        const existingPatient = candidates.find(
-          (candidate) =>
-            normalizePhoneDigits(candidate.phone ?? "") === phoneDigits,
-        );
-
-        let patientId: string;
-        if (existingPatient) {
-          patientId = existingPatient.id;
-        } else {
-          const [createdPatient] = await tx
-            .insert(patients)
+          const [created] = await tx
+            .insert(appointments)
             .values({
               organizationId,
-              fullName: patientName,
-              phone: patientPhone,
-              status: "active",
+              patientId,
+              doctorUserId: doctorId,
+              status: "planned",
+              startsAt: startDate,
+              endsAt: endDate,
+              comment: comment || "Запись через виджет на сайте",
             })
-            .returning({ id: patients.id });
-          if (!createdPatient) throw new Error("patient_insert_failed");
-          patientId = createdPatient.id;
-        }
+            .returning();
+          if (!created) throw new Error("appointment_insert_failed");
+          return { conflict: false as const, appointment: created };
+        });
 
-        const [created] = await tx
-          .insert(appointments)
-          .values({
-            organizationId,
-            patientId,
-            doctorUserId: doctorId,
-            status: "planned",
-            startsAt: startDate,
-            endsAt: endDate,
-            comment: comment || "Запись через виджет на сайте",
-          })
-          .returning();
-        if (!created) throw new Error("appointment_insert_failed");
-        return { conflict: false as const, appointment: created };
-      });
-
-      if (result.conflict) {
-        return reply
-          .status(409)
-          .send({
+        if (result.conflict) {
+          return reply.status(409).send({
             error: "Выбранное время уже занято. Обновите список слотов.",
           });
+        }
+        return { success: true, appointment: result.appointment };
+      } catch (error) {
+        request.log.error(
+          { err: error },
+          "[publicBooking] Не удалось создать запись",
+        );
+        return reply
+          .status(500)
+          .send({ error: "Не удалось создать запись. Повторите попытку." });
       }
-      return { success: true, appointment: result.appointment };
-    } catch (error) {
-      request.log.error(
-        { err: error },
-        "[publicBooking] Не удалось создать запись",
-      );
-      return reply
-        .status(500)
-        .send({ error: "Не удалось создать запись. Повторите попытку." });
-    }
+    });
   });
 };

@@ -1,7 +1,88 @@
 import { readFileSync } from "node:fs";
+import ts from "typescript";
+import {
+	callsLocationReload,
+	eachNode,
+	findLazyMountErrorBoundary,
+} from "./lib/source-tree.mjs";
+
+/*
+ * ПОЧЕМУ ГРАНИЦА ОТКАЗА ИЩЕТСЯ РАЗБОРОМ, А НЕ `includes("AppShellErrorBoundary")`.
+ *
+ * Здесь стояла проверка `shellSource.includes("AppShellErrorBoundary")`. Класс
+ * вынесли из AppShell.tsx в bootErrorBoundary.tsx и назвали BootErrorBoundary —
+ * чтобы одна и та же граница накрыла второй контур main.tsx (онлайн-запись
+ * пациента и портал зуботехника, которые до этого падали в пустую страницу).
+ * Поведение стало ЛУЧШЕ, а сторож покраснел, потому что сторожил НАПИСАНИЕ, а не
+ * свойство. Пять проверок из этого файла разом отвалились по одной причине: они
+ * искали текст границы в том файле, где граница больше не объявлена.
+ *
+ * Замена подстроки на `BootErrorBoundary` вернула бы зелёный цвет и оставила бы
+ * ровно ту же ловушку следующему переименованию. Поэтому проверяется свойство:
+ *
+ *   1. в AppShell.tsx находится привязка, в которую положен lazy(() =>
+ *      import("./App")) — то есть тот самый ленивый монтаж рабочего места;
+ *   2. по дереву JSX берутся ЭЛЕМЕНТЫ-ПРЕДКИ этого монтажа;
+ *   3. каждый предок разрешается через таблицу импортов AppShell.tsx в реальный
+ *      файл, файл разбирается, и в нём ищется класс с ОБОИМИ обработчиками:
+ *      статическим getDerivedStateFromError и методом componentDidCatch;
+ *   4. найденный класс и есть граница — дальше её собственный модуль обязан
+ *      объявлять отказ (role="alert" + aria-live="assertive" на ОДНОМ узле),
+ *      давать детерминированное действие (location.reload()) и объяснять
+ *      случившееся текстом, понятным сотруднику клиники.
+ *
+ * Ни имя класса, ни имя файла в проверку не входят: переименуй хоть класс, хоть
+ * модуль — сторож продолжит доказывать то же самое утверждение. Сломает его
+ * только настоящая пропажа границы над ленивым рабочим местом.
+ *
+ * ПОЧЕМУ ИМЕННО ЭТИ ДВА ИМЕНИ ОСТАЮТСЯ ОПОРОЙ. getDerivedStateFromError и
+ * componentDidCatch — не наши идентификаторы, а строковые ключи, по которым сам
+ * React при обходе fiber-дерева решает, является ли класс границей
+ * (react.dev/reference/react/Component). Их нельзя переименовать, не сломав
+ * механизм: по этой же причине они переживают минификацию — сборщики мангрят
+ * идентификаторы, а не имена свойств.
+ *
+ * Разбор ведёт компилятор TypeScript, а не регулярка. Общие для трёх сторожей
+ * функции разбора (обход, таблица импортов, разрешение модуля, признаки класса-
+ * границы, поиск границы над ленивым монтажом) живут в scripts/lib/source-tree.mjs
+ * одним экземпляром: здесь у них была третья копия, и копии уже расходились.
+ * Тот же ход уже сделан в scripts/smoke-telegram-url-ui-source.mjs,
+ * scripts/check-css-tokens.mjs и scripts/lib/route-topology.mjs — по той же
+ * причине: текстовый поиск не отличает код от комментария и рассыпается при
+ * переносе кода в соседний файл.
+ */
+
+const shellFile = "apps/web/src/AppShell.tsx";
+
+/** Есть ли узел, объявляющий отказ вслух: role="alert" И aria-live="assertive". */
+function announcesBlockingFailure(sourceFile) {
+	let announces = false;
+	eachNode(sourceFile, (node) => {
+		if (!ts.isJsxSelfClosingElement(node) && !ts.isJsxOpeningElement(node))
+			return;
+		let hasAlertRole = false;
+		let hasAssertiveLiveRegion = false;
+		for (const attribute of node.attributes.properties) {
+			if (!ts.isJsxAttribute(attribute)) continue;
+			const attributeName = attribute.name.getText(sourceFile);
+			const value =
+				attribute.initializer && ts.isStringLiteral(attribute.initializer)
+					? attribute.initializer.text
+					: null;
+			if (attributeName === "role" && value === "alert") hasAlertRole = true;
+			if (attributeName === "aria-live" && value === "assertive") {
+				hasAssertiveLiveRegion = true;
+			}
+		}
+		// Оба признака обязаны стоять на ОДНОМ узле: role="alert" на одном элементе и
+		// aria-live="assertive" на другом читалку экрана не заставят прочесть отказ.
+		if (hasAlertRole && hasAssertiveLiveRegion) announces = true;
+	});
+	return announces;
+}
 
 const mainSource = readFileSync("apps/web/src/main.tsx", "utf8");
-const shellSource = readFileSync("apps/web/src/AppShell.tsx", "utf8");
+const shellSource = readFileSync(shellFile, "utf8");
 const appSource = readFileSync("apps/web/src/App.tsx", "utf8");
 const settingsSource = readFileSync("apps/web/src/SettingsView.tsx", "utf8");
 const viteSource = readFileSync("apps/web/vite.config.ts", "utf8");
@@ -137,43 +218,66 @@ if (!shellSource.includes("<h1>DENTE</h1>")) {
 	missing.push("AppShell loading state must use the DENTE brand spelling");
 }
 
-if (!shellSource.includes("AppShellErrorBoundary")) {
+/*
+ * ГРАНИЦА ОТКАЗА НАД ЛЕНИВЫМ РАБОЧИМ МЕСТОМ. Проверяется свойство, не написание:
+ * см. разбор в шапке файла. Всё, что ниже, опирается только на разбор дерева.
+ */
+const bootMount = findLazyMountErrorBoundary(shellFile, { specifier: "./App" });
+const lazyWorkspaceName = bootMount.lazyBindingName;
+
+/** Граница: разрешённый предок, чей класс держит ОБА обработчика React. */
+let bootErrorBoundary = null;
+
+if (!bootMount.mountedBindingName) {
 	missing.push(
-		"AppShell must wrap lazy workspace loading in a boot error boundary",
+		"AppShell must render the lazy workspace it declares, so a boot boundary can wrap it",
+	);
+} else if (bootMount.boundary) {
+	bootErrorBoundary = {
+		file: bootMount.boundary.file,
+		ast: bootMount.boundary.ast,
+		source: readFileSync(bootMount.boundary.file, "utf8"),
+		className: bootMount.boundary.className,
+	};
+} else if (bootMount.halfBuilt) {
+	missing.push(
+		`AppShell boot error boundary must catch lazy import and runtime boot failures (${bootMount.halfBuilt} implements only one of getDerivedStateFromError/componentDidCatch)`,
+	);
+} else {
+	missing.push(
+		`AppShell must wrap lazy workspace loading in a boot error boundary (no ancestor of <${lazyWorkspaceName}> resolves to a class with static getDerivedStateFromError and componentDidCatch)`,
 	);
 }
 
-if (
-	!shellSource.includes("getDerivedStateFromError") ||
-	!shellSource.includes("componentDidCatch")
-) {
-	missing.push(
-		"AppShell boot error boundary must catch lazy import and runtime boot failures",
-	);
-}
+if (bootErrorBoundary) {
+	if (!announcesBlockingFailure(bootErrorBoundary.ast)) {
+		missing.push(
+			`AppShell boot failure state must announce a blocking recovery message (${bootErrorBoundary.file} has no node carrying both role="alert" and aria-live="assertive")`,
+		);
+	}
 
-if (
-	!shellSource.includes('role="alert"') ||
-	!shellSource.includes('aria-live="assertive"')
-) {
-	missing.push(
-		"AppShell boot failure state must announce a blocking recovery message",
-	);
-}
+	if (!callsLocationReload(bootErrorBoundary.ast, bootErrorBoundary.ast)) {
+		missing.push(
+			`AppShell boot failure state must offer a deterministic reload action (${bootErrorBoundary.file} never calls location.reload())`,
+		);
+	}
 
-if (!shellSource.includes("window.location.reload()")) {
-	missing.push(
-		"AppShell boot failure state must offer a deterministic reload action",
-	);
-}
-
-if (
-	!shellSource.includes("Не удалось открыть рабочее место клиники.") ||
-	!shellSource.includes("Файлы интерфейса не загрузились.")
-) {
-	missing.push(
-		"AppShell boot failure state must explain recovery in clinic-readable text",
-	);
+	/*
+	 * Текст — единственное, что здесь проверяется подстрокой, и намеренно: это не
+	 * идентификатор, а ровно то, что читает сотрудник клиники. Переименование его
+	 * не задевает, а переписывание — как раз то изменение, которое обязано пройти
+	 * через глаза человека.
+	 */
+	if (
+		!bootErrorBoundary.source.includes(
+			"Не удалось открыть рабочее место клиники.",
+		) ||
+		!bootErrorBoundary.source.includes("Файлы интерфейса не загрузились.")
+	) {
+		missing.push(
+			`AppShell boot failure state must explain recovery in clinic-readable text (${bootErrorBoundary.file})`,
+		);
+	}
 }
 
 if (
@@ -908,6 +1012,8 @@ console.log({
 	manualCommunicationTaskDataChunk: true,
 	manualWorkspaceStaticOptionsChunk: true,
 	manualWorkspaceUiLabelsChunk: true,
-	recoverableBootErrors: true,
+	// Не константа `true`, а найденное: печатается тот класс и тот файл, которые
+	// сторож реально прошёл по дереву. Переезд границы будет виден в логе гейта.
+	recoverableBootErrors: `${bootErrorBoundary.file}:${bootErrorBoundary.className}`,
 	readableRouteFallbacks: true,
 });

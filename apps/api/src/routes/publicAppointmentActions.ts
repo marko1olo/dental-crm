@@ -25,6 +25,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { appointments, clinics, communicationTasks, organizations, patients } from "../db/schema.js";
 import { markActionCodeUsed, resolveActionCode } from "../services/communications/appointmentActionLinks.js";
 import { invalidateAppointmentReminders } from "../services/communications/appointmentReminders.js";
@@ -144,61 +145,110 @@ export async function registerPublicAppointmentActionRoutes(app: FastifyInstance
 		const payload = { organizationId: resolved.organizationId, appointmentId: resolved.appointmentId };
 		const expectedAction = resolved.action;
 
-		const [appointment] = await db
-			.select({
-				id: appointments.id,
-				status: appointments.status,
-				startsAt: appointments.startsAt,
-				patientId: appointments.patientId
-			})
-			.from(appointments)
-			.where(and(eq(appointments.id, payload.appointmentId), eq(appointments.organizationId, payload.organizationId)))
-			.limit(1);
+		/*
+		 * КОНТЕКСТ АРЕНДАТОРА НА ЕДИНСТВЕННОМ ЗДЕСЬ АДРЕСЕ БЕЗ АВТОРИЗАЦИИ.
+		 *
+		 * Токена у пациента нет, поэтому `request.tenantId` не выставлен и
+		 * глобальная обёртка server.ts этот обработчик не оборачивает. Под FORCE
+		 * RLS ломалось всё, что ниже: поиск приёма отдавал ноль строк, и пациент
+		 * получал «Запись не найдена» на живую запись; название клиники не
+		 * читалось и заменялось словом «Клиника»; `UPDATE` статуса затрагивал
+		 * ноль строк; вставка задачи администратору отвергалась кодом 42501.
+		 *
+		 * Обхода здесь не нужно и он был бы дырой: арендатор УЖЕ известен — его
+		 * назвала строка кода, найденная выше единственным запросом под обходом.
+		 * Под контекстом чужой приём недоступен ни на чтение, ни на запись, и
+		 * подобранный чужой код ничего не откроет.
+		 */
+		return withTenantCtx(payload.organizationId, async () => {
+			const [appointment] = await db
+				.select({
+					id: appointments.id,
+					status: appointments.status,
+					startsAt: appointments.startsAt,
+					patientId: appointments.patientId
+				})
+				.from(appointments)
+				.where(and(eq(appointments.id, payload.appointmentId), eq(appointments.organizationId, payload.organizationId)))
+				.limit(1);
 
-		const title = await clinicTitle(payload.organizationId);
-		if (!appointment) {
-			return sendPage(reply, 404, title, "Запись не найдена. Возможно, её уже отменили. Позвоните в клинику.", "error");
-		}
-
-		const [clinic] = await db
-			.select({ timezone: clinics.timezone })
-			.from(clinics)
-			.where(eq(clinics.organizationId, payload.organizationId))
-			.limit(1);
-		const moment = formatAppointmentMoment(appointment.startsAt, clinic?.timezone ?? "Europe/Moscow");
-
-		// Прошедший приём подтверждать и отменять нечего, а сообщение об этом
-		// понятнее, чем «ссылка недействительна».
-		if (appointment.startsAt.getTime() < Date.now()) {
-			return sendPage(reply, 409, title, `Приём ${moment} уже прошёл. Чтобы записаться снова, позвоните в клинику.`, "warn");
-		}
-
-		if (expectedAction === "confirm") {
-			if (appointment.status === "confirmed") {
-				// Повторное нажатие — обычное дело: пациент открыл ссылку дважды.
-				return sendPage(reply, 200, title, `Приём ${moment} уже подтверждён. Ждём вас.`, "ok");
+			const title = await clinicTitle(payload.organizationId);
+			if (!appointment) {
+				return sendPage(reply, 404, title, "Запись не найдена. Возможно, её уже отменили. Позвоните в клинику.", "error");
 			}
-			if (appointment.status !== "planned") {
-				return sendPage(
-					reply,
-					409,
-					title,
-					`Приём ${moment} уже нельзя подтвердить: его статус изменила клиника. Позвоните нам.`,
-					"warn"
-				);
+
+			const [clinic] = await db
+				.select({ timezone: clinics.timezone })
+				.from(clinics)
+				.where(eq(clinics.organizationId, payload.organizationId))
+				.limit(1);
+			const moment = formatAppointmentMoment(appointment.startsAt, clinic?.timezone ?? "Europe/Moscow");
+
+			// Прошедший приём подтверждать и отменять нечего, а сообщение об этом
+			// понятнее, чем «ссылка недействительна».
+			if (appointment.startsAt.getTime() < Date.now()) {
+				return sendPage(reply, 409, title, `Приём ${moment} уже прошёл. Чтобы записаться снова, позвоните в клинику.`, "warn");
+			}
+
+			if (expectedAction === "confirm") {
+				if (appointment.status === "confirmed") {
+					// Повторное нажатие — обычное дело: пациент открыл ссылку дважды.
+					return sendPage(reply, 200, title, `Приём ${moment} уже подтверждён. Ждём вас.`, "ok");
+				}
+				if (appointment.status !== "planned") {
+					return sendPage(
+						reply,
+						409,
+						title,
+						`Приём ${moment} уже нельзя подтвердить: его статус изменила клиника. Позвоните нам.`,
+						"warn"
+					);
+				}
+
+				/*
+				 * БЫЛО: UPDATE appointments SET status='confirmed' WHERE id=...
+				 * без organizationId. SELECT выше уже фильтровал по org, но
+				 * подтверждение по публичной ссылке — мутация статуса записи;
+				 * id-only UPDATE ломает multi-tenant defense-in-depth (тот же
+				 * класс, что visits/appointments staff path).
+				 * СТАЛО: organizationId + id; 0 строк → не помечаем код использованным.
+				 */
+				const [confirmed] = await db
+					.update(appointments)
+					.set({ status: "confirmed" })
+					.where(
+						and(
+							eq(appointments.id, appointment.id),
+							eq(appointments.organizationId, payload.organizationId),
+						),
+					)
+					.returning({ id: appointments.id });
+				if (!confirmed) {
+					return sendPage(reply, 404, title, "Запись не найдена. Возможно, её уже отменили. Позвоните в клинику.", "error");
+				}
+				await markActionCodeUsed(resolved.code);
+				wsBroker.broadcastToOrganization(payload.organizationId, {
+					type: "APPOINTMENT_UPDATED",
+					payload: { appointmentId: appointment.id, source: "patient_confirmation" }
+				});
+				return sendPage(reply, 200, title, `Спасибо! Приём ${moment} подтверждён. Ждём вас.`, "ok");
+			}
+
+			if (appointment.status === "cancelled") {
+				return sendPage(reply, 200, title, `Приём ${moment} уже отменён. Чтобы записаться снова, позвоните в клинику.`, "ok");
+			}
+			if (appointment.status !== "planned" && appointment.status !== "confirmed") {
+				return sendPage(reply, 409, title, `Приём ${moment} уже нельзя отменить по ссылке. Позвоните в клинику.`, "warn");
 			}
 
 			/*
-			 * БЫЛО: UPDATE appointments SET status='confirmed' WHERE id=...
-			 * без organizationId. SELECT выше уже фильтровал по org, но
-			 * подтверждение по публичной ссылке — мутация статуса записи;
-			 * id-only UPDATE ломает multi-tenant defense-in-depth (тот же
-			 * класс, что visits/appointments staff path).
-			 * СТАЛО: organizationId + id; 0 строк → не помечаем код использованным.
+			 * БЫЛО: UPDATE status='cancelled' WHERE id only (см. confirm выше).
+			 * СТАЛО: organizationId + id + RETURNING; иначе код ссылки сжигался бы
+			 * без реальной отмены.
 			 */
-			const [confirmed] = await db
+			const [cancelled] = await db
 				.update(appointments)
-				.set({ status: "confirmed" })
+				.set({ status: "cancelled" })
 				.where(
 					and(
 						eq(appointments.id, appointment.id),
@@ -206,87 +256,55 @@ export async function registerPublicAppointmentActionRoutes(app: FastifyInstance
 					),
 				)
 				.returning({ id: appointments.id });
-			if (!confirmed) {
+			if (!cancelled) {
 				return sendPage(reply, 404, title, "Запись не найдена. Возможно, её уже отменили. Позвоните в клинику.", "error");
 			}
 			await markActionCodeUsed(resolved.code);
+
+			// Напоминания об отменённом приёме снимаются сразу: иначе пациент,
+			// только что отказавшийся, получит «ждём вас завтра».
+			await invalidateAppointmentReminders(payload.organizationId, appointment.id, "Приём отменён пациентом по ссылке");
+
+			// Отмена не должна проходить молча: администратор обязан узнать об
+			// освободившемся слоте и попробовать переставить пациента.
+			if (appointment.patientId) {
+				const [patient] = await db
+					.select({ fullName: patients.fullName })
+					.from(patients)
+					.where(eq(patients.id, appointment.patientId))
+					.limit(1);
+
+				await db.insert(communicationTasks).values({
+					organizationId: payload.organizationId,
+					patientId: appointment.patientId,
+					appointmentId: appointment.id,
+					assignedRole: "administrator",
+					channel: "phone",
+					intent: "appointment_confirmation",
+					status: "queued",
+					priority: "high",
+					dueAt: new Date(),
+					title: "Пациент отменил приём по ссылке",
+					body:
+						`${patient?.fullName ?? "Пациент"} отменил приём ${moment} через ссылку в сообщении. ` +
+						"Слот освободился: предложите время другому пациенту из листа ожидания и уточните, нужен ли перенос.",
+					workflowCode: "appointment_reschedule_followup"
+				});
+			}
+
 			wsBroker.broadcastToOrganization(payload.organizationId, {
 				type: "APPOINTMENT_UPDATED",
-				payload: { appointmentId: appointment.id, source: "patient_confirmation" }
+				payload: { appointmentId: appointment.id, source: "patient_cancellation" }
 			});
-			return sendPage(reply, 200, title, `Спасибо! Приём ${moment} подтверждён. Ждём вас.`, "ok");
-		}
 
-		if (appointment.status === "cancelled") {
-			return sendPage(reply, 200, title, `Приём ${moment} уже отменён. Чтобы записаться снова, позвоните в клинику.`, "ok");
-		}
-		if (appointment.status !== "planned" && appointment.status !== "confirmed") {
-			return sendPage(reply, 409, title, `Приём ${moment} уже нельзя отменить по ссылке. Позвоните в клинику.`, "warn");
-		}
-
-		/*
-		 * БЫЛО: UPDATE status='cancelled' WHERE id only (см. confirm выше).
-		 * СТАЛО: organizationId + id + RETURNING; иначе код ссылки сжигался бы
-		 * без реальной отмены.
-		 */
-		const [cancelled] = await db
-			.update(appointments)
-			.set({ status: "cancelled" })
-			.where(
-				and(
-					eq(appointments.id, appointment.id),
-					eq(appointments.organizationId, payload.organizationId),
-				),
-			)
-			.returning({ id: appointments.id });
-		if (!cancelled) {
-			return sendPage(reply, 404, title, "Запись не найдена. Возможно, её уже отменили. Позвоните в клинику.", "error");
-		}
-		await markActionCodeUsed(resolved.code);
-
-		// Напоминания об отменённом приёме снимаются сразу: иначе пациент,
-		// только что отказавшийся, получит «ждём вас завтра».
-		await invalidateAppointmentReminders(payload.organizationId, appointment.id, "Приём отменён пациентом по ссылке");
-
-		// Отмена не должна проходить молча: администратор обязан узнать об
-		// освободившемся слоте и попробовать переставить пациента.
-		if (appointment.patientId) {
-			const [patient] = await db
-				.select({ fullName: patients.fullName })
-				.from(patients)
-				.where(eq(patients.id, appointment.patientId))
-				.limit(1);
-
-			await db.insert(communicationTasks).values({
-				organizationId: payload.organizationId,
-				patientId: appointment.patientId,
-				appointmentId: appointment.id,
-				assignedRole: "administrator",
-				channel: "phone",
-				intent: "appointment_confirmation",
-				status: "queued",
-				priority: "high",
-				dueAt: new Date(),
-				title: "Пациент отменил приём по ссылке",
-				body:
-					`${patient?.fullName ?? "Пациент"} отменил приём ${moment} через ссылку в сообщении. ` +
-					"Слот освободился: предложите время другому пациенту из листа ожидания и уточните, нужен ли перенос.",
-				workflowCode: "appointment_reschedule_followup"
-			});
-		}
-
-		wsBroker.broadcastToOrganization(payload.organizationId, {
-			type: "APPOINTMENT_UPDATED",
-			payload: { appointmentId: appointment.id, source: "patient_cancellation" }
+			return sendPage(
+				reply,
+				200,
+				title,
+				`Приём ${moment} отменён. Мы получили ваш отказ; при необходимости администратор свяжется с вами для переноса.`,
+				"ok"
+			);
 		});
-
-		return sendPage(
-			reply,
-			200,
-			title,
-			`Приём ${moment} отменён. Мы получили ваш отказ; при необходимости администратор свяжется с вами для переноса.`,
-			"ok"
-		);
 	};
 
 	/**

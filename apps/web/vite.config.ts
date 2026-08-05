@@ -65,6 +65,10 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           const normalizedId = id.replaceAll("\\", "/");
+          // Виртуальный модуль Vite с хелпером __vitePreload. Без явного захвата он
+          // попадает в первый чанк, который его использовал (здесь — app-helpers,
+          // 120 862 Б), и точка входа тянет весь тот чанк ради одной привязки.
+          if (normalizedId.includes("vite/preload-helper")) return "vite-preload-helper";
           if (normalizedId.endsWith("/apps/web/src/AppBootState.tsx")) return "boot-state";
           if (normalizedId.endsWith("/apps/web/src/browserContinuity.ts")) return "browser-continuity";
           if (normalizedId.endsWith("/apps/web/src/workspacePreload.ts")) return "workspace-preload";
@@ -76,7 +80,12 @@ export default defineConfig({
           if (normalizedId.endsWith("/apps/web/src/rubAmountInput.ts")) return "rub-amount-input";
           if (normalizedId.endsWith("/apps/web/src/settingsStaticData.tsx")) return "settings-static-data";
           if (normalizedId.endsWith("/apps/web/src/imagingUiLabels.ts")) return "imaging-ui-labels";
-          if (normalizedId.endsWith("/apps/web/src/ctPlanningGeometry.ts")) return "ct-planning-geometry";
+          // Геометрия КТ-планирования живёт в utils/math/toothGeometry.ts: именно оттуда
+          // ctPlanningState.ts берёт buildCtPlanningGeometrySummary. Файл
+          // src/ctPlanningGeometry.ts — его мёртвый дубль, на него ссылаются только
+          // `import type`, поэтому в рантайм-графе его нет и правило на него не давало
+          // ни одного чанка. Правило переведено на живой модуль.
+          if (normalizedId.endsWith("/apps/web/src/utils/math/toothGeometry.ts")) return "ct-planning-geometry";
           if (normalizedId.endsWith("/apps/web/src/ctPlanningMeasurementPlan.ts")) return "ct-planning-measurement-plan";
           if (normalizedId.endsWith("/apps/web/src/ctPlanningMeasurementPanel.tsx")) return "ct-planning-measurement-panel";
           if (normalizedId.endsWith("/apps/web/src/ctPlanningWorkflowPlan.ts")) return "ct-planning-workflow-plan";
@@ -155,6 +164,11 @@ export default defineConfig({
           if (normalizedId.endsWith("/apps/web/src/components/PanelLoadFailure.tsx")) return "panel-load-failure";
           if (normalizedId.endsWith("/apps/web/src/hooks/useWebsocket.ts")) return "use-websocket";
           if (normalizedId.endsWith("/apps/web/src/App.tsx")) return "workspace";
+          // d3 объявляют сразу двое: recharts (через victory-vendor) в аналитике и
+          // @kitware/vtk.js в просмотрщике DICOM. Кто первым занял модуль, тот его и
+          // унёс — все 80 модулей d3 оказались внутри dicom-components (4 268 136 Б),
+          // и «Аналитика» получила статическое ребро на весь просмотрщик ради шкал.
+          if (normalizedId.includes("/node_modules/d3-")) return "d3-vendor";
           if (normalizedId.includes("/node_modules/react") || normalizedId.includes("/node_modules/react-dom")) return "react-vendor";
           if (normalizedId.includes("/node_modules/lucide-react")) return "icons";
           if (normalizedId.includes("/node_modules/zod")) return "schema-vendor";

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
-import { sql } from "drizzle-orm";
+import { type SQL, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import { withSuperuserBypass } from "../../db/rls.js";
 
 /**
  * ОБЩИЙ ИНВЕНТАРЬ ДЛЯ ТЕСТОВ, КОТОРЫЕ СЕЮТ СВОЮ КЛИНИКУ В ЖИВУЮ БАЗУ.
@@ -146,15 +147,42 @@ function assertPurgeableFixtureId(organizationId: string): void {
 }
 
 /**
+ * Таблица со ссылкой на организацию и признак того, вправе ли текущая роль
+ * удалять из неё строки.
+ */
+type OrganizationScopedTable = {
+	readonly name: string;
+	readonly deletable: boolean;
+};
+
+/**
  * Таблицы, где есть ссылка на организацию, — по каталогу базы.
  *
  * Имя таблицы приходит из `information_schema` и подставляется через
  * `sql.identifier`, идентификатор организации — параметром запроса. Склейки
  * значения в текст SQL здесь нет.
+ *
+ * ПОЧЕМУ ЗДЕСЬ ЖЕ СПРАШИВАЕТСЯ ПРАВО НА УДАЛЕНИЕ. С миграции
+ * `0161_audit_append_only.sql` часть таблиц журнала аудита закрыта на дозапись:
+ * право DELETE у роли `dental` отозвано, поверх стоят триггеры-сторожа. Такая
+ * таблица отвечает на DELETE кодом 42501 ВСЕГДА — проверка прав срабатывает до
+ * того, как база посмотрит на условие, поэтому отказ приходит даже когда под
+ * условие не подпадает ни одной строки (замерено: DELETE по заведомо
+ * несуществующей организации даёт 42501 на обеих таблицах журнала).
+ *
+ * Признак берётся из каталога, а не из списка имён в коде, ровно по той же
+ * причине, по которой из каталога берётся сам список таблиц: поимённый перечень
+ * устаревает при первой же следующей миграции, которая закроет ещё одну таблицу,
+ * а `has_table_privilege` отстать не может.
  */
-async function tablesReferencingOrganization(): Promise<string[]> {
-	const catalog = await db.execute<{ table_name: string }>(sql`
-		SELECT c.table_name
+async function organizationScopedTables(): Promise<OrganizationScopedTable[]> {
+	const catalog = await db.execute<{ table_name: string; deletable: boolean }>(sql`
+		SELECT c.table_name,
+		       has_table_privilege(
+		         current_user,
+		         format('%I.%I', c.table_schema, c.table_name),
+		         'DELETE'
+		       ) AS deletable
 		FROM information_schema.columns AS c
 		JOIN information_schema.tables AS t
 		  ON t.table_schema = c.table_schema AND t.table_name = c.table_name
@@ -164,7 +192,63 @@ async function tablesReferencingOrganization(): Promise<string[]> {
 		  AND t.table_type = 'BASE TABLE'
 		ORDER BY c.table_name
 	`);
-	return catalog.rows.map((row) => row.table_name);
+	return catalog.rows.map((row) => ({ name: row.table_name, deletable: row.deletable }));
+}
+
+/**
+ * Проверяет, что закрытые на дозапись таблицы не держат ни одной строки убираемых
+ * организаций.
+ *
+ * ЗАЧЕМ ЭТО ВООБЩЕ НУЖНО. Строки журнала мешают не сами по себе: обе таблицы
+ * журнала стоят на ссылающейся стороне внешнего ключа
+ * `organization_id -> organizations.id` без `ON DELETE`. Пока хоть одна запись
+ * жива, удаление самой организации отвергается кодом 23503. Удалить журнал ролью
+ * приложения нельзя и не должно быть можно, поэтому единственный честный исход —
+ * назвать это вслух, с таблицей, организацией и числом строк, а не отдать
+ * следующему читателю невнятный отказ по внешнему ключу.
+ *
+ * ПОЧЕМУ СЧЁТ ИДЁТ ПОД `withSuperuserBypass`. Обе таблицы журнала — под
+ * принудительным RLS (`relforcerowsecurity`) с политикой по `app.current_tenant`.
+ * Обычный SELECT без тенант-контекста возвращает НОЛЬ СТРОК независимо от того,
+ * что в таблице лежит на самом деле. Проверка, построенная на таком счёте, всегда
+ * говорила бы «чисто» — то есть была бы не проверкой, а её имитацией. Обход RLS
+ * здесь только на ЧТЕНИЕ и в транзакции: `withSuperuserBypass` ставит флаг через
+ * `set_config(…, true)`, поэтому он умирает вместе с транзакцией и не утекает на
+ * следующего клиента пула.
+ */
+async function assertAppendOnlyTablesAreEmptyFor(
+	tables: readonly string[],
+	targets: readonly string[],
+	idList: SQL,
+): Promise<void> {
+	if (tables.length === 0) return;
+
+	const held = await withSuperuserBypass(async (tx) => {
+		const found: string[] = [];
+		for (const table of tables) {
+			const result = await tx.execute<{ organization_id: string; total: number }>(sql`
+				SELECT organization_id::text AS organization_id, count(*)::int AS total
+				FROM ${sql.identifier(table)}
+				WHERE organization_id IN (${idList})
+				GROUP BY organization_id
+				ORDER BY organization_id
+			`);
+			for (const row of result.rows) {
+				found.push(`${table}: ${row.organization_id} — строк ${row.total}`);
+			}
+		}
+		return found;
+	});
+
+	if (held.length === 0) return;
+
+	throw new Error(
+		`purgeFixtureOrganizations: организации ${targets.join(", ")} оставили записи в журнале аудита, ` +
+			`поэтому удалить их нельзя: ${held.join("; ")}. ` +
+			"Журнал открыт только на дозапись (миграция 0161_audit_append_only.sql, мера РСБ.7 приказа ФСТЭК России N 21), " +
+			"роль приложения не удаляет из него ни одной строки. " +
+			"Тест, дописывающий журнал под фикстурной клиникой, обязан либо не удалять эту клинику, либо получить отдельный идентификатор на прогон.",
+	);
 }
 
 /**
@@ -177,6 +261,28 @@ async function tablesReferencingOrganization(): Promise<string[]> {
  * таблицы. Остаток не замалчивается: он превращается в исключение с именами
  * таблиц, потому что тихо оставленный мусор в следующем прогоне читается как
  * данные клиники.
+ *
+ * ТАБЛИЦЫ ЖУРНАЛА АУДИТА В ЭТОТ ЦИКЛ НЕ ПОПАДАЮТ, И ЭТО НЕ ПОБЛАЖКА. С миграции
+ * 0161 у роли приложения нет права DELETE на `audit_events` и
+ * `clinical_audit_logs`; отказ 42501 приходит на КАЖДОМ проходе и не зависит ни
+ * от условия запроса, ни от числа строк. Для цикла «мешает ссылка из ещё не
+ * очищенной таблицы — вернёмся следующим проходом» это вечно заблокированная
+ * таблица: цикл честно доходил до предела и падал исключением ВСЕГДА, даже когда
+ * журнал по этим организациям пуст.
+ *
+ * Цена этой ошибки была не в упавшей уборке. `after`-хук четырёх файлов диктовки
+ * снимает консультационную блокировку PostgreSQL ПОСЛЕ уборки; исключение из
+ * уборки уносило хук целиком, `release()` не вызывался, сессия-держатель
+ * оставалась жива, и остальные участники очереди ждали её до конца прогона.
+ * Набор тестов переставал завершаться вообще — измерено, воспроизведено на
+ * `speech/tests/storage.test.ts` (EXIT=124 по внешнему таймауту).
+ *
+ * Правильное разделение проходит не по «получилось/не получилось», а по природе
+ * отказа: FK-блокировка временна и снимается следующим проходом, отзыв права
+ * постоянен и следующим проходом не снимется никогда. Первое лечится циклом,
+ * второе — знанием о том, что удалять эту таблицу не нужно и не положено.
+ * Поэтому право спрашивается заранее, а непустой журнал становится отдельным,
+ * названным вслух отказом (см. `assertAppendOnlyTablesAreEmptyFor`).
  */
 export async function purgeFixtureOrganizations(organizationIds: readonly string[]): Promise<void> {
 	const targets = [...new Set(organizationIds)];
@@ -194,7 +300,10 @@ export async function purgeFixtureOrganizations(organizationIds: readonly string
 		sql`, `,
 	);
 
-	let remaining = await tablesReferencingOrganization();
+	const catalog = await organizationScopedTables();
+	const appendOnly = catalog.filter((table) => !table.deletable).map((table) => table.name);
+
+	let remaining = catalog.filter((table) => table.deletable).map((table) => table.name);
 	let lastFailure: unknown = null;
 	for (let pass = 0; pass < MAX_PURGE_PASSES && remaining.length > 0; pass += 1) {
 		const blocked: string[] = [];
@@ -221,6 +330,13 @@ export async function purgeFixtureOrganizations(organizationIds: readonly string
 		);
 	}
 
-	await db.execute(sql`DELETE FROM bi_analytics_snapshots WHERE organization_id IN (${idList})`).catch(() => {});
+	/*
+	 * Журнал проверяется ДО удаления организации, а не после отказа по внешнему
+	 * ключу: 23503 назвал бы имя ограничения, а не причину, по которой строки
+	 * журнала неудаляемы, и следующий читатель пошёл бы искать дефект в уборке.
+	 */
+	await assertAppendOnlyTablesAreEmptyFor(appendOnly, targets, idList);
+
 	await db.execute(sql`DELETE FROM organizations WHERE id IN (${idList})`);
 }
+

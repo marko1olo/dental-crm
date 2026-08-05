@@ -1,10 +1,19 @@
 # Детальная Карта Архитектуры и Модулей Dental CRM (DENTE)
 
 ## 1. Общая структура монорепозитория
-- **Frontend App**: `apps/web` (Vite, React 18, TypeScript, TailwindCSS/Vanilla CSS).
+- **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
 - **Backend API**: `apps/api` (Fastify 4+, TypeScript, Drizzle ORM, Node.js).
 - **Shared Package**: `packages/shared` (общие схемы Zod, DTO, типы документов, одонтограммы и интерфейсов).
-- **База данных**: PostgreSQL / PGlite (схема в `apps/api/src/db/schema.ts` — более 2300 строк типезированных таблиц и энумов).
+- **База данных**: **нативный PostgreSQL 18.4** по TCP на `127.0.0.1:5432`, драйвер `node-postgres`
+  (схема в `apps/api/src/db/schema.ts` — 3158 строк, 126 `pgTable` + 46 `pgEnum`; всего по всем модулям
+  схемы 129 таблиц, в живой базе 148).
+
+> **Исправлено 2026-08-06.** Здесь стояло «React 18» и «PostgreSQL / PGlite», а размер схемы был указан
+> как «более 2300 строк». Все три утверждения неверны. React — 19.2.7 (`apps/web/package.json`), это
+> расхождение на мажорную версию. PGlite в проекте нет: `@electric-sql/pglite` не объявлен ни в одном
+> `package.json`, а каталог `node_modules/@electric-sql/` пуст. Альтернативы «PostgreSQL или PGlite» не
+> существует — движок один. Числа замерены 2026-08-06 и устаревают; пересчитывай перед тем, как
+> ссылаться. Подробности — `.agents/DATABASE.md`.
 
 ---
 

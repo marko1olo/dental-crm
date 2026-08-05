@@ -19,10 +19,19 @@ import {
 	taxDeductionCertificateMinYear,
 	type Visit,
 	kopecksToNumericString,
-	multiplyKopecks,
 	parseKopecks,
 	sumKopecks,
 } from "@dental/shared";
+/*
+ * Итог строки лечения считается в ОДНОМ месте на весь сервер —
+ * `money/patientDebt.ts`. Своей формулы здесь больше нет: та, что стояла,
+ * округляла КОЛИЧЕСТВО и расходилась с печатной формой того же документа на
+ * 500,00 ₽ (замер у `expectedFinancialLineTotalKopecks` ниже).
+ */
+import {
+	type ChargeLineOutcome,
+	chargeLineOutcome,
+} from "../money/patientDebt.js";
 /*
  * Перевод слов разборщика в слова человека — ОДИН на весь сервер, рядом с домом
  * текстов отказа по кабинету клиники (utils/clinicSessionRefusal.ts).
@@ -844,14 +853,34 @@ type FinancialServicePayloadLine = {
 	totalRub: number;
 };
 
+/**
+ * Итог строки платёжного документа — ТЕМ ЖЕ расчётом, что и везде.
+ *
+ * ЧТО ЗДЕСЬ БЫЛО И СКОЛЬКО ЭТО СТОИЛО. Стояло
+ * `const quantity = Math.max(0, Math.round(line.quantity))`, то есть ворота
+ * документа ОКРУГЛЯЛИ КОЛИЧЕСТВО. Замер 2026-08-05 через `validateDocumentCreation`
+ * на цене 1 000,00 ₽, количестве 1,5 и нулевой скидке: эта функция требовала
+ * итог 2 000,00 ₽, а печатная форма той же сметы
+ * (`renderDocument.ts`, `treatmentPlanItemTotalKopecks`) на тех же данных
+ * печатала 1 500,00 ₽. Расхождение ворот и печати ОДНОГО документа — 500,00 ₽.
+ * Округление количества — это не «приведение к типу»: оно дописывает пациенту
+ * половину услуги по полной цене.
+ *
+ * СТАЛО: расчёт зовётся из ОДНОГО дома (`money/patientDebt.ts`,
+ * `chargeLineOutcome`), где записана и формула `цена × количество − скидка`, и
+ * причина, по которой порядок именно такой (скидка задана строкой позиции
+ * целиком, а не ценой за единицу). Количество вне контракта здесь больше не
+ * угадывается — оно становится ПРИЧИНОЙ ОТКАЗА (`ok: false`), и эту причину
+ * читает человек, а не молча получает документ с чужой суммой.
+ */
 function expectedFinancialLineTotalKopecks(
 	line: FinancialServicePayloadLine,
-): number {
-	const unitKopecks = parseKopecks(line.unitPriceRub);
-	const quantity = Math.max(0, Math.round(line.quantity));
-	const lineSubtotalKopecks = multiplyKopecks(unitKopecks, quantity);
-	const discountKopecks = parseKopecks(line.discountRub);
-	return Math.max(0, lineSubtotalKopecks - discountKopecks);
+): ChargeLineOutcome {
+	return chargeLineOutcome({
+		unitPriceRub: line.unitPriceRub,
+		quantity: line.quantity,
+		discountRub: line.discountRub,
+	});
 }
 
 function financialLinesTotalKopecks(
@@ -865,10 +894,18 @@ function financialServiceLinesMismatchReason(
 	documentLabel: string,
 ): string | null {
 	for (const [index, line] of lines.entries()) {
-		const expectedTotalKopecks = expectedFinancialLineTotalKopecks(line);
+		const expected = expectedFinancialLineTotalKopecks(line);
+		if (!expected.ok) {
+			/*
+			 * Раньше такая строка молча считалась по округлённому количеству и
+			 * уходила в документ. Отказ называет строку и причину целиком: это
+			 * ворота денежного документа, и «примерно та сумма» здесь недопустима.
+			 */
+			return `${documentLabel}: строка ${index + 1} не может быть посчитана. ${expected.reason}`;
+		}
 		const lineTotalKopecks = parseKopecks(line.totalRub);
-		if (lineTotalKopecks !== expectedTotalKopecks) {
-			return `${documentLabel}: строка ${index + 1} должна иметь сумму ${moneyRubText(kopecksToNumericString(expectedTotalKopecks))} руб. по количеству, цене и скидке; передано ${moneyRubText(line.totalRub)} руб.`;
+		if (lineTotalKopecks !== expected.kopecks) {
+			return `${documentLabel}: строка ${index + 1} должна иметь сумму ${moneyKopecksText(expected.kopecks)} руб. по количеству, цене и скидке; передано ${moneyRubText(line.totalRub)} руб.`;
 		}
 	}
 	return null;
@@ -1235,8 +1272,34 @@ export function paidAmountRubForDocument(
 		.reduce((total, payment) => total + payment.amountRub, 0);
 }
 
-function treatmentLineTotal(item: DocumentTreatmentPlanItem): number {
-	return Math.max(0, item.unitPriceRub * item.quantity - item.discountRub);
+/**
+ * Пятая формула итога строки, найденная 2026-08-05 в этом же файле.
+ *
+ * БЫЛО: `Math.max(0, item.unitPriceRub * item.quantity - item.discountRub)` —
+ * рубли в ПЛАВАЮЩЕЙ ТОЧКЕ. Комментарий у `plannedDocumentTotalRub` ниже это уже
+ * признавал словами: «`plannedAmountRub` складывается из позиций плана в
+ * плавающей точке … и такая сумма умеет приносить грязь ниже копейки:
+ * 300.01 + 300.05 + 300.07 даёт 900.1299999999999». Грязь там приводилась к
+ * копейкам на ВЫХОДЕ, то есть после того, как сравнение
+ * `payloadTotalRub !== facts.plannedAmountRub` (`plannedFactsTotalMismatchReason`)
+ * уже отбило законный документ.
+ *
+ * СТАЛО: сложение целыми копейками через тот же единственный дом расчёта, что и
+ * у строк платёжного документа выше. Округления больше нет ни одного: `цена ×
+ * количество − скидка` на целых копейках точна по построению.
+ *
+ * ПОЗИЦИЯ С КОЛИЧЕСТВОМ ВНЕ КОНТРАКТА В СУММУ НЕ ВХОДИТ, и это осознанный
+ * выбор из двух плохих. Бросить отсюда нельзя: функция зовётся при сборе фактов
+ * в `routes/documents/create.ts:88`, и исключение дало бы 500 без объяснения на
+ * КАЖДУЮ попытку оформить документ. Подставить догадку — нельзя тем более:
+ * ровно из-за такой догадки ворота и печать расходились на 500,00 ₽. Поэтому
+ * такая позиция не даёт плану суммы вовсе; документ либо будет отбит проверкой
+ * «итог не совпадает с планом лечения», либо не будет выдан —
+ * `renderDocument.ts`, `documentIssueBlockReason` называет такую позицию прямо.
+ */
+function treatmentLineTotalKopecks(item: DocumentTreatmentPlanItem): number {
+	const outcome = chargeLineOutcome(item);
+	return outcome.ok ? outcome.kopecks : 0;
 }
 
 export function plannedAmountRubForDocument(
@@ -1252,13 +1315,19 @@ export function plannedAmountRubForDocument(
 		return 0;
 	}
 
-	return treatmentPlanItems
-		.filter(
-			(item) =>
-				item.patientId === input.patientId && item.status !== "cancelled",
-		)
-		.filter((item) => !input.visitId || item.visitId === input.visitId)
-		.reduce((total, item) => total + treatmentLineTotal(item), 0);
+	const totalKopecks = sumKopecks(
+		treatmentPlanItems
+			.filter(
+				(item) =>
+					item.patientId === input.patientId && item.status !== "cancelled",
+			)
+			.filter((item) => !input.visitId || item.visitId === input.visitId)
+			.map(treatmentLineTotalKopecks),
+	);
+	// Один перевод копеек в рубли на весь итог, через строку numeric(12, 2):
+	// деление на 100 в цикле вернуло бы плавающую точку, ради ухода от которой
+	// весь расчёт и переведён в целые.
+	return Number(kopecksToNumericString(totalKopecks));
 }
 
 /**

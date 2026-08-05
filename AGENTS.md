@@ -6,7 +6,7 @@
 Before starting any development or refactoring, you MUST load and read the following modular directories:
 - **[Documentation Index](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Entry point to the system.
 - **[System Architecture](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** — Monorepo layout, Fastify API, React client, WebSocket broker.
-- **[Database Registry](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Drizzle ORM over native PostgreSQL 18 on `127.0.0.1:5432` (verified 2026-07-27; data dir `apps/api/dente-db`, NOT PGlite — that package is not installed), migrations, seeding.
+- **[Database Registry](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Drizzle ORM over native PostgreSQL 18.4 on `127.0.0.1:5432` (re-verified 2026-08-06; `@electric-sql/pglite` is not installed). **Data directory is `.data/pg18`, NOT `apps/api/dente-db`** — the older claim was wrong; `dente-db` is a PGlite leftover whose `postmaster.pid` holds PID `-42`. Also covers the `npm ci` trap that deletes the undeclared PostgreSQL binaries, the destructive `db:reset-seed` and the safety gate it acquired on 2026-08-06, migrations, and live RLS state.
 - **[Telephony & Portal Details](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Call alerts, OTP auth portal specs.
 - **[CLI Commands & E2E Smoke Tests](file:///C:/Clinic_MVP/dental-crm/.agents/COMMANDS_AND_TESTS.md)** — Biome commands, compiler gates, smoke scripts.
 - **[UI & State Standards](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)** — Tailwind directives, view preloading, God Context constraints.
