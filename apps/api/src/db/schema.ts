@@ -1726,7 +1726,7 @@ export const visitDiaryRevisions = pgTable("visit_diary_revisions", {
 export const visitExaminationPhotoLinks = pgTable("visit_examination_photo_links", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
-  visitId: uuid("visit_id").notNull(),
+  visitId: text("visit_id").notNull(),
   patientId: uuid("patient_id"),
   photoUrl: text("photo_url").notNull(),
   caption: text("caption"),
@@ -2066,7 +2066,7 @@ export const clinicalAuditLogs = pgTable("clinical_audit_logs", {
   resourceType: text("resource_type"),
   entityType: text("entity_type"),
   resourceId: uuid("resource_id"),
-  entityId: uuid("entity_id"),
+  entityId: text("entity_id"),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   meta: jsonb("meta"),
