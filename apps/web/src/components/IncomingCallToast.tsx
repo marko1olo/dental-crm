@@ -26,7 +26,11 @@ export function IncomingCallToast() {
 	} | null>(null);
 
 	let ctx: any = null;
-	try { ctx = useAppLogicContext(); } catch { /* rendered outside AppLogic provider (e.g. isolated preview): degrade to prop/null */ }
+	try {
+		ctx = useAppLogicContext();
+	} catch (e) {
+		console.warn("IncomingCallToast rendered outside AppLogic provider (e.g. isolated preview): degrading to null.", e);
+	}
 	const dashboard = ctx?.dashboard;
 	const { lastMessage } = useWebsocket(WS_URL);
 

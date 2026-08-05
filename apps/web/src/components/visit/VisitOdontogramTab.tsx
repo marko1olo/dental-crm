@@ -8,7 +8,11 @@ import { realVisitFieldId } from "./visitIdentity";
 
 export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointment?: any; dashboard?: any }) {
 	let ctx: any = null;
-	try { ctx = useAppLogicContext(); } catch { /* rendered outside AppLogic provider: fall back to props */ }
+	try {
+		ctx = useAppLogicContext();
+	} catch (e) {
+		console.warn("VisitOdontogramTab rendered outside AppLogic provider: falling back to props.", e);
+	}
 	const activePatient = props?.activePatient ?? ctx?.activePatient;
 	const activeAppointment = props?.activeAppointment ?? ctx?.activeAppointment;
 	const dashboard = props?.dashboard ?? ctx?.dashboard;

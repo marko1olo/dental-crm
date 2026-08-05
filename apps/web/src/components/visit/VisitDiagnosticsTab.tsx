@@ -35,7 +35,11 @@ import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
 */
 export function VisitDiagnosticsTab(props?: { activePatient?: any }) {
 	let ctx: any = null;
-	try { ctx = useAppLogicContext(); } catch { /* rendered outside AppLogic provider: fall back to props */ }
+	try {
+		ctx = useAppLogicContext();
+	} catch (e) {
+		console.warn("VisitDiagnosticsTab rendered outside AppLogic provider: falling back to props.", e);
+	}
 	const activePatient = props?.activePatient ?? ctx?.activePatient;
 	const workspaceFlags = useWorkspaceProfile();
 
