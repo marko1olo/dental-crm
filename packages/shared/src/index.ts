@@ -7430,17 +7430,26 @@ function findRuleParserLines(
   sectionPrefixes: string[] = [],
   limit = 4
 ): string | null {
-  const sectionBlocks = sectionPrefixes.length
-    ? context.sectionBlocks.filter((item) => lineStartsWithSection(item, sectionPrefixes)).map(cleanRuleParserLine).filter(Boolean)
-    : [];
+  const sectionBlocks: string[] = [];
+  if (sectionPrefixes.length) {
+    for (const item of context.sectionBlocks) {
+      if (lineStartsWithSection(item, sectionPrefixes)) {
+        const cleaned = cleanRuleParserLine(item);
+        if (cleaned) sectionBlocks.push(cleaned);
+      }
+    }
+  }
+
   const searchLines = sectionBlocks.length ? context.unscopedLines : context.allLines;
 
   const excludedPrefixes = allSectionPrefixes.filter((prefix) => !sectionPrefixes.includes(prefix));
-  const matchedLines = searchLines
-    .filter((item) => !lineStartsWithSection(item, excludedPrefixes))
-    .filter((item) => includesAnyText(item.toLowerCase(), tokens))
-    .map(cleanRuleParserLine)
-    .filter(Boolean);
+  const matchedLines: string[] = [];
+  for (const item of searchLines) {
+    if (!lineStartsWithSection(item, excludedPrefixes) && includesAnyText(item.toLowerCase(), tokens)) {
+      const cleaned = cleanRuleParserLine(item);
+      if (cleaned) matchedLines.push(cleaned);
+    }
+  }
   const mergedLines = uniqueStrings([...sectionBlocks, ...matchedLines]).slice(0, limit);
   return mergedLines.length ? mergedLines.join(". ") : null;
 }
