@@ -214,15 +214,19 @@ describe("автоматические напоминания о приёме", 
 		const first = await scheduleAppointmentReminders({ organizationId: ORG_ID, now });
 		assert.equal(first.queued, 1, JSON.stringify(first));
 
-		const rows = await db
-			.select()
-			.from(communicationOutbox)
-			.where(
-				and(
-					eq(communicationOutbox.organizationId, ORG_ID),
-					eq(communicationOutbox.dedupeKey, `reminder:${APPOINTMENT_ID}:24`)
+		// Чтение тоже под контекстом: без него выборка пуста молча, и «ровно одно
+		// напоминание» краснело бы на нуле строк, а не на дефекте планировщика.
+		const rows = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select()
+				.from(communicationOutbox)
+				.where(
+					and(
+						eq(communicationOutbox.organizationId, ORG_ID),
+						eq(communicationOutbox.dedupeKey, `reminder:${APPOINTMENT_ID}:24`)
+					)
 				)
-			);
+		);
 		assert.equal(rows.length, 1);
 
 		const reminder = rows[0];

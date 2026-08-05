@@ -162,81 +162,102 @@ describe("журнал обращений пациента", () => {
 			// иначе оставляет обращения, и следующий прогон считает их своими.
 			await purgeFixtures();
 
-			await db
-				.insert(organizations)
-				.values([
-					{ id: ORG_MINE, name: "Клиника журнала обращений" },
-					{ id: ORG_FOREIGN, name: "Клиника соседа" },
-				])
-				.onConflictDoNothing();
-			await db
-				.insert(users)
-				.values({ id: DOCTOR_ID, organizationId: ORG_MINE, fullName: DOCTOR_NAME, role: "doctor" })
-				.onConflictDoNothing();
-			await db
-				.insert(patients)
-				.values([
-					{ id: PATIENT_MAIN, organizationId: ORG_MINE, fullName: "Основной Пациент" },
-					{ id: PATIENT_NEIGHBOUR, organizationId: ORG_MINE, fullName: "Соседняя Карта" },
-					{ id: PATIENT_FOREIGN, organizationId: ORG_FOREIGN, fullName: "Пациент Соседней Клиники" },
-				])
-				.onConflictDoNothing();
+			/*
+			 * Сев разложен по двум тенант-контекстам. Под FORCE RLS в WITH CHECK
+			 * тенант-таблиц дизъюнкта обхода нет: вставка без `app.current_tenant`
+			 * отвергается кодом 42501, а вставка ЧУЖОЙ организации под своим
+			 * контекстом — тем же кодом. Поэтому массив из двух клиник в одном
+			 * `values([...])` разделён: одна клиника — один контекст.
+			 */
+			await withFixtureTenant(ORG_MINE, async () => {
+				await db
+					.insert(organizations)
+					.values({ id: ORG_MINE, name: "Клиника журнала обращений" })
+					.onConflictDoNothing();
+				await db
+					.insert(users)
+					.values({ id: DOCTOR_ID, organizationId: ORG_MINE, fullName: DOCTOR_NAME, role: "doctor" })
+					.onConflictDoNothing();
+				await db
+					.insert(patients)
+					.values([
+						{ id: PATIENT_MAIN, organizationId: ORG_MINE, fullName: "Основной Пациент" },
+						{ id: PATIENT_NEIGHBOUR, organizationId: ORG_MINE, fullName: "Соседняя Карта" },
+					])
+					.onConflictDoNothing();
 
-			await db
-				.insert(communicationEvents)
-				.values([
-					{
-						id: EVENT_NEWEST,
-						organizationId: ORG_MINE,
-						patientId: PATIENT_MAIN,
-						actorUserId: DOCTOR_ID,
-						channel: "sms",
-						direction: "outbound",
-						status: "delivered",
-						message: MESSAGE_NEWEST,
-						createdAt: AT_NEWEST,
-					},
-					{
-						id: EVENT_INBOUND,
-						organizationId: ORG_MINE,
-						patientId: PATIENT_MAIN,
-						channel: "telegram",
-						direction: "inbound",
-						status: "completed",
-						message: MESSAGE_INBOUND,
-						createdAt: AT_INBOUND,
-					},
-					{
-						id: EVENT_NEEDS_CALL,
-						organizationId: ORG_MINE,
-						patientId: PATIENT_MAIN,
-						channel: "phone",
-						direction: "outbound",
-						status: "needs_call",
-						message: MESSAGE_NEEDS_CALL,
-						createdAt: AT_NEEDS_CALL,
-					},
-					{
-						id: EVENT_SKIPPED,
-						organizationId: ORG_MINE,
-						patientId: PATIENT_MAIN,
-						channel: "sms",
-						direction: "outbound",
-						status: "skipped",
-						message: MESSAGE_SKIPPED,
-						createdAt: AT_SKIPPED,
-					},
-					{
-						id: EVENT_NEIGHBOUR,
-						organizationId: ORG_MINE,
-						patientId: PATIENT_NEIGHBOUR,
-						channel: "sms",
-						direction: "outbound",
-						status: "delivered",
-						message: MESSAGE_NEIGHBOUR,
-						createdAt: AT_INBOUND,
-					},
-					{
+				await db
+					.insert(communicationEvents)
+					.values([
+						{
+							id: EVENT_NEWEST,
+							organizationId: ORG_MINE,
+							patientId: PATIENT_MAIN,
+							actorUserId: DOCTOR_ID,
+							channel: "sms",
+							direction: "outbound",
+							status: "delivered",
+							message: MESSAGE_NEWEST,
+							createdAt: AT_NEWEST,
+						},
+						{
+							id: EVENT_INBOUND,
+							organizationId: ORG_MINE,
+							patientId: PATIENT_MAIN,
+							channel: "telegram",
+							direction: "inbound",
+							status: "completed",
+							message: MESSAGE_INBOUND,
+							createdAt: AT_INBOUND,
+						},
+						{
+							id: EVENT_NEEDS_CALL,
+							organizationId: ORG_MINE,
+							patientId: PATIENT_MAIN,
+							channel: "phone",
+							direction: "outbound",
+							status: "needs_call",
+							message: MESSAGE_NEEDS_CALL,
+							createdAt: AT_NEEDS_CALL,
+						},
+						{
+							id: EVENT_SKIPPED,
+							organizationId: ORG_MINE,
+							patientId: PATIENT_MAIN,
+							channel: "sms",
+							direction: "outbound",
+							status: "skipped",
+							message: MESSAGE_SKIPPED,
+							createdAt: AT_SKIPPED,
+						},
+						{
+							id: EVENT_NEIGHBOUR,
+							organizationId: ORG_MINE,
+							patientId: PATIENT_NEIGHBOUR,
+							channel: "sms",
+							direction: "outbound",
+							status: "delivered",
+							message: MESSAGE_NEIGHBOUR,
+							createdAt: AT_INBOUND,
+						},
+					])
+					.onConflictDoNothing();
+			});
+
+			// Клиника соседа — свой контекст: её строки этому арендатору не
+			// принадлежат, и политика записи их бы не пропустила.
+			await withFixtureTenant(ORG_FOREIGN, async () => {
+				await db
+					.insert(organizations)
+					.values({ id: ORG_FOREIGN, name: "Клиника соседа" })
+					.onConflictDoNothing();
+				await db
+					.insert(patients)
+					.values({ id: PATIENT_FOREIGN, organizationId: ORG_FOREIGN, fullName: "Пациент Соседней Клиники" })
+					.onConflictDoNothing();
+				await db
+					.insert(communicationEvents)
+					.values({
 						id: EVENT_FOREIGN,
 						organizationId: ORG_FOREIGN,
 						patientId: PATIENT_FOREIGN,
@@ -245,9 +266,9 @@ describe("журнал обращений пациента", () => {
 						status: "delivered",
 						message: MESSAGE_FOREIGN,
 						createdAt: AT_INBOUND,
-					},
-				])
-				.onConflictDoNothing();
+					})
+					.onConflictDoNothing();
+			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;
@@ -322,9 +343,14 @@ describe("журнал обращений пациента", () => {
 		assert.equal(log.shownEvents, 4);
 		assert.equal(log.truncated, false);
 
-		const counted = await db.execute(
-			sql`select count(*)::int as n from communication_events
-			     where organization_id = ${ORG_MINE} and patient_id = ${PATIENT_MAIN}`,
+		// Сверка идёт под тем же арендатором, под которым ходит маршрут. Без
+		// контекста SELECT не видит ни одной строки клиники и вернул бы 0, то есть
+		// «маршрут 4, база 0» говорило бы о политике, а не о связи по пациенту.
+		const counted = await withFixtureTenant(ORG_MINE, async () =>
+			db.execute(
+				sql`select count(*)::int as n from communication_events
+				     where organization_id = ${ORG_MINE} and patient_id = ${PATIENT_MAIN}`,
+			),
 		);
 		const inDatabase = (counted.rows[0] as { n: number }).n;
 		assert.equal(log.totalEvents, inDatabase, `маршрут ${log.totalEvents}, база ${inDatabase}`);
