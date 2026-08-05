@@ -79,9 +79,15 @@ const userId = crypto.randomUUID();
 const clinicName = "DENTE Стоматология";
 const loginId = "clinic@example.com";
 const ownerEmail = "owner@clinic.com";
-const password = "dente2026";
 const ownerName = "Администратор клиники";
-const ownerPin = "1234";
+
+const password = process.env.INITIAL_ADMIN_PASSWORD;
+const ownerPin = process.env.INITIAL_ADMIN_PIN;
+
+if (!password || !ownerPin) {
+	console.error("[SETUP] Missing required environment variables: INITIAL_ADMIN_PASSWORD and/or INITIAL_ADMIN_PIN");
+	process.exit(1);
+}
 
 const passwordHash = await hashCredential(password);
 const pinHash = await hashCredential(ownerPin);
@@ -104,6 +110,6 @@ console.log("[SETUP] Owner user created:", ownerName, "| email:", ownerEmail);
 
 await (db as any).close();
 console.log("[SETUP] Done!");
-console.log("  Clinic login: clinic@example.com / dente2026");
-console.log("  Staff login:  owner@clinic.com / dente2026");
-console.log("  PIN pad:      1234");
+console.log("  Clinic login: clinic@example.com / [INITIAL_ADMIN_PASSWORD]");
+console.log("  Staff login:  owner@clinic.com / [INITIAL_ADMIN_PASSWORD]");
+console.log("  PIN pad:      [INITIAL_ADMIN_PIN]");
