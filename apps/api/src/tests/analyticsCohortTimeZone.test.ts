@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { eq, sql } from "drizzle-orm";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { db } from "../db/client.js";
 import { clinics, organizations, patients, payments } from "../db/schema.js";
 import { RU_MONTHS, registerAnalyticsRoutes } from "../routes/analytics.js";
 import { runBiAnalyticsAggregation } from "../scripts/cronAnalyticsWorker.js";
 import { computeBiAnalyticsSnapshots } from "../services/biAnalyticsWorker.js";
 import { currentMonthPeriod } from "../services/reports/managerReports.js";
+import { withFixtureTenant } from "./support/fixtureOrganizations.js";
+import { createTenantTestApp } from "./support/tenantTestApp.js";
 
 /**
  * МЕСЯЦ КОГОРТЫ — КАЛЕНДАРНОЕ ПОНЯТИЕ ПОЯСА КЛИНИКИ, А НЕ ПОЯСА СЕССИИ БАЗЫ.
@@ -77,12 +79,20 @@ function monthKeyIn(zone: string, at: Date): string {
 	return `${parts.get("year")}-${parts.get("month")}`;
 }
 
+/**
+ * Уборка идёт под тенант-контекстом клиники: под принудительным RLS `DELETE` без
+ * `app.current_tenant` не видит ни одной своей строки и снимает НОЛЬ, ошибкой это
+ * не считается. Прежняя уборка отчиталась бы об успехе, оставив в живой базе и
+ * платёж, и пациента, и клинику с чужим поясом +12.
+ */
 async function removeFixtureRows(): Promise<void> {
-	await db.execute(sql`delete from bi_analytics_snapshots where organization_id = ${ORG_ID}`);
-	await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
-	await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-	await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	await withFixtureTenant(ORG_ID, async () => {
+		await db.execute(sql`delete from bi_analytics_snapshots where organization_id = ${ORG_ID}`);
+		await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
+		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
+		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	});
 }
 
 describe("месяц когорты берётся в поясе клиники", () => {

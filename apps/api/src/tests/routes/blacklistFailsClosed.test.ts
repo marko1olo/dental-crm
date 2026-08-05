@@ -107,16 +107,24 @@ describe("чёрный список отвечает в безопасную с�
 
 	test("внесённый в чёрный список пациент остаётся запрещённым", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
-		assert.equal(await isPatientBookingBlocked(ORG_ID, PATIENT_ID), true);
+		// В бою эта проверка вызывается из createAppointmentInDb уже под
+		// `withTenantCtx`. Прямой вызов без контекста читал бы ноль строк и молча
+		// отвечал «не запрещён» — то самое, от чего файл и сторожит.
+		assert.equal(
+			await withFixtureTenant(ORG_ID, async () => isPatientBookingBlocked(ORG_ID, PATIENT_ID)),
+			true
+		);
 	});
 
 	test("пациент без запрета остаётся разрешённым", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
-		await db
-			.delete(patientArchiveReasonsAndBlacklists)
-			.where(eq(patientArchiveReasonsAndBlacklists.organizationId, ORG_ID));
+		await withFixtureTenant(ORG_ID, async () => {
+			await db
+				.delete(patientArchiveReasonsAndBlacklists)
+				.where(eq(patientArchiveReasonsAndBlacklists.organizationId, ORG_ID));
+		});
 		assert.equal(
-			await isPatientBookingBlocked(ORG_ID, PATIENT_ID),
+			await withFixtureTenant(ORG_ID, async () => isPatientBookingBlocked(ORG_ID, PATIENT_ID)),
 			false,
 			"без строки запрета запись обязана остаться доступной — иначе клиника не сможет записать никого"
 		);

@@ -90,16 +90,22 @@ describe("создание карты пациента: запрет дубле�
 			// своей снимается и общая клиника прежнего блока — она осталась
 			// именно от таких обрывов и больше никому не принадлежит.
 			await purgeFixtureOrganizations([ORG_ID, ...LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS]);
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника запрета дублей" });
-			// Без onConflictDoNothing: место расчищено выше, и конфликт первичного
-			// ключа здесь означал бы, что фикстура сеет не туда, куда думает.
-			// Раньше он молчал, и тест шёл с чужой строкой вместо своей.
-			await db.insert(patients).values({
-				id: EXISTING_PATIENT_ID,
-				organizationId: ORG_ID,
-				fullName: EXISTING_NAME,
-				birthDate: EXISTING_BIRTH_DATE,
-				phone: EXISTING_PHONE
+			// Сев под тенант-контекстом клиники. Под FORCE RLS в WITH CHECK политик
+			// тенант-таблиц дизъюнкта обхода нет, поэтому вставка без
+			// `app.current_tenant` отвергается кодом 42501 и на организации, и на
+			// пациенте.
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника запрета дублей" });
+				// Без onConflictDoNothing: место расчищено выше, и конфликт первичного
+				// ключа здесь означал бы, что фикстура сеет не туда, куда думает.
+				// Раньше он молчал, и тест шёл с чужой строкой вместо своей.
+				await db.insert(patients).values({
+					id: EXISTING_PATIENT_ID,
+					organizationId: ORG_ID,
+					fullName: EXISTING_NAME,
+					birthDate: EXISTING_BIRTH_DATE,
+					phone: EXISTING_PHONE
+				});
 			});
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;
@@ -133,7 +139,11 @@ describe("создание карты пациента: запрет дубле�
 		assert.match(String(body.message), /телефон или дату рождения/);
 
 		// Вторая строка в базе не появилась — проверяем базу, а не только ответ.
-		const rows = await db.select({ id: patients.id }).from(patients).where(eq(patients.organizationId, ORG_ID));
+		// Чтение под контекстом клиники: без него политика скрыла бы и первую
+		// карту, и «в базе 0 карт вместо одной» говорило бы о RLS, а не о запрете.
+		const rows = await withFixtureTenant(ORG_ID, async () =>
+			db.select({ id: patients.id }).from(patients).where(eq(patients.organizationId, ORG_ID))
+		);
 		assert.equal(rows.length, 1, `в базе ${rows.length} карт вместо одной`);
 	});
 

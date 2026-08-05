@@ -19,16 +19,40 @@
  *     ключ молча дополнялся нулями.
  *  8. Параметры подключения были зашиты ("-U dental -d dental_crm") и не
  *     совпадали бы с DATABASE_URL — копия снималась бы не с той базы.
+ *  9. Успех settled по событию 'finish' файлового потока, а код возврата
+ *     pg_dump на тот момент был ещё null — и проверка
+ *     `if (dumpExitCode !== 0 && dumpExitCode !== null) return;` пропускала
+ *     этот null дальше. Измерено 2026-08-06 на живой базе: pg_dump упал с
+ *     кодом 1 на первой же таблице под FORCE RLS, успев отдать 239 573 байта
+ *     схемы, 'finish' пришёл раньше 'close' во всех 5 прогонах, и функция
+ *     вернула success: true. Обработчик кода возврата отрабатывал позже, но
+ *     settled уже стоял, и его отказ выбрасывался. Проверка кода возврата
+ *     была мёртвым кодом.
+ * 10. Порог «пустого дампа» стоял на IV_LENGTH + 64 = 80 байт. Дамп ПУСТОЙ
+ *     базы (одна схема, ноль строк) той же командой весит 495 904 байта —
+ *     порог мимо цели в шесть тысяч раз. Оборванная копия из пункта 9
+ *     (239 600 байт) проходила его свободно, восстанавливалась без единой
+ *     ошибки и давала 148 таблиц и НОЛЬ строк клинических данных. Размер
+ *     файла не отличает схему от копии; отличает только содержимое.
  */
 
 import { spawn } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { StringDecoder } from "node:string_decoder";
+import { Transform, type TransformCallback } from "node:stream";
 
 const ENCRYPTION_ALGORITHM = "aes-256-cbc";
 const IV_LENGTH = 16;
 const REQUIRED_KEY_BYTES = 32;
+
+/** Заголовок секции данных в текстовом дампе pg_dump. */
+const COPY_HEADER_PATTERN = /^COPY\s+(\S+)\s*\([^)]*\)\s+FROM\s+stdin;\s*$/;
+/** Маркер конца секции данных COPY. Внутри данных `\` экранируется как `\\`. */
+const COPY_TERMINATOR = "\\.";
+/** Последняя строка, которую pg_dump печатает, только успешно закончив работу. */
+const DUMP_COMPLETION_MARKER = "PostgreSQL database dump complete";
 
 /** Публичное значение из репозитория — использовать его нельзя. */
 const PUBLIC_SAMPLE_KEY = "DUMMY_SAMPLE_KEY_NOT_A_REAL_SECRET";

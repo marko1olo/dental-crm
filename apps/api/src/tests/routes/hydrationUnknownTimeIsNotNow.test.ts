@@ -143,53 +143,58 @@ before(async () => {
 	// не доходит, и его строки следующий прогон читает как данные клиники.
 	await purgeFixtureOrganizations(FIXTURE_ORGANIZATION_IDS);
 
-	await db.insert(organizations).values({
-		id: ORGANIZATION_ID,
-		name: "Сторож нечитаемого времени",
-	});
-	await db.insert(patients).values([
-		{ id: PATIENT_OK_ID, organizationId: ORGANIZATION_ID, fullName: "Читаемов Пациент Временович" },
-		{ id: PATIENT_BROKEN_ID, organizationId: ORGANIZATION_ID, fullName: "Нечитаемов Пациент Временович" },
-	]);
-	await db.insert(appointments).values([
-		{
-			id: APPOINTMENT_OK_ID,
-			organizationId: ORGANIZATION_ID,
-			patientId: PATIENT_OK_ID,
-			status: "planned",
-			startsAt: new Date(OK_STARTS_AT),
-			endsAt: new Date(OK_ENDS_AT),
-			reason: "контроль пломбы 36",
-		},
-		{
-			id: APPOINTMENT_BROKEN_ID,
-			organizationId: ORGANIZATION_ID,
-			patientId: PATIENT_OK_ID,
-			status: "planned",
-			startsAt: new Date(OK_STARTS_AT),
-			endsAt: new Date(OK_ENDS_AT),
-			reason: "снятие швов",
-		},
-	]);
-
 	/*
-	 * Нечитаемое время ставится ОТДЕЛЬНЫМ SQL, а не через drizzle: `infinity` в JS
-	 * Date не существует, поэтому передать его слоем ORM нечем — и именно поэтому
-	 * собственные записывающие пути приложения такую строку не создают. Порча
-	 * приходит из восстановления дампа чужой системы и из правок SQL руками.
+	 * Весь сев — под тенант-контекстом клиники. Под принудительным RLS INSERT без
+	 * него отвергается кодом 42501, а UPDATE тихо трогает ноль строк: порча времени
+	 * не встала бы, и сторож охранял бы пустое место, оставаясь зелёным.
 	 */
-	await db.execute(sql`
-		update appointments set starts_at = 'infinity', ends_at = 'infinity'
-		 where id = ${APPOINTMENT_BROKEN_ID}::uuid`);
-	await db.execute(sql`
-		update patients set created_at = 'infinity'
-		 where id = ${PATIENT_BROKEN_ID}::uuid`);
+	await withFixtureTenant(ORGANIZATION_ID, async () => {
+		await db.insert(organizations).values({
+			id: ORGANIZATION_ID,
+			name: "Сторож нечитаемого времени",
+		});
+		await db.insert(patients).values([
+			{ id: PATIENT_OK_ID, organizationId: ORGANIZATION_ID, fullName: "Читаемов Пациент Временович" },
+			{ id: PATIENT_BROKEN_ID, organizationId: ORGANIZATION_ID, fullName: "Нечитаемов Пациент Временович" },
+		]);
+		await db.insert(appointments).values([
+			{
+				id: APPOINTMENT_OK_ID,
+				organizationId: ORGANIZATION_ID,
+				patientId: PATIENT_OK_ID,
+				status: "planned",
+				startsAt: new Date(OK_STARTS_AT),
+				endsAt: new Date(OK_ENDS_AT),
+				reason: "контроль пломбы 36",
+			},
+			{
+				id: APPOINTMENT_BROKEN_ID,
+				organizationId: ORGANIZATION_ID,
+				patientId: PATIENT_OK_ID,
+				status: "planned",
+				startsAt: new Date(OK_STARTS_AT),
+				endsAt: new Date(OK_ENDS_AT),
+				reason: "снятие швов",
+			},
+		]);
 
-	app = Fastify();
-	// Тот же хук, что в apps/api/src/server.ts: он наполняет личность запроса.
-	app.addHook("onRequest", async (request) => {
-		getRequestIdentity(request);
+		/*
+		 * Нечитаемое время ставится ОТДЕЛЬНЫМ SQL, а не через drizzle: `infinity` в JS
+		 * Date не существует, поэтому передать его слоем ORM нечем — и именно поэтому
+		 * собственные записывающие пути приложения такую строку не создают. Порча
+		 * приходит из восстановления дампа чужой системы и из правок SQL руками.
+		 */
+		await db.execute(sql`
+			update appointments set starts_at = 'infinity', ends_at = 'infinity'
+			 where id = ${APPOINTMENT_BROKEN_ID}::uuid`);
+		await db.execute(sql`
+			update patients set created_at = 'infinity'
+			 where id = ${PATIENT_BROKEN_ID}::uuid`);
 	});
+
+	// Оба хука изоляции боевого server.ts: он наполняет личность запроса и
+	// оборачивает обработчик в `withTenantCtx`, без которого сводка читает ноль строк.
+	app = createTenantTestApp();
 	await registerDashboardRoutes(app);
 	await app.ready();
 });
@@ -197,12 +202,16 @@ before(async () => {
 after(async () => {
 	await app?.close();
 	await purgeFixtureOrganizations(FIXTURE_ORGANIZATION_IDS);
-	const leftovers = await db.execute<{ rows_left: number }>(sql`
-		select (
-			(select count(*) from organizations where id = ${ORGANIZATION_ID}::uuid)
-			+ (select count(*) from appointments where organization_id = ${ORGANIZATION_ID}::uuid)
-			+ (select count(*) from patients where organization_id = ${ORGANIZATION_ID}::uuid)
-		)::int as rows_left`);
+	// Пересчёт остатка — под тенант-контекстом: без него политика прячет от счёта
+	// любые уцелевшие строки, и проверка «мусора не осталось» стала бы тождеством.
+	const leftovers = await withFixtureTenant(ORGANIZATION_ID, async () =>
+		db.execute<{ rows_left: number }>(sql`
+			select (
+				(select count(*) from organizations where id = ${ORGANIZATION_ID}::uuid)
+				+ (select count(*) from appointments where organization_id = ${ORGANIZATION_ID}::uuid)
+				+ (select count(*) from patients where organization_id = ${ORGANIZATION_ID}::uuid)
+			)::int as rows_left`),
+	);
 	assert.equal(
 		leftovers.rows[0]?.rows_left,
 		0,

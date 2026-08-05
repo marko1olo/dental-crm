@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { communicationCampaigns } from "../../db/communicationsSchema.js";
@@ -15,6 +15,8 @@ import {
 } from "../../db/schema.js";
 import { registerCommunicationOutboxRoutes } from "../../routes/communicationsOutbox.js";
 import { estimateAudienceCost, resolveAudience } from "../../services/communications/audience.js";
+import { withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /**
  * Рассылки: отбор получателей, предпросмотр, запуск, отмена.
