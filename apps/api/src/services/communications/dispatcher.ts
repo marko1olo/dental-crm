@@ -567,35 +567,6 @@ async function countSentToday(organizationId: string, patientIds: string[], now:
 	return counts;
 }
 
-async function markSuppressed(row: OutboxRow, reason: string, now: Date): Promise<void> {
-	await db
-		.update(communicationOutbox)
-		.set({
-			status: "suppressed",
-			lockedAt: null,
-			lockedBy: null,
-			lastErrorClass: "suppressed",
-			lastErrorMessage: reason,
-			updatedAt: now
-		})
-		.where(eq(communicationOutbox.id, row.id));
-}
-
-async function markDeferred(row: OutboxRow, notBefore: Date, reason: string, now: Date): Promise<void> {
-	await db
-		.update(communicationOutbox)
-		.set({
-			status: "queued",
-			lockedAt: null,
-			lockedBy: null,
-			nextAttemptAt: notBefore,
-			lastErrorClass: "deferred",
-			lastErrorMessage: reason,
-			updatedAt: now
-		})
-		.where(eq(communicationOutbox.id, row.id));
-}
-
 /**
  * Что стало с одной строкой очереди. Ровно один из этих итогов на строку —
  * счётчики отчёта складываются в `claimed` без остатка.
@@ -603,8 +574,8 @@ async function markDeferred(row: OutboxRow, notBefore: Date, reason: string, now
 export type RowOutcome = "sent" | "retried" | "failed" | "suppressed" | "not_configured" | "deferred";
 
 /**
- * Одна строка очереди: проверки, отправка, запись итога. Возвращает, что
- * именно произошло, — отчёт собирается вызывающим.
+ * Одна строка очереди: проверки, отправка, формирование итога. Возвращает, что
+ * именно произошло и какие поля нужно обновить в базе.
  */
 async function processRow(
 	row: OutboxRow,
@@ -615,14 +586,28 @@ async function processRow(
 		readonly sentToday: Map<string, number>;
 		readonly now: Date;
 	}
-): Promise<RowOutcome> {
+): Promise<{ outcome: RowOutcome; update: typeof communicationOutbox.$inferInsert }> {
 	const { credentials, settings, now } = context;
 	const channel = row.channel as CommunicationChannelCode;
 	const scope = row.scope as CommunicationConsentScope;
 
+	const makeUpdate = (patch: Partial<typeof communicationOutbox.$inferInsert>) => ({
+		...row,
+		...patch,
+		updatedAt: now
+	});
+
 	if (!isMachineDeliverableChannel(channel)) {
-		await markSuppressed(row, "Канал не отправляется автоматически.", now);
-		return "suppressed";
+		return {
+			outcome: "suppressed",
+			update: makeUpdate({
+				status: "suppressed",
+				lockedAt: null,
+				lockedBy: null,
+				lastErrorClass: "suppressed",
+				lastErrorMessage: "Канал не отправляется автоматически."
+			})
+		};
 	}
 
 	/*
@@ -649,8 +634,16 @@ async function processRow(
 		if (!isTransactionalReply) {
 			const consent = decideConsent(context.consents.get(row.patientId) ?? [], channel, scope);
 			if (!consent.allowed) {
-				await markSuppressed(row, consent.reason ?? "Нет согласия на сообщения по этому каналу.", now);
-				return "suppressed";
+				return {
+					outcome: "suppressed",
+					update: makeUpdate({
+						status: "suppressed",
+						lockedAt: null,
+						lockedBy: null,
+						lastErrorClass: "suppressed",
+						lastErrorMessage: consent.reason ?? "Нет согласия на сообщения по этому каналу."
+					})
+				};
 			}
 		}
 
@@ -658,12 +651,16 @@ async function processRow(
 		// цикла, если пациент отправит «СТОП» десять раз подряд.
 		const alreadySent = context.sentToday.get(row.patientId) ?? 0;
 		if (alreadySent >= settings.dailyLimitPerPatient) {
-			await markSuppressed(
-				row,
-				`Достигнут суточный предел сообщений пациенту (${settings.dailyLimitPerPatient}).`,
-				now
-			);
-			return "suppressed";
+			return {
+				outcome: "suppressed",
+				update: makeUpdate({
+					status: "suppressed",
+					lockedAt: null,
+					lockedBy: null,
+					lastErrorClass: "suppressed",
+					lastErrorMessage: `Достигнут суточный предел сообщений пациенту (${settings.dailyLimitPerPatient}).`
+				})
+			};
 		}
 	}
 
@@ -671,12 +668,29 @@ async function processRow(
 	// ждёт ответа сейчас, а не в девять утра.
 	const quietHours = isTransactionalReply ? ({ action: "send" } as const) : decideQuietHours(now, scope, settings);
 	if (quietHours.action === "suppress") {
-		await markSuppressed(row, quietHours.reason, now);
-		return "suppressed";
+		return {
+			outcome: "suppressed",
+			update: makeUpdate({
+				status: "suppressed",
+				lockedAt: null,
+				lockedBy: null,
+				lastErrorClass: "suppressed",
+				lastErrorMessage: quietHours.reason
+			})
+		};
 	}
 	if (quietHours.action === "defer") {
-		await markDeferred(row, quietHours.notBefore, "Тихие часы: отправка отложена до утра.", now);
-		return "deferred";
+		return {
+			outcome: "deferred",
+			update: makeUpdate({
+				status: "queued",
+				lockedAt: null,
+				lockedBy: null,
+				nextAttemptAt: quietHours.notBefore,
+				lastErrorClass: "suppressed",
+				lastErrorMessage: "Тихие часы: отправка отложена до утра."
+			})
+		};
 	}
 
 	const attempt = row.attempts + 1;
@@ -692,9 +706,12 @@ async function processRow(
 	);
 
 	if (result.ok) {
-		await db
-			.update(communicationOutbox)
-			.set({
+		if (row.patientId) {
+			context.sentToday.set(row.patientId, (context.sentToday.get(row.patientId) ?? 0) + 1);
+		}
+		return {
+			outcome: "sent",
+			update: makeUpdate({
 				status: "sent",
 				attempts: attempt,
 				sentAt: now,
@@ -703,14 +720,9 @@ async function processRow(
 				providerMessageId: result.providerMessageId,
 				segments: result.segments,
 				lastErrorClass: null,
-				lastErrorMessage: null,
-				updatedAt: now
+				lastErrorMessage: null
 			})
-			.where(eq(communicationOutbox.id, row.id));
-		if (row.patientId) {
-			context.sentToday.set(row.patientId, (context.sentToday.get(row.patientId) ?? 0) + 1);
-		}
-		return "sent";
+		};
 	}
 
 	const outcome = decideAfterFailure({
@@ -723,44 +735,32 @@ async function processRow(
 	});
 
 	if (outcome.kind === "retry") {
-		await db
-			.update(communicationOutbox)
-			.set({
+		return {
+			outcome: "retried",
+			update: makeUpdate({
 				status: "queued",
 				attempts: attempt,
 				lockedAt: null,
 				lockedBy: null,
 				nextAttemptAt: new Date(now.getTime() + outcome.delaySeconds * 1000),
 				lastErrorClass: outcome.errorClass,
-				lastErrorMessage: outcome.errorMessage,
-				updatedAt: now
+				lastErrorMessage: outcome.errorMessage
 			})
-			.where(eq(communicationOutbox.id, row.id));
-		return "retried";
+		};
 	}
 
-	await db
-		.update(communicationOutbox)
-		.set({
+	const finalOutcome = outcome.kind === "suppressed" ? "not_configured" : "failed";
+	return {
+		outcome: finalOutcome,
+		update: makeUpdate({
 			status: outcome.kind === "suppressed" ? "suppressed" : "failed",
 			attempts: attempt,
 			lockedAt: null,
 			lockedBy: null,
 			lastErrorClass: outcome.errorClass,
-			lastErrorMessage: outcome.errorMessage,
-			updatedAt: now
+			lastErrorMessage: outcome.errorMessage
 		})
-		.where(eq(communicationOutbox.id, row.id));
-
-	/*
-	 * В базу пишется статус `suppressed`, а в отчёт — `not_configured`. Это не
-	 * рассинхронизация: `decideAfterFailure` возвращает `suppressed` только по
-	 * `isSuppressingErrorClass` (deliveryPolicy.ts:191-193), то есть строго при
-	 * `not_configured`. Класс ошибки остаётся в строке (`lastErrorClass`), а
-	 * отчёт называет причину отдельным счётчиком, чтобы «шлюз не настроен» не
-	 * пряталось среди осознанных отказов.
-	 */
-	return outcome.kind === "suppressed" ? "not_configured" : "failed";
+	};
 }
 
 /**
@@ -816,10 +816,12 @@ export async function dispatchDueMessages(options: DispatchOptions = {}): Promis
 			countSentToday(organizationId, patientIds, now)
 		]);
 
-		const unknownFailures = new Map<string, string[]>();
+		const outboxUpdates: (typeof communicationOutbox.$inferInsert)[] = [];
+
 		for (const row of rows) {
 			try {
-				const outcome = await processRow(row, { credentials, settings, consents, sentToday, now });
+				const { outcome, update } = await processRow(row, { credentials, settings, consents, sentToday, now });
+				outboxUpdates.push(update);
 				/*
 				 * Switch, а не цепочка if/else с «остальное — deferred». Прежняя
 				 * цепочка сваливала в `deferred` любой итог, которого не знала: добавь
@@ -855,28 +857,37 @@ export async function dispatchDueMessages(options: DispatchOptions = {}): Promis
 				// навсегда: возвращаем её в очередь с записанной причиной.
 				report.retried += 1;
 				const errorMessage = error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500);
-				const failureGroup = unknownFailures.get(errorMessage) ?? [];
-				failureGroup.push(row.id);
-				unknownFailures.set(errorMessage, failureGroup);
+				outboxUpdates.push({
+					...row,
+					status: "queued",
+					attempts: row.attempts + 1,
+					lockedAt: null,
+					lockedBy: null,
+					nextAttemptAt: new Date(now.getTime() + 60_000),
+					lastErrorClass: "unknown",
+					lastErrorMessage: errorMessage,
+					updatedAt: now
+				});
 			}
 		}
 
-		for (const [errorMessage, ids] of unknownFailures) {
-			if (ids.length > 0) {
-				await db
-					.update(communicationOutbox)
-					.set({
-						status: "queued",
-						attempts: sql`${communicationOutbox.attempts} + 1`,
-						lockedAt: null,
-						lockedBy: null,
-						nextAttemptAt: new Date(now.getTime() + 60_000),
-						lastErrorClass: "unknown",
-						lastErrorMessage: errorMessage,
-						updatedAt: now
-					})
-					.where(inArray(communicationOutbox.id, ids));
-			}
+		if (outboxUpdates.length > 0) {
+			await db.insert(communicationOutbox).values(outboxUpdates).onConflictDoUpdate({
+				target: communicationOutbox.id,
+				set: {
+					status: sql`excluded.status`,
+					attempts: sql`excluded.attempts`,
+					sentAt: sql`excluded.sent_at`,
+					lockedAt: sql`excluded.locked_at`,
+					lockedBy: sql`excluded.locked_by`,
+					providerMessageId: sql`excluded.provider_message_id`,
+					segments: sql`excluded.segments`,
+					lastErrorClass: sql`excluded.last_error_class`,
+					lastErrorMessage: sql`excluded.last_error_message`,
+					nextAttemptAt: sql`excluded.next_attempt_at`,
+					updatedAt: sql`excluded.updated_at`
+				}
+			});
 		}
 	}
 
