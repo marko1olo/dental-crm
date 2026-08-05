@@ -97,22 +97,22 @@ export async function evaluateClinicalRulesInDb(organizationId: string, input: C
   const evaluations = rules.flatMap((rule): ClinicalRuleEvaluation[] => {
     if (!rule.active) return [];
 
-    const triggeredByServiceIds = rule.triggerServiceIds.filter((serviceId) => serviceIds.has(serviceId));
+    const triggeredByServiceIds = rule.triggerServiceIds.length > 0
+      ? rule.triggerServiceIds.filter((serviceId) => serviceIds.has(serviceId))
+      : Array.from(serviceIds);
     if (!triggeredByServiceIds.length) return [];
 
     const missingRequiredServiceIds = rule.requiredServiceIds.filter((serviceId) => !serviceIds.has(serviceId));
     const missingCompletedServiceIds = rule.requiresCompletedServiceIds.filter((serviceId) => !completedServiceIds.has(serviceId));
     const blockedServiceIds = rule.blockedServiceIds.filter((serviceId) => serviceIds.has(serviceId));
 
-    let resolved = missingRequiredServiceIds.length === 0 && missingCompletedServiceIds.length === 0;
-    let activeBlockedServiceIds = blockedServiceIds;
-
-    if (rule.action === "block_service") {
-      const hasBlockingCondition =
-        missingCompletedServiceIds.length > 0 || (rule.requiresCompletedServiceIds.length === 0 && blockedServiceIds.length > 0);
-      resolved = !hasBlockingCondition;
-      activeBlockedServiceIds = hasBlockingCondition ? blockedServiceIds : [];
-    }
+    const hasBlockingCondition =
+      missingRequiredServiceIds.length > 0 ||
+      missingCompletedServiceIds.length > 0 ||
+      blockedServiceIds.length > 0;
+      
+    let resolved = !hasBlockingCondition;
+    let activeBlockedServiceIds = hasBlockingCondition ? blockedServiceIds : [];
 
     if (rule.action === "show_warning" || rule.action === "schedule_followup") {
       resolved = false;

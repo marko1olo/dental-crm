@@ -52,6 +52,24 @@ const MIGRATIONS_DIR = path.resolve(
 const LEDGER_TABLE = "_dente_migrations";
 const STATEMENT_BREAKPOINT = /-->\s*statement-breakpoint/gi;
 
+/**
+ * Маркер в первой строке файла: миграция выполняется БЕЗ транзакции.
+ *
+ * ЗАЧЕМ:
+ *   PostgreSQL запрещает CREATE INDEX CONCURRENTLY внутри транзакции:
+ *   > ERROR: CREATE INDEX CONCURRENTLY cannot run inside a transaction block
+ *
+ *   Индексные миграции (0155, 0156 и аналогичные) должны использовать
+ *   этот маркер. Runner выполнит их statement-by-statement через autocommit.
+ *   При ошибке ledger запись НЕ делается, поэтому повторный запуск продолжит
+ *   применение с этой же миграции. IF NOT EXISTS на каждом индексе
+ *   гарантирует идемпотентность.
+ *
+ * ФОРМАТ: первая строка файла должна быть ровно:
+ *   -- no-transaction
+ */
+const NO_TRANSACTION_MARKER = /^\s*--\s*no-transaction(?:\s|$)/i;
+
 const flags = new Set(process.argv.slice(2));
 const dryRun = flags.has("--dry-run");
 const baseline = flags.has("--baseline");
@@ -88,8 +106,36 @@ function readMigrations(): MigrationFile[] {
 		});
 }
 
-/** Разбивает файл на выполняемые куски. */
-function statementsOf(migration: MigrationFile): string[] {
+/** Разбивает файл на выполняемые куски.
+ *
+ * В transactional-режиме — по маркеру statement-breakpoint (drizzle-kit формат).
+ * В no-transaction-режиме — по точке с запятой: каждый CREATE INDEX CONCURRENTLY
+ * должен быть отдельным вызовом client.query(), иначе node-postgres (simple query
+ * protocol) выполнит только ПЕРВЫЙ оператор и молча проигнорирует остальные.
+ *
+ * КРИТИЧЕСКИЙ ИНВАРИАНТ (no-tx): фильтр должен отбрасывать ТОЛЬКО те куски,
+ * которые не содержат НИКАКОГО SQL — исключительно пустые строки и комментарии.
+ * Нельзя проверять только первый символ: первый чанк после split(';') содержит
+ * заголовочные комментарии файла И первый DDL-оператор. Наивный !/^--/.test(s)
+ * убивал бы первый CREATE INDEX в каждой индексной миграции молча.
+ */
+function statementsOf(migration: MigrationFile, noTransaction: boolean): string[] {
+	if (noTransaction) {
+		// Для no-transaction файлов (индексные миграции без statement-breakpoint):
+		// разбиваем по ';' — каждый CREATE INDEX CONCURRENTLY IF NOT EXISTS
+		// получает свой отдельный client.query() вызов.
+		return migration.sql
+			.split(/;/)
+			.filter((chunk) => {
+				// Отбрасываем только куски без единого SQL-слова после удаления
+				// всех однострочных комментариев (-- ...) и пробельных символов.
+				// Это корректно обрабатывает первый чанк: «-- header\nCREATE INDEX…»
+				// → после strip комментариев → «CREATE INDEX…» → length > 0 → оставить.
+				const withoutComments = chunk.replace(/--[^\n]*/g, "").trim();
+				return withoutComments.length > 0;
+			})
+			.map((chunk) => chunk.trim() + ";"); // восстанавливаем точку с запятой
+	}
 	// Файлы, сгенерированные drizzle-kit, размечены маркером statement-breakpoint.
 	// Написанные руками — обычные скрипты, их Postgres выполняет целиком.
 	const parts = migration.sql
@@ -97,6 +143,27 @@ function statementsOf(migration: MigrationFile): string[] {
 		.map((part) => part.trim())
 		.filter(Boolean);
 	return parts.length > 0 ? parts : [];
+}
+
+/** True если файл помечен как no-transaction (первая непустая строка содержит маркер). */
+function isNoTransaction(migration: MigrationFile): boolean {
+	const firstLine = migration.sql.split(/\r?\n/)[0] ?? "";
+	return NO_TRANSACTION_MARKER.test(firstLine);
+}
+
+/**
+ * Проверяет что транзакционный файл не содержит CONCURRENTLY.
+ * CONCURRENTLY внутри BEGIN/COMMIT даст ERROR от PostgreSQL — лучше
+ * обнаружить это сразу с чёткой диагностикой, а не получить откат.
+ */
+function assertNoConcurrentInTransaction(migration: MigrationFile): void {
+	if (/\bCONCURRENTLY\b/i.test(migration.sql)) {
+		throw new Error(
+			`[migrate] КОНФЛИКТ: ${migration.name} содержит CONCURRENTLY, но не помечен ` +
+			`'-- no-transaction'. CREATE INDEX CONCURRENTLY нельзя использовать ` +
+			`внутри транзакции. Добавьте '-- no-transaction' в первую строку файла.`,
+		);
+	}
 }
 
 async function ensureLedger(client: pg.PoolClient): Promise<void> {
@@ -172,35 +239,70 @@ async function main(): Promise<void> {
 				continue;
 			}
 
-			const statements = statementsOf(migration);
-			// Файл целиком в одной транзакции: половина применённой миграции
-			// хуже, чем неприменённая — её нельзя ни докатить, ни откатить.
-			await client.query("BEGIN");
-			try {
-				for (const statement of statements) {
-					await client.query(statement);
+			const noTx = isNoTransaction(migration);
+			const statements = statementsOf(migration, noTx);
+
+			if (noTx) {
+				// ── no-transaction mode ─────────────────────────────────────────
+				// CREATE INDEX CONCURRENTLY и аналогичные DDL без транзакции.
+				// Выполняем каждый statement в autocommit (без BEGIN).
+				// IF NOT EXISTS на каждом индексе обеспечивает идемпотентность:
+				// при повторном запуске уже созданные индексы пропускаются.
+				try {
+					for (const statement of statements) {
+						await client.query(statement);
+					}
+					// Ledger запись вне транзакции — нет смысла оборачивать в BEGIN
+					// когда сам DDL уже выполнен в autocommit.
+					await client.query(
+						`INSERT INTO "${LEDGER_TABLE}" ("name", "checksum") VALUES ($1, $2)`,
+						[migration.name, migration.checksum],
+					);
+					applied += 1;
+					console.log(`[migrate] применён (no-tx): ${migration.name}`);
+				} catch (error) {
+					console.error(
+						`[migrate] ОШИБКА в ${migration.name}: ${(error as Error).message}`,
+					);
+					console.error(
+						"[migrate] Остановлено. В режиме no-transaction частично созданные " +
+						"индексы (IF NOT EXISTS) безопасны — повторный запуск продолжит.",
+					);
+					process.exitCode = 1;
+					return;
 				}
-				await client.query(
-					`INSERT INTO "${LEDGER_TABLE}" ("name", "checksum") VALUES ($1, $2)`,
-					[migration.name, migration.checksum],
-				);
-				await client.query("COMMIT");
-				applied += 1;
-				console.log(`[migrate] применён: ${migration.name}`);
-			} catch (error) {
-				await client.query("ROLLBACK");
-				console.error(
-					`[migrate] ОШИБКА в ${migration.name}: ${(error as Error).message}`,
-				);
-				console.error(
-					"[migrate] Остановлено. Следующие миграции не применялись — порядок важен.",
-				);
-				console.error(
-					"[migrate] Если база уже наполнена (схему досоздавал рантайм-DDL), " +
-						"выполните один раз: npm run db:migrate -- --baseline",
-				);
-				process.exitCode = 1;
-				return;
+			} else {
+				// ── transactional mode (стандартный) ────────────────────────────
+				// Файл целиком в одной транзакции: половина применённой миграции
+				// хуже, чем неприменённая — её нельзя ни докатить, ни откатить.
+				assertNoConcurrentInTransaction(migration);
+				await client.query("BEGIN");
+				try {
+					for (const statement of statements) {
+						await client.query(statement);
+					}
+					await client.query(
+						`INSERT INTO "${LEDGER_TABLE}" ("name", "checksum") VALUES ($1, $2)`,
+						[migration.name, migration.checksum],
+					);
+					await client.query("COMMIT");
+					applied += 1;
+					console.log(`[migrate] применён: ${migration.name}`);
+				} catch (error) {
+					await client.query("ROLLBACK");
+					console.error(
+						`[migrate] ОШИБКА в ${migration.name}: ${(error as Error).message}`,
+					);
+					console.error(
+						"[migrate] Остановлено. Следующие миграции не применялись — порядок важен.",
+					);
+					console.error(
+						"[migrate] Если база уже наполнена (схему досоздавал рантайм-DDL), " +
+							"выполните один раз: npm run db:migrate -- --baseline",
+					);
+					process.exitCode = 1;
+					return;
+				}
 			}
 		}
 

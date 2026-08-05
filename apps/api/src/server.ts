@@ -321,6 +321,15 @@ export async function createDenteApiApp(options: {
     // Один раз разбираем токены запроса и кладём результат в request.user,
     // чтобы маршруты не парсили заголовки самостоятельно и не расходились в логике.
     getRequestIdentity(request);
+    // Кешируем organizationId текущего запроса для удобного доступа в маршрутах
+    // через withTenantCtx (apps/api/src/db/rls.ts). Не делаем здесь вызова базы —
+    // withTenantCtx открывает транзакцию самостоятельно, чтобы set_config и
+    // последующий запрос попали на одно и то же pg-соединение из пула.
+    const _req = request as unknown as Record<string, unknown>;
+    const _identity = _req.user as { organizationId?: string | null } | undefined;
+    if (_identity?.organizationId) {
+      _req.tenantId = _identity.organizationId;
+    }
   });
 
   /* Несуществующий адрес отвечал штатным английским текстом Fastify с методом и
