@@ -19,6 +19,8 @@
  */
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 import {
   UploadCloud,
   Bot,
@@ -119,14 +121,9 @@ export function escapeHtml(value: string): string {
 }
 
 function renderMarkdown(text: string): string {
-  return escapeHtml(text)
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/^#{1,3}\s+(.+)$/gm, '<h4 style="margin:12px 0 4px">$1</h4>')
-    .replace(/^[-*]\s+(.+)$/gm, '<li style="margin:2px 0">$1</li>')
-    .replace(/(<li.*<\/li>)/s, '<ul style="margin:8px 0;padding-left:20px">$1</ul>')
-    .replace(/\n\n+/g, '<br/><br/>')
-    .replace(/\n/g, '<br/>');
+  if (!text) return '';
+  const rawHtml = marked.parse(text, { async: false }) as string;
+  return DOMPurify.sanitize(rawHtml);
 }
 
 // ─── Заголовки отчёта (кликабельные секции) ───────────────────────────────────
