@@ -71,6 +71,28 @@ const PORTAL_TOKEN_KIND = "portal";
  * новый IP и не удалялась никогда — утечка памяти на публичном маршруте.
  * Здесь остаётся то, чего лимитер по IP дать не может: ограничение выдачи на
  * КОНКРЕТНОГО пациента и потолок числа попыток на КОНКРЕТНЫЙ код.
+ *
+ * ПУЛ СОЕДИНЕНИЙ И ГРАНИЦЫ ТРАНЗАКЦИЙ (правка 2026-08-05, расчётом, не на
+ * глаз). withTenantCtx — это dbRaw.transaction(...), то есть на время колбэка
+ * соединение из пула занято целиком. Пул в db/client.ts создан как
+ * `new pg.Pool({ connectionString })`: без `max` — значит ДЕСЯТЬ соединений по
+ * умолчанию, без connectionTimeoutMillis — значит ожидание БЕЗ СРОКА.
+ *
+ * Обе точки входа держали внутри одной открытой транзакции работу, к базе не
+ * относящуюся: PBKDF2 (100 000 итераций SHA-512) и, в send-otp, исходящий HTTP
+ * к SMS-шлюзу. Оценка удержания одного соединения на send-otp — 615-5320 мс, из
+ * которых на сами запросы к базе приходится 8-30 мс. Десяти одновременных
+ * запросов на ПУБЛИЧНЫЙ неаутентифицированный маршрут хватало, чтобы выбрать
+ * весь пул, после чего вставало всё приложение — расписание, карта приёма,
+ * печать документов, — потому что соединения ждут бесконечно.
+ *
+ * Теперь дорогая работа идёт СНАРУЖИ транзакций: в send-otp их четыре коротких
+ * (отбраковка по троттлингу; выдача кода; чтение кред канала; отметка исхода),
+ * в verify-otp — две (попытка; гашение). Что осталось неделимым и почему —
+ * подробно у каждой границы. Главное из этого: проверка троттлинга и вставка
+ * кода — одна транзакция, а выбор кода, инкремент счётчика попыток и гашение
+ * при превышении потолка — тоже одна. Разделение этих групп даёт обход лимитов,
+ * а не выигрыш в ёмкости.
  */
 
 /** Настройки одноразового кода. Значения по умолчанию рабочие, но переопределяемы. */
@@ -335,7 +357,80 @@ export const portalRoutes: FastifyPluginAsync = async (
 			if (!patient) return reply.status(202).send(neutralAccepted);
 
 			const now = new Date();
-			return withTenantCtx(patient.organizationId, async () => {
+
+			/*
+			 * ГРАНИЦЫ ТРАНЗАКЦИЙ: ПОЧЕМУ ЗДЕСЬ НЕ ОДНА ОБЁРТКА НА ВЕСЬ ОБРАБОТЧИК.
+			 *
+			 * withTenantCtx — это dbRaw.transaction(...) (db/rls.ts): на всё время
+			 * колбэка одно соединение из пула занято целиком. Пул заводится в
+			 * db/client.ts как `new pg.Pool({ connectionString })` — без `max`, то
+			 * есть по умолчанию ДЕСЯТЬ соединений, и без connectionTimeoutMillis,
+			 * то есть запрос, которому соединения не досталось, ждёт его БЕЗ СРОКА.
+			 *
+			 * Прежняя редакция держала внутри этой транзакции две вещи, которым в
+			 * ней делать нечего: PBKDF2 на 100 000 итераций SHA-512 (десятки-сотни
+			 * миллисекунд) и ИСХОДЯЩИЙ HTTP к SMS-шлюзу (сотни миллисекунд —
+			 * секунды). Маршрут ПУБЛИЧНЫЙ и без аутентификации. Десяток
+			 * одновременных запросов выбирал весь пул, и следом вставало ВСЁ
+			 * приложение — расписание, карта приёма, печать документов, — потому
+			 * что соединения ждут бесконечно, а ждут их все.
+			 *
+			 * Разбито на короткие транзакции: между ними соединение возвращается в
+			 * пул, а дорогая работа идёт снаружи. Что при этом обязано остаться
+			 * неделимым — разобрано у каждой границы отдельно, ниже.
+			 */
+
+			/*
+			 * ОТБРАКОВКА ДО PBKDF2. Проверка троттлинга стоит здесь не ради
+			 * скорости, а чтобы не потерять свойство прежней редакции: хеш там
+			 * считался ПОСЛЕ проверки, то есть отвергнутый запрос не стоил ничего.
+			 * Пул потоков libuv по умолчанию — четыре потока, общих с чтением
+			 * файлов и разрешением имён (utils/cryptoHelper.ts). Считай мы хеш
+			 * первым, любой, кто долбит этот публичный маршрут, заказывал бы
+			 * 100 000 итераций SHA-512 на каждый запрос, включая заведомо
+			 * отвергнутые, и выедал бы пул потоков всему процессу.
+			 *
+			 * Проверка здесь НЕ окончательная: авторитетная повторяется внутри
+			 * транзакции выдачи, вместе со вставкой, которую она разрешает.
+			 */
+			const throttledBeforeHashing = await withTenantCtx(
+				patient.organizationId,
+				async () =>
+					isIssuanceThrottled(patient.organizationId, patient.id, policy, now),
+			);
+			if (throttledBeforeHashing) {
+				// Тоже нейтральный ответ: 429 именно здесь снова отличал бы
+				// существующего пациента от несуществующего.
+				return reply.status(202).send(neutralAccepted);
+			}
+
+			/*
+			 * PBKDF2 — ВНЕ транзакции. Соединение с базой на это время не нужно:
+			 * считается хеш от значения, которого ещё нет ни в одной строке.
+			 */
+			const code = generateNumericCode(policy.codeLength);
+			const codeHash = await hashCredential(code);
+
+			/*
+			 * ЕДИНИЦА АТОМАРНОСТИ ВЫДАЧИ. Проверка троттлинга, уборка старья,
+			 * гашение прежних действующих кодов и вставка нового идут ОДНОЙ
+			 * транзакцией. Разделять их нельзя: между гашением и вставкой не
+			 * должно существовать окна, в котором у пациента нет ни одного
+			 * действующего кода, а авторитетная проверка троттлинга не должна
+			 * отрываться от вставки, которую она разрешает.
+			 *
+			 * ЧЕСТНО ОБ ОСТАВШЕЙСЯ ДЫРЕ, ЧТОБЫ НИКТО НЕ СЧИТАЛ ЕЁ ЗАКРЫТОЙ: одной
+			 * транзакции для троттлинга МАЛО. Проверка — обычный SELECT, он не
+			 * берёт блокировок, а уровень изоляции по умолчанию READ COMMITTED.
+			 * Два одновременных запроса читают одно и то же «недавних выдач нет» и
+			 * оба вставляют. Так было и до этой правки — объединение в транзакцию
+			 * этого не чинило. Лечится pg_advisory_xact_lock по паре
+			 * (организация, пациент) либо частичным уникальным индексом; и то и
+			 * другое меняет поведение публичного маршрута и требует проверки на
+			 * живой базе, поэтому названо в отчёте как долг, а не протащено сюда
+			 * молча и без проверки.
+			 */
+			const issuance = await withTenantCtx(patient.organizationId, async () => {
 				if (
 					await isIssuanceThrottled(
 						patient.organizationId,
@@ -344,13 +439,8 @@ export const portalRoutes: FastifyPluginAsync = async (
 						now,
 					)
 				) {
-					// Тоже нейтральный ответ: 429 именно здесь снова отличал бы
-					// существующего пациента от несуществующего.
-					return reply.status(202).send(neutralAccepted);
+					return { throttled: true as const, issuedId: null };
 				}
-
-				const code = generateNumericCode(policy.codeLength);
-				const codeHash = await hashCredential(code);
 
 				// Уборка старья по этому же пациенту: без неё таблица растёт вечно.
 				await db
@@ -382,6 +472,14 @@ export const portalRoutes: FastifyPluginAsync = async (
 
 				// Строка заводится ДО обращения к шлюзу и только со статусом pending:
 				// если процесс упадёт на отправке, код не окажется «отправленным».
+				//
+				// РАЗДЕЛЕНИЕ ТРАНЗАКЦИЙ ЭТО ТРЕБОВАНИЕ НЕ ОСЛАБИЛО, А ВПЕРВЫЕ ЕГО
+				// ВЫПОЛНИЛО. Пока шлюз вызывался внутри этой же транзакции, падение
+				// на отправке откатывало и саму строку: она не оставалась «pending»,
+				// она ИСЧЕЗАЛА — вместе с гашением прежних кодов. Комментарий обещал
+				// одно, транзакция делала другое. Теперь вставка фиксируется здесь,
+				// ДО обращения к шлюзу, и обрыв на HTTP оставляет ровно то состояние,
+				// которое здесь описано: строка есть, статус pending.
 				const inserted = await db
 					.insert(portalOtpCodes)
 					.values({
@@ -393,50 +491,93 @@ export const portalRoutes: FastifyPluginAsync = async (
 						expiresAt: new Date(now.getTime() + policy.ttlSeconds * 1000),
 					})
 					.returning({ id: portalOtpCodes.id });
-				const issuedId = inserted[0]?.id;
-				if (!issuedId) {
-					return reply.status(500).send({
-						error: "OtpNotIssued",
-						message: "Не удалось выдать код входа. Повторите попытку.",
-					});
-				}
+				return {
+					throttled: false as const,
+					issuedId: inserted[0]?.id ?? null,
+				};
+			});
 
-				if (developerLogFallback) {
-					request.log.warn(
-						{ portalOtpDeveloperCode: code, patientId: patient.id },
-						"РЕЖИМ РАЗРАБОТКИ: SMS-шлюз не настроен, одноразовый код входа в личный кабинет выведен в журнал сервера и никому не отправлен. При NODE_ENV=production эта ветка недостижима.",
-					);
+			if (issuance.throttled) {
+				return reply.status(202).send(neutralAccepted);
+			}
+			const issuedId = issuance.issuedId;
+			if (!issuedId) {
+				return reply.status(500).send({
+					error: "OtpNotIssued",
+					message: "Не удалось выдать код входа. Повторите попытку.",
+				});
+			}
+
+			if (developerLogFallback) {
+				request.log.warn(
+					{ portalOtpDeveloperCode: code, patientId: patient.id },
+					"РЕЖИМ РАЗРАБОТКИ: SMS-шлюз не настроен, одноразовый код входа в личный кабинет выведен в журнал сервера и никому не отправлен. При NODE_ENV=production эта ветка недостижима.",
+				);
+				// Отдельная короткая транзакция. Строка уже зафиксирована, её перевод
+				// в «sent» не обязан делить соединение с выдачей.
+				await withTenantCtx(patient.organizationId, async () => {
 					await db
 						.update(portalOtpCodes)
 						.set({ deliveryStatus: "sent" })
 						.where(eq(portalOtpCodes.id, issuedId));
-					return reply.status(202).send(neutralAccepted);
-				}
+				});
+				return reply.status(202).send(neutralAccepted);
+			}
 
-				const msisdn = normalizeRussianMsisdn(patient.phone);
-				const credentials = await resolveChannelCredentials(
-					patient.organizationId,
-				);
-				const delivery =
-					msisdn === null
-						? {
-								ok: false as const,
-								errorClass: "recipient_unavailable" as const,
-								errorMessage:
-									"Номер в карточке пациента не приводится к формату оператора.",
-							}
-						: await sendThroughChannel(
-								{
-									channel: "sms",
-									recipientAddress: msisdn,
-									subject: null,
-									body: renderOtpMessage(policy, code),
-									idempotencyKey: `portal-otp:${issuedId}`,
-								},
-								credentials,
-							);
+			const msisdn = normalizeRussianMsisdn(patient.phone);
+			/*
+			 * Креды канала — ОТДЕЛЬНАЯ короткая транзакция, и она обязана быть
+			 * транзакцией с контекстом арендатора: resolveChannelCredentials
+			 * читает dente_whatsapp_bot_configs, dente_telegram_bot_configs и
+			 * dente_max_bot_configs, а на всех трёх включён RLS с политикой
+			 * tenant_isolation (drizzle/0157, FORCE в 0159). Вызови её без
+			 * withTenantCtx — политика fail-closed вернёт НОЛЬ строк, креды
+			 * молча станут null, и маршрут ответит «шлюз не настроен» на
+			 * исправно настроенном шлюзе. Это не оптимизация, это условие
+			 * работоспособности.
+			 *
+			 * ПОЧЕМУ НЕ ВНУТРИ ТРАНЗАКЦИИ ВЫДАЧИ. Три одиночных чтения по
+			 * organization_id — дёшево, и соблазн сэкономить одну выемку из
+			 * пула есть. Но тогда сбой чтения кредов откатывал бы выдачу кода
+			 * целиком, а транзакция выдачи держала бы блокировки на строках
+			 * пациента ещё эти 3-15 мс. Здесь важнее первое: после фиксации
+			 * выдачи любой последующий сбой обязан оставлять строку pending —
+			 * ровно то, чего требует комментарий у вставки.
+			 */
+			const credentials = await withTenantCtx(
+				patient.organizationId,
+				async () => resolveChannelCredentials(patient.organizationId),
+			);
 
-				if (!delivery.ok) {
+			/*
+			 * ИСХОДЯЩИЙ HTTP — ВНЕ ЛЮБОЙ ТРАНЗАКЦИИ. Это и есть главная причина
+			 * всей правки: обращение к чужому серверу занимает от сотен
+			 * миллисекунд до секунд, а при недоступном шлюзе — весь таймаут
+			 * транспорта. Соединение с базой в это время никому не нужно и
+			 * теперь никем не держится.
+			 */
+			const delivery =
+				msisdn === null
+					? {
+							ok: false as const,
+							errorClass: "recipient_unavailable" as const,
+							errorMessage:
+								"Номер в карточке пациента не приводится к формату оператора.",
+						}
+					: await sendThroughChannel(
+							{
+								channel: "sms",
+								recipientAddress: msisdn,
+								subject: null,
+								body: renderOtpMessage(policy, code),
+								idempotencyKey: `portal-otp:${issuedId}`,
+							},
+							credentials,
+						);
+
+			if (!delivery.ok) {
+				// Отметка исхода — по id, полученному из транзакции выдачи.
+				await withTenantCtx(patient.organizationId, async () => {
 					await db
 						.update(portalOtpCodes)
 						.set({
@@ -444,36 +585,38 @@ export const portalRoutes: FastifyPluginAsync = async (
 							deliveryErrorClass: delivery.errorClass,
 						})
 						.where(eq(portalOtpCodes.id, issuedId));
-					request.log.error(
-						{ patientId: patient.id, errorClass: delivery.errorClass },
-						"Код входа в личный кабинет не отправлен: шлюз отказал",
-					);
-					/*
-					 * Честный отказ вместо «отправлено». Пациент, смотрящий на «код
-					 * отправлен» при пустом счету шлюза, — это и есть та самая обманка,
-					 * ради устранения которой переписан этот маршрут.
-					 *
-					 * ОСТАТОЧНЫЙ РИСК, НАЗЫВАЮ ЯВНО: до шлюза доходят только запросы по
-					 * реально существующему пациенту, поэтому в момент аварии шлюза
-					 * разница между 502 и 202 отличает существующий номер от
-					 * несуществующего. Это состояние аварии, а не штатное; молчать
-					 * пациенту о том, что SMS не ушла, — хуже.
-					 */
-					return reply
-						.status(delivery.errorClass === "not_configured" ? 503 : 502)
-						.send({
-							error: "OtpDeliveryFailed",
-							errorClass: delivery.errorClass,
-							message: `Не удалось отправить код: ${delivery.errorMessage}`,
-						});
-				}
+				});
+				request.log.error(
+					{ patientId: patient.id, errorClass: delivery.errorClass },
+					"Код входа в личный кабинет не отправлен: шлюз отказал",
+				);
+				/*
+				 * Честный отказ вместо «отправлено». Пациент, смотрящий на «код
+				 * отправлен» при пустом счету шлюза, — это и есть та самая обманка,
+				 * ради устранения которой переписан этот маршрут.
+				 *
+				 * ОСТАТОЧНЫЙ РИСК, НАЗЫВАЮ ЯВНО: до шлюза доходят только запросы по
+				 * реально существующему пациенту, поэтому в момент аварии шлюза
+				 * разница между 502 и 202 отличает существующий номер от
+				 * несуществующего. Это состояние аварии, а не штатное; молчать
+				 * пациенту о том, что SMS не ушла, — хуже.
+				 */
+				return reply
+					.status(delivery.errorClass === "not_configured" ? 503 : 502)
+					.send({
+						error: "OtpDeliveryFailed",
+						errorClass: delivery.errorClass,
+						message: `Не удалось отправить код: ${delivery.errorMessage}`,
+					});
+			}
 
+			await withTenantCtx(patient.organizationId, async () => {
 				await db
 					.update(portalOtpCodes)
 					.set({ deliveryStatus: "sent" })
 					.where(eq(portalOtpCodes.id, issuedId));
-				return reply.status(202).send(neutralAccepted);
 			});
+			return reply.status(202).send(neutralAccepted);
 		},
 	);
 
@@ -509,64 +652,109 @@ export const portalRoutes: FastifyPluginAsync = async (
 			if (!patient) return reply.status(401).send(invalidOtp);
 
 			const now = new Date();
-			return withTenantCtx(patient.organizationId, async () => {
-				const active = await db
-					.select({
-						id: portalOtpCodes.id,
-						codeHash: portalOtpCodes.codeHash,
-					})
-					.from(portalOtpCodes)
-					.where(
-						and(
-							eq(portalOtpCodes.organizationId, patient.organizationId),
-							eq(portalOtpCodes.patientId, patient.id),
-							// Только реально доставленные: код из строки, на которой шлюз
-							// отказал, пациенту не приходил и приниматься не должен.
-							eq(portalOtpCodes.deliveryStatus, "sent"),
-							isNull(portalOtpCodes.consumedAt),
-							gte(portalOtpCodes.expiresAt, now),
-						),
-					)
-					.orderBy(desc(portalOtpCodes.createdAt))
-					.limit(1);
-				const candidate = active[0];
-				if (!candidate) return reply.status(401).send(invalidOtp);
 
-				// Счётчик растёт ДО сверки. Если увеличивать после, оборванное на
-				// середине соединение даёт бесплатную попытку, и потолок обходится.
-				const counted = await db
-					.update(portalOtpCodes)
-					.set({ attemptCount: sql`${portalOtpCodes.attemptCount} + 1` })
-					.where(eq(portalOtpCodes.id, candidate.id))
-					.returning({ attemptCount: portalOtpCodes.attemptCount });
-				const attemptNumber = counted[0]?.attemptCount ?? policy.maxAttempts + 1;
+			/*
+			 * ГРАНИЦЫ ТРАНЗАКЦИЙ. Здесь та же болезнь, что и в send-otp: обёртка на
+			 * весь обработчик затаскивала внутрь ОТКРЫТОЙ транзакции PBKDF2 на
+			 * 100 000 итераций. Соединение из пула (10 штук, ждать бесконечно —
+			 * db/client.ts) держалось всё время счёта, а маршрут ПУБЛИЧНЫЙ: перебор
+			 * кода занимал не только пул потоков libuv, но и пул соединений базы.
+			 *
+			 * Транзакций стало две, сверка вынесена между ними. Что осталось
+			 * неделимым и почему — ниже.
+			 */
 
-				if (attemptNumber > policy.maxAttempts) {
-					// Код сжигается целиком: после исчерпания попыток он не примется
-					// даже верным. Пауза не помогла бы — перебор продолжился бы после неё.
-					await db
-						.update(portalOtpCodes)
-						.set({ consumedAt: now })
+			/*
+			 * ТРАНЗАКЦИЯ ПОПЫТКИ. Выбор действующего кода, инкремент счётчика и
+			 * гашение при превышении потолка обязаны идти ОДНОЙ транзакцией.
+			 * Разорви их — и между инкрементом и решением «попытки исчерпаны»
+			 * появляется окно, в котором код ещё не сожжён, а лимит уже пройден:
+			 * это ровно тот обход потолка, ради которого счётчик и заведён.
+			 *
+			 * ПОБОЧНО ЭТО ЧИНИТ ТО, ЧТО ОБЕЩАЛ КОММЕНТАРИЙ НИЖЕ. «Счётчик растёт
+			 * ДО сверки» было верно по порядку строк, но не по фиксации: пока
+			 * инкремент и PBKDF2 жили в одной транзакции, падение процесса на
+			 * сверке откатывало и инкремент — попытка выходила бесплатной, ровно
+			 * как при обрыве. Теперь инкремент зафиксирован ДО того, как начнётся
+			 * дорогая сверка.
+			 */
+			const candidate = await withTenantCtx(
+				patient.organizationId,
+				async () => {
+					const active = await db
+						.select({
+							id: portalOtpCodes.id,
+							codeHash: portalOtpCodes.codeHash,
+						})
+						.from(portalOtpCodes)
 						.where(
 							and(
-								eq(portalOtpCodes.id, candidate.id),
+								eq(portalOtpCodes.organizationId, patient.organizationId),
+								eq(portalOtpCodes.patientId, patient.id),
+								// Только реально доставленные: код из строки, на которой шлюз
+								// отказал, пациенту не приходил и приниматься не должен.
+								eq(portalOtpCodes.deliveryStatus, "sent"),
 								isNull(portalOtpCodes.consumedAt),
+								gte(portalOtpCodes.expiresAt, now),
 							),
-						);
-					return reply.status(401).send(invalidOtp);
-				}
+						)
+						.orderBy(desc(portalOtpCodes.createdAt))
+						.limit(1);
+					const found = active[0];
+					if (!found) return null;
 
-				if (!(await verifyCredential(code, candidate.codeHash))) {
-					return reply.status(401).send(invalidOtp);
-				}
+					// Счётчик растёт ДО сверки. Если увеличивать после, оборванное на
+					// середине соединение даёт бесплатную попытку, и потолок обходится.
+					const counted = await db
+						.update(portalOtpCodes)
+						.set({ attemptCount: sql`${portalOtpCodes.attemptCount} + 1` })
+						.where(eq(portalOtpCodes.id, found.id))
+						.returning({ attemptCount: portalOtpCodes.attemptCount });
+					const attemptNumber =
+						counted[0]?.attemptCount ?? policy.maxAttempts + 1;
 
-				/*
-				 * Однократность обеспечивается условным UPDATE, а не проверкой перед
-				 * ним: два одновременных запроса с верным кодом иначе оба прошли бы
-				 * проверку «ещё не использован» и оба получили бы сессию. Здесь
-				 * выигрывает ровно один — второй не увидит ни одной обновлённой строки.
-				 */
-				const consumed = await db
+					if (attemptNumber > policy.maxAttempts) {
+						// Код сжигается целиком: после исчерпания попыток он не примется
+						// даже верным. Пауза не помогла бы — перебор продолжился бы после неё.
+						await db
+							.update(portalOtpCodes)
+							.set({ consumedAt: now })
+							.where(
+								and(
+									eq(portalOtpCodes.id, found.id),
+									isNull(portalOtpCodes.consumedAt),
+								),
+							);
+						return null;
+					}
+					return found;
+				},
+			);
+			if (!candidate) return reply.status(401).send(invalidOtp);
+
+			/*
+			 * PBKDF2 — ВНЕ транзакции. Попытка уже посчитана и зафиксирована,
+			 * соединение с базой на время сверки не нужно никому.
+			 */
+			if (!(await verifyCredential(code, candidate.codeHash))) {
+				return reply.status(401).send(invalidOtp);
+			}
+
+			/*
+			 * Однократность обеспечивается условным UPDATE, а не проверкой перед
+			 * ним: два одновременных запроса с верным кодом иначе оба прошли бы
+			 * проверку «ещё не использован» и оба получили бы сессию. Здесь
+			 * выигрывает ровно один — второй не увидит ни одной обновлённой строки.
+			 *
+			 * ОТДЕЛЬНАЯ ТРАНЗАКЦИЯ ЭТУ ГАРАНТИЮ НЕ ТРОГАЕТ, и вот почему её можно
+			 * было отделить. Гарантию даёт не транзакция, а одиночный UPDATE с
+			 * `consumedAt IS NULL` в условии: он берёт блокировку строки, второй
+			 * запрос ждёт фиксацию первого и перечитывает условие уже по
+			 * обновлённой строке. Условие isNull(consumedAt) здесь НЕСНИМАЕМО —
+			 * без него оба запроса обновят строку и оба получат сессию.
+			 */
+			const consumed = await withTenantCtx(patient.organizationId, async () =>
+				db
 					.update(portalOtpCodes)
 					.set({ consumedAt: now })
 					.where(
@@ -575,24 +763,24 @@ export const portalRoutes: FastifyPluginAsync = async (
 							isNull(portalOtpCodes.consumedAt),
 						),
 					)
-					.returning({ id: portalOtpCodes.id });
-				if (consumed.length !== 1) return reply.status(401).send(invalidOtp);
+					.returning({ id: portalOtpCodes.id }),
+			);
+			if (consumed.length !== 1) return reply.status(401).send(invalidOtp);
 
-				// Signed, expiring session token. Replaces the previous unsigned
-				// base64(`DENTE_TOKEN:<id>`) payload, which any caller could forge to read
-				// another patient's medical record (IDOR).
-				const token = signToken(
-					{
-						sub: patient.id,
-						organizationId: patient.organizationId,
-						kind: PORTAL_TOKEN_KIND,
-					},
-					requireAuthTokenSecret(),
-					PORTAL_TOKEN_TTL_SECONDS,
-				);
+			// Signed, expiring session token. Replaces the previous unsigned
+			// base64(`DENTE_TOKEN:<id>`) payload, which any caller could forge to read
+			// another patient's medical record (IDOR).
+			const token = signToken(
+				{
+					sub: patient.id,
+					organizationId: patient.organizationId,
+					kind: PORTAL_TOKEN_KIND,
+				},
+				requireAuthTokenSecret(),
+				PORTAL_TOKEN_TTL_SECONDS,
+			);
 
-				return { success: true, token, patientId: patient.id };
-			});
+			return { success: true, token, patientId: patient.id };
 		},
 	);
 
