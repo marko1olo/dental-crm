@@ -1,6 +1,66 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert';
-import { splitLine, isValidRussianInn } from '../utils/strings.js';
+import { splitLine, isValidRussianInn, isValidRussianSnils, isValidRussianPassport } from '../utils/strings.js';
+
+describe('isValidRussianSnils', () => {
+  test('returns true for null, undefined, or empty string', () => {
+    assert.strictEqual(isValidRussianSnils(null), true);
+    assert.strictEqual(isValidRussianSnils(undefined), true);
+    assert.strictEqual(isValidRussianSnils(''), true);
+  });
+
+  test('returns false for invalid lengths', () => {
+    assert.strictEqual(isValidRussianSnils('1234567890'), false); // 10 digits
+    assert.strictEqual(isValidRussianSnils('123456789012'), false); // 12 digits
+  });
+
+  test('returns false for identical digits', () => {
+    assert.strictEqual(isValidRussianSnils('11111111111'), false);
+    assert.strictEqual(isValidRussianSnils('00000000000'), false);
+  });
+
+  test('returns true for numPart <= 1001001', () => {
+    assert.strictEqual(isValidRussianSnils('00100100000'), true); // 1001000 <= 1001001
+    assert.strictEqual(isValidRussianSnils('00100100100'), true); // 1001001 <= 1001001
+  });
+
+  test('calculates correctly when sum < 100', () => {
+    assert.strictEqual(isValidRussianSnils('20000000018'), true); // sum is 18 (2*9), 18 < 100
+    assert.strictEqual(isValidRussianSnils('20000000019'), false); // invalid control sum
+  });
+
+  test('calculates correctly when sum === 100 or sum === 101', () => {
+    assert.strictEqual(isValidRussianSnils('20000799900'), true); // sum is 100, control is 00
+    assert.strictEqual(isValidRussianSnils('20000889900'), true); // sum is 101, control is 00
+  });
+
+  test('calculates correctly when sum > 101', () => {
+    assert.strictEqual(isValidRussianSnils('20000898901'), true); // rem < 100
+    assert.strictEqual(isValidRussianSnils('20089999900'), true); // rem === 100, control is 00
+  });
+
+  test('ignores non-digit characters', () => {
+    assert.strictEqual(isValidRussianSnils('200-008-899 00'), true);
+  });
+});
+
+describe('isValidRussianPassport', () => {
+  test('returns true for null, undefined, or empty string', () => {
+    assert.strictEqual(isValidRussianPassport(null), true);
+    assert.strictEqual(isValidRussianPassport(undefined), true);
+    assert.strictEqual(isValidRussianPassport(''), true);
+  });
+
+  test('returns true for exactly 10 digits', () => {
+    assert.strictEqual(isValidRussianPassport('1234567890'), true);
+    assert.strictEqual(isValidRussianPassport('1234 567890'), true); // spaces ignored
+  });
+
+  test('returns false for invalid lengths', () => {
+    assert.strictEqual(isValidRussianPassport('123456789'), false);
+    assert.strictEqual(isValidRussianPassport('12345678901'), false);
+  });
+});
 
 describe('isValidRussianInn', () => {
   test('returns true for null, undefined, or empty string', () => {
