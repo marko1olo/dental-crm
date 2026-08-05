@@ -175,4 +175,12 @@ describe("formatKopecksRu", () => {
 	test("долг показывается типографским минусом", () => {
 		assert.strictEqual(formatKopecksRu(-4275), `${RU_MONEY_MINUS}${money("42,75")}`);
 	});
+
+	test("бросает ошибку, если переданы дробные копейки", () => {
+		assert.throws(() => formatKopecksRu(150.5), /Копейки должны быть целым числом/);
+	});
+
+	test("бросает ошибку при выходе за пределы безопасного целого", () => {
+		assert.throws(() => formatKopecksRu(Number.MAX_SAFE_INTEGER + 1), /выходит за пределы точного целого/);
+	});
 });
