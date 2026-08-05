@@ -185,7 +185,7 @@ export function slotFitsRanges(slotStartMinute: number, ranges: { fromMinute: nu
 const PRIORITY_ORDER: Readonly<Record<string, number>> = { high: 0, medium: 1, low: 2 };
 
 export async function findWaitlistMatches(slot: FreedSlot, limit = 20): Promise<WaitlistMatchReport> {
-	const rows = await withTenantCtx(slot.organizationId, async (tx) => db
+	const rows = await withTenantCtx(slot.organizationId, async (tx) => tx
     		.select({
     			entryId: appointmentWaitlists.id,
     			patientId: appointmentWaitlists.patientId,

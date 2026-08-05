@@ -132,7 +132,7 @@ export async function mergePatients(
     return { ok: false, reason: "Указана одна и та же карточка." };
   }
 
-  const bothPatients = await withTenantCtx(input.organizationId, async (tx) => db
+  const bothPatients = await withTenantCtx(input.organizationId, async (tx) => tx
       .select({
         id: patients.id,
         fullName: patients.fullName,
@@ -184,7 +184,7 @@ export async function mergePatients(
   const filledFields: string[] = [];
 
   try {
-    await withTenantCtx(input.organizationId, async (tx) => tx.transaction(async (tx) => {
+    await withTenantCtx(input.organizationId, async (tx) => tx.transaction(async (inner) => {
           // Сначала снимаем конфликты уникальности, иначе перенос упадёт.
           const conflictPromises = UNIQUE_CONFLICT_TABLES.map(async (conflict) => {
             const scopeMatch =
@@ -198,7 +198,7 @@ export async function mergePatients(
                     sql` and `,
                   );
 
-            const deleted = await tx.execute(sql`
+            const deleted = await inner.execute(sql`
 					delete from ${sql.identifier(conflict.table)} d
 					where d.${sql.identifier(conflict.column)} = ${input.duplicatePatientId}
 						and exists (
@@ -218,7 +218,7 @@ export async function mergePatients(
           }
 
           const updatePromises = columns.map(async (column) => {
-            const updated = await tx.execute(sql`
+            const updated = await inner.execute(sql`
 					update ${sql.identifier(column.tableName)}
 					set ${sql.identifier(column.columnName)} = ${input.primaryPatientId}
 					where ${sql.identifier(column.columnName)} = ${input.duplicatePatientId}
@@ -258,7 +258,7 @@ export async function mergePatients(
           // БЫЛО: пациенты загружены с organizationId, а UPDATE — только по id.
           // Слияние — самая опасная операция картотеки (PHI + оплаты + снимки).
           // СТАЛО: and(id, organizationId) на обеих карточках.
-          await tx
+          await inner
             .update(patients)
             .set({ ...fill, notes: nextNotes, updatedAt: new Date() })
             .where(
@@ -269,7 +269,7 @@ export async function mergePatients(
             );
 
           // Карточка не удаляется: она становится архивной ссылкой.
-          await tx
+          await inner
             .update(patients)
             .set({
               status: "archived",
@@ -289,7 +289,7 @@ export async function mergePatients(
               ? [input.primaryPatientId, input.duplicatePatientId]
               : [input.duplicatePatientId, input.primaryPatientId];
 
-          await tx
+          await inner
             .insert(patientDuplicateDecisions)
             .values({
               organizationId: input.organizationId,
@@ -371,7 +371,7 @@ export async function dismissDuplicatePair(input: {
       ? [input.leftPatientId, input.rightPatientId]
       : [input.rightPatientId, input.leftPatientId];
 
-  await withTenantCtx(input.organizationId, async (tx) => db
+  await withTenantCtx(input.organizationId, async (tx) => tx
       .insert(patientDuplicateDecisions)
       .values({
         organizationId: input.organizationId,

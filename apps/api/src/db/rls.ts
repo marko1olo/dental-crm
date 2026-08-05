@@ -69,8 +69,32 @@ const bypassScope = new AsyncLocalStorage<true>();
  * transaction, checking out a second connection from a pool of 10 while the
  * outer one is still held — halving effective capacity and, once the pool is
  * saturated, deadlocking: every held connection waits for a connection that
- * can never be handed out. When a transaction is already active for the same
- * tenant we reuse it; `set_config` has already run on that connection.
+ * can never be handed out. When a transaction is already active we reuse it.
+ *
+ * FAST PATH (nested, same tenant). Because of that auto-wrapper the nested
+ * case is the norm, and the tenant is almost always identical to the one the
+ * outer scope already established. The current value still has to be read once
+ * — it is needed both for the comparison and for the later restore — but when
+ * it already equals `organizationId` the callback runs immediately: no
+ * set_config on entry, none in `finally`. That is 1 round-trip instead of 3.
+ *
+ * EMPTY-STRING NORMALIZATION. A user-defined GUC does not reset to NULL: once
+ * it has been set, its reset value is the EMPTY STRING, so
+ * `current_setting('app.current_tenant', true)` returns ''. Restoring that
+ * verbatim writes '' back, and policies casting `::uuid` then fail with 22P02
+ * (invalid input syntax for type uuid), whereas NULL::uuid is simply NULL. The
+ * read therefore maps '' to null, so the restore passes NULL and set_config
+ * resets the parameter instead of storing an empty string explicitly. This
+ * guard stands on its own; it does not depend on NULLIF() in the policies.
+ *
+ * BYPASS SUPPRESSION. Policies from migration 0158 read
+ * `current_setting('app.superuser_bypass', true) = 'on' OR <tenant match>`,
+ * and the left disjunct is true for EVERY row. A withTenantCtx call nested
+ * inside an active withSuperuserBypass would inherit a transaction in which
+ * the tenant setting cannot restrict anything — isolation for that scope is
+ * dead. An explicit request for a tenant context means isolation is wanted, so
+ * the flag is forced to 'off' for the duration of the callback and restored to
+ * 'on' in `finally`, leaving the surrounding bypass scope intact.
  *
  * @param organizationId  UUID of the organization/tenant making the request.
  *                        Must be a verified, non-null value from RequestIdentity.
@@ -90,22 +114,61 @@ export async function withTenantCtx<T>(
     const previous = await existingTx.execute(
       sql`SELECT current_setting('app.current_tenant', true) AS tenant`,
     );
-    const previousTenant =
+    const rawTenant =
       (previous as unknown as { rows?: Array<{ tenant: string | null }> })
         .rows?.[0]?.tenant ?? null;
-    await existingTx.execute(
-      sql`SELECT set_config('app.current_tenant', ${organizationId}, true)`,
-    );
+    // Reset value of a user-defined GUC is '' rather than NULL. Writing ''
+    // back would make the `::uuid` casts in the policies raise 22P02; NULL
+    // casts cleanly. Normalize on read so the restore below passes NULL.
+    const previousTenant = rawTenant === '' ? null : rawTenant;
+    // An enclosing withSuperuserBypass left `app.superuser_bypass = 'on'` on
+    // this transaction, which satisfies the permissive disjunct of every 0158
+    // policy for every row. Asking for a tenant context means asking for
+    // isolation, so the flag is suppressed for the callback and handed back to
+    // the outer scope in `finally`.
+    const bypassActive = bypassScope.getStore() === true;
+    const tenantChanged = previousTenant !== organizationId;
+    if (!tenantChanged && !bypassActive) {
+      // The transaction already carries exactly this tenant and no bypass to
+      // undo: set_config would write back the value that is already there, and
+      // the restore would write it a second time. Skip both.
+      return callback(existingTx as any);
+    }
+    if (bypassActive) {
+      await existingTx.execute(
+        sql`SELECT set_config('app.superuser_bypass', 'off', true)`,
+      );
+    }
+    if (tenantChanged) {
+      await existingTx.execute(
+        sql`SELECT set_config('app.current_tenant', ${organizationId}, true)`,
+      );
+    }
     try {
       return await callback(existingTx as any);
     } finally {
-      try {
-        await existingTx.execute(
-          sql`SELECT set_config('app.current_tenant', ${previousTenant}, true)`,
-        );
-      } catch {
-        // Transaction already aborted; the setting dies with it. Suppress so
-        // the original error from the callback is not masked.
+      // Each restore gets its own try/catch: on an aborted transaction every
+      // statement fails, and a throw from here would replace the original error
+      // from the callback. Failing the first must not skip the second either.
+      if (tenantChanged) {
+        try {
+          await existingTx.execute(
+            sql`SELECT set_config('app.current_tenant', ${previousTenant}, true)`,
+          );
+        } catch {
+          // Transaction already aborted; the setting dies with it. Suppress so
+          // the original error from the callback is not masked.
+        }
+      }
+      if (bypassActive) {
+        try {
+          await existingTx.execute(
+            sql`SELECT set_config('app.superuser_bypass', 'on', true)`,
+          );
+        } catch {
+          // Same reasoning: the outer bypass scope resets the flag itself, and
+          // on an aborted transaction nothing survives anyway.
+        }
       }
     }
   }

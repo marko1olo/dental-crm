@@ -8,7 +8,6 @@ import {
   type SpeechRecordingRecoveryList,
   type SpeechRecordingRecoveryItem
 } from "@dental/shared";
-import { db } from "../db/client.js";
 import { aiJobs, patients, visits } from "../db/schema.js";
 import { withTenantCtx, withSuperuserBypass } from "../db/rls.js";
 
@@ -508,19 +507,37 @@ async function resolveSpeechChunkOrganizationId(scope: {
   visitId?: string | null;
 }): Promise<string> {
   if (scope.visitId) {
-    const [visit] = await withSuperuserBypass( async (tx) => db
-          .select({ organizationId: visits.organizationId })
-          .from(visits)
-          .where(eq(visits.id, scope.visitId as string))
-          .limit(1));
+    /*
+     * Идентификатор кладётся в const ДО замыкания, и это не косметика.
+     * Сужение типа, которое даёт `if (scope.visitId)`, внутрь стрелочной
+     * функции не переносится: свойство объекта может быть переприсвоено к
+     * моменту вызова колбэка, поэтому компилятор возвращает полю исходный тип
+     * `string | null | undefined`. Именно эту потерю сужения затыкал прежний
+     * `as string` — каст пропустил бы null в запрос как `WHERE id = NULL`,
+     * условие всегда ложно, ноль строк и невнятный отказ позже. У const
+     * переприсваивания нет, сужение сохраняется, и проверку держит компилятор.
+     */
+    const visitId = scope.visitId;
+    const [visit] = await withSuperuserBypass(async (tx) =>
+      tx
+        .select({ organizationId: visits.organizationId })
+        .from(visits)
+        .where(eq(visits.id, visitId))
+        .limit(1)
+    );
     if (visit?.organizationId) return visit.organizationId;
   }
   if (scope.patientId) {
-    const [patient] = await withSuperuserBypass( async (tx) => db
-          .select({ organizationId: patients.organizationId })
-          .from(patients)
-          .where(eq(patients.id, scope.patientId as string))
-          .limit(1));
+    // const по той же причине, что и visitId выше: сужение типа не переживает
+    // границу замыкания, а каст вместо него пропускает null в запрос.
+    const patientId = scope.patientId;
+    const [patient] = await withSuperuserBypass(async (tx) =>
+      tx
+        .select({ organizationId: patients.organizationId })
+        .from(patients)
+        .where(eq(patients.id, patientId))
+        .limit(1)
+    );
     if (patient?.organizationId) return patient.organizationId;
   }
   throw new SpeechChunkOrganizationScopeError();
@@ -631,13 +648,15 @@ function readDurableEnvelope(recordingId: string, rawEnvelope: string | null): D
  * (organization_id, input_storage_path) в ai_jobs нет, он требует миграции.
  */
 async function loadDurableRecordingEnvelope(recordingId: string, organizationId: string): Promise<DurableEnvelopeRead> {
-  const [row] = await withSuperuserBypass( async (tx) => db
+  const [row] = await withSuperuserBypass(async (tx) =>
+    tx
       .select({ inputText: aiJobs.inputText })
       .from(aiJobs)
       .where(
         and(eq(aiJobs.organizationId, organizationId), eq(aiJobs.inputStoragePath, durableRecordingPath(recordingId)))
       )
-      .limit(1));
+      .limit(1)
+  );
   if (!row) return { chunks: [], unreadableChunks: [] };
   const stored = readDurableEnvelope(recordingId, row.inputText);
   return {
@@ -814,19 +833,23 @@ async function persistSpeechRecording(trigger: SpeechTranscriptionChunk, organiz
     updatedAt: new Date()
   };
 
-  const [updated] = await withSuperuserBypass( async (tx) => db
+  const [updated] = await withSuperuserBypass(async (tx) =>
+    tx
       .update(aiJobs)
       .set(values)
       .where(and(eq(aiJobs.organizationId, organizationId), eq(aiJobs.inputStoragePath, storagePath)))
-      .returning({ id: aiJobs.id }));
+      .returning({ id: aiJobs.id })
+  );
 
   if (!updated) {
-    await withSuperuserBypass( async (tx) => tx.insert(aiJobs).values({
-          organizationId,
-          kind: durableRecordingJobKind,
-          inputStoragePath: storagePath,
-          ...values
-        }));
+    await withSuperuserBypass(async (tx) =>
+      tx.insert(aiJobs).values({
+        organizationId,
+        kind: durableRecordingJobKind,
+        inputStoragePath: storagePath,
+        ...values
+      })
+    );
   }
 
   for (const chunk of chunks) {
@@ -955,7 +978,7 @@ async function restoreSpeechTranscriptionChunks(): Promise<void> {
   const chunkBudget = maxRestoredChunkCount();
   const charBudget = maxRestoredTranscriptChars();
   const storagePathPattern = `${durableRecordingPathPrefix}%`;
-  const restored = await withSuperuserBypass( async (tx) => tx.execute(sql`
+  const restored = await withSuperuserBypass(async (tx) => tx.execute(sql`
     SELECT input_text, input_storage_path
     FROM (
       SELECT
