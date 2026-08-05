@@ -14,19 +14,19 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
-import Fastify from "fastify";
 import { db } from "../../db/client.js";
 import { organizations, users } from "../../db/schema.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
 import { telephonyRoutes } from "../../routes/telephony.js";
 import { authTokenSecret } from "../../security/authSecret.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,
 	purgeFixtureOrganizations,
+	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "inventoryTelephonyBody";
 const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);

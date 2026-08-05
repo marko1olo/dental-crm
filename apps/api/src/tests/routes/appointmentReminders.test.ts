@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
@@ -20,6 +20,8 @@ import {
 	scheduleAppointmentReminders,
 	shortDoctorName
 } from "../../services/communications/appointmentReminders.js";
+import { withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /**
  * Напоминание за сутки — то, ради чего клиника заводит рассылку. В проекте его

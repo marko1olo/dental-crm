@@ -89,21 +89,30 @@ async function liveEnumLabels(): Promise<string[]> {
 	return rows.rows.map((row) => row.enumlabel);
 }
 
-/** Последний снимок клиники: воронка планов лечения так, как её записал воркер. */
+/**
+ * Последний снимок клиники: воронка планов лечения так, как её записал воркер.
+ *
+ * Чтение идёт под тенант-контекстом: `bi_analytics_snapshots` — тенант-таблица
+ * под принудительным RLS, и запрос без `app.current_tenant` вернул бы ноль строк
+ * без ошибки, то есть отчёт «снимок не записан» был бы о самом чтении, а не о
+ * воркере.
+ */
 async function readSnapshot(organizationId: string): Promise<{
 	planFunnel: { status?: string; name: string; value: number }[];
 	cohortLtv: Record<string, unknown>[];
 }> {
-	const snapshot = await db.execute<{
-		plan_funnel_json: { status?: string; name: string; value: number }[];
-		cohort_ltv_json: Record<string, unknown>[];
-	}>(sql`
-		SELECT plan_funnel_json, cohort_ltv_json
-		FROM bi_analytics_snapshots
-		WHERE organization_id = ${organizationId}
-		ORDER BY snapshot_date DESC
-		LIMIT 1
-	`);
+	const snapshot = await withFixtureTenant(organizationId, async () =>
+		db.execute<{
+			plan_funnel_json: { status?: string; name: string; value: number }[];
+			cohort_ltv_json: Record<string, unknown>[];
+		}>(sql`
+			SELECT plan_funnel_json, cohort_ltv_json
+			FROM bi_analytics_snapshots
+			WHERE organization_id = ${organizationId}
+			ORDER BY snapshot_date DESC
+			LIMIT 1
+		`),
+	);
 	assert.equal(
 		snapshot.rows.length,
 		1,
