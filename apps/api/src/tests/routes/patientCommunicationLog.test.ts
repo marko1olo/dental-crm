@@ -456,11 +456,15 @@ describe("журнал обращений пациента", () => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		// Заводим карту без единого обращения: экран обязан отличать «через
-		// систему не обращались» от «прочитать не удалось».
-		await db
-			.insert(patients)
-			.values({ id: PATIENT_EMPTY, organizationId: ORG_MINE, fullName: "Без Обращений" })
-			.onConflictDoNothing();
+		// систему не обращались» от «прочитать не удалось». Досев внутри теста
+		// нуждается в тенант-контексте так же, как сев в before: без
+		// `app.current_tenant` вставка отвергается кодом 42501.
+		await withFixtureTenant(ORG_MINE, async () => {
+			await db
+				.insert(patients)
+				.values({ id: PATIENT_EMPTY, organizationId: ORG_MINE, fullName: "Без Обращений" })
+				.onConflictDoNothing();
+		});
 
 		const { status, body } = await readLog(clinicToken, PATIENT_EMPTY);
 		assert.equal(status, 200, body);

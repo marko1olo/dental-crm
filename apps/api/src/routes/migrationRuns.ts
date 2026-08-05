@@ -633,6 +633,13 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
 
     reply.header("Content-Type", "text/csv; charset=utf-8");
     reply.header("Content-Disposition", `attachment; filename="reconciliation-${run.id.slice(0, 8)}.csv"`);
+    /*
+     * ЗДЕСЬ `reply.send` ОСТАЁТСЯ, И ЭТО НЕ ПРОПУСК. Тело ответа — не JSON, а
+     * строка CSV с BOM, отданная под собственным Content-Type и
+     * Content-Disposition; форму отправки такого тела трогать незачем. Записи в
+     * базу этот маршрут не делает вовсе — читает уже сформированную сверку,
+     * поэтому откладывать здесь нечего.
+     */
     return reply.send(`﻿${csv}`);
   });
 
@@ -640,7 +647,8 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
   app.get("/api/migration/worker/status", async (request, reply) => {
     const context = await requireClinicalReadContext(request, reply, "migration worker status");
     if (!context) return;
-    return reply.code(200).send({ worker: migrationWorkerStatus() });
+    reply.code(200);
+    return { worker: migrationWorkerStatus() };
   });
 
   /**

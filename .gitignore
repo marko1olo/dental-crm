@@ -183,3 +183,6 @@ NUL
 **/tsconfig.tsbuildinfo
  
 .tools/ 
+
+.dente-data/
+apps/api/.dente-data/

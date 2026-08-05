@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { sql } from "drizzle-orm";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { db } from "../db/client.js";
 import { appointments, organizations, patients, treatmentPlans } from "../db/schema.js";
 import { registerAnalyticsRoutes } from "../routes/analytics.js";
@@ -10,7 +10,9 @@ import {
 	fixtureUuid,
 	isDatabaseUnavailable,
 	purgeFixtureOrganizations,
+	withFixtureTenant,
 } from "./support/fixtureOrganizations.js";
+import { createTenantTestApp } from "./support/tenantTestApp.js";
 
 /**
  * «ВОРОНКА ПЛАНОВ ЛЕЧЕНИЯ» НА ЖИВОМ ЭКРАНЕ АНАЛИТИКИ СЧИТАЛА ПРИЁМЫ.
@@ -152,10 +154,18 @@ async function liveEnumLabels(): Promise<string[]> {
 	return rows.rows.map((row) => row.enumlabel);
 }
 
-/** Число планов клиники — независимым запросом, а не константой этого файла. */
+/**
+ * Число планов клиники — независимым запросом, а не константой этого файла.
+ *
+ * Запрос идёт под тенант-контекстом: под принудительным RLS счёт без
+ * `app.current_tenant` вернул бы ноль и ошибки не дал бы, то есть «независимая»
+ * проверка молча сверяла бы воронку с нулём.
+ */
 async function countPlansInDatabase(organizationId: string): Promise<number> {
-	const rows = await db.execute<{ count: number }>(
-		sql`SELECT count(*)::int AS count FROM treatment_plans WHERE organization_id = ${organizationId}`,
+	const rows = await withFixtureTenant(organizationId, async () =>
+		db.execute<{ count: number }>(
+			sql`SELECT count(*)::int AS count FROM treatment_plans WHERE organization_id = ${organizationId}`,
+		),
 	);
 	return Number(rows.rows[0]?.count ?? 0);
 }

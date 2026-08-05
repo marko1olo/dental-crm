@@ -246,42 +246,52 @@ describe("автоматические напоминания о приёме", 
 		assert.equal(second.queued, 0, JSON.stringify(second));
 		assert.equal(second.alreadyQueued, 1, JSON.stringify(second));
 
-		const rows = await db
-			.select({ id: communicationOutbox.id })
-			.from(communicationOutbox)
-			.where(
-				and(
-					eq(communicationOutbox.organizationId, ORG_ID),
-					eq(communicationOutbox.dedupeKey, `reminder:${APPOINTMENT_ID}:24`)
+		const rows = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ id: communicationOutbox.id })
+				.from(communicationOutbox)
+				.where(
+					and(
+						eq(communicationOutbox.organizationId, ORG_ID),
+						eq(communicationOutbox.dedupeKey, `reminder:${APPOINTMENT_ID}:24`)
+					)
 				)
-			);
+		);
 		assert.equal(rows.length, 1);
 	});
 
 	test("отменённый приём напоминания не получает", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-		await db.update(appointments).set({ status: "cancelled" }).where(eq(appointments.id, APPOINTMENT_ID));
+		// DELETE и UPDATE без контекста трогают НОЛЬ строк и молчат об этом:
+		// очередь осталась бы непустой, а приём — запланированным.
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+			await db.update(appointments).set({ status: "cancelled" }).where(eq(appointments.id, APPOINTMENT_ID));
+		});
 
 		const report = await scheduleAppointmentReminders({ organizationId: ORG_ID, now });
 		assert.equal(report.queued, 0, JSON.stringify(report));
 		assert.equal(report.examined, 0, JSON.stringify(report));
 
-		await db.update(appointments).set({ status: "planned" }).where(eq(appointments.id, APPOINTMENT_ID));
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.update(appointments).set({ status: "planned" }).where(eq(appointments.id, APPOINTMENT_ID));
+		});
 	});
 
 	test("отказ пациента отменяет напоминание по этому каналу", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-		await db.insert(patientCommunicationConsents).values({
-			organizationId: ORG_ID,
-			patientId: PATIENT_ID,
-			channel: "sms",
-			scope: "service",
-			state: "revoked",
-			source: "staff"
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+			await db.insert(patientCommunicationConsents).values({
+				organizationId: ORG_ID,
+				patientId: PATIENT_ID,
+				channel: "sms",
+				scope: "service",
+				state: "revoked",
+				source: "staff"
+			});
 		});
 
 		const report = await scheduleAppointmentReminders({ organizationId: ORG_ID, now });
@@ -289,15 +299,19 @@ describe("автоматические напоминания о приёме", 
 		assert.equal(report.queued, 0, JSON.stringify(report));
 		assert.equal(report.skippedNoChannel, 1, JSON.stringify(report));
 
-		await db
-			.delete(patientCommunicationConsents)
-			.where(eq(patientCommunicationConsents.organizationId, ORG_ID));
+		await withFixtureTenant(ORG_ID, async () => {
+			await db
+				.delete(patientCommunicationConsents)
+				.where(eq(patientCommunicationConsents.organizationId, ORG_ID));
+		});
 	});
 
 	test("приём вне окна не трогается", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+		});
 		// «Сейчас» на трое суток раньше: до приёма ещё далеко, напоминать рано.
 		const tooEarly = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
 
@@ -309,7 +323,9 @@ describe("автоматические напоминания о приёме", 
 	test("ручной запуск доступен через маршрут", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+		});
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/communications/reminders/run",

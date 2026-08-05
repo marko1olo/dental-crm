@@ -164,10 +164,12 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 		);
 		assert.ok(saved.json.id, "маршрут не вернул id заказа");
 
-		const row = await db.execute<{ price_rub: string }>(sql`
-			select price_rub::text as price_rub from lab_orders
-			 where id = ${String(saved.json.id)}::uuid
-		`);
+		const row = await withFixtureTenant(ORGANIZATION_ID, async () =>
+			db.execute<{ price_rub: string }>(sql`
+				select price_rub::text as price_rub from lab_orders
+				 where id = ${String(saved.json.id)}::uuid
+			`),
+		);
 		assert.equal(
 			row.rows[0]?.price_rub,
 			"1500.50",
