@@ -242,13 +242,11 @@ function toNamedValuePoints(value: unknown): NamedValuePoint[] {
 	return value.flatMap((item) => {
 		const row = asRecord(item);
 		if (!row) return [];
-		return [
-			{
-				name: typeof row.name === "string" ? row.name : "",
-				value: numberOr(row.value, 0),
-				fill: typeof row.fill === "string" ? row.fill : "",
-			},
-		];
+		return {
+			name: typeof row.name === "string" ? row.name : "",
+			value: numberOr(row.value, 0),
+			fill: typeof row.fill === "string" ? row.fill : "",
+		};
 	});
 }
 
@@ -257,14 +255,12 @@ function toDoctorRows(value: unknown): DoctorProfitabilityRow[] {
 	return value.flatMap((item) => {
 		const row = asRecord(item);
 		if (!row) return [];
-		return [
-			{
-				name: typeof row.name === "string" ? row.name : "",
-				revenue: numberOr(row.revenue, 0),
-				margin: nullableNumber(row.margin),
-				completionRate: nullableNumber(row.completionRate),
-			},
-		];
+		return {
+			name: typeof row.name === "string" ? row.name : "",
+			revenue: numberOr(row.revenue, 0),
+			margin: nullableNumber(row.margin),
+			completionRate: nullableNumber(row.completionRate),
+		};
 	});
 }
 
@@ -273,7 +269,7 @@ function toCohortPoints(value: unknown): CohortLtvPoint[] {
 	return value.flatMap((item) => {
 		const row = asRecord(item);
 		if (!row) return [];
-		return [{ cohort: typeof row.cohort === "string" ? row.cohort : "", "Month 12": numberOr(row["Month 12"], 0) }];
+		return { cohort: typeof row.cohort === "string" ? row.cohort : "", "Month 12": numberOr(row["Month 12"], 0) };
 	});
 }
 
