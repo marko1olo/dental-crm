@@ -19,5 +19,5 @@ const url = new URL(raw);
 console.log("host:    ", url.hostname);
 console.log("port:    ", url.port || "5432");
 console.log("database:", url.pathname.replace(/^\//, ""));
-console.log("user:    ", decodeURIComponent(url.username));
-console.log("password:", url.password ? "(задан)" : "(не задан)");
+console.log("user:    ", url.username ? "***" : "(не задан)");
+console.log("password:", url.password ? "***" : "(не задан)");
