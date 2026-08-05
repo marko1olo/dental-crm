@@ -1959,7 +1959,7 @@ export function useAppLogic(): any {
 		setClinicProfileSaveState,
 		clinicProfileDirty,
 		setClinicProfileDirty,
-		currentView,
+		currentView: requestedWorkspaceView,
 		setCurrentView,
 		settingsTab,
 		setSettingsTab,
@@ -2162,6 +2162,44 @@ export function useAppLogic(): any {
 		uiPreferencesSyncError,
 		setUiPreferencesSyncError,
 	} = useAppStore();
+
+	/**
+	 * ОХРАННИК МАРШРУТА ПО РОЛИ. Считается ПРИ РЕНДЕРЕ, а не в useEffect.
+	 *
+	 * ЧТО БЫЛО СЛОМАНО. Проверка прав целиком жила в useEffect (он остался ниже,
+	 * но занят теперь только адресом). Эффекты выполняются ПОСЛЕ коммита, значит
+	 * запрещённый роли раздел успевал СМОНТИРОВАТЬСЯ полностью: отрабатывали его
+	 * собственные эффекты, уходили сетевые запросы за клиническими данными, и лишь
+	 * следующим проходом раздел сменялся «Сменой». Редирект убирал раздел с экрана,
+	 * но не отменял того, что тот уже успел сделать: администратор, открывший
+	 * ссылку #visit, отправлял запросы данных приёма — раздела, которого нет в его
+	 * getFilteredAppViews. Ровно тот случай, про который документация React
+	 * («You Might Not Need an Effect») говорит прямо: значение, выводимое из уже
+	 * имеющегося состояния, считают при рендере, а не досылают эффектом, иначе
+	 * первый проход уходит на экран со старым значением.
+	 *
+	 * ЧТО ИМЕННО ПОМЕНЯЛОСЬ. `currentView` ниже по файлу и во всём возвращаемом
+	 * объекте — уже ПРОВЕРЕННОЕ значение, поэтому запрещённый раздел не попадает
+	 * даже в первый коммит и монтировать нечего. Запрошенное значение осталось
+	 * доступным как `requestedWorkspaceView` и нужно только для правки адреса.
+	 *
+	 * ПРО ЗАПАСНОЙ РАЗДЕЛ. Здесь «shift» — тот же, что стоял в прежнем эффекте, и
+	 * менять его этой правкой нельзя: у ролей «Администратор» и «Управляющий»
+	 * getFilteredAppViews «shift» НЕ содержит, но именно на него их сбрасывает и
+	 * viewFromHash(), и прежний охранник, — то есть «Смена» и сегодня их рабочий
+	 * стартовый экран. Подставить сюда «первый разрешённый роли раздел» значило бы
+	 * молча переселить две роли на другой стартовый экран под видом починки границ
+	 * ошибок. Это отдельное решение, и оно вынесено ведущему.
+	 */
+	const allowedWorkspaceViews = useMemo(
+		() => getFilteredAppViews(selectedWorkspaceRole),
+		[selectedWorkspaceRole],
+	);
+	const currentView: AppView = allowedWorkspaceViews.includes(
+		requestedWorkspaceView,
+	)
+		? requestedWorkspaceView
+		: "shift";
 	const {
 		onboardingDismissed,
 		setOnboardingDismissed,
@@ -4372,12 +4410,18 @@ export function useAppLogic(): any {
 	}, []);
 
 	useEffect(() => {
-		const allowedViews = getFilteredAppViews(selectedWorkspaceRole);
-		if (!allowedViews.includes(currentView)) {
-			setCurrentView("shift");
-			window.location.hash = "shift";
-		}
-	}, [selectedWorkspaceRole, currentView]);
+		/*
+		 * Здесь БОЛЬШЕ НЕ ОХРАННИК — решение о том, что рисовать, принято выше при
+		 * рендере, и запрещённый раздел уже не смонтирован. Остаётся привести к
+		 * этому решению хранилище и адрес: иначе в строке браузера висел бы #visit
+		 * при открытой «Смене», и следующая перезагрузка снова целилась бы в
+		 * закрытый роли раздел. Проверка на равенство обязательна: без неё
+		 * setCurrentView() на каждом проходе перезапускал бы этот же эффект.
+		 */
+		if (requestedWorkspaceView === currentView) return;
+		setCurrentView(currentView);
+		window.location.hash = currentView;
+	}, [requestedWorkspaceView, currentView, setCurrentView]);
 
 	useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
 

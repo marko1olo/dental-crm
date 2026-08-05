@@ -4,7 +4,8 @@ import { formatPhoneNumber } from "../../utils/inputSanitation";
 
 /*
  * Реквизиты пациента: паспорт, ИНН, СНИЛС, представитель, получатель
- * документов, основание обработки персональных данных и удобное окно записи.
+ * документов, основание обработки персональных данных, удобное окно записи и
+ * уровень лояльности.
  *
  * ЧТО БЫЛО НЕ ТАК. Этот файл лежал в дереве и не был подключён ни к одному
  * экрану, а карточка пациента (PatientsView.tsx) рисовала свою копию того же
@@ -51,6 +52,22 @@ type WeekdayOption = {
 };
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+
+type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
+
+/*
+ * Подписи уровней лояльности. Ключи — ровно enum общей схемы
+ * (packages/shared: standard|silver|gold|platinum), и это не стилистика:
+ * Record по этому же union не даёт ни выдумать лишний уровень, ни забыть
+ * новый — оба случая ломают сборку здесь, а не расходятся с сервером молча.
+ * Так уже ломалось: UI слал "none", которого в enum нет, и получал 400.
+ */
+const loyaltyTierLabels: Record<NonNullable<PatientAdministrativeProfile["loyaltyTier"]>, string> = {
+  standard: "Базовый",
+  silver: "Серебро",
+  gold: "Золото",
+  platinum: "Платинум"
+};
 
 type PatientAdministrativeFormProps = {
   patientAdministrativeProfileDraft: PatientAdministrativeProfileDraft;
@@ -249,6 +266,31 @@ export function PatientAdministrativeForm({
           placeholder="Например: только утро, не звонить после 19:00, нужен сопровождающий"
         />
       </label>
+      <label>
+        Уровень лояльности
+        {/* Уровень уже редактировали значком с короной в шапке карточки
+            (components/patients/PatientLoyaltyHeader.tsx), но НЕ здесь — при том
+            что «Сохранить реквизиты» его пишет: buildPatientAdministrativeProfilePayload
+            кладёт draft.loyaltyTier в тело PUT и приводит всё нераспознанное к
+            "standard". То есть форма была невидимым владельцем поля: оператор не
+            видел значения, которое сам же и отправлял, а на устаревшем черновике
+            сохранение реквизитов возвращало уровень назад. Поле видимо — значит
+            владелец один и он честный. */}
+        <select
+          value={patientAdministrativeProfileDraft.loyaltyTier}
+          onChange={(event: SelectChangeEvent) => updatePatientAdministrativeProfileDraft("loyaltyTier", event.target.value)}
+        >
+          {Object.entries(loyaltyTierLabels).map(([tier, label]) => (
+            <option key={`patient-loyalty-${tier}`} value={tier}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="field-note form-span-2">
+        Уровень — пометка для сотрудников: скидку по нему программа не считает и в счёт не подставляет,
+        назначайте её вручную при оплате. Тот же уровень показывает значок с короной в шапке карточки.
+      </p>
     </div>
   );
 }

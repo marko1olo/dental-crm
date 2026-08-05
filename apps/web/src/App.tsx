@@ -3723,34 +3723,85 @@ export function App() {
         ) : null}
 
         {currentView === "shift" ? (
-        <ShiftView
-          visibleRecommendedActions={visibleRecommendedActions}
-          recommendedActionPriorityLabels={recommendedActionPriorityLabels}
-          staffRoleLabels={staffRoleLabels}
-          dashboard={dashboard}
-          activeQueueRole={activeQueueRole}
-          setError={setError}
-          mostLoadedResource={mostLoadedResource}
-          setSelectedPatientId={setSelectedPatientId}
-        />
+        /*
+          Граница и Suspense здесь появились последними из всех разделов, и это
+          было не украшение. `ShiftView` объявлен через `lazy()` (строка 399),
+          но своего `Suspense` не имел: при подвешивании React поднимался до
+          ближайшего сверху — а он стоит в AppShell.tsx вокруг ВСЕГО рабочего
+          места. То есть на стартовом разделе, который открывается по умолчанию
+          и куда сбрасывает охранник маршрута, вместо панели гасился весь экран
+          вместе с боковым меню и шапкой. Границы ошибок над «Сменой» не было
+          вовсе: сбой рендера или недогруженный чанк снимал рабочее место целиком
+          и оставлял человека с кнопкой перезагрузки на пустой странице.
+        */
+        <WorkspaceRouteErrorBoundary view="shift" label={viewLabels.shift} panelClassName="panel shift-panel" panelId="shift">
+          <Suspense
+            fallback={
+              <div className="panel shift-panel" id="shift" aria-busy="true">
+                <div className="panel-heading">
+                  <h2>{viewLabels.shift}</h2>
+                  <span className="status-pill status-planned">загрузка</span>
+                </div>
+              </div>
+            }
+          >
+            <ShiftView
+              visibleRecommendedActions={visibleRecommendedActions}
+              recommendedActionPriorityLabels={recommendedActionPriorityLabels}
+              staffRoleLabels={staffRoleLabels}
+              dashboard={dashboard}
+              activeQueueRole={activeQueueRole}
+              setError={setError}
+              mostLoadedResource={mostLoadedResource}
+              setSelectedPatientId={setSelectedPatientId}
+            />
+          </Suspense>
+        </WorkspaceRouteErrorBoundary>
         ) : null}
 
         {["shift", "patients"].includes(currentView) ? (
-          <PatientCockpit
-            /*
-              На «Смене» карточка показывает пациента открытого приёма, а не
-              `activePatient`: тот при отсутствии приёма подставляет первого
-              пациента списка, и на экран попадал случайный человек с красной
-              пометкой «СРОЧНО». Без приёма карточка честно говорит «Пациент
-              не выбран». В разделе «Пациенты» выбор из списка остаётся.
-            */
-            activePatient={currentView === "shift" ? activeVisitPatient : activePatient}
-            activePatientInsight={activePatientInsight}
-            dashboard={dashboard}
-            activeCommunicationTasks={activeCommunicationTasks}
-            activeImagingStudies={activeImagingStudies}
-            activeUsableDocuments={activeUsableDocuments}
-          />
+          /*
+            Карточка приходит из того же ленивого модуля, что и «Смена»
+            (ShiftView.tsx, строка 400), поэтому у неё те же две дыры — и своя
+            граница, а не общая со «Сменой»: сбой карточки пациента не должен
+            уносить сводку смены, и наоборот. `view` подставляется настоящий, а
+            не постоянный «shift»: по его смене граница сама снимает отказ
+            (componentDidUpdate в workspaceRouteErrorBoundary.tsx), то есть
+            переход «Смена» ↔ «Пациенты» служит бесплатным повтором.
+          */
+          <WorkspaceRouteErrorBoundary
+            view={currentView === "patients" ? "patients" : "shift"}
+            label="Карточка пациента"
+            panelClassName="patient-cockpit"
+            panelId="patient-cockpit"
+          >
+            <Suspense
+              fallback={
+                <section className="patient-cockpit dnt-cockpit" aria-label="Карточка пациента" aria-busy="true">
+                  <div className="panel-heading">
+                    <h2>Карточка пациента</h2>
+                    <span className="status-pill status-planned">загрузка</span>
+                  </div>
+                </section>
+              }
+            >
+              <PatientCockpit
+                /*
+                  На «Смене» карточка показывает пациента открытого приёма, а не
+                  `activePatient`: тот при отсутствии приёма подставляет первого
+                  пациента списка, и на экран попадал случайный человек с красной
+                  пометкой «СРОЧНО». Без приёма карточка честно говорит «Пациент
+                  не выбран». В разделе «Пациенты» выбор из списка остаётся.
+                */
+                activePatient={currentView === "shift" ? activeVisitPatient : activePatient}
+                activePatientInsight={activePatientInsight}
+                dashboard={dashboard}
+                activeCommunicationTasks={activeCommunicationTasks}
+                activeImagingStudies={activeImagingStudies}
+                activeUsableDocuments={activeUsableDocuments}
+              />
+            </Suspense>
+          </WorkspaceRouteErrorBoundary>
         ) : null}
 
         {currentView === "imaging" ? (

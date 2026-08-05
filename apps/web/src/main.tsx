@@ -1,6 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { AppShell } from "./AppShell";
+import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
 import { GuestLabPortal } from "./GuestLabPortal";
 import { installApiAuthFetch } from "./lib/apiAuthFetch";
@@ -77,14 +78,23 @@ if (publicPortalRoute) {
   // есть онлайн-записи у клиники не было вовсе — пациент по-прежнему звонил, а
   // готовый бэкенд отвечал в пустоту. Разбор адреса появился вместе с порталом
   // зуботехника, и теперь второй вид адреса стоит рядом с первым.
+  // ГРАНИЦА ОШИБОК ЗДЕСЬ ОБЯЗАТЕЛЬНА, И ЕЁ НЕ БЫЛО. Рабочее место клиники всегда
+  // монтировалось внутрь границы (AppShell), а этот контур — нет: исключение при
+  // рендере снимало поддерево, React оставлял пустой корень, и посетитель — чаще
+  // всего пациент с телефона — видел белую страницу без текста и без действия.
+  // Граница накрывает и GlobalToast: если падает он, страница записи всё равно
+  // не должна исчезать молча. Она ловит только фазу рендера — сбои сетевых
+  // запросов внутри самих виджетов разбираются их собственными обработчиками.
   appRoot.render(
     <React.StrictMode>
-      {publicPortalRoute.kind === "booking" ? (
-        <PublicBookingWidget organizationId={publicPortalRoute.organizationId} />
-      ) : (
-        <GuestLabPortal token={publicPortalRoute.token} />
-      )}
-      <GlobalToast />
+      <BootErrorBoundary audience="public">
+        {publicPortalRoute.kind === "booking" ? (
+          <PublicBookingWidget organizationId={publicPortalRoute.organizationId} />
+        ) : (
+          <GuestLabPortal token={publicPortalRoute.token} />
+        )}
+        <GlobalToast />
+      </BootErrorBoundary>
     </React.StrictMode>
   );
 } else {

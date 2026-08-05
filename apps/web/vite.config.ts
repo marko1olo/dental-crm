@@ -121,6 +121,20 @@ export default defineConfig({
           if (normalizedId.endsWith("/apps/web/src/store/visitStore.ts")) return "visit-store";
           if (normalizedId.endsWith("/apps/web/src/store/appStore.ts")) return "app-store";
           if (normalizedId.endsWith("/apps/web/src/store/uiStore.ts")) return "ui-store";
+          // Rollup's functional manualChunks добавляет в ручной чанк не только сам модуль,
+          // но и ВСЕ его ещё не занятые зависимости. Из-за этого правило
+          // components/settings/ ниже засасывало общие модули, которые к настройкам
+          // отношения не имеют, и точка входа получала статическое ребро на
+          // settings-components (через lib/publicPortalRoute.ts, который импортирует
+          // main.tsx). Каждый общий модуль ниже занят явно, чтобы правила-каталоги
+          // не могли его поглотить.
+          if (normalizedId.endsWith("/apps/web/src/components/EmptyState.tsx")) return "empty-state";
+          if (normalizedId.endsWith("/apps/web/src/lib/publicPortalRoute.ts")) return "public-portal-route";
+          if (normalizedId.endsWith("/apps/web/src/SmartParsePreview.tsx")) return "smart-parse-preview";
+          if (normalizedId.endsWith("/apps/web/src/PriceDictationBar.tsx")) return "price-dictation-bar";
+          if (normalizedId.endsWith("/apps/web/src/lib/authedApiFile.ts")) return "authed-api-file";
+          if (normalizedId.endsWith("/apps/web/src/components/PatientPortal.tsx")) return "patient-portal";
+          if (normalizedId.endsWith("/apps/web/src/components/workspace/WorkspaceFeaturesSelector.tsx")) return "features-selector";
           if (normalizedId.includes("/apps/web/src/components/settings/")) return "settings-components";
           if (normalizedId.includes("/apps/web/src/components/dicom/")) return "dicom-components";
           if (normalizedId.includes("/apps/web/src/components/imaging/")) return "imaging-components";
@@ -134,6 +148,12 @@ export default defineConfig({
           if (normalizedId.endsWith("/apps/web/src/documentLogic.ts")) return "document-logic";
           if (normalizedId.endsWith("/apps/web/src/documentValidators.ts")) return "document-validators";
           if (normalizedId.endsWith("/apps/web/src/useAppLogic.tsx")) return "app-logic";
+          // Те же грабли, что и выше, но для правила App.tsx -> workspace: оба модуля
+          // общие (PanelLoadFailure рендерят 19 панелей, useWebsocket зовут 5 мест),
+          // и без явного захвата они уезжали внутрь workspace, из-за чего ленивые
+          // маршруты получали статическое ребро на самый тяжёлый чанк.
+          if (normalizedId.endsWith("/apps/web/src/components/PanelLoadFailure.tsx")) return "panel-load-failure";
+          if (normalizedId.endsWith("/apps/web/src/hooks/useWebsocket.ts")) return "use-websocket";
           if (normalizedId.endsWith("/apps/web/src/App.tsx")) return "workspace";
           if (normalizedId.includes("/node_modules/react") || normalizedId.includes("/node_modules/react-dom")) return "react-vendor";
           if (normalizedId.includes("/node_modules/lucide-react")) return "icons";
