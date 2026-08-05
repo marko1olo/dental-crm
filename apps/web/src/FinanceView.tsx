@@ -175,7 +175,7 @@ export function FinanceView({
    */
   money = formatMoney,
   onCreateDocument,
-  onGoToDocuments = () => {},
+  onGoToDocuments,
   onGoToPrices = () => {},
   onGoToVisit = () => {},
   onRecordPayment = () => {},
