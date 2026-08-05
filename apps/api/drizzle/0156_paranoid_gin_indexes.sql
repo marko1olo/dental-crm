@@ -61,12 +61,6 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_msg_tpl_catalogs_vars_gin ON message
 
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_msgr_inbound_events_payload_gin ON messenger_inbound_events USING GIN (raw_payload);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_dente_max_bot_features_gin ON dente_max_bot_configs USING GIN (enabled_features_json);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_dente_max_bot_routing_gin ON dente_max_bot_configs USING GIN (staff_routing_json);
-
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_dente_wa_bot_features_gin ON dente_whatsapp_bot_configs USING GIN (enabled_features_json);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_dente_wa_bot_routing_gin ON dente_whatsapp_bot_configs USING GIN (staff_routing_json);
-
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_protocol_tpls_diag_hints_gin ON protocol_templates USING GIN (diagnosis_hints);
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_protocol_tpls_req_docs_gin ON protocol_templates USING GIN (required_documents);
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_protocol_tpls_sug_img_gin ON protocol_templates USING GIN (suggested_imaging);

@@ -2,6 +2,7 @@ import { and, eq, gte, lt, notInArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import {
   appointments,
   clinics,
@@ -325,44 +326,47 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
         });
       }
 
-      const [organization] = await db
-        .select({ id: organizations.id })
-        .from(organizations)
-        .where(eq(organizations.id, organizationId))
-        .limit(1);
-      if (!organization) {
-        return reply
-          .status(404)
-          .send({ error: "ClinicNotFound", message: CLINIC_LINK_DEAD_MESSAGE });
-      }
+      return withTenantCtx(organizationId, async () => {
+        const [organization] = await db
+          .select({ id: organizations.id })
+          .from(organizations)
+          .where(eq(organizations.id, organizationId))
+          .limit(1);
+        if (!organization) {
+          return reply.status(404).send({
+            error: "ClinicNotFound",
+            message: CLINIC_LINK_DEAD_MESSAGE,
+          });
+        }
 
-      const doctorsList = await db
-        .select({
-          id: users.id,
-          fullName: users.fullName,
-          specialties: users.specialties,
-        })
-        .from(users)
-        .where(
-          and(
-            eq(users.organizationId, organizationId),
-            eq(users.role, "doctor"),
-          ),
-        )
-        .limit(50);
+        const doctorsList = await db
+          .select({
+            id: users.id,
+            fullName: users.fullName,
+            specialties: users.specialties,
+          })
+          .from(users)
+          .where(
+            and(
+              eq(users.organizationId, organizationId),
+              eq(users.role, "doctor"),
+            ),
+          )
+          .limit(50);
 
-      if (doctorsList.length === 0) {
-        // Клиника существует, но записываться не к кому. Причина у сервера
-        // установлена ровно такая; ПОЧЕМУ врачей нет (не заведены, у всех
-        // снята роль врача) он не знает и не сочиняет.
-        return reply.status(503).send({
-          error: "NoBookableDoctors",
-          message:
-            "В этой клинике пока нет ни одного врача, открытого для записи через сайт, поэтому выбрать специалиста не из кого. Позвоните в клинику — там запишут на приём.",
-        });
-      }
+        if (doctorsList.length === 0) {
+          // Клиника существует, но записываться не к кому. Причина у сервера
+          // установлена ровно такая; ПОЧЕМУ врачей нет (не заведены, у всех
+          // снята роль врача) он не знает и не сочиняет.
+          return reply.status(503).send({
+            error: "NoBookableDoctors",
+            message:
+              "В этой клинике пока нет ни одного врача, открытого для записи через сайт, поэтому выбрать специалиста не из кого. Позвоните в клинику — там запишут на приём.",
+          });
+        }
 
-      return doctorsList;
+        return doctorsList;
+      });
     },
   );
 

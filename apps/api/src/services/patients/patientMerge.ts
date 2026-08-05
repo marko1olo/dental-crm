@@ -31,6 +31,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { patients } from "../../db/schema.js";
 import { patientDuplicateDecisions } from "../../db/patientsSchema.js";
+import { withTenantCtx, withSuperuserBypass } from "../../db/rls.js";
 
 /** Имя таблицы или колонки из каталога. Защита от подстановки в динамический SQL. */
 const SAFE_IDENTIFIER = /^[a-z_][a-z0-9_]*$/;
@@ -131,24 +132,24 @@ export async function mergePatients(
     return { ok: false, reason: "Указана одна и та же карточка." };
   }
 
-  const bothPatients = await db
-    .select({
-      id: patients.id,
-      fullName: patients.fullName,
-      phone: patients.phone,
-      email: patients.email,
-      birthDate: patients.birthDate,
-      notes: patients.notes,
-      status: patients.status,
-      mergedInto: patients.mergedIntoPatientId,
-    })
-    .from(patients)
-    .where(
-      and(
-        eq(patients.organizationId, input.organizationId),
-        sql`${patients.id} in (${input.primaryPatientId}, ${input.duplicatePatientId})`,
-      ),
-    );
+  const bothPatients = await withTenantCtx(input.organizationId, async (tx) => db
+      .select({
+        id: patients.id,
+        fullName: patients.fullName,
+        phone: patients.phone,
+        email: patients.email,
+        birthDate: patients.birthDate,
+        notes: patients.notes,
+        status: patients.status,
+        mergedInto: patients.mergedIntoPatientId,
+      })
+      .from(patients)
+      .where(
+        and(
+          eq(patients.organizationId, input.organizationId),
+          sql`${patients.id} in (${input.primaryPatientId}, ${input.duplicatePatientId})`,
+        ),
+      ));
 
   const primary = bothPatients.find((row) => row.id === input.primaryPatientId);
   const duplicate = bothPatients.find(
@@ -183,21 +184,21 @@ export async function mergePatients(
   const filledFields: string[] = [];
 
   try {
-    await db.transaction(async (tx) => {
-      // Сначала снимаем конфликты уникальности, иначе перенос упадёт.
-      const conflictPromises = UNIQUE_CONFLICT_TABLES.map(async (conflict) => {
-        const scopeMatch =
-          conflict.scope.length === 0
-            ? sql`true`
-            : sql.join(
-                conflict.scope.map(
-                  (column) =>
-                    sql`d.${sql.identifier(column)} = p.${sql.identifier(column)}`,
-                ),
-                sql` and `,
-              );
+    await withTenantCtx(input.organizationId, async (tx) => tx.transaction(async (tx) => {
+          // Сначала снимаем конфликты уникальности, иначе перенос упадёт.
+          const conflictPromises = UNIQUE_CONFLICT_TABLES.map(async (conflict) => {
+            const scopeMatch =
+              conflict.scope.length === 0
+                ? sql`true`
+                : sql.join(
+                    conflict.scope.map(
+                      (column) =>
+                        sql`d.${sql.identifier(column)} = p.${sql.identifier(column)}`,
+                    ),
+                    sql` and `,
+                  );
 
-        const deleted = await tx.execute(sql`
+            const deleted = await tx.execute(sql`
 					delete from ${sql.identifier(conflict.table)} d
 					where d.${sql.identifier(conflict.column)} = ${input.duplicatePatientId}
 						and exists (
@@ -207,121 +208,121 @@ export async function mergePatients(
 						)
 					returning d.${sql.identifier(conflict.column)}
 				`);
-        const count = rowCount(deleted);
-        return { table: conflict.table, count };
-      });
+            const count = rowCount(deleted);
+            return { table: conflict.table, count };
+          });
 
-      const conflictResults = await Promise.all(conflictPromises);
-      for (const { table, count } of conflictResults) {
-        if (count > 0) droppedConflicts[table] = count;
-      }
+          const conflictResults = await Promise.all(conflictPromises);
+          for (const { table, count } of conflictResults) {
+            if (count > 0) droppedConflicts[table] = count;
+          }
 
-      const updatePromises = columns.map(async (column) => {
-        const updated = await tx.execute(sql`
+          const updatePromises = columns.map(async (column) => {
+            const updated = await tx.execute(sql`
 					update ${sql.identifier(column.tableName)}
 					set ${sql.identifier(column.columnName)} = ${input.primaryPatientId}
 					where ${sql.identifier(column.columnName)} = ${input.duplicatePatientId}
 					returning 1
 				`);
-        const count = rowCount(updated);
-        return { key: `${column.tableName}.${column.columnName}`, count };
-      });
+            const count = rowCount(updated);
+            return { key: `${column.tableName}.${column.columnName}`, count };
+          });
 
-      const updateResults = await Promise.all(updatePromises);
-      for (const { key, count } of updateResults) {
-        if (count > 0) movedRows[key] = count;
-      }
+          const updateResults = await Promise.all(updatePromises);
+          for (const { key, count } of updateResults) {
+            if (count > 0) movedRows[key] = count;
+          }
 
-      // Переносим только то, чего в основной карточке нет.
-      const fill: Record<string, string> = {};
-      if (!primary.phone?.trim() && duplicate.phone?.trim()) {
-        fill.phone = duplicate.phone.trim();
-        filledFields.push("телефон");
-      }
-      if (!primary.email?.trim() && duplicate.email?.trim()) {
-        fill.email = duplicate.email.trim();
-        filledFields.push("почта");
-      }
-      if (!primary.birthDate?.trim() && duplicate.birthDate?.trim()) {
-        fill.birthDate = duplicate.birthDate.trim();
-        filledFields.push("дата рождения");
-      }
+          // Переносим только то, чего в основной карточке нет.
+          const fill: Record<string, string> = {};
+          if (!primary.phone?.trim() && duplicate.phone?.trim()) {
+            fill.phone = duplicate.phone.trim();
+            filledFields.push("телефон");
+          }
+          if (!primary.email?.trim() && duplicate.email?.trim()) {
+            fill.email = duplicate.email.trim();
+            filledFields.push("почта");
+          }
+          if (!primary.birthDate?.trim() && duplicate.birthDate?.trim()) {
+            fill.birthDate = duplicate.birthDate.trim();
+            filledFields.push("дата рождения");
+          }
 
-      // Заметки не заменяются, а дописываются: в них бывает важное.
-      const duplicateNotes = duplicate.notes?.trim();
-      const mergedNote = `Объединено из карточки «${duplicate.fullName}»${duplicateNotes ? `. Заметки оттуда: ${duplicateNotes}` : ""}`;
-      const nextNotes = primary.notes?.trim()
-        ? `${primary.notes.trim()}\n${mergedNote}`
-        : mergedNote;
+          // Заметки не заменяются, а дописываются: в них бывает важное.
+          const duplicateNotes = duplicate.notes?.trim();
+          const mergedNote = `Объединено из карточки «${duplicate.fullName}»${duplicateNotes ? `. Заметки оттуда: ${duplicateNotes}` : ""}`;
+          const nextNotes = primary.notes?.trim()
+            ? `${primary.notes.trim()}\n${mergedNote}`
+            : mergedNote;
 
-      // БЫЛО: пациенты загружены с organizationId, а UPDATE — только по id.
-      // Слияние — самая опасная операция картотеки (PHI + оплаты + снимки).
-      // СТАЛО: and(id, organizationId) на обеих карточках.
-      await tx
-        .update(patients)
-        .set({ ...fill, notes: nextNotes, updatedAt: new Date() })
-        .where(
-          and(
-            eq(patients.id, input.primaryPatientId),
-            eq(patients.organizationId, input.organizationId),
-          ),
-        );
+          // БЫЛО: пациенты загружены с organizationId, а UPDATE — только по id.
+          // Слияние — самая опасная операция картотеки (PHI + оплаты + снимки).
+          // СТАЛО: and(id, organizationId) на обеих карточках.
+          await tx
+            .update(patients)
+            .set({ ...fill, notes: nextNotes, updatedAt: new Date() })
+            .where(
+              and(
+                eq(patients.id, input.primaryPatientId),
+                eq(patients.organizationId, input.organizationId),
+              ),
+            );
 
-      // Карточка не удаляется: она становится архивной ссылкой.
-      await tx
-        .update(patients)
-        .set({
-          status: "archived",
-          mergedIntoPatientId: input.primaryPatientId,
-          notes: `Карточка объединена с «${primary.fullName}». Все записи, оплаты и снимки перенесены туда.`,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(patients.id, input.duplicatePatientId),
-            eq(patients.organizationId, input.organizationId),
-          ),
-        );
+          // Карточка не удаляется: она становится архивной ссылкой.
+          await tx
+            .update(patients)
+            .set({
+              status: "archived",
+              mergedIntoPatientId: input.primaryPatientId,
+              notes: `Карточка объединена с «${primary.fullName}». Все записи, оплаты и снимки перенесены туда.`,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(patients.id, input.duplicatePatientId),
+                eq(patients.organizationId, input.organizationId),
+              ),
+            );
 
-      const [left, right] =
-        input.primaryPatientId < input.duplicatePatientId
-          ? [input.primaryPatientId, input.duplicatePatientId]
-          : [input.duplicatePatientId, input.primaryPatientId];
+          const [left, right] =
+            input.primaryPatientId < input.duplicatePatientId
+              ? [input.primaryPatientId, input.duplicatePatientId]
+              : [input.duplicatePatientId, input.primaryPatientId];
 
-      await tx
-        .insert(patientDuplicateDecisions)
-        .values({
-          organizationId: input.organizationId,
-          leftPatientId: left,
-          rightPatientId: right,
-          decision: "merged",
-          decidedByUserId: input.performedByUserId ?? null,
-          reason: input.reason ?? null,
-          movedRowsJson: JSON.stringify({
-            movedRows,
-            droppedConflicts,
-            filledFields,
-          }),
-        })
-        .onConflictDoUpdate({
-          target: [
-            patientDuplicateDecisions.organizationId,
-            patientDuplicateDecisions.leftPatientId,
-            patientDuplicateDecisions.rightPatientId,
-          ],
-          set: {
-            decision: "merged",
-            decidedByUserId: input.performedByUserId ?? null,
-            reason: input.reason ?? null,
-            movedRowsJson: JSON.stringify({
-              movedRows,
-              droppedConflicts,
-              filledFields,
-            }),
-            decidedAt: new Date(),
-          },
-        });
-    });
+          await tx
+            .insert(patientDuplicateDecisions)
+            .values({
+              organizationId: input.organizationId,
+              leftPatientId: left,
+              rightPatientId: right,
+              decision: "merged",
+              decidedByUserId: input.performedByUserId ?? null,
+              reason: input.reason ?? null,
+              movedRowsJson: JSON.stringify({
+                movedRows,
+                droppedConflicts,
+                filledFields,
+              }),
+            })
+            .onConflictDoUpdate({
+              target: [
+                patientDuplicateDecisions.organizationId,
+                patientDuplicateDecisions.leftPatientId,
+                patientDuplicateDecisions.rightPatientId,
+              ],
+              set: {
+                decision: "merged",
+                decidedByUserId: input.performedByUserId ?? null,
+                reason: input.reason ?? null,
+                movedRowsJson: JSON.stringify({
+                  movedRows,
+                  droppedConflicts,
+                  filledFields,
+                }),
+                decidedAt: new Date(),
+              },
+            });
+        }));
   } catch (error) {
     return {
       ok: false,
@@ -370,29 +371,29 @@ export async function dismissDuplicatePair(input: {
       ? [input.leftPatientId, input.rightPatientId]
       : [input.rightPatientId, input.leftPatientId];
 
-  await db
-    .insert(patientDuplicateDecisions)
-    .values({
-      organizationId: input.organizationId,
-      leftPatientId: left,
-      rightPatientId: right,
-      decision: "dismissed",
-      decidedByUserId: input.performedByUserId ?? null,
-      reason: input.reason ?? null,
-    })
-    .onConflictDoUpdate({
-      target: [
-        patientDuplicateDecisions.organizationId,
-        patientDuplicateDecisions.leftPatientId,
-        patientDuplicateDecisions.rightPatientId,
-      ],
-      set: {
+  await withTenantCtx(input.organizationId, async (tx) => db
+      .insert(patientDuplicateDecisions)
+      .values({
+        organizationId: input.organizationId,
+        leftPatientId: left,
+        rightPatientId: right,
         decision: "dismissed",
         decidedByUserId: input.performedByUserId ?? null,
         reason: input.reason ?? null,
-        decidedAt: new Date(),
-      },
-    });
+      })
+      .onConflictDoUpdate({
+        target: [
+          patientDuplicateDecisions.organizationId,
+          patientDuplicateDecisions.leftPatientId,
+          patientDuplicateDecisions.rightPatientId,
+        ],
+        set: {
+          decision: "dismissed",
+          decidedByUserId: input.performedByUserId ?? null,
+          reason: input.reason ?? null,
+          decidedAt: new Date(),
+        },
+      }));
 
   return { ok: true };
 }

@@ -23,7 +23,9 @@ describe("generateDentalCdaXml", () => {
 	};
 
 	test("generates valid XML with full parameters", () => {
-		const xml = generateDentalCdaXml(baseParams);
+		const result = generateDentalCdaXml(baseParams);
+		assert.ok(result.success, result.success ? "" : String(result.error));
+		const xml = result.xml;
 
 		assert.ok(xml.includes(`<?xml version="1.0" encoding="UTF-8"?>`));
 		assert.ok(xml.includes(`<ClinicalDocument xmlns="urn:hl7-org:v3"`));
@@ -73,7 +75,9 @@ describe("generateDentalCdaXml", () => {
 			patientGender: "female" as const, // Female gender code
 		};
 
-		const xml = generateDentalCdaXml(params);
+		const result = generateDentalCdaXml(params);
+		assert.ok(result.success, result.success ? "" : String(result.error));
+		const xml = result.xml;
 
 		assert.ok(xml.includes(`<family>Смирнова</family>`));
 		assert.ok(xml.includes(`<given>Анна</given>`));
@@ -101,11 +105,15 @@ describe("generateDentalCdaXml", () => {
 	test("handles 'other' or null gender code", () => {
 		// Unknown/absent gender is expressed as HL7 nullFlavor UNK, never a fake
 		// administrativeGenderCode code="0".
-		let xml = generateDentalCdaXml({ ...baseParams, patientGender: "other" });
+		let result = generateDentalCdaXml({ ...baseParams, patientGender: "other" });
+		assert.ok(result.success, result.success ? "" : String(result.error));
+		let xml = result.xml;
 		assert.ok(xml.includes(`<administrativeGenderCode nullFlavor="UNK"/>`));
 		assert.ok(!xml.includes(`code="0"`));
 
-		xml = generateDentalCdaXml({ ...baseParams, patientGender: null });
+		result = generateDentalCdaXml({ ...baseParams, patientGender: null });
+		assert.ok(result.success, result.success ? "" : String(result.error));
+		xml = result.xml;
 		assert.ok(xml.includes(`<administrativeGenderCode nullFlavor="UNK"/>`));
 		assert.ok(!xml.includes(`code="0"`));
 	});
@@ -117,11 +125,13 @@ describe("generateDentalCdaXml", () => {
 			`${lockedAt.getFullYear()}${pad(lockedAt.getMonth() + 1)}${pad(lockedAt.getDate())}` +
 			`${pad(lockedAt.getHours())}${pad(lockedAt.getMinutes())}${pad(lockedAt.getSeconds())}`;
 
-		const xml = generateDentalCdaXml({
+		const result = generateDentalCdaXml({
 			...baseParams,
 			documentTime: lockedAt,
 			visitDate: new Date("2023-09-01T10:00:00.000Z"),
 		});
+		assert.ok(result.success, result.success ? "" : String(result.error));
+		const xml = result.xml;
 
 		assert.ok(
 			xml.includes(`<effectiveTime value="${expected}"/>`),

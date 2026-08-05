@@ -332,6 +332,28 @@ export async function createDenteApiApp(options: {
     }
   });
 
+  // Глобальная изоляция арендаторов: если у запроса есть tenantId (выставлен в onRequest выше),
+  // автоматически оборачиваем весь обработчик маршрута в withTenantCtx. Это даёт гарантию, что
+  // любые обращения к базе через прокси `db` внутри маршрута получат правильный RLS контекст,
+  // и нам не нужно вручную пробрасывать `tx` или писать `withTenantCtx` в сотнях ручек.
+  app.addHook("onRoute", (routeOptions) => {
+    const originalHandler = routeOptions.handler;
+    if (originalHandler) {
+      routeOptions.handler = async function (request, reply) {
+        const _req = request as unknown as Record<string, unknown>;
+        const tenantId = _req.tenantId;
+        if (typeof tenantId === "string" && tenantId.length > 0) {
+          // Динамический импорт, чтобы избежать циклических зависимостей при старте
+          const { withTenantCtx } = await import("./db/rls.js");
+          return withTenantCtx(tenantId, async () => {
+            return originalHandler.call(this, request, reply);
+          });
+        }
+        return originalHandler.call(this, request, reply);
+      };
+    }
+  });
+
   /* Несуществующий адрес отвечал штатным английским текстом Fastify с методом и
      путём внутри; фильтр клиента строку без русских букв отбрасывает целиком,
      поэтому человек не получал ни причины, ни шага. Текст и причина — в

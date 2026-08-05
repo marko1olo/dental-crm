@@ -64,6 +64,7 @@ import {
 	visits,
 } from "../../db/schema.js";
 import { currentMonthPeriod, type ReportPeriod } from "../reports/managerReports.js";
+import { withTenantCtx, withSuperuserBypass } from "../../db/rls.js";
 
 /**
  * Период по умолчанию берётся из отчётов руководителю, а не объявляется здесь
@@ -415,52 +416,52 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 	 */
 	const paidVisits = db.$with("payout_paid_visits").as(
 		db
-			.select({ visitId: payments.visitId })
-			.from(payments)
-			.where(
-				and(
-					eq(payments.organizationId, organizationId),
-					eq(payments.status, "paid"),
-					isNotNull(payments.visitId),
-					gte(payments.paidAt, from),
-					lte(payments.paidAt, to),
-				),
-			)
-			.groupBy(payments.visitId),
-	);
+    			.select({ visitId: payments.visitId })
+    			.from(payments)
+    			.where(
+    				and(
+    					eq(payments.organizationId, organizationId),
+    					eq(payments.status, "paid"),
+    					isNotNull(payments.visitId),
+    					gte(payments.paidAt, from),
+    					lte(payments.paidAt, to),
+    				),
+    			)
+    			.groupBy(payments.visitId),
+    	);
 
 	const revenue = db.$with("payout_revenue").as(
 		db
-			.select({
-				doctorUserId: appointments.doctorUserId,
-				revenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`.as("revenue_rub"),
-				paymentCount: sql<number>`count(*)::int`.as("payment_count"),
-			})
-			.from(payments)
-			.innerJoin(visits, eq(payments.visitId, visits.id))
-			.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
-			.where(
-				and(
-					eq(payments.organizationId, organizationId),
-					eq(payments.status, "paid"),
-					gte(payments.paidAt, from),
-					lte(payments.paidAt, to),
-					// Изоляция клиники на КАЖДОМ звене цепочки, а не только на платеже:
-					// строка чужой организации не должна попасть в расчёт даже при
-					// испорченной ссылке.
-					eq(visits.organizationId, organizationId),
-					eq(appointments.organizationId, organizationId),
-					isNotNull(appointments.doctorUserId),
-				),
-			)
-			.groupBy(appointments.doctorUserId),
-	);
+    			.select({
+    				doctorUserId: appointments.doctorUserId,
+    				revenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`.as("revenue_rub"),
+    				paymentCount: sql<number>`count(*)::int`.as("payment_count"),
+    			})
+    			.from(payments)
+    			.innerJoin(visits, eq(payments.visitId, visits.id))
+    			.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
+    			.where(
+    				and(
+    					eq(payments.organizationId, organizationId),
+    					eq(payments.status, "paid"),
+    					gte(payments.paidAt, from),
+    					lte(payments.paidAt, to),
+    					// Изоляция клиники на КАЖДОМ звене цепочки, а не только на платеже:
+    					// строка чужой организации не должна попасть в расчёт даже при
+    					// испорченной ссылке.
+    					eq(visits.organizationId, organizationId),
+    					eq(appointments.organizationId, organizationId),
+    					isNotNull(appointments.doctorUserId),
+    				),
+    			)
+    			.groupBy(appointments.doctorUserId),
+    	);
 
 	const materials = db.$with("payout_materials").as(
 		db
-			.select({
-				doctorUserId: appointments.doctorUserId,
-				materialCostRub: sql<number>`
+    			.select({
+    				doctorUserId: appointments.doctorUserId,
+    				materialCostRub: sql<number>`
 					coalesce(
 						sum(
 							coalesce(${inventoryTransactions}."unit_cost_rub", 0)
@@ -469,31 +470,31 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 						0
 					)::numeric(12,2)
 				`.as("material_cost_rub"),
-				movements: sql<number>`count(*)::int`.as("movements"),
-				movementsUnpriced: sql<number>`count(*) filter (
+    				movements: sql<number>`count(*)::int`.as("movements"),
+    				movementsUnpriced: sql<number>`count(*) filter (
 					where ${inventoryTransactions}."unit_cost_rub" is null
 					   or ${inventoryTransactions}."unit_cost_rub" = 0
 					   or ${inventoryTransactions}."quantity_changed" is null
 					   or ${inventoryTransactions}."quantity_changed" = 0
 				)::int`.as("movements_unpriced"),
-			})
-			.from(inventoryTransactions)
-			.innerJoin(paidVisits, eq(inventoryTransactions.visitId, paidVisits.visitId))
-			.innerJoin(visits, eq(inventoryTransactions.visitId, visits.id))
-			.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
-			.where(
-				and(
-					eq(inventoryTransactions.organizationId, organizationId),
-					// Расход материалов при подписании приёма. Приход на склад
-					// ('receipt') себестоимостью визита не является.
-					eq(inventoryTransactions.transactionType, "auto_deduct"),
-					eq(visits.organizationId, organizationId),
-					eq(appointments.organizationId, organizationId),
-					isNotNull(appointments.doctorUserId),
-				),
-			)
-			.groupBy(appointments.doctorUserId),
-	);
+    			})
+    			.from(inventoryTransactions)
+    			.innerJoin(paidVisits, eq(inventoryTransactions.visitId, paidVisits.visitId))
+    			.innerJoin(visits, eq(inventoryTransactions.visitId, visits.id))
+    			.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
+    			.where(
+    				and(
+    					eq(inventoryTransactions.organizationId, organizationId),
+    					// Расход материалов при подписании приёма. Приход на склад
+    					// ('receipt') себестоимостью визита не является.
+    					eq(inventoryTransactions.transactionType, "auto_deduct"),
+    					eq(visits.organizationId, organizationId),
+    					eq(appointments.organizationId, organizationId),
+    					isNotNull(appointments.doctorUserId),
+    				),
+    			)
+    			.groupBy(appointments.doctorUserId),
+    	);
 
 	/*
 	 * Ставки врачей. Уникальности в БД нет (единственный индекс —
@@ -504,31 +505,31 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 	 */
 	const rateCandidates = db.$with("payout_rate_candidates").as(
 		db
-			.select({
-				userId: doctorCommissions.userId,
-				commissionPct: doctorCommissions.commissionPct,
-				materialDeductionPct: doctorCommissions.materialCostDeductionPct,
-				effectiveFrom: doctorCommissions.effectiveFrom,
-				rowNumber: sql<number>`row_number() over (
+    			.select({
+    				userId: doctorCommissions.userId,
+    				commissionPct: doctorCommissions.commissionPct,
+    				materialDeductionPct: doctorCommissions.materialCostDeductionPct,
+    				effectiveFrom: doctorCommissions.effectiveFrom,
+    				rowNumber: sql<number>`row_number() over (
 					partition by ${doctorCommissions}."user_id"
 					order by ${doctorCommissions}."effective_from" desc, ${doctorCommissions}."created_at" desc
 				)`.as("row_number"),
-				rateRowCount: sql<number>`(count(*) over (partition by ${doctorCommissions}."user_id"))::int`.as(
-					"rate_row_count",
-				),
-			})
-			.from(doctorCommissions)
-			.where(
-				and(
-					eq(doctorCommissions.organizationId, organizationId),
-					eq(doctorCommissions.isActive, true),
-					lte(doctorCommissions.effectiveFrom, to),
-					// Соединять ставку по doctor_id нельзя: эту колонку не пишет ни
-					// один писатель, и такой отчёт был бы пуст всегда.
-					isNotNull(doctorCommissions.userId),
-				),
-			),
-	);
+    				rateRowCount: sql<number>`(count(*) over (partition by ${doctorCommissions}."user_id"))::int`.as(
+    					"rate_row_count",
+    				),
+    			})
+    			.from(doctorCommissions)
+    			.where(
+    				and(
+    					eq(doctorCommissions.organizationId, organizationId),
+    					eq(doctorCommissions.isActive, true),
+    					lte(doctorCommissions.effectiveFrom, to),
+    					// Соединять ставку по doctor_id нельзя: эту колонку не пишет ни
+    					// один писатель, и такой отчёт был бы пуст всегда.
+    					isNotNull(doctorCommissions.userId),
+    				),
+    			)
+    	);
 
 	const doctorFilter = scope.onlyDoctorUserId
 		? and(eq(users.organizationId, organizationId), eq(users.id, scope.onlyDoctorUserId))
@@ -659,12 +660,24 @@ const METHOD_NOTE =
  * Два запроса: агрегат по врачам и контрольная сумма кассы за период. Второй
  * нужен, чтобы владелец видел разницу между кассой клиники и суммой строк: без
  * него «не отнесено к врачу» выглядело бы как ошибка расчёта.
+ *
+ * ОДИН СНИМОК НА ОБА ЗАПРОСА. Контрольная сумма имеет смысл только если обе
+ * половины читают одно и то же состояние `payments`. Оба запроса выполняются
+ * внутри одной транзакции: `withTenantCtx` переиспользует активную транзакцию,
+ * если она уже открыта (авто-обёртка `onRoute` в server.ts), иначе открывает
+ * свою. Раньше вторая половина открывала собственную транзакцию, и оплата,
+ * попавшая в базу между двумя запросами, давала расхождение контрольной суммы:
+ * владелец видел «потерянные» деньги в строке «не отнесено к врачу».
+ * REPEATABLE READ не требуется: внутри одной транзакции READ COMMITTED даёт
+ * обоим запросам согласованное чтение только при условии, что между ними нет
+ * записи из этой же транзакции — здесь оба запроса read-only.
  */
 export async function doctorPayouts(scope: DoctorPayoutScope): Promise<DoctorPayoutReport> {
-	const [aggregateRows, [periodRevenue]] = await Promise.all([
-		buildDoctorPayoutAggregateQuery(scope),
-		buildPeriodRevenueQuery(scope),
-	]);
+	const [aggregateRows, [periodRevenue]] = await withTenantCtx(
+		scope.organizationId,
+		async () =>
+			Promise.all([buildDoctorPayoutAggregateQuery(scope), buildPeriodRevenueQuery(scope)]),
+	);
 
 	const rows: DoctorPayoutRow[] = aggregateRows.map((row) => {
 		const revenueRub = moneyFromDb(row.revenueRub, "выручка врача");
