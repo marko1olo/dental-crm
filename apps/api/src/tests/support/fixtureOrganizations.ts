@@ -283,6 +283,12 @@ async function assertAppendOnlyTablesAreEmptyFor(
  * второе — знанием о том, что удалять эту таблицу не нужно и не положено.
  * Поэтому право спрашивается заранее, а непустой журнал становится отдельным,
  * названным вслух отказом (см. `assertAppendOnlyTablesAreEmptyFor`).
+ *
+ * ЗДЕСЬ БОЛЬШЕ НЕТ ОТДЕЛЬНОГО УДАЛЕНИЯ `bi_analytics_snapshots` С `.catch(() => {})`.
+ * Оно было и лишним, и вредным: у таблицы есть колонка `organization_id`,
+ * то есть каталожный цикл выше берёт её сам (проверено запросом к
+ * `information_schema`), а проглоченная ошибка означала бы, что уборка отчиталась
+ * об успехе, ничего не проверив. Ровно этот приём и просили не применять.
  */
 export async function purgeFixtureOrganizations(organizationIds: readonly string[]): Promise<void> {
 	const targets = [...new Set(organizationIds)];
