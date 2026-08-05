@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
+import { type FastifyInstance } from "fastify";
 import { and, eq, like } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { appointmentActionCodes } from "../../db/communicationsSchema.js";
@@ -23,6 +23,8 @@ import {
 } from "../../services/communications/appointmentActionLinks.js";
 import { invalidateAppointmentReminders } from "../../services/communications/appointmentReminders.js";
 import { describeSmsPayload } from "../../services/communications/templateRenderer.js";
+import { withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /**
  * Подтверждение приёма пациентом в одно касание и снятие устаревших напоминаний.
@@ -117,7 +119,7 @@ describe("код ссылки на приём", () => {
 	test("Fastify пропускает параметр такой длины", async () => {
 		// Прямая проверка того, на чём сломалась первая версия: параметр длиннее
 		// 100 знаков не сопоставляется маршрутом, и ответ был 404.
-		const app = Fastify();
+		const app = createTenantTestApp();
 		await registerPublicAppointmentActionRoutes(app);
 		try {
 			const shortCode = generateActionCode();
@@ -154,13 +156,21 @@ describe("код ссылки на приём", () => {
  * них одна. Порядок удаления — от зависимых строк к организации.
  */
 async function purgeFixtures(): Promise<void> {
-	await db.delete(appointmentActionCodes).where(eq(appointmentActionCodes.organizationId, ORG_ID));
-	await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-	await db.delete(communicationTasks).where(eq(communicationTasks.organizationId, ORG_ID));
-	await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-	await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-	await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	/*
+	 * Уборка идёт под тенант-контекстом клиники. Под FORCE RLS запрос без
+	 * `app.current_tenant` не видит ни одной строки этой организации, а DELETE,
+	 * не увидевший строк, снимает НОЛЬ и ошибкой это не считается: уборка
+	 * отчиталась бы об успехе, оставив приёмы прошлого прогона подтверждёнными.
+	 */
+	await withFixtureTenant(ORG_ID, async () => {
+		await db.delete(appointmentActionCodes).where(eq(appointmentActionCodes.organizationId, ORG_ID));
+		await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+		await db.delete(communicationTasks).where(eq(communicationTasks.organizationId, ORG_ID));
+		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
+		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	});
 }
 
 describe("страница подтверждения приёма", () => {
@@ -171,7 +181,7 @@ describe("страница подтверждения приёма", () => {
 	const env = { DENTE_PUBLIC_BASE_URL: BASE_URL };
 
 	before(async () => {
-		app = Fastify();
+		app = createTenantTestApp();
 		await registerPublicAppointmentActionRoutes(app);
 
 		try {
@@ -179,39 +189,46 @@ describe("страница подтверждения приёма", () => {
 			// приёмы придут уже подтверждёнными и отменёнными, см. purgeFixtures.
 			await purgeFixtures();
 
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника подтверждений" });
-			await db
-				.insert(clinics)
-				.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Клиника на Ленина", timezone: "Europe/Moscow" });
-			await db.insert(patients).values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Подтвердов Пётр Петрович" });
-			await db
-				.insert(appointments)
-				.values([
-					{
-						id: APPOINTMENT_ID,
-						organizationId: ORG_ID,
-						patientId: PATIENT_ID,
-						status: "planned",
-						startsAt: soon,
-						endsAt: new Date(soon.getTime() + 3_600_000)
-					},
-					{
-						id: PAST_APPOINTMENT_ID,
-						organizationId: ORG_ID,
-						patientId: PATIENT_ID,
-						status: "planned",
-						startsAt: past,
-						endsAt: new Date(past.getTime() + 3_600_000)
-					},
-					{
-						id: CANCEL_APPOINTMENT_ID,
-						organizationId: ORG_ID,
-						patientId: PATIENT_ID,
-						status: "confirmed",
-						startsAt: soon,
-						endsAt: new Date(soon.getTime() + 3_600_000)
-					}
-				]);
+			/*
+			 * Сев под тенант-контекстом клиники. У всех тенант-таблиц в WITH CHECK
+			 * стоит только `organization_id = current_tenant`, поэтому INSERT без
+			 * контекста отвергается кодом 42501 и до проверок дело не доходит.
+			 */
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника подтверждений" });
+				await db
+					.insert(clinics)
+					.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Клиника на Ленина", timezone: "Europe/Moscow" });
+				await db.insert(patients).values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Подтвердов Пётр Петрович" });
+				await db
+					.insert(appointments)
+					.values([
+						{
+							id: APPOINTMENT_ID,
+							organizationId: ORG_ID,
+							patientId: PATIENT_ID,
+							status: "planned",
+							startsAt: soon,
+							endsAt: new Date(soon.getTime() + 3_600_000)
+						},
+						{
+							id: PAST_APPOINTMENT_ID,
+							organizationId: ORG_ID,
+							patientId: PATIENT_ID,
+							status: "planned",
+							startsAt: past,
+							endsAt: new Date(past.getTime() + 3_600_000)
+						},
+						{
+							id: CANCEL_APPOINTMENT_ID,
+							organizationId: ORG_ID,
+							patientId: PATIENT_ID,
+							status: "confirmed",
+							startsAt: soon,
+							endsAt: new Date(soon.getTime() + 3_600_000)
+						}
+					]);
+			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;
@@ -245,10 +262,18 @@ describe("страница подтверждения приёма", () => {
 	test("подтверждение переводит приём в confirmed и показывает страницу", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const links = await issueAppointmentActionLinks(
-			{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
-			new Date(),
-			env
+		/*
+		 * Выдача ссылок ВСТАВЛЯЕТ коды, а сверка статуса ЧИТАЕТ приём. В бою обе
+		 * операции идут внутри `withTenantCtx` (планировщик напоминаний, маршрут);
+		 * вызванные из теста напрямую, без контекста они дают 42501 на вставке и
+		 * пустую выборку на чтении — `row?.status` был бы undefined.
+		 */
+		const links = await withFixtureTenant(ORG_ID, async () =>
+			issueAppointmentActionLinks(
+				{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
+				new Date(),
+				env
+			)
 		);
 		assert.ok(links);
 
@@ -261,17 +286,21 @@ describe("страница подтверждения приёма", () => {
 		// Ссылка на запись пациента не должна попадать в поисковики.
 		assert.ok(response.body.includes('name="robots" content="noindex'));
 
-		const [row] = await db.select({ status: appointments.status }).from(appointments).where(eq(appointments.id, APPOINTMENT_ID));
+		const [row] = await withFixtureTenant(ORG_ID, async () =>
+			db.select({ status: appointments.status }).from(appointments).where(eq(appointments.id, APPOINTMENT_ID))
+		);
 		assert.equal(row?.status, "confirmed");
 	});
 
 	test("повторное нажатие не считается ошибкой", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const links = await issueAppointmentActionLinks(
-			{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
-			new Date(),
-			env
+		const links = await withFixtureTenant(ORG_ID, async () =>
+			issueAppointmentActionLinks(
+				{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
+				new Date(),
+				env
+			)
 		);
 		assert.ok(links);
 		const response = await app.inject({ method: "GET", url: pathOf(links.confirmLink) });
@@ -284,15 +313,19 @@ describe("страница подтверждения приёма", () => {
 
 		// Напоминание может уйти дважды — за сутки и за два часа. В обоих
 		// сообщениях должна быть одна ссылка, иначе первая перестанет работать.
-		const first = await issueAppointmentActionLinks(
-			{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
-			new Date(),
-			env
+		const first = await withFixtureTenant(ORG_ID, async () =>
+			issueAppointmentActionLinks(
+				{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
+				new Date(),
+				env
+			)
 		);
-		const second = await issueAppointmentActionLinks(
-			{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
-			new Date(),
-			env
+		const second = await withFixtureTenant(ORG_ID, async () =>
+			issueAppointmentActionLinks(
+				{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
+				new Date(),
+				env
+			)
 		);
 		assert.equal(first?.confirmLink, second?.confirmLink);
 		assert.equal(first?.cancelLink, second?.cancelLink);
@@ -301,10 +334,12 @@ describe("страница подтверждения приёма", () => {
 	test("прошедший приём подтвердить нельзя, и об этом сказано понятно", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const links = await issueAppointmentActionLinks(
-			{ organizationId: ORG_ID, appointmentId: PAST_APPOINTMENT_ID, startsAt: past },
-			new Date(),
-			env
+		const links = await withFixtureTenant(ORG_ID, async () =>
+			issueAppointmentActionLinks(
+				{ organizationId: ORG_ID, appointmentId: PAST_APPOINTMENT_ID, startsAt: past },
+				new Date(),
+				env
+			)
 		);
 		assert.ok(links);
 		const response = await app.inject({ method: "GET", url: pathOf(links.confirmLink) });
@@ -317,18 +352,24 @@ describe("страница подтверждения приёма", () => {
 
 		// Код на пару «приём + действие» один: сдвигаем срок у существующего, а
 		// не вставляем второй — на это есть уникальный индекс.
-		const links = await issueAppointmentActionLinks(
-			{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
-			new Date(),
-			env
+		const links = await withFixtureTenant(ORG_ID, async () =>
+			issueAppointmentActionLinks(
+				{ organizationId: ORG_ID, appointmentId: APPOINTMENT_ID, startsAt: soon },
+				new Date(),
+				env
+			)
 		);
 		assert.ok(links);
 		const code = links.cancelLink.slice(links.cancelLink.lastIndexOf("/") + 1);
 
-		await db
-			.update(appointmentActionCodes)
-			.set({ expiresAt: new Date(Date.now() - 60_000) })
-			.where(eq(appointmentActionCodes.code, code));
+		// UPDATE без контекста не видит строки и меняет НОЛЬ строк, не сообщая об
+		// этом: срок остался бы прежним, и проверка судила бы о живой ссылке.
+		await withFixtureTenant(ORG_ID, async () => {
+			await db
+				.update(appointmentActionCodes)
+				.set({ expiresAt: new Date(Date.now() - 60_000) })
+				.where(eq(appointmentActionCodes.code, code));
+		});
 
 		const resolved = await resolveActionCode(code);
 		assert.equal(resolved?.expired, true);
@@ -338,10 +379,12 @@ describe("страница подтверждения приёма", () => {
 		assert.ok(response.body.includes("недействительна"));
 
 		// Возвращаем срок: следующие проверки опираются на живые ссылки.
-		await db
-			.update(appointmentActionCodes)
-			.set({ expiresAt: actionCodeExpiry(soon) })
-			.where(eq(appointmentActionCodes.code, code));
+		await withFixtureTenant(ORG_ID, async () => {
+			await db
+				.update(appointmentActionCodes)
+				.set({ expiresAt: actionCodeExpiry(soon) })
+				.where(eq(appointmentActionCodes.code, code));
+		});
 	});
 
 	test("неизвестный и просроченный код отвечают одинаково", async (context) => {
@@ -365,21 +408,25 @@ describe("страница подтверждения приёма", () => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		// Напоминание уже стоит в очереди — после отказа оно уйти не должно.
-		await db.insert(communicationOutbox).values({
-			organizationId: ORG_ID,
-			patientId: PATIENT_ID,
-			channel: "sms",
-			intent: "appointment_confirmation",
-			recipientAddress: "79160000601",
-			body: "Ждём вас завтра",
-			status: "queued",
-			dedupeKey: `reminder:${CANCEL_APPOINTMENT_ID}:24`
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(communicationOutbox).values({
+				organizationId: ORG_ID,
+				patientId: PATIENT_ID,
+				channel: "sms",
+				intent: "appointment_confirmation",
+				recipientAddress: "79160000601",
+				body: "Ждём вас завтра",
+				status: "queued",
+				dedupeKey: `reminder:${CANCEL_APPOINTMENT_ID}:24`
+			});
 		});
 
-		const links = await issueAppointmentActionLinks(
-			{ organizationId: ORG_ID, appointmentId: CANCEL_APPOINTMENT_ID, startsAt: soon },
-			new Date(),
-			env
+		const links = await withFixtureTenant(ORG_ID, async () =>
+			issueAppointmentActionLinks(
+				{ organizationId: ORG_ID, appointmentId: CANCEL_APPOINTMENT_ID, startsAt: soon },
+				new Date(),
+				env
+			)
 		);
 		assert.ok(links);
 
@@ -387,29 +434,35 @@ describe("страница подтверждения приёма", () => {
 		assert.equal(response.statusCode, 200, response.body.slice(0, 300));
 		assert.ok(response.body.includes("отменён"), response.body.slice(0, 300));
 
-		const [row] = await db
-			.select({ status: appointments.status })
-			.from(appointments)
-			.where(eq(appointments.id, CANCEL_APPOINTMENT_ID));
+		const [row] = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ status: appointments.status })
+				.from(appointments)
+				.where(eq(appointments.id, CANCEL_APPOINTMENT_ID))
+		);
 		assert.equal(row?.status, "cancelled");
 
 		// Пациент, только что отказавшийся, не должен получить «ждём вас завтра».
-		const leftovers = await db
-			.select({ id: communicationOutbox.id })
-			.from(communicationOutbox)
-			.where(
-				and(
-					eq(communicationOutbox.organizationId, ORG_ID),
-					like(communicationOutbox.dedupeKey, `reminder:${CANCEL_APPOINTMENT_ID}:%`)
+		const leftovers = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ id: communicationOutbox.id })
+				.from(communicationOutbox)
+				.where(
+					and(
+						eq(communicationOutbox.organizationId, ORG_ID),
+						like(communicationOutbox.dedupeKey, `reminder:${CANCEL_APPOINTMENT_ID}:%`)
+					)
 				)
-			);
+		);
 		assert.equal(leftovers.length, 0);
 
 		// Отмена не проходит молча: администратор должен узнать о слоте.
-		const tasks = await db
-			.select({ title: communicationTasks.title, priority: communicationTasks.priority, body: communicationTasks.body })
-			.from(communicationTasks)
-			.where(eq(communicationTasks.organizationId, ORG_ID));
+		const tasks = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ title: communicationTasks.title, priority: communicationTasks.priority, body: communicationTasks.body })
+				.from(communicationTasks)
+				.where(eq(communicationTasks.organizationId, ORG_ID))
+		);
 		assert.equal(tasks.length, 1, JSON.stringify(tasks));
 		assert.ok(tasks[0]?.title.includes("отменил"));
 		assert.equal(tasks[0]?.priority, "high");
@@ -419,30 +472,36 @@ describe("страница подтверждения приёма", () => {
 	test("повторная отмена не создаёт вторую задачу", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const links = await issueAppointmentActionLinks(
-			{ organizationId: ORG_ID, appointmentId: CANCEL_APPOINTMENT_ID, startsAt: soon },
-			new Date(),
-			env
+		const links = await withFixtureTenant(ORG_ID, async () =>
+			issueAppointmentActionLinks(
+				{ organizationId: ORG_ID, appointmentId: CANCEL_APPOINTMENT_ID, startsAt: soon },
+				new Date(),
+				env
+			)
 		);
 		assert.ok(links);
 		const response = await app.inject({ method: "GET", url: pathOf(links.cancelLink) });
 		assert.equal(response.statusCode, 200, response.body.slice(0, 200));
 		assert.ok(response.body.includes("уже отменён"));
 
-		const tasks = await db
-			.select({ id: communicationTasks.id })
-			.from(communicationTasks)
-			.where(eq(communicationTasks.organizationId, ORG_ID));
+		const tasks = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ id: communicationTasks.id })
+				.from(communicationTasks)
+				.where(eq(communicationTasks.organizationId, ORG_ID))
+		);
 		assert.equal(tasks.length, 1);
 	});
 
 	test("переход по ссылке отмечается временем", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const rows = await db
-			.select({ action: appointmentActionCodes.action, usedAt: appointmentActionCodes.usedAt })
-			.from(appointmentActionCodes)
-			.where(eq(appointmentActionCodes.appointmentId, CANCEL_APPOINTMENT_ID));
+		const rows = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ action: appointmentActionCodes.action, usedAt: appointmentActionCodes.usedAt })
+				.from(appointmentActionCodes)
+				.where(eq(appointmentActionCodes.appointmentId, CANCEL_APPOINTMENT_ID))
+		);
 		const cancelCode = rows.find((row) => row.action === "cancel");
 		assert.notEqual(cancelCode?.usedAt, null);
 	});

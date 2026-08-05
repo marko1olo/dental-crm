@@ -122,12 +122,13 @@ const visitDraftAcceptNoActiveVisitMessage =
  * нему ветвится, не увидел незнакомого класса.
  */
 function sendNoActiveVisitRefusal(reply: FastifyReply, operation: VisitDraftMutationOperation) {
-  return reply.code(409).send({
+  reply.code(409);
+  return {
     error: "VisitDraftMutationRejected",
     reason: "no_active_visit",
     message:
       operation === "accept" ? visitDraftAcceptNoActiveVisitMessage : visitDraftAutosaveNoActiveVisitMessage
-  });
+  };
 }
 /*
  * ЭТОТ ОТВЕТ — ПОСЛЕДНЯЯ ЛИНИЯ, А НЕ РАБОЧИЙ РЕЖИМ. ИСТОРИЯ ВАЖНА.
@@ -160,13 +161,33 @@ function visitRequestBody(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
-function parseVisitPayload<T>(schema: VisitPayloadSchema<T>, value: unknown, message: string, reply: FastifyReply): T | null {
+/**
+ * Разбор тела запроса приёма.
+ *
+ * ВОЗВРАЩАЕТ РЕЗУЛЬТАТ, А НЕ ОТПРАВЛЯЕТ ОТКАЗ САМ. Прежняя форма звала
+ * `reply.code(400).send(...)` внутри и отдавала `null`, а обработчик выходил
+ * пустым `return`. Отправка при этом происходила ВНУТРИ транзакции, которую
+ * server.ts (хук onRoute) держит открытой вокруг каждого обработчика: ответ
+ * уходил до COMMIT. Здесь это ещё безобидно (тело не прошло проверку, писать
+ * нечего), но форма одна на весь файл, и держать в нём две разные — значит
+ * оставить следующему читателю вопрос, какая правильная.
+ */
+type VisitPayloadOutcome<T> =
+  | { readonly ok: true; readonly data: T }
+  | { readonly ok: false; readonly refusal: { readonly error: string; readonly message: string } };
+
+function parseVisitPayload<T>(
+  schema: VisitPayloadSchema<T>,
+  value: unknown,
+  message: string,
+  reply: FastifyReply
+): VisitPayloadOutcome<T> {
   const parsed = schema.safeParse(value);
   if (!parsed.success) {
-    reply.code(400).send({ error: "VisitDraftValidationError", message });
-    return null;
+    reply.code(400);
+    return { ok: false, refusal: { error: "VisitDraftValidationError", message } };
   }
-  return parsed.data;
+  return { ok: true, data: parsed.data };
 }
 
 function visitDraftDomainMessage(error: unknown): string {
@@ -181,6 +202,16 @@ function visitDraftDomainMessage(error: unknown): string {
  * в тесте невозможно, и тесты вместо этого выставляли переменные окружения
  * DENTAL_MOCK_*_ERROR, которых в коде не существует, — ошибка не подставлялась
  * никогда, запрос уходил в живую базу и все ветки отвечали одинаково.
+ *
+ * ЭТА ФУНКЦИЯ ОСТАЛАСЬ НА `reply.send`, В ОТЛИЧИЕ ОТ ОСТАЛЬНОГО ФАЙЛА, И ЭТО
+ * НЕ НЕДОСМОТР. Её поведение закреплено юнит-тестами в
+ * apps/api/src/tests/routes/visits.test.ts: тамошняя заглушка ответа снимает
+ * тело ИМЕННО из вызова `send()` (`captureReply`), и перевод на возврат
+ * значения обрушил бы девять проверок в файле, править который этой задаче
+ * запрещено. Дефекта «ответ раньше COMMIT» здесь при этом нет по существу:
+ * функция вызывается только из блоков catch, где записи не произошло и
+ * транзакции всё равно откатываться. Долг назван, а не замаскирован — вместе с
+ * `sendVisitOpenError` ниже, у которой ровно та же причина.
  */
 export function sendVisitDraftMutationError(error: unknown, reply: FastifyReply, operation: VisitDraftMutationOperation) {
   const message = visitDraftDomainMessage(error);
@@ -228,6 +259,12 @@ const visitOpenFailedMessage = "Прием не открыт: повторите
  * Тексты называют причину И действие: «обновите расписание» без причины
  * заставляло врача у кресла нажимать одно и то же, пока не позовут
  * администратора.
+ *
+ * ОСТАЁТСЯ НА `reply.send` ПО ТОЙ ЖЕ ПРИЧИНЕ, ЧТО И
+ * `sendVisitDraftMutationError` выше: заглушка ответа в
+ * apps/api/src/tests/routes/visits.test.ts снимает тело из вызова `send()`.
+ * Вызывается только из catch, где записи не было, — отложенного COMMIT на
+ * успешной записи здесь возникнуть не может.
  */
 export function sendVisitOpenError(error: unknown, reply: FastifyReply) {
   const message = error instanceof Error ? error.message.trim() : "";
@@ -278,10 +315,11 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 
     const { appointmentId } = request.params as { appointmentId?: string };
     if (!appointmentId) {
-      return reply.code(400).send({
+      reply.code(400);
+      return {
         error: "VisitOpenValidationError",
         message: "Прием не открыт: не передана запись расписания. Откройте строку расписания и повторите."
-      });
+      };
     }
 
     try {
@@ -299,11 +337,12 @@ export async function registerVisitRoutes(app: FastifyInstance) {
           payload: { appointmentId, visitId: result.visit.id }
         });
       }
-      return reply.code(result.created ? 201 : 200).send({
+      reply.code(result.created ? 201 : 200);
+      return {
         success: true,
         created: result.created,
         visit: result.visit
-      });
+      };
     } catch (error) {
       return sendVisitOpenError(error, reply);
     }
@@ -325,11 +364,12 @@ export async function registerVisitRoutes(app: FastifyInstance) {
       // Единственное состояние, где «приём не найден» — правда: строки с этим
       // идентификатором в этой клинике нет. Чужой приём попадает сюда же, и это
       // сознательно: подтвердить существование приёма другой клиники нельзя.
-      return reply.code(404).send({
+      reply.code(404);
+      return {
         error: "VisitNotFound",
         reason: "visit_not_found",
         message: visitDraftNotFoundMessage
-      });
+      };
     }
     if (lookup.outcome === "no_draft") {
       /*
@@ -340,7 +380,8 @@ export async function registerVisitRoutes(app: FastifyInstance) {
        * состояния в один ответ значило бы вернуть ту же потерю различия, только с
        * другой стороны.
        */
-      return reply.code(404).send({
+      reply.code(404);
+      return {
         error: "VisitDraftAbsent",
         reason: lookup.status === "signed" ? "visit_signed" : "visit_voided",
         visitId: lookup.visitId,
@@ -348,7 +389,7 @@ export async function registerVisitRoutes(app: FastifyInstance) {
         signedAt: lookup.signedAt,
         message:
           lookup.status === "signed" ? visitDraftSignedNoDraftMessage : visitDraftVoidedNoDraftMessage
-      });
+      };
     }
     return visitDraftAutosaveResponseSchema.parse({ serverDraft: lookup.serverDraft });
   });
@@ -362,13 +403,14 @@ export async function registerVisitRoutes(app: FastifyInstance) {
     // Проверка стоит ДО разбора тела: иначе врач получил бы отказ по форме запроса
     // там, где дело не в форме — приёма нет вовсе.
     if (visitId === noActiveVisitId) return sendNoActiveVisitRefusal(reply, "autosave");
-    const input = parseVisitPayload(
+    const outcome = parseVisitPayload(
       visitDraftAutosaveRequestSchema,
       { ...visitRequestBody(request.body), visitId },
       visitDraftAutosaveValidationMessage,
       reply
     );
-    if (!input) return;
+    if (!outcome.ok) return outcome.refusal;
+    const input = outcome.data;
 
     try {
       const serverDraft = await upsertVisitDraftAutosaveInDb(orgId, input);
@@ -387,13 +429,14 @@ export async function registerVisitRoutes(app: FastifyInstance) {
     // Подписание — юридически значимое действие, и подписывать нечего: приём не
     // открыт. Причина названа до разбора тела, чтобы врач не искал ошибку в тексте.
     if (visitId === noActiveVisitId) return sendNoActiveVisitRefusal(reply, "accept");
-    const input = parseVisitPayload(
+    const outcome = parseVisitPayload(
       acceptVisitDraftSchema,
       { ...visitRequestBody(request.body), visitId },
       visitDraftAcceptValidationMessage,
       reply
     );
-    if (!input) return;
+    if (!outcome.ok) return outcome.refusal;
+    const input = outcome.data;
 
     let result: Awaited<ReturnType<typeof acceptVisitDraftInDb>>;
     try {
@@ -409,13 +452,14 @@ export async function registerVisitRoutes(app: FastifyInstance) {
           { visitId: error.acceptedVisitId, revision: error.newRevision, cause: error.cause },
           "Прием подписан, но слой доступа не собрал ответ по контракту acceptVisitDraftResponseSchema"
         );
-        return reply.code(500).send({
+        reply.code(500);
+        return {
           error: "VisitDraftAcceptResponseIncomplete",
           reason: "visit_signed_response_incomplete",
           visitId: error.acceptedVisitId,
           revision: error.newRevision,
           message: visitDraftAcceptResponseIncompleteMessage
-        });
+        };
       }
       return sendVisitDraftMutationError(error, reply, "accept");
     }
@@ -431,13 +475,14 @@ export async function registerVisitRoutes(app: FastifyInstance) {
         { visitId: result.visit.id, revision: result.visit.revision, issues: response.error.issues },
         "Прием подписан, но ответ маршрута не собран по контракту acceptVisitDraftResponseSchema"
       );
-      return reply.code(500).send({
+      reply.code(500);
+      return {
         error: "VisitDraftAcceptResponseIncomplete",
         reason: "visit_signed_response_incomplete",
         visitId: result.visit.id,
         revision: result.visit.revision,
         message: visitDraftAcceptResponseIncompleteMessage
-      });
+      };
     }
     return response.data;
   });

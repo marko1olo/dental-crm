@@ -31,6 +31,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { and, eq, sql } from "drizzle-orm";
 import Fastify, { type FastifyInstance } from "fastify";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 import { db } from "../../db/client.js";
 import { communicationEvents, organizations, patients, users } from "../../db/schema.js";
 import { registerPatientRoutes } from "../../routes/patients.js";
@@ -44,6 +45,7 @@ import {
 	parsePatientCommunicationLogLimit,
 } from "../../services/patients/patientCommunicationLog.js";
 import { signToken } from "../../utils/cryptoHelper.js";
+import { withFixtureTenant } from "../support/fixtureOrganizations.js";
 
 const ORG_MINE = "cc110000-0000-4000-8000-0000000000a1";
 const ORG_FOREIGN = "cc110000-0000-4000-8000-0000000000a2";
@@ -140,7 +142,7 @@ describe("журнал обращений пациента", () => {
 		clinicToken = signToken({ organizationId: ORG_MINE }, TEST_SECRET, 3600);
 		foreignToken = signToken({ organizationId: ORG_FOREIGN }, TEST_SECRET, 3600);
 
-		app = Fastify({ logger: false });
+		app = createTenantTestApp();
 		await registerPatientRoutes(app);
 		await app.ready();
 

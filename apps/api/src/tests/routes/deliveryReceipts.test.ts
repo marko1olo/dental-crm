@@ -6,6 +6,8 @@ import { db } from "../../db/client.js";
 import { communicationOutbox, organizations, patients } from "../../db/schema.js";
 import { registerCommunicationReceiptRoutes } from "../../routes/communicationReceipts.js";
 import { parseSmsRuReceipts, parseSmscReceipt, parseWhatsappStatuses } from "../../services/communications/deliveryReceipts.js";
+import { withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /**
  * Квитанции о доставке.
@@ -47,9 +49,16 @@ function isMissingDatabase(error: unknown): boolean {
  * проверив, — статус просто не менялся.
  */
 async function purgeFixtures(): Promise<void> {
-	await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-	await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	/*
+	 * Уборка идёт под тенант-контекстом клиники. DELETE без него не падает: под
+	 * принудительным RLS политика просто не показывает ни одной строки, удаляется
+	 * ноль, и хук отчитывается об успехе, оставив фикстуру в общей базе.
+	 */
+	await withFixtureTenant(ORG_ID, async () => {
+		await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	});
 }
 
 describe("разбор квитанций провайдеров", () => {
@@ -175,57 +184,64 @@ describe("применение квитанций к очереди", () => {
 
 	before(async () => {
 		process.env.DENTE_COMMUNICATION_RECEIPT_SECRET = SECRET;
-		app = Fastify();
+		app = createTenantTestApp();
 		await registerCommunicationReceiptRoutes(app);
 
 		try {
 			// Сначала расчистить место за оборванным прогоном, потом сеять.
 			await purgeFixtures();
 
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника квитанций" });
-			await db.insert(patients).values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Квитанция Тест Тестович" });
+			/*
+			 * Сев под тенант-контекстом: в WITH CHECK у `patients` и
+			 * `communication_outbox` стоит только `organization_id = current_tenant`,
+			 * без дизъюнкта обхода, поэтому вставка без контекста отвергается 42501.
+			 */
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.insert(organizations).values({ id: ORG_ID, name: "Клиника квитанций" });
+				await db.insert(patients).values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Квитанция Тест Тестович" });
 
-			await db
-				.insert(communicationOutbox)
-				.values([
-					{
-						id: sentId,
-						organizationId: ORG_ID,
-						patientId: PATIENT_ID,
-						channel: "sms",
-						intent: "appointment_confirmation",
-						recipientAddress: "79160000501",
-						body: "Напоминание",
-						status: "sent",
-						providerMessageId: "receipt-sent-1",
-						dedupeKey: "receipt:test:sent"
-					},
-					{
-						// Отменённое сообщение квитанция не должна оживлять.
-						id: cancelledId,
-						organizationId: ORG_ID,
-						patientId: PATIENT_ID,
-						channel: "sms",
-						intent: "general",
-						recipientAddress: "79160000501",
-						body: "Отменено",
-						status: "cancelled",
-						providerMessageId: "receipt-cancelled-1",
-						dedupeKey: "receipt:test:cancelled"
-					},
-					{
-						id: deliveredId,
-						organizationId: ORG_ID,
-						patientId: PATIENT_ID,
-						channel: "sms",
-						intent: "general",
-						recipientAddress: "79160000501",
-						body: "Доставлено",
-						status: "delivered",
-						providerMessageId: "receipt-delivered-1",
-						dedupeKey: "receipt:test:delivered"
-					}
-				]);
+				await db
+					.insert(communicationOutbox)
+					.values([
+						{
+							id: sentId,
+							organizationId: ORG_ID,
+							patientId: PATIENT_ID,
+							channel: "sms",
+							intent: "appointment_confirmation",
+							recipientAddress: "79160000501",
+							body: "Напоминание",
+							status: "sent",
+							providerMessageId: "receipt-sent-1",
+							dedupeKey: "receipt:test:sent"
+						},
+						{
+							// Отменённое сообщение квитанция не должна оживлять.
+							id: cancelledId,
+							organizationId: ORG_ID,
+							patientId: PATIENT_ID,
+							channel: "sms",
+							intent: "general",
+							recipientAddress: "79160000501",
+							body: "Отменено",
+							status: "cancelled",
+							providerMessageId: "receipt-cancelled-1",
+							dedupeKey: "receipt:test:cancelled"
+						},
+						{
+							id: deliveredId,
+							organizationId: ORG_ID,
+							patientId: PATIENT_ID,
+							channel: "sms",
+							intent: "general",
+							recipientAddress: "79160000501",
+							body: "Доставлено",
+							status: "delivered",
+							providerMessageId: "receipt-delivered-1",
+							dedupeKey: "receipt:test:delivered"
+						}
+					]);
+			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;
@@ -275,7 +291,14 @@ describe("применение квитанций к очереди", () => {
 		assert.equal(response.statusCode, 200, response.body);
 		assert.equal(JSON.parse(response.body).delivered, 1);
 
-		const [row] = await db.select().from(communicationOutbox).where(eq(communicationOutbox.id, sentId));
+		/*
+		 * Сверка тоже под тенант-контекстом: SELECT без него не ошибается, а молча
+		 * отдаёт ноль строк, и проверка результата квитанции читала бы undefined
+		 * вместо статуса сообщения.
+		 */
+		const [row] = await withFixtureTenant(ORG_ID, async () =>
+			db.select().from(communicationOutbox).where(eq(communicationOutbox.id, sentId))
+		);
 		assert.equal(row?.status, "delivered");
 		assert.notEqual(row?.deliveredAt, null);
 		assert.ok(row?.receiptDetail?.includes("Доставлено"), row?.receiptDetail ?? "");
@@ -295,7 +318,9 @@ describe("применение квитанций к очереди", () => {
 		assert.equal(response.statusCode, 200, response.body);
 		assert.equal(JSON.parse(response.body).failed, 0);
 
-		const [row] = await db.select().from(communicationOutbox).where(eq(communicationOutbox.id, sentId));
+		const [row] = await withFixtureTenant(ORG_ID, async () =>
+			db.select().from(communicationOutbox).where(eq(communicationOutbox.id, sentId))
+		);
 		assert.equal(row?.status, "delivered");
 		// Текст квитанции при этом сохраняется — расхождение должно быть видно.
 		assert.ok(row?.receiptDetail?.includes("истёк срок"), row?.receiptDetail ?? "");
@@ -314,7 +339,9 @@ describe("применение квитанций к очереди", () => {
 		// Провайдер об отменённом сообщении ничего знать не может.
 		assert.equal(JSON.parse(response.body).unmatched, 1);
 
-		const [row] = await db.select().from(communicationOutbox).where(eq(communicationOutbox.id, cancelledId));
+		const [row] = await withFixtureTenant(ORG_ID, async () =>
+			db.select().from(communicationOutbox).where(eq(communicationOutbox.id, cancelledId))
+		);
 		assert.equal(row?.status, "cancelled");
 	});
 
@@ -329,7 +356,9 @@ describe("применение квитанций к очереди", () => {
 		// Строка уже delivered — понижения не будет, но текст запишется.
 		assert.equal(JSON.parse(response.body).failed, 0);
 
-		const [row] = await db.select().from(communicationOutbox).where(eq(communicationOutbox.id, deliveredId));
+		const [row] = await withFixtureTenant(ORG_ID, async () =>
+			db.select().from(communicationOutbox).where(eq(communicationOutbox.id, deliveredId))
+		);
 		assert.equal(row?.status, "delivered");
 		assert.ok(row?.receiptDetail?.includes("Невозможно доставить"), row?.receiptDetail ?? "");
 	});
