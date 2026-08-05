@@ -21,6 +21,16 @@ import {
  */
 const money = (digits: string) => `${digits}${RU_MONEY_NBSP}₽`;
 
+describe("Money constants", () => {
+	test("RU_MONEY_NBSP is non-breaking space (U+00A0)", () => {
+		assert.strictEqual(RU_MONEY_NBSP, "\u00A0");
+	});
+
+	test("RU_MONEY_MINUS is typographic minus (U+2212)", () => {
+		assert.strictEqual(RU_MONEY_MINUS, "\u2212");
+	});
+});
+
 describe("parseKopecks", () => {
 	test("разбирает строку numeric из драйвера точно", () => {
 		assert.strictEqual(parseKopecks("150.50"), 15050);

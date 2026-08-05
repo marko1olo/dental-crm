@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "savedAt": "2026-07-31T11:55:34.346Z",
+  "savedAt": "2026-08-05T05:52:32.250Z",
   "health": {
     "google_speech:26987e457b44": {
       "cooldownUntil": 0,
       "failures": 0,
-      "successes": 1,
-      "lastUsedAt": 1785372631904,
+      "successes": 3,
+      "lastUsedAt": 1785909152250,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -65,54 +65,6 @@
       "lastUsedAt": 1785498934134,
       "lastStatusCode": 401,
       "lastError": "401 Unauthorized"
-    },
-    "groq_whisper:28098ef6adba": {
-      "cooldownUntil": 1783088401505,
-      "failures": 34,
-      "successes": 3,
-      "lastUsedAt": 1783088371505,
-      "lastStatusCode": null,
-      "lastError": "fetch failed"
-    },
-    "groq_whisper:3ac3d993a93f": {
-      "cooldownUntil": 1783088363547,
-      "failures": 78,
-      "successes": 2,
-      "lastUsedAt": 1783088333547,
-      "lastStatusCode": null,
-      "lastError": "fetch failed"
-    },
-    "groq_whisper:4bda99f4f65e": {
-      "cooldownUntil": 0,
-      "failures": 1,
-      "successes": 0,
-      "lastUsedAt": 1783196986610,
-      "lastStatusCode": null,
-      "lastError": "catalog is not iterable"
-    },
-    "groq_whisper:5e5573f5e9ab": {
-      "cooldownUntil": 1783088398491,
-      "failures": 30,
-      "successes": 2,
-      "lastUsedAt": 1783088368491,
-      "lastStatusCode": null,
-      "lastError": "fetch failed"
-    },
-    "groq_whisper:a98543b30147": {
-      "cooldownUntil": 1783088404508,
-      "failures": 94,
-      "successes": 3,
-      "lastUsedAt": 1783088374508,
-      "lastStatusCode": null,
-      "lastError": "fetch failed"
-    },
-    "groq_whisper:cd65f7a57886": {
-      "cooldownUntil": 1783197016628,
-      "failures": 1,
-      "successes": 0,
-      "lastUsedAt": 1783196986628,
-      "lastStatusCode": 500,
-      "lastError": "Simulated Groq Failure"
     }
   }
 }
