@@ -291,13 +291,23 @@ export async function registerWhatsappRoutes(
 			return reply.code(400).send({ error: "BadWebhookRequest" });
 		}
 
-		const [config] = await db
-			.select({
-				webhookVerifyToken: denteWhatsappBotConfigs.webhookVerifyToken,
-			})
-			.from(denteWhatsappBotConfigs)
-			.where(eq(denteWhatsappBotConfigs.webhookVerifyToken, token))
-			.limit(1);
+		/*
+		 * ОПЕРАЦИЯ «ДО АРЕНДАТОРА». Рукопожатие присылает Meta: токена клиники в
+		 * нём нет и быть не может, а организация станет известна только из
+		 * найденной строки — ищем по самому проверочному токену. Под FORCE RLS
+		 * запрос без контекста отдавал ноль строк, и подписка на вебхук
+		 * ОТКЛОНЯЛАСЬ ВСЕГДА: WhatsApp клиники нельзя было подключить вовсе.
+		 * Обход накрывает ровно этот SELECT одной колонки.
+		 */
+		const [config] = await withSuperuserBypass(async (tx) =>
+			tx
+				.select({
+					webhookVerifyToken: denteWhatsappBotConfigs.webhookVerifyToken,
+				})
+				.from(denteWhatsappBotConfigs)
+				.where(eq(denteWhatsappBotConfigs.webhookVerifyToken, token))
+				.limit(1),
+		);
 
 		if (!config) {
 			return reply.code(403).send({ error: "WebhookTokenMismatch" });
@@ -432,13 +442,29 @@ export async function registerWhatsappRoutes(
 							: null;
 					if (!phoneNumberId) continue;
 
-					const [orgConfig] = await db
-						.select({ organizationId: denteWhatsappBotConfigs.organizationId })
-						.from(denteWhatsappBotConfigs)
-						.where(eq(denteWhatsappBotConfigs.phoneNumberId, phoneNumberId))
-						.limit(1);
+					/*
+					 * ОПЕРАЦИЯ «ДО АРЕНДАТОРА»: событие прислала Meta, и чья это
+					 * клиника, известно только по номеру отправляющего аккаунта.
+					 * Без контекста запрос отдавал ноль строк, срабатывало
+					 * `continue` ниже — и КАЖДОЕ входящее сообщение WhatsApp
+					 * молча выбрасывалось. Обход накрывает ровно этот SELECT
+					 * одной колонки; всё, что делается дальше, идёт под
+					 * контекстом найденной клиники.
+					 */
+					const [orgConfig] = await withSuperuserBypass(async (tx) =>
+						tx
+							.select({
+								organizationId: denteWhatsappBotConfigs.organizationId,
+							})
+							.from(denteWhatsappBotConfigs)
+							.where(
+								eq(denteWhatsappBotConfigs.phoneNumberId, phoneNumberId),
+							)
+							.limit(1),
+					);
 
 					if (!orgConfig) continue;
+					const inboundOrganizationId = orgConfig.organizationId;
 
 					/*
 					 * Квитанции доставки. Раньше value.statuses отбрасывался молча, и
